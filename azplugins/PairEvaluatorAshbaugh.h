@@ -57,6 +57,27 @@ HOSTDEVICE inline ashbaugh_params make_ashbaugh_params(Scalar lj1,
     }
 
 //! Class for evaluating the Ashbaugh-Hatch pair potential
+/*!
+ * PairEvaluatorAshbaugh evaluates the function:
+ *      \f{eqnarray*}{
+ *      V(r)  = & V_{\mathrm{LJ}}(r, \varepsilon, \sigma, \alpha) + (1-\lambda)\varepsilon & r < (2/\alpha)^{1/6}\sigma \\
+ *            = & \lambda V_{\mathrm{LJ}}(r, \varepsilon, \sigma, \alpha) & (2/\alpha)^{1/6}\sigma \ge r < r_{\mathrm{cut}} \\
+ *            = & 0 & r \ge r_{\mathrm{cut}}
+ *      \f}
+ *
+ * where \f$V_{\mathrm{LJ}}(r,\varepsilon,\sigma,\alpha)\f$ is the standard Lennard-Jones potential (see EvaluatorPairLJ)
+ * with parameters \f$\varepsilon\f$, \f$\sigma\f$, and \f$\alpha\f$ (default: 1.0). This potential is implemented
+ * as given in
+ * <a href="http://dx.doi.org/10.1021/ja802124e">H.S. Ashbaugh and H.W. Hatch, J. Am. Chem. Soc., 130, 9536 (2008)</a>.
+ *
+ * The Ashbaugh-Hatch potential does not need diameter or charge. Five parameters are specified and stored in a
+ * ashbaugh_params. These are related to the standard Lennard-Jones and Ashbaugh-Hatch parameters by:
+ * - \a lj1 = 4.0 * epsilon * pow(sigma,12.0)
+ * - \a lj2 = alpha * 4.0 * epsilon * pow(sigma,6.0);
+ * - \a lambda is the scale factor for the attraction (0 = WCA, 1 = LJ)
+ * - \a rwcasq is the square of the location of the potential minimum (WCA cutoff), pow(2.0/alpha,1./3.) * sigma * sigma
+ * - \a wca_shift is the amount needed to shift the energy of the repulsive part to match the attractive energy.
+ */
 class PairEvaluatorAshbaugh
     {
     public:
