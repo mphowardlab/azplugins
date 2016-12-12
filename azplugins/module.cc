@@ -72,8 +72,10 @@ PYBIND11_PLUGIN(_azplugins)
     pybind11::module m("_azplugins");
 
     export_PotentialPair<azplugins::PairPotentialAshbaugh>(m, "PairPotentialAshbaugh");
+    export_PotentialPair<azplugins::PairPotentialColloid>(m, "PairPotentialColloid");
     #ifdef ENABLE_CUDA
     export_PotentialPairGPU<azplugins::PairPotentialAshbaughGPU, azplugins::PairPotentialAshbaugh>(m, "PairPotentialAshbaughGPU");
+    export_PotentialPairGPU<azplugins::PairPotentialColloidGPU, azplugins::PairPotentialColloid>(m, "PairPotentialColloidGPU");
     #endif // ENABLE_CUDA
     azplugins::detail::export_ashbaugh_params(m);
 

@@ -26,6 +26,9 @@
  *     particle pairs at fixed distances.
  */
 
+#ifndef AZPLUGINS_PAIR_POTENTIALS_H_
+#define AZPLUGINS_PAIR_POTENTIALS_H_
+
 #ifdef NVCC
 #error This header cannot be compiled by nvcc
 #endif
@@ -38,14 +41,19 @@
 
 // All pair potential evaluators must be included here
 #include "PairEvaluatorAshbaugh.h"
+#include "PairEvaluatorColloid.h"
 
 namespace azplugins
 {
 
 typedef ::PotentialPair<azplugins::detail::PairEvaluatorAshbaugh> PairPotentialAshbaugh;
+typedef ::PotentialPair<azplugins::detail::PairEvaluatorColloid> PairPotentialColloid;
 
 #ifdef ENABLE_CUDA
 typedef ::PotentialPairGPU<azplugins::detail::PairEvaluatorAshbaugh, azplugins::gpu::compute_pair_ashbaugh> PairPotentialAshbaughGPU;
+typedef ::PotentialPairGPU<azplugins::detail::PairEvaluatorColloid, azplugins::gpu::compute_pair_colloid> PairPotentialColloidGPU;
 #endif // ENABLE_CUDA
 
 } // end namespace azplugins
+
+#endif // AZPLUGINS_PAIR_POTENTIALS_H_

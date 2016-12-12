@@ -81,3 +81,43 @@ class ashbaugh(hoomd.md.pair.pair):
         rwcasq = math.pow(2.0/alpha, 1.0/3.0) * sigma**2
         wca_shift = epsilon * alpha**2 * (1. - lam)
         return _azplugins.make_ashbaugh_params(lj1, lj2, lam, rwcasq, wca_shift)
+
+class colloid(hoomd.md.pair.pair):
+    def __init__(self, r_cut, nlist=None, name=None):
+        hoomd.util.print_status_line();
+
+        # initialize the base class
+        hoomd.md.pair.pair.__init__(self, r_cut, nlist, name);
+
+        # create the c++ mirror class
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            self.cpp_class = _azplugins.PairPotentialColloid
+        else:
+            self.cpp_class = _azplugins.PairPotentialColloidGPU
+            self.nlist.cpp_nlist.setStorageMode(hoomd.md._md.NeighborList.storageMode.full)
+        self.cpp_force = self.cpp_class(hoomd.context.current.system_definition, self.nlist.cpp_nlist, self.name)
+
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name);
+
+        # setup the coefficent options
+        self.required_coeffs = ['epsilon', 'sigma', 'style'];
+        self.pair_coeff.set_default_coeff('epsilon', 144.0);
+        self.pair_coeff.set_default_coeff('sigma', 1.0);
+
+    ## Process the coefficients
+    def process_coeff(self, coeff):
+        epsilon = coeff['epsilon'];
+        sigma = coeff['sigma'];
+        style = coeff['style']
+
+        if style == 'slv-slv':
+            style = 0
+        elif style == 'coll-slv':
+            style = 1
+        elif style == 'coll-coll':
+            style = 2
+        else:
+            hoomd.context.msg.error('Unknown interaction style\n')
+            raise RuntimeError('Unknown interaction style')
+
+        return hoomd._hoomd.make_scalar4(epsilon, sigma**3, sigma**6, hoomd._hoomd.int_as_scalar(style));

@@ -21,5 +21,11 @@ cudaError_t compute_pair_ashbaugh(const pair_args_t& pair_args,
     return gpu_compute_pair_forces<azplugins::detail::PairEvaluatorAshbaugh>(pair_args, d_params);
     }
 
+cudaError_t compute_pair_colloid(const pair_args_t& pair_args,
+                                 const azplugins::detail::PairEvaluatorColloid::param_type *d_params)
+    {
+    return gpu_compute_pair_forces<azplugins::detail::PairEvaluatorColloid>(pair_args, d_params);
+    }
+
 } // end namespace gpu
 } // end namespace azplugins
