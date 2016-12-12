@@ -42,11 +42,11 @@ macro(add_script_test_gpu script)
 endmacro()
 
 set(TEST_LIST_CPU
-    test_example
+    test_pair_ashbaugh
     )
 
 set(TEST_LIST_GPU
-    test_example
+    test_pair_ashbaugh
     )
 
 set(EXCLUDE_FROM_MPI

@@ -1,0 +1,133 @@
+// Maintainer: mphoward
+
+/*!
+ * \file PairEvaluatorAshbaugh.h
+ * \brief Defines the pair force evaluator class for Ashbaugh-Hatch potential
+ */
+
+#ifndef AZPLUGINS_PAIR_EVALUATOR_ASHBAUGH_H_
+#define AZPLUGINS_PAIR_EVALUATOR_ASHBAUGH_H_
+
+#ifndef NVCC
+#include <string>
+#endif
+
+#include "hoomd/HOOMDMath.h"
+
+#ifdef NVCC
+#define DEVICE __device__
+#define HOSTDEVICE __host__ __device__
+#else
+#define DEVICE
+#define HOSTDEVICE
+#endif
+
+namespace azplugins
+{
+
+namespace detail
+{
+//! Ashbaugh-Hatch parameters
+/*!
+ * \sa PairEvaluatorAshbaugh
+ */
+struct ashbaugh_params
+    {
+    Scalar lj1; //<! The coefficient for 1/r^12
+    Scalar lj2; //!< The coefficient for 1/r^6
+    Scalar lambda; //!< Controls the attractive tail, between 0 and 1
+    Scalar rwcasq; //!< The square of the location of the LJ potential minimum
+    Scalar wca_shift; //!< The amount to shift the repulsive part by
+    };
+
+//! Convenience function for making ashbaugh_params in python
+HOSTDEVICE inline ashbaugh_params make_ashbaugh_params(Scalar lj1,
+                                                       Scalar lj2,
+                                                       Scalar lambda,
+                                                       Scalar rwcasq,
+                                                       Scalar wca_shift)
+    {
+    ashbaugh_params p;
+    p.lj1 = lj1;
+    p.lj2 = lj2;
+    p.lambda = lambda;
+    p.rwcasq = rwcasq;
+    p.wca_shift = wca_shift;
+    return p;
+    }
+
+//! Class for evaluating the Ashbaugh-Hatch pair potential
+class PairEvaluatorAshbaugh
+    {
+    public:
+        //! Define the parameter type used by this pair potential evaluator
+        typedef ashbaugh_params param_type;
+
+        DEVICE PairEvaluatorAshbaugh(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
+            : rsq(_rsq), rcutsq(_rcutsq), lj1(_params.lj1), lj2(_params.lj2), lambda(_params.lambda),
+              rwcasq(_params.rwcasq), wca_shift(_params.wca_shift)
+            {
+            }
+
+        DEVICE static bool needsDiameter() { return false; }
+        DEVICE void setDiameter(Scalar di, Scalar dj) { }
+
+        DEVICE static bool needsCharge() { return false; }
+        DEVICE void setCharge(Scalar qi, Scalar qj) { }
+
+        DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
+            {
+            if (rsq < rcutsq && lj1 != 0)
+                {
+                Scalar r2inv = Scalar(1.0)/rsq;
+                Scalar r6inv = r2inv * r2inv * r2inv;
+                force_divr= r2inv * r6inv * (Scalar(12.0)*lj1*r6inv - Scalar(6.0)*lj2);
+
+                pair_eng = r6inv * (lj1*r6inv - lj2);
+                if (rsq < rwcasq)
+                    {
+                    pair_eng += wca_shift;
+                    }
+                else
+                    {
+                    force_divr *= lambda;
+                    pair_eng *= lambda;
+                    }
+
+                if (energy_shift)
+                    {
+                    Scalar rcut2inv = Scalar(1.0)/rcutsq;
+                    Scalar rcut6inv = rcut2inv * rcut2inv * rcut2inv;
+                    pair_eng -= lambda * rcut6inv * (lj1*rcut6inv - lj2);
+                    }
+                return true;
+                }
+            else
+                return false;
+            }
+
+        #ifndef NVCC
+        //! Return the name of this potential
+        static std::string getName()
+            {
+            return std::string("ashbaugh");
+            }
+        #endif
+
+    protected:
+        Scalar rsq;     //!< Stored rsq from the constructor
+        Scalar rcutsq;  //!< Stored rcutsq from the constructor
+        Scalar lj1;     //!< lj1 parameter extracted from the params passed to the constructor
+        Scalar lj2;     //!< lj2 parameter extracted from the params passed to the constructor
+        Scalar lambda;  //!< lambda parameter
+        Scalar rwcasq;  //!< WCA cutoff radius squared
+        Scalar wca_shift; //!< Energy shift for WCA part of the potential
+    };
+
+} // end namespace detail
+} // end namespace azplugins
+
+#undef DEVICE
+#undef HOSTDEVICE
+
+#endif // AZPLUGINS_PAIR_EVALUATOR_ASHBAUGH_H_
