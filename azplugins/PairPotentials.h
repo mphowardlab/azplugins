@@ -19,7 +19,7 @@
  *  3. Define the driver function in PairPotentialDrivers.cu. The driver function needs to launch
  *     the templated kernel.
  *
- *  4. Expose the pair potential on the python level in pair.py.
+ *  4. Expose the pair potential on the python level in module.cc and pair.py.
  *
  *  5. Write a unit test for the potential in test-py. Two types of tests should be conducted: one that
  *     checks that all methods work on the python object, and one that validates the force and energy between
