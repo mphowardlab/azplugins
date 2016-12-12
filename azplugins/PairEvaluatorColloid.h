@@ -26,6 +26,41 @@ namespace detail
 {
 
 //! Class for evaluating the colloid pair potential
+/*!
+ * An effective Lennard-Jones potential obtained by integrating the Lennard-Jones potential
+ * between a point and a sphere or a sphere and a sphere. The attractive part of the
+ * colloid-colloid pair potential was derived originally by Hamaker, and the full potential
+ * by <a href="http://doi.org/10.1103/PhysRevE.67.041710">Everaers and Ejtehadi</a>.
+ * A discussion of the application of these potentials to colloidal suspensions can be found
+ * in <a href="http://dx.doi.org/10.1063/1.3578181">Grest et al.</a>
+ *
+ * The pair potential has three different coupling styles between particle types:
+ *
+ * - ``slv-slv`` gives the Lennard-Jones potential for coupling between pointlike particles,
+ *   with the standard \f$4 \varepsilon\f$ replaced by \f$A/36\f$.
+ * - ``coll-slv`` gives the interaction between a pointlike particle and a colloid
+ * - ``coll-coll`` gives the interaction between two colloids
+ *
+ * Refer to the work by <a href="http://dx.doi.org/10.1063/1.3578181">Grest et al.</a> for the
+ * form of the colloid-solvent and colloid-colloid potentials, which are too cumbersome
+ * to report on here.
+ *
+ * \warning
+ * The ``coll-slv`` and ``coll-coll`` styles make use of the particle diameters to
+ * compute the interactions. In the ``coll-slv`` case, the identity of the colloid
+ * in the pair is inferred to be the larger of the two diameters. You must make
+ * sure you appropriately set the particle diameters in the particle data.
+ *
+ * The strength of all potentials is set by the Hamaker constant, represented here by the
+ * symbol \f$A\f$. The other parameter \f$\sigma\f$ is the diameter of the particles that
+ * are integrated out (colloids are comprised of Lennard-Jones particles with parameter
+ * \f$\sigma\f$). The parameters that are fed in are:
+ *
+ * - \a A - the Hamaker constant
+ * - \a sigma_3 - \f$\sigma^3\f$
+ * - \a sigma_6 - \f$\sigma^6\f$
+ * - \a form - the style of the pair interaction as in int that is cast to the interaction_type
+ */
 class PairEvaluatorColloid
     {
     public:
@@ -54,6 +89,16 @@ class PairEvaluatorColloid
         DEVICE static bool needsCharge() { return false; }
         DEVICE void setCharge(Scalar qi, Scalar qj) { }
 
+        //! Computes the solvent-solvent interaction
+        /*!
+         * \param force_divr Force divided by r
+         * \param _rsq Distance between particle centers, squared
+         * \tparam force If true, compute the force
+         * \returns energy
+         *
+         * The force is only computed if \a force is true. This is useful for
+         * performing the energy shift, where the potential needs to be reevaluated at rcut.
+         */
         template<bool force>
         DEVICE inline Scalar computeSolventSolvent(Scalar& force_divr, Scalar _rsq)
             {
@@ -68,6 +113,16 @@ class PairEvaluatorColloid
             return c1 * r6inv * (sigma_6 * r6inv - Scalar(1.0));
             }
 
+        //! Computes the colloid-solvent interaction
+        /*!
+         * \param force_divr Force divided by r
+         * \param _rsq Distance between particle centers, squared
+         * \tparam force If true, compute the force
+         * \returns energy
+         *
+         * The force is only computed if \a force is true. This is useful for
+         * performing the energy shift, where the potential needs to be reevaluated at rcut.
+         */
         template<bool force>
         DEVICE inline Scalar computeColloidSolvent(Scalar& force_divr, Scalar _rsq)
             {
@@ -90,6 +145,16 @@ class PairEvaluatorColloid
             return Scalar(2.0/9.0)*fR*(Scalar(1.0)-(asq*(asq*(asq/Scalar(3.0) + Scalar(3.0)*_rsq)+Scalar(4.2)*rsqsq)+_rsq*rsqsq)*sigma_6/asq_minus_rsq_6);
             }
 
+        //! Computes the colloid-colloid interaction
+        /*!
+         * \param force_divr Force divided by r
+         * \param _rsq Distance between particle centers, squared
+         * \tparam force If true, compute the force
+         * \returns energy
+         *
+         * The force is only computed if \a force is true. This is useful for
+         * performing the energy shift, where the potential needs to be reevaluated at rcut.
+         */
         template<bool force>
         DEVICE inline Scalar computeColloidColloid(Scalar& force_divr, Scalar _rsq)
             {
@@ -194,7 +259,7 @@ class PairEvaluatorColloid
         */
         static std::string getName()
             {
-            return std::string("np");
+            return std::string("colloid");
             }
         #endif
 

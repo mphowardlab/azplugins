@@ -12,3 +12,5 @@ Not yet released
 * A framework is configured for developing pair potentials.
 * `pair.ashbaugh` implements the Ashbaugh-Hatch (Lennard-Jones perturbation)
    potential.
+* `pair.colloid` implements the colloid (integrated Lennard-Jones) potential
+  for colloidal suspensions.

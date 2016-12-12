@@ -24,6 +24,12 @@ class pair_colloid_tests(unittest.TestCase):
         coll.update_coeffs()
 
     # test missing style
+    def test_set_missing_epsilon(self):
+        coll = azplugins.pair.colloid(r_cut=3.0, nlist = self.nl)
+        coll.pair_coeff.set('A', 'A', sigma=1.0, style='slv-slv')
+        self.assertRaises(RuntimeError, coll.update_coeffs)
+
+    # test missing style
     def test_set_missing_style(self):
         coll = azplugins.pair.colloid(r_cut=3.0, nlist = self.nl)
         coll.pair_coeff.set('A', 'A', epsilon=144.0, sigma=1.0)
@@ -57,8 +63,8 @@ class pair_colloid_tests(unittest.TestCase):
     # test default coefficients
     def test_default_coeff(self):
         coll = azplugins.pair.colloid(r_cut=3.0, nlist = self.nl)
-        # (r_cut, and r_on are default)
-        coll.pair_coeff.set('A', 'A', style='slv-slv')
+        # (sigma, r_cut, and r_on are default)
+        coll.pair_coeff.set('A', 'A', epsilon=144., style='slv-slv')
         coll.update_coeffs()
 
     # test max rcut
