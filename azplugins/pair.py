@@ -77,7 +77,7 @@ class ashbaugh(hoomd.md.pair.pair):
         lam = coeff['lam']
 
         lj1 = 4.0 * epsilon * math.pow(sigma, 12.0)
-        lj2 = 4.0 * epsilon * math.pow(sigma, 6.0)
+        lj2 = alpha * 4.0 * epsilon * math.pow(sigma, 6.0)
         rwcasq = math.pow(2.0/alpha, 1.0/3.0) * sigma**2
         wca_shift = epsilon * alpha**2 * (1. - lam)
         return _azplugins.make_ashbaugh_params(lj1, lj2, lam, rwcasq, wca_shift)
