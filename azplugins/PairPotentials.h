@@ -19,12 +19,15 @@
  *  3. Define the driver function in PairPotentialDrivers.cu. The driver function needs to launch
  *     the templated kernel.
  *
- *  4. Expose the pair potential on the python level in pair.py.
+ *  4. Expose the pair potential on the python level in module.cc and pair.py.
  *
  *  5. Write a unit test for the potential in test-py. Two types of tests should be conducted: one that
  *     checks that all methods work on the python object, and one that validates the force and energy between
  *     particle pairs at fixed distances.
  */
+
+#ifndef AZPLUGINS_PAIR_POTENTIALS_H_
+#define AZPLUGINS_PAIR_POTENTIALS_H_
 
 #ifdef NVCC
 #error This header cannot be compiled by nvcc
@@ -38,14 +41,19 @@
 
 // All pair potential evaluators must be included here
 #include "PairEvaluatorAshbaugh.h"
+#include "PairEvaluatorColloid.h"
 
 namespace azplugins
 {
 
 typedef ::PotentialPair<azplugins::detail::PairEvaluatorAshbaugh> PairPotentialAshbaugh;
+typedef ::PotentialPair<azplugins::detail::PairEvaluatorColloid> PairPotentialColloid;
 
 #ifdef ENABLE_CUDA
 typedef ::PotentialPairGPU<azplugins::detail::PairEvaluatorAshbaugh, azplugins::gpu::compute_pair_ashbaugh> PairPotentialAshbaughGPU;
+typedef ::PotentialPairGPU<azplugins::detail::PairEvaluatorColloid, azplugins::gpu::compute_pair_colloid> PairPotentialColloidGPU;
 #endif // ENABLE_CUDA
 
 } // end namespace azplugins
+
+#endif // AZPLUGINS_PAIR_POTENTIALS_H_

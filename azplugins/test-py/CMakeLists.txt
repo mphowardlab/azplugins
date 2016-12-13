@@ -43,10 +43,12 @@ endmacro()
 
 set(TEST_LIST_CPU
     test_pair_ashbaugh
+    test_pair_colloid
     )
 
 set(TEST_LIST_GPU
     test_pair_ashbaugh
+    test_pair_colloid
     )
 
 set(EXCLUDE_FROM_MPI

@@ -17,6 +17,7 @@
 
 // All pair potential evaluators must be included here
 #include "PairEvaluatorAshbaugh.h"
+#include "PairEvaluatorColloid.h"
 
 namespace azplugins
 {
@@ -25,6 +26,11 @@ namespace gpu
 //! Compute pair forces on the GPU with PairEvaluatorAshbaugh
 cudaError_t compute_pair_ashbaugh(const pair_args_t& pair_args,
                                   const azplugins::detail::PairEvaluatorAshbaugh::param_type *d_params);
+
+
+//! Compute pair forces on the GPU with PairEvaluatorColloid
+cudaError_t compute_pair_colloid(const pair_args_t& pair_args,
+                                 const azplugins::detail::PairEvaluatorColloid::param_type *d_params);
 } // end namespace gpu
 } // end namespace azplugins
 

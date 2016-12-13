@@ -82,3 +82,111 @@ class ashbaugh(hoomd.md.pair.pair):
         rwcasq = math.pow(2.0/alpha, 1.0/3.0) * sigma**2
         wca_shift = epsilon * alpha**2 * (1. - lam)
         return _azplugins.make_ashbaugh_params(lj1, lj2, lam, rwcasq, wca_shift)
+
+class colloid(hoomd.md.pair.pair):
+    R""" Colloid pair potential
+
+    Args:
+        r_cut (float): Default cutoff radius (in distance units).
+        nlist (:py:mod:`hoomd.md.nlist`): Neighbor list
+        name (str): Name of the force instance.
+
+    :py:class:`colloid` is an effective Lennard-Jones potential obtained by
+    integrating the Lennard-Jones potential between a point and a sphere or a sphere and a
+    sphere. The attractive part of the colloid-colloid pair potential was derived originally
+    by Hamaker, and the full potential by `Everaers and Ejtehadi <http://doi.org/10.1103/PhysRevE.67.041710>`_.
+    A discussion of the application of these potentials to colloidal suspensions can be found
+    in `Grest et al. <http://dx.doi.org/10.1063/1.3578181>`_
+
+    The pair potential has three different coupling styles between particle types:
+
+    - ``slv-slv`` gives the Lennard-Jones potential for coupling between pointlike particles
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray*}
+        V(r)  = & \frac{\varepsilon}{36} \left[\left(\frac{\sigma}{r}\right)^{12}
+                  - \left(\frac{\sigma}{r}\right)^6 \right] & r < r_{\mathrm{cut}} \\
+              = & 0 & r \ge r_{\mathrm{cut}}
+        \end{eqnarray*}
+
+    - ``coll-slv`` gives the interaction between a pointlike particle and a colloid
+    - ``coll-coll`` gives the interaction between two colloids
+
+    Refer to the work by `Grest et al. <http://dx.doi.org/10.1063/1.3578181>`_ for the
+    form of the colloid-solvent and colloid-colloid potentials, which are too cumbersome
+    to report on here. See :py:class:`hoomd.md.pair.pair` for details on how forces are
+    calculated and the available energy shifting and smoothing modes. Use
+    :py:meth:`pair_coeff.set <coeff.set>` to set potential coefficients.
+
+    .. warning::
+        The ``coll-slv`` and ``coll-coll`` styles make use of the particle diameters to
+        compute the interactions. In the ``coll-slv`` case, the identity of the colloid
+        in the pair is inferred to be the larger of the two diameters. You must make
+        sure you appropriately set the particle diameters in the particle data.
+
+    The strength of all potentials is set by the Hamaker constant, represented here by the
+    symbol :math:`\varepsilon` for consistency with other potentials. The other parameter
+    :math:`\sigma` is the diameter of the particles that are integrated out (colloids are
+    comprised of Lennard-Jones particles with parameter :math:`\sigma`).
+
+    The following coefficients must be set per unique pair of particle types:
+
+    - :math:`\varepsilon` - *epsilon* (in energy units) - Hamaker constant
+    - :math:`\sigma` - *sigma* (in distance units) - Size of colloid constituent particles
+        - *optional*: defaults to 1.0
+    - ``style`` - ``slv-slv``, ``coll-slv``, or ``coll-coll`` - Style of pair interaction
+    - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
+      - *optional*: defaults to the global r_cut specified in the pair command
+    - :math:`r_{\mathrm{on}}`- *r_on* (in distance units)
+      - *optional*: defaults to the global r_cut specified in the pair command
+
+    Example::
+
+        nl = hoomd.md.nlist.cell()
+        coll = azplugins.pair.colloid(r_cut=3.0, nlist=nl)
+        # standard Lennard-Jones for solvent-solvent
+        coll.pair_coeff.set('S', 'S', epsilon=144.0, sigma=1.0, style='slv-slv')
+        # solvent-colloid
+        coll.pair_coeff.set('S', 'C', epsilon=100.0, sigma=1.0, style='slv-coll', r_cut=9.0)
+        # colloid-colloid
+        coll.pair_coeff.set('C', 'C', epsilon=40.0, sigma=1.0, r_cut=10.581)
+
+    """
+    def __init__(self, r_cut, nlist=None, name=None):
+        hoomd.util.print_status_line();
+
+        # initialize the base class
+        hoomd.md.pair.pair.__init__(self, r_cut, nlist, name);
+
+        # create the c++ mirror class
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            self.cpp_class = _azplugins.PairPotentialColloid
+        else:
+            self.cpp_class = _azplugins.PairPotentialColloidGPU
+            self.nlist.cpp_nlist.setStorageMode(hoomd.md._md.NeighborList.storageMode.full)
+        self.cpp_force = self.cpp_class(hoomd.context.current.system_definition, self.nlist.cpp_nlist, self.name)
+
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name);
+
+        # setup the coefficent options
+        self.required_coeffs = ['epsilon', 'sigma', 'style'];
+        self.pair_coeff.set_default_coeff('sigma', 1.0);
+
+    ## Process the coefficients
+    def process_coeff(self, coeff):
+        epsilon = coeff['epsilon'];
+        sigma = coeff['sigma'];
+        style = coeff['style']
+
+        if style == 'slv-slv':
+            style = 0
+        elif style == 'coll-slv':
+            style = 1
+        elif style == 'coll-coll':
+            style = 2
+        else:
+            hoomd.context.msg.error('Unknown interaction style\n')
+            raise RuntimeError('Unknown interaction style')
+
+        return hoomd._hoomd.make_scalar4(epsilon, sigma**3, sigma**6, hoomd._hoomd.int_as_scalar(style));
