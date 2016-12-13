@@ -7,6 +7,7 @@ set(_${COMPONENT_NAME}_sources
     )
 
 set(_${COMPONENT_NAME}_cu_sources
+    PairPotentialDrivers.cu
     )
 
 # Need to define NO_IMPORT_ARRAY in every file but module.cc
@@ -19,7 +20,7 @@ endif (ENABLE_CUDA)
 add_library (_${COMPONENT_NAME} SHARED ${_${COMPONENT_NAME}_sources} ${_CUDA_GENERATED_FILES})
 
 # link the library to its dependencies
-target_link_libraries(_${COMPONENT_NAME} ${HOOMD_LIBRARIES})
+target_link_libraries(_${COMPONENT_NAME} ${HOOMD_LIBRARIES} _hoomd _md)
 
 # if we are compiling with MPI support built in, set appropriate
 # compiler/linker flags
@@ -62,7 +63,7 @@ ENDMACRO(copy_file)
 
 set(files
     __init__.py
-    update.py
+    pair.py
     )
 
 install(FILES ${files}

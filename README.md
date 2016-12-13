@@ -2,7 +2,8 @@
 
 AZPlugins is a component (plugin) for [HOOMD-blue](http://glotzerlab.engin.umich.edu/hoomd-blue)
 which expands its functionality for tackling a variety of problems in soft matter physics.
-See [ChangeLog.md](ChangeLog.md) for recent development.
+Currently, AZPlugins is tested against v2.1.1 of HOOMD-blue. See [ChangeLog.md](ChangeLog.md) for
+a list of recent development.
 
 ## Compiling AZPlugins
 
@@ -46,10 +47,10 @@ import azplugins
      * Python >= 2.7
      * numpy >= 1.7
      * CMake >= 2.8.0
-     * C++ 11 capable compiler (tested with gcc >= 4.8.5, clang 3.5)
+     * C++ 11 capable compiler (tested with gcc >= 4.8.4)
  * Optional:
      * NVIDIA CUDA Toolkit >= 7.0
-     * MPI (tested with OpenMPI, MVAPICH)
+     * MPI (tested with OpenMPI)
 
 ### Testing
 
