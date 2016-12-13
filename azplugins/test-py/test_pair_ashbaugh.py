@@ -122,29 +122,33 @@ class potential_ashbaugh_tests(unittest.TestCase):
         md.integrate.mode_standard(dt=0)
         nve = md.integrate.nve(group = group.all())
         run(1)
+        U = 2.0
+        F = -45.7143
         f0 = ash.forces[0].force
         f1 = ash.forces[1].force
         e0 = ash.forces[0].energy
         e1 = ash.forces[1].energy
 
-        self.assertAlmostEqual(e0,0.5*2.0,3)
-        self.assertAlmostEqual(e1,0.5*2.0,3)
+        self.assertAlmostEqual(e0,0.5*U,3)
+        self.assertAlmostEqual(e1,0.5*U,3)
 
-        self.assertAlmostEqual(f0[0],-45.7143,3)
+        self.assertAlmostEqual(f0[0],F,3)
         self.assertAlmostEqual(f0[1],0)
         self.assertAlmostEqual(f0[2],0)
 
-        self.assertAlmostEqual(f1[0],45.7143,3)
+        self.assertAlmostEqual(f1[0],-F,3)
         self.assertAlmostEqual(f1[1],0)
         self.assertAlmostEqual(f1[2],0)
 
         # change lambda to check for shifting of energy (force stays the same)
         ash.pair_coeff.set('A','A', lam=0.5)
         run(1)
-        self.assertAlmostEqual(ash.forces[0].energy, 0.5*1.0,3)
-        self.assertAlmostEqual(ash.forces[1].energy, 0.5*1.0,3)
-        self.assertAlmostEqual(ash.forces[0].force[0], -45.7143,3)
-        self.assertAlmostEqual(ash.forces[1].force[0], 45.7143,3)
+        U = 1.0
+        F = -45.7143
+        self.assertAlmostEqual(ash.forces[0].energy, 0.5*U, 3)
+        self.assertAlmostEqual(ash.forces[1].energy, 0.5*U, 3)
+        self.assertAlmostEqual(ash.forces[0].force[0], F, 3)
+        self.assertAlmostEqual(ash.forces[1].force[0], -F, 3)
 
         # change sigma so that now the particle is in the LJ region
         # when lambda = 0, then the potential and force are zero
@@ -158,29 +162,56 @@ class potential_ashbaugh_tests(unittest.TestCase):
         # partially switch on the LJ with lambda = 0.5
         ash.pair_coeff.set('A','A', lam=0.5)
         run(1)
-        self.assertAlmostEqual(ash.forces[0].energy, 0.5*-0.0460947, 3)
-        self.assertAlmostEqual(ash.forces[1].energy, 0.5*-0.0460947, 3)
-        self.assertAlmostEqual(ash.forces[0].force[0], 0.260291, 3)
-        self.assertAlmostEqual(ash.forces[1].force[0], -0.260291, 3)
+        U = -0.0460947
+        F = 0.260291
+        self.assertAlmostEqual(ash.forces[0].energy, 0.5*U, 3)
+        self.assertAlmostEqual(ash.forces[1].energy, 0.5*U, 3)
+        self.assertAlmostEqual(ash.forces[0].force[0], F, 3)
+        self.assertAlmostEqual(ash.forces[1].force[0], -F, 3)
 
         # test that energy shifting works (bump up sigma so that at rcut = 3 the shift is reasonable)
         # check wca is shifted first
         ash.pair_coeff.set('A','A', sigma=1.05)
         ash.set_params(mode='shift')
         run(1)
-        self.assertAlmostEqual(ash.forces[0].energy, 0.5*1.00734, 3)
-        self.assertAlmostEqual(ash.forces[1].energy, 0.5*1.00734, 3)
-        self.assertAlmostEqual(ash.forces[0].force[0], -45.7143, 3)
-        self.assertAlmostEqual(ash.forces[1].force[0], 45.7143, 3)
+        U = 1.00734
+        F = -45.7143
+        self.assertAlmostEqual(ash.forces[0].energy, 0.5*U, 3)
+        self.assertAlmostEqual(ash.forces[1].energy, 0.5*U, 3)
+        self.assertAlmostEqual(ash.forces[0].force[0], F, 3)
+        self.assertAlmostEqual(ash.forces[1].force[0], -F, 3)
 
-        # and check ash
+        # and check lj
         ash.pair_coeff.set('A','A', sigma=0.85)
         ash.set_params(mode='shift')
         run(1)
-        self.assertAlmostEqual(ash.forces[0].energy, 0.5*-0.806849, 3)
-        self.assertAlmostEqual(ash.forces[1].energy, 0.5*-0.806849, 3)
-        self.assertAlmostEqual(ash.forces[0].force[0], 2.81197, 3)
-        self.assertAlmostEqual(ash.forces[1].force[0], -2.81197, 3)
+        U = -0.806849
+        F = 2.81197
+        self.assertAlmostEqual(ash.forces[0].energy, 0.5*U, 3)
+        self.assertAlmostEqual(ash.forces[1].energy, 0.5*U, 3)
+        self.assertAlmostEqual(ash.forces[0].force[0], F, 3)
+        self.assertAlmostEqual(ash.forces[1].force[0], -F, 3)
+
+    # test alpha parameter in potential. if potential is handled right,
+    # coefficients are processed correctly and force will also be correct
+    def test_alpha(self):
+        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl)
+        ash.pair_coeff.set('A','A', epsilon=2.0, sigma=1.05, alpha=0.5, lam=0.5)
+        ash.set_params(mode="no_shift")
+
+        md.integrate.mode_standard(dt=0)
+        nve = md.integrate.nve(group = group.all())
+        run(1)
+
+        U = 4.25
+        self.assertAlmostEqual(ash.forces[0].energy,0.5*U,3)
+        self.assertAlmostEqual(ash.forces[1].energy,0.5*U,3)
+
+        ash.pair_coeff.set('A','A', sigma=0.5)
+        run(1)
+        U = -0.022775444603705584
+        self.assertAlmostEqual(ash.forces[0].energy,0.5*U,3)
+        self.assertAlmostEqual(ash.forces[1].energy,0.5*U,3)
 
     # test the cases where the potential should be zero
     def test_noninteract(self):

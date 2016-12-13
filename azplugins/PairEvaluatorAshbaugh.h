@@ -84,18 +84,49 @@ class PairEvaluatorAshbaugh
         //! Define the parameter type used by this pair potential evaluator
         typedef ashbaugh_params param_type;
 
+        //! Constructor
+        /*!
+         * \param _rsq Squared distance between particles
+         * \param _rcutsq Cutoff radius squared
+         * \param _params Pair potential parameters, given by typedef above
+         *
+         * The functor initializes its members from \a _params.
+         */
         DEVICE PairEvaluatorAshbaugh(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
             : rsq(_rsq), rcutsq(_rcutsq), lj1(_params.lj1), lj2(_params.lj2), lambda(_params.lambda),
               rwcasq(_params.rwcasq), wca_shift(_params.wca_shift)
             {
             }
 
+        //! Ashbaugh-Hatch potential does not need diameter
         DEVICE static bool needsDiameter() { return false; }
+        //! Accept the optional diameter values
+        /*!
+         * \param di Diameter of particle i
+         * \param dj Diameter of particle j
+         */
         DEVICE void setDiameter(Scalar di, Scalar dj) { }
 
+        //! Ashbaugh-Hatch potential does not need charge
         DEVICE static bool needsCharge() { return false; }
+        //! Accept the optional charge values
+        /*!
+         * \param qi Charge of particle i
+         * \param qj Charge of particle j
+         */
         DEVICE void setCharge(Scalar qi, Scalar qj) { }
 
+        //! Evaluate the force and energy
+        /*!
+         * \param force_divr Holds the computed force divided by r
+         * \param pair_eng Holds the computed pair energy
+         * \param energy_shift If true, the potential is shifted to zero at the cutoff
+         *
+         * \returns True if the energy calculation occurs
+         *
+         * The calculation does not occur if the pair distance is greater than the cutoff
+         * or if the potential is scaled to zero.
+         */
         DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
             {
             if (rsq < rcutsq && lj1 != 0)
