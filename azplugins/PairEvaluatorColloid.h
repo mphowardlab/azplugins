@@ -70,6 +70,14 @@ class PairEvaluatorColloid
         //! Different forms for the (i,j) interaction
         enum interaction_type {SOLVENT_SOLVENT=0, COLLOID_SOLVENT, COLLOID_COLLOID};
 
+        //! Constructor
+        /*!
+         * \param _rsq Squared distance between particles
+         * \param _rcutsq Cutoff radius squared
+         * \param _params Pair potential parameters, given by typedef above
+         *
+         * The functor initializes its members from \a _params.
+         */
         DEVICE PairEvaluatorColloid(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
             : rsq(_rsq), rcutsq(_rcutsq)
             {
@@ -79,14 +87,28 @@ class PairEvaluatorColloid
             form = static_cast<interaction_type>(__scalar_as_int(_params.w));
             }
 
+        //! Colloid potential needs diameter
         DEVICE static bool needsDiameter() { return true; }
+        //! Accept the optional diameter values
+        /*!
+         * \param di Diameter of particle i
+         * \param dj Diameter of particle j
+         *
+         * Diameters are stashed as the particle radii.
+         */
         DEVICE void setDiameter(Scalar di, Scalar dj)
             {
             ai = Scalar(0.5) * di;
             aj = Scalar(0.5) * dj;
             }
 
+        //! Colloid potential does not need charge
         DEVICE static bool needsCharge() { return false; }
+        //! Accept the optional charge values
+        /*!
+         * \param qi Charge of particle i
+         * \param qj Charge of particle j
+         */
         DEVICE void setCharge(Scalar qi, Scalar qj) { }
 
         //! Computes the solvent-solvent interaction
@@ -212,6 +234,17 @@ class PairEvaluatorColloid
             return pair_eng;
             }
 
+        //! Evaluate the force and energy
+        /*!
+         * \param force_divr Holds the computed force divided by r
+         * \param pair_eng Holds the computed pair energy
+         * \param energy_shift If true, the potential is shifted to zero at the cutoff
+         *
+         * \returns True if the energy calculation occurs
+         *
+         * The calculation does not occur if the pair distance is greater than the cutoff
+         * or if the potential is scaled to zero.
+         */
         DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
             {
             // compute the force divided by r in force_divr
