@@ -75,6 +75,7 @@ class ashbaugh(hoomd.md.pair.pair):
         epsilon = coeff['epsilon']
         sigma = coeff['sigma']
         lam = coeff['lam']
+        alpha = coeff['alpha']
 
         lj1 = 4.0 * epsilon * math.pow(sigma, 12.0)
         lj2 = alpha * 4.0 * epsilon * math.pow(sigma, 6.0)
