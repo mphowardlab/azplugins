@@ -153,61 +153,28 @@ class potential_colloid_tests(unittest.TestCase):
         # test with shifting enabled
         self.coll.set_params(mode="shift")
         run(1)
-        f0 = self.coll.forces[0].force
-        f1 = self.coll.forces[1].force
-        e0 = self.coll.forces[0].energy
-        e1 = self.coll.forces[1].energy
-
         U -= -0.00380516787794
-        self.assertAlmostEqual(e0,0.5*U,3)
-        self.assertAlmostEqual(e1,0.5*U,3)
-
-        self.assertAlmostEqual(f0[0],F,3)
-        self.assertAlmostEqual(f0[1],0)
-        self.assertAlmostEqual(f0[2],0)
-
-        self.assertAlmostEqual(f1[0],-F,3)
-        self.assertAlmostEqual(f1[1],0)
-        self.assertAlmostEqual(f1[2],0)
+        self.assertAlmostEqual(self.coll.forces[0].energy,0.5*U,3)
+        self.assertAlmostEqual(self.coll.forces[1].energy,0.5*U,3)
+        self.assertAlmostEqual(self.coll.forces[0].force[0],F,3)
+        self.assertAlmostEqual(self.coll.forces[1].force[0],-F,3)
 
         # set epsilon to zero and make sure this is ignored
         self.coll.set_params(mode='no_shift')
         self.coll.pair_coeff.set('A','A', epsilon=0.0)
         run(1)
-        f0 = self.coll.forces[0].force
-        f1 = self.coll.forces[1].force
-        e0 = self.coll.forces[0].energy
-        e1 = self.coll.forces[1].energy
-
-        self.assertAlmostEqual(e0,0)
-        self.assertAlmostEqual(e1,0)
-
-        self.assertAlmostEqual(f0[0],0)
-        self.assertAlmostEqual(f0[1],0)
-        self.assertAlmostEqual(f0[2],0)
-
-        self.assertAlmostEqual(f1[0],0)
-        self.assertAlmostEqual(f1[1],0)
-        self.assertAlmostEqual(f1[2],0)
+        self.assertAlmostEqual(self.coll.forces[0].energy,0)
+        self.assertAlmostEqual(self.coll.forces[1].energy,0)
+        self.assertAlmostEqual(self.coll.forces[0].force[0],0)
+        self.assertAlmostEqual(self.coll.forces[1].force[0],0)
 
         # shrink cutoff and ensure this case is ignored
         self.coll.pair_coeff.set('A','A', epsilon=100., r_cut=2.0)
         run(1)
-        f0 = self.coll.forces[0].force
-        f1 = self.coll.forces[1].force
-        e0 = self.coll.forces[0].energy
-        e1 = self.coll.forces[1].energy
-
-        self.assertAlmostEqual(e0,0)
-        self.assertAlmostEqual(e1,0)
-
-        self.assertAlmostEqual(f0[0],0)
-        self.assertAlmostEqual(f0[1],0)
-        self.assertAlmostEqual(f0[2],0)
-
-        self.assertAlmostEqual(f1[0],0)
-        self.assertAlmostEqual(f1[1],0)
-        self.assertAlmostEqual(f1[2],0)
+        self.assertAlmostEqual(self.coll.forces[0].energy,0)
+        self.assertAlmostEqual(self.coll.forces[1].energy,0)
+        self.assertAlmostEqual(self.coll.forces[0].force[0],0)
+        self.assertAlmostEqual(self.coll.forces[1].force[0],0)
 
     # test the calculation of force and potential for colloid-solvent style
     def test_coll_slv_potential(self):
@@ -238,61 +205,28 @@ class potential_colloid_tests(unittest.TestCase):
         # test with shifting enabled
         self.coll.set_params(mode="shift")
         run(1)
-        f0 = self.coll.forces[0].force
-        f1 = self.coll.forces[1].force
-        e0 = self.coll.forces[0].energy
-        e1 = self.coll.forces[1].energy
-
         U -= -0.00225831446085
-        self.assertAlmostEqual(e0,0.5*U,3)
-        self.assertAlmostEqual(e1,0.5*U,3)
-
-        self.assertAlmostEqual(f0[0],F,3)
-        self.assertAlmostEqual(f0[1],0)
-        self.assertAlmostEqual(f0[2],0)
-
-        self.assertAlmostEqual(f1[0],-F,3)
-        self.assertAlmostEqual(f1[1],0)
-        self.assertAlmostEqual(f1[2],0)
+        self.assertAlmostEqual(self.coll.forces[0].energy,0.5*U,3)
+        self.assertAlmostEqual(self.coll.forces[1].energy,0.5*U,3)
+        self.assertAlmostEqual(self.coll.forces[0].force[0],F,3)
+        self.assertAlmostEqual(self.coll.forces[1].force[0],-F,3)
 
         # set epsilon to zero and make sure this is ignored
         self.coll.set_params(mode='no_shift')
         self.coll.pair_coeff.set('A','A', epsilon=0.0)
         run(1)
-        f0 = self.coll.forces[0].force
-        f1 = self.coll.forces[1].force
-        e0 = self.coll.forces[0].energy
-        e1 = self.coll.forces[1].energy
-
-        self.assertAlmostEqual(e0,0)
-        self.assertAlmostEqual(e1,0)
-
-        self.assertAlmostEqual(f0[0],0)
-        self.assertAlmostEqual(f0[1],0)
-        self.assertAlmostEqual(f0[2],0)
-
-        self.assertAlmostEqual(f1[0],0)
-        self.assertAlmostEqual(f1[1],0)
-        self.assertAlmostEqual(f1[2],0)
+        self.assertAlmostEqual(self.coll.forces[0].energy,0)
+        self.assertAlmostEqual(self.coll.forces[1].energy,0)
+        self.assertAlmostEqual(self.coll.forces[0].force[0],0)
+        self.assertAlmostEqual(self.coll.forces[1].force[0],0)
 
         # shrink cutoff and ensure this case is ignored
         self.coll.pair_coeff.set('A','A', epsilon=100., r_cut=2.0)
         run(1)
-        f0 = self.coll.forces[0].force
-        f1 = self.coll.forces[1].force
-        e0 = self.coll.forces[0].energy
-        e1 = self.coll.forces[1].energy
-
-        self.assertAlmostEqual(e0,0)
-        self.assertAlmostEqual(e1,0)
-
-        self.assertAlmostEqual(f0[0],0)
-        self.assertAlmostEqual(f0[1],0)
-        self.assertAlmostEqual(f0[2],0)
-
-        self.assertAlmostEqual(f1[0],0)
-        self.assertAlmostEqual(f1[1],0)
-        self.assertAlmostEqual(f1[2],0)
+        self.assertAlmostEqual(self.coll.forces[0].energy,0)
+        self.assertAlmostEqual(self.coll.forces[1].energy,0)
+        self.assertAlmostEqual(self.coll.forces[0].force[0],0)
+        self.assertAlmostEqual(self.coll.forces[1].force[0],0)
 
     # test the calculation of force and potential for colloid-solvent style
     def test_coll_coll_potential(self):
@@ -323,61 +257,28 @@ class potential_colloid_tests(unittest.TestCase):
         # test with shifting enabled
         self.coll.set_params(mode="shift")
         run(1)
-        f0 = self.coll.forces[0].force
-        f1 = self.coll.forces[1].force
-        e0 = self.coll.forces[0].energy
-        e1 = self.coll.forces[1].energy
-
         U -= -0.00696278336528
-        self.assertAlmostEqual(e0,0.5*U,3)
-        self.assertAlmostEqual(e1,0.5*U,3)
-
-        self.assertAlmostEqual(f0[0],F,3)
-        self.assertAlmostEqual(f0[1],0)
-        self.assertAlmostEqual(f0[2],0)
-
-        self.assertAlmostEqual(f1[0],-F,3)
-        self.assertAlmostEqual(f1[1],0)
-        self.assertAlmostEqual(f1[2],0)
+        self.assertAlmostEqual(self.coll.forces[0].energy,0.5*U,3)
+        self.assertAlmostEqual(self.coll.forces[1].energy,0.5*U,3)
+        self.assertAlmostEqual(self.coll.forces[0].force[0],F,3)
+        self.assertAlmostEqual(self.coll.forces[1].force[0],-F,3)
 
         # set epsilon to zero and make sure this is ignored
         self.coll.set_params(mode='no_shift')
         self.coll.pair_coeff.set('A','A', epsilon=0.0)
         run(1)
-        f0 = self.coll.forces[0].force
-        f1 = self.coll.forces[1].force
-        e0 = self.coll.forces[0].energy
-        e1 = self.coll.forces[1].energy
-
-        self.assertAlmostEqual(e0,0)
-        self.assertAlmostEqual(e1,0)
-
-        self.assertAlmostEqual(f0[0],0)
-        self.assertAlmostEqual(f0[1],0)
-        self.assertAlmostEqual(f0[2],0)
-
-        self.assertAlmostEqual(f1[0],0)
-        self.assertAlmostEqual(f1[1],0)
-        self.assertAlmostEqual(f1[2],0)
+        self.assertAlmostEqual(self.coll.forces[0].energy,0)
+        self.assertAlmostEqual(self.coll.forces[1].energy,0)
+        self.assertAlmostEqual(self.coll.forces[0].force[0],0)
+        self.assertAlmostEqual(self.coll.forces[1].force[0],0)
 
         # shrink cutoff and ensure this case is ignored
         self.coll.pair_coeff.set('A','A', epsilon=100., r_cut=2.0)
         run(1)
-        f0 = self.coll.forces[0].force
-        f1 = self.coll.forces[1].force
-        e0 = self.coll.forces[0].energy
-        e1 = self.coll.forces[1].energy
-
-        self.assertAlmostEqual(e0,0)
-        self.assertAlmostEqual(e1,0)
-
-        self.assertAlmostEqual(f0[0],0)
-        self.assertAlmostEqual(f0[1],0)
-        self.assertAlmostEqual(f0[2],0)
-
-        self.assertAlmostEqual(f1[0],0)
-        self.assertAlmostEqual(f1[1],0)
-        self.assertAlmostEqual(f1[2],0)
+        self.assertAlmostEqual(self.coll.forces[0].energy,0)
+        self.assertAlmostEqual(self.coll.forces[1].energy,0)
+        self.assertAlmostEqual(self.coll.forces[0].force[0],0)
+        self.assertAlmostEqual(self.coll.forces[1].force[0],0)
 
     def tearDown(self):
         del self.coll
