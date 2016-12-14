@@ -183,4 +183,4 @@ class WallEvaluatorColloid
 } // end namespace azpluings
 
 #undef DEVICE
-#endif // __WALL_EVALUATOR_COLLOID_H__
+#endif // AZPLUGINS_WALL_EVALUATOR_COLLOID_H_
