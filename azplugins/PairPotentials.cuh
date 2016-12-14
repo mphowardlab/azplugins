@@ -1,4 +1,4 @@
-// Maintainer: mphoward / Everyone is free to add additional potentials
+// Maintainer: mphoward
 
 /*!
  * \file PairPotentials.cuh
