@@ -12,9 +12,10 @@
  *     This file should be added to the list of includes below. You can follow one of the other
  *     evaluator functors as an example for the details.
  *
- *  2. Explicitly instantiate a template for a CUDA driver for your potential in WallPotentialDrivers.cu.
+ *  2. Explicitly instantiate a template for a CUDA driver for your potential in WallPotentials.cu.
  *
- *  3. Expose the wall potential on the python level in module.cc and wall.py.
+ *  3. Expose the wall potential on the python level in module.cc with export_wall_potential and add
+ *     the mirror python object to wall.py.
  *
  *  4. Write a unit test for the potential in test-py. Two types of tests should be conducted: one that
  *     checks that all methods work on the python object, and one that validates the force and energy
@@ -57,7 +58,6 @@ namespace detail
  * for creating the parameters (make_name_params()). If CUDA is enabled,
  * a corresponding GPU class called nameGPU is exported.
  */
-
 template< class evaluator >
 void export_wall_potential(py::module& m, const std::string& name)
     {

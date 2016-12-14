@@ -8,14 +8,7 @@
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 namespace py = pybind11;
 
-/* Pair potential includes */
 #include "PairPotentials.h"
-#include "hoomd/md/PotentialPair.h"
-#ifdef ENABLE_CUDA
-#include "hoomd/md/PotentialPairGPU.h"
-#endif // ENABLE_CUDA
-
-/* Wall potential includes */
 #include "WallPotentials.h"
 
 //! Plugins for soft matter
@@ -76,12 +69,8 @@ PYBIND11_PLUGIN(_azplugins)
     pybind11::module m("_azplugins");
 
     /* Pair potentials */
-    export_PotentialPair<azplugins::PairPotentialAshbaugh>(m, "PairPotentialAshbaugh");
-    export_PotentialPair<azplugins::PairPotentialColloid>(m, "PairPotentialColloid");
-    #ifdef ENABLE_CUDA
-    export_PotentialPairGPU<azplugins::PairPotentialAshbaughGPU, azplugins::PairPotentialAshbaugh>(m, "PairPotentialAshbaughGPU");
-    export_PotentialPairGPU<azplugins::PairPotentialColloidGPU, azplugins::PairPotentialColloid>(m, "PairPotentialColloidGPU");
-    #endif // ENABLE_CUDA
+    azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorAshbaugh>(m, "PairPotentialAshbaugh");
+    azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorColloid>(m, "PairPotentialColloid");
     azplugins::detail::export_ashbaugh_params(m);
 
     /* Wall potentials */

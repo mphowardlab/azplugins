@@ -7,8 +7,8 @@ set(_${COMPONENT_NAME}_sources
     )
 
 set(_${COMPONENT_NAME}_cu_sources
-    PairPotentialDrivers.cu
-    WallPotentialDrivers.cu
+    PairPotentials.cu
+    WallPotentials.cu
     )
 
 # Need to define NO_IMPORT_ARRAY in every file but module.cc
