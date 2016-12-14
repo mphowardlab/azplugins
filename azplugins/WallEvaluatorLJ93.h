@@ -36,8 +36,8 @@ namespace detail
  * the energy of interaction and \f$\rho_{\rm w}\f$ the density of particles in the wall. Evaluation of this energy
  * is simplified into the following parameters:
  *
- * - \a lj1 = (2.0/15.0)*\varepsilon*pow(sigma,9.0)
- * - \a lj2 = \varepsilon * pow(sigma,3.0)
+ * - \verbatim lj1 = (2.0/15.0) * epsilon * pow(sigma,9.0) \endverbatim
+ * - \verbatim lj2 = epsilon * pow(sigma,3.0) \endverbatim
  *
  * The force acting on the particle is then
  * \f [ F(r)/r = \frac{\varepsilon}{r^2} \left ( \frac{6}{5}\left(\frac{\sigma}{r}\right)^9 - 3 \left(\frac{\sigma}{r}\right)^3 \right) \f]

@@ -28,7 +28,7 @@
 #include "WallEvaluatorLJ93.h"
 
 /*
- * The code handles python exports using a templated function, and so should
+ * The code below handles python exports using a templated function, and so should
  * not be compiled in NVCC.
  */
 #ifndef NVCC

@@ -22,13 +22,13 @@ class wall_lj93_tests(unittest.TestCase):
         lj93.force_coeff.set('A', epsilon=1.0, sigma=1.0, r_cut=2.5, r_extrap=0.1)
         lj93.update_coeffs()
 
-    # test missing coefficients
+    # test missing epsilon
     def test_set_missing_epsilon(self):
         lj93 = azplugins.wall.lj93(self.walls)
         lj93.force_coeff.set('A', sigma=1.0)
         self.assertRaises(RuntimeError, lj93.update_coeffs)
 
-    # test missing coefficients
+    # test missing sigma
     def test_set_missing_sigma(self):
         lj93 = azplugins.wall.lj93(self.walls)
         lj93.force_coeff.set('A', epsilon=1.0)
