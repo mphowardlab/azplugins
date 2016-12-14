@@ -2,7 +2,7 @@
 import hoomd
 import _azplugins
 
-class lj(hoomd.md.wall.wallpotential):
+class lj93(hoomd.md.wall.wallpotential):
     R""" Lennard-Jones 9-3 wall potential.
 
     Args:
@@ -53,7 +53,7 @@ class lj(hoomd.md.wall.wallpotential):
         hoomd.util.print_status_line()
 
         # initialize the base class
-        hoomd.md.walls.wallpotential.__init__(self, walls, r_cut, name)
+        hoomd.md.wall.wallpotential.__init__(self, walls, r_cut, name)
 
         # create the c++ mirror class
         if not hoomd.context.exec_conf.isCUDAEnabled():
@@ -74,4 +74,4 @@ class lj(hoomd.md.wall.wallpotential):
         # lj coefficients
         lj1 = (2.0 / 15.0) * epsilon * sigma**9
         lj2 = epsilon * sigma**3
-        return _azplugins.make_wall_lj93_params(_hoomd.make_scalar2(lj1, lj2), coeff['r_cut']**2, coeff['r_extrap'])
+        return _azplugins.make_wall_lj93_params(hoomd._hoomd.make_scalar2(lj1, lj2), coeff['r_cut']**2, coeff['r_extrap'])
