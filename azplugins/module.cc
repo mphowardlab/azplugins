@@ -85,6 +85,7 @@ PYBIND11_PLUGIN(_azplugins)
     azplugins::detail::export_ashbaugh_params(m);
 
     /* Wall potentials */
+    azplugins::detail::export_wall_potential<azplugins::detail::WallEvaluatorColloid>(m, "WallPotentialColloid");
     azplugins::detail::export_wall_potential<azplugins::detail::WallEvaluatorLJ93>(m, "WallPotentialLJ93");
 
     return m.ptr();

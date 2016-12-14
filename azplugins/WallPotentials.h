@@ -25,6 +25,7 @@
 #define AZPLUGINS_WALL_POTENTIALS_H_
 
 // All wall potential evaluators should be included here
+#include "WallEvaluatorColloid.h"
 #include "WallEvaluatorLJ93.h"
 
 /*

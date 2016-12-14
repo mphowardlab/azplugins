@@ -69,7 +69,7 @@ class WallEvaluatorLJ93
          * \param dj Dummy diameter
          *
          * \note The way HOOMD computes wall forces by recycling evaluators requires that we give
-         *       a second diameter, even though thi is meaningless for the potential.
+         *       a second diameter, even though this is meaningless for the potential.
          */
         DEVICE void setDiameter(Scalar di, Scalar dj) { }
 
@@ -81,7 +81,7 @@ class WallEvaluatorLJ93
          * \param qj Dummy charge
          *
          * \note The way HOOMD computes wall forces by recycling evaluators requires that we give
-         *       a second charge, even though thi is meaningless for the potential.
+         *       a second charge, even though this is meaningless for the potential.
          */
         DEVICE void setCharge(Scalar qi, Scalar qj) { }
 
