@@ -20,6 +20,10 @@ endif (ENABLE_CUDA)
 
 add_library (_${COMPONENT_NAME} SHARED ${_${COMPONENT_NAME}_sources} ${_CUDA_GENERATED_FILES})
 
+if(NOT DEFINED HOOMD_MD_LIB)
+set(HOOMD_MD_LIB _md)
+endif(NOT DEFINED HOOMD_MD_LIB)
+
 # link the library to its dependencies
 target_link_libraries(_${COMPONENT_NAME} ${HOOMD_LIBRARIES} ${HOOMD_MD_LIB})
 
