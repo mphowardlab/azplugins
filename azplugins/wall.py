@@ -19,7 +19,7 @@ class lj93(hoomd.md.wall.wallpotential):
         \begin{eqnarray*}
         V(r)  = & \varepsilon \left( \frac{2}{15}\left(\frac{\sigma}{r}\right)^9
                                     - \left(\frac{\sigma}{r}\right)^3 \right) & r < r_{\rm cut} \\
-              = & 0 & r \ge r_{\mathrm{cut}}
+              = & 0 & r \ge r_{\rm cut}
         \end{eqnarray*}
 
     Here, :math:`\varepsilon` is the Hamaker constant and :math:`\sigma` is the Lennard-Jones diameter

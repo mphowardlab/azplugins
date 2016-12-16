@@ -45,7 +45,7 @@ namespace azplugins
 {
 namespace detail
 {
-//! Convenience function to exxport wall potential to python
+//! Convenience function to export wall potential to python
 /*!
  * \param m Python module
  * \param name Name of CPU class
