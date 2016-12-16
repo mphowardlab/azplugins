@@ -7,7 +7,8 @@ set(_${COMPONENT_NAME}_sources
     )
 
 set(_${COMPONENT_NAME}_cu_sources
-    PairPotentialDrivers.cu
+    PairPotentials.cu
+    WallPotentials.cu
     )
 
 # Need to define NO_IMPORT_ARRAY in every file but module.cc
@@ -65,6 +66,7 @@ ENDMACRO(copy_file)
 set(files
     __init__.py
     pair.py
+    wall.py
     )
 
 install(FILES ${files}

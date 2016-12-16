@@ -13,15 +13,12 @@
  *     This file should be included below. You can follow one of the other evaluator functors as
  *     an example for the details.
  *
- *  2. Declare a CUDA driver function in PairPotentialDrivers.cuh. These functions drive the launching
- *     of a templated CUDA kernel for the pair potential. See the documentation there for implementation details.
+ *  2. Explicitly instantiate a template for a CUDA driver for your potential in PairPotentials.cu.
  *
- *  3. Define the driver function in PairPotentialDrivers.cu. The driver function needs to launch
- *     the templated kernel.
+ *  3. Expose the pair potential on the python level in module.cc using export_pair_potential and
+ *     add the mirror python object to pair.py.
  *
- *  4. Expose the pair potential on the python level in module.cc and pair.py.
- *
- *  5. Write a unit test for the potential in test-py. Two types of tests should be conducted: one that
+ *  4. Write a unit test for the potential in test-py. Two types of tests should be conducted: one that
  *     checks that all methods work on the python object, and one that validates the force and energy between
  *     particle pairs at fixed distances.
  */
@@ -29,31 +26,42 @@
 #ifndef AZPLUGINS_PAIR_POTENTIALS_H_
 #define AZPLUGINS_PAIR_POTENTIALS_H_
 
-#ifdef NVCC
-#error This header cannot be compiled by nvcc
-#endif
-
-#include "hoomd/md/PotentialPair.h"
-#ifdef ENABLE_CUDA
-#include "hoomd/md/PotentialPairGPU.h"
-#include "PairPotentialDrivers.cuh"
-#endif
-
 // All pair potential evaluators must be included here
 #include "PairEvaluatorAshbaugh.h"
 #include "PairEvaluatorColloid.h"
 
+/*
+ * The code below handles python exports using a templated function, and so
+ * should not be compiled in NVCC.
+ */
+#ifndef NVCC
+#include "hoomd/extern/pybind/include/pybind11/pybind11.h"
+namespace py = pybind11;
+
+#include "hoomd/md/PotentialPair.h"
+#ifdef ENABLE_CUDA
+#include "hoomd/md/PotentialPairGPU.h"
+#include "PairPotentials.cuh"
+#endif
+
 namespace azplugins
 {
+namespace detail
+{
+//! Exports the pair potential to the python module
+template<class evaluator>
+void export_pair_potential(py::module& m, const std::string& name)
+    {
+    typedef ::PotentialPair<evaluator> pair_potential_cpu;
+    export_PotentialPair<pair_potential_cpu>(m, name);
 
-typedef ::PotentialPair<azplugins::detail::PairEvaluatorAshbaugh> PairPotentialAshbaugh;
-typedef ::PotentialPair<azplugins::detail::PairEvaluatorColloid> PairPotentialColloid;
-
-#ifdef ENABLE_CUDA
-typedef ::PotentialPairGPU<azplugins::detail::PairEvaluatorAshbaugh, azplugins::gpu::compute_pair_ashbaugh> PairPotentialAshbaughGPU;
-typedef ::PotentialPairGPU<azplugins::detail::PairEvaluatorColloid, azplugins::gpu::compute_pair_colloid> PairPotentialColloidGPU;
-#endif // ENABLE_CUDA
-
+    #ifdef ENABLE_CUDA
+    typedef ::PotentialPairGPU<evaluator, azplugins::gpu::compute_pair_potential<evaluator> > pair_potential_gpu;
+    export_PotentialPairGPU<pair_potential_gpu, pair_potential_cpu>(m, name + "GPU");
+    #endif // ENABLE_CUDA
+    }
+} // end namespace detail
 } // end namespace azplugins
+#endif // NVCC
 
 #endif // AZPLUGINS_PAIR_POTENTIALS_H_
