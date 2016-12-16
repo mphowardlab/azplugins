@@ -1,5 +1,7 @@
 # Maintainer: mphoward / Everyone is free to add additional potentials
 import hoomd
+from hoomd import _hoomd
+from hoomd.md import _md
 import _azplugins
 import math
 
@@ -62,7 +64,7 @@ class ashbaugh(hoomd.md.pair.pair):
             self.cpp_class = _azplugins.PairPotentialAshbaugh
         else:
             self.cpp_class = _azplugins.PairPotentialAshbaughGPU
-            self.nlist.cpp_nlist.setStorageMode(hoomd.md._md.NeighborList.storageMode.full)
+            self.nlist.cpp_nlist.setStorageMode(_md.NeighborList.storageMode.full)
         self.cpp_force = self.cpp_class(hoomd.context.current.system_definition, self.nlist.cpp_nlist, self.name)
 
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
@@ -164,7 +166,7 @@ class colloid(hoomd.md.pair.pair):
             self.cpp_class = _azplugins.PairPotentialColloid
         else:
             self.cpp_class = _azplugins.PairPotentialColloidGPU
-            self.nlist.cpp_nlist.setStorageMode(hoomd.md._md.NeighborList.storageMode.full)
+            self.nlist.cpp_nlist.setStorageMode(_md.NeighborList.storageMode.full)
         self.cpp_force = self.cpp_class(hoomd.context.current.system_definition, self.nlist.cpp_nlist, self.name)
 
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name);
@@ -189,4 +191,4 @@ class colloid(hoomd.md.pair.pair):
             hoomd.context.msg.error('Unknown interaction style\n')
             raise RuntimeError('Unknown interaction style')
 
-        return hoomd._hoomd.make_scalar4(epsilon, sigma**3, sigma**6, hoomd._hoomd.int_as_scalar(style));
+        return _hoomd.make_scalar4(epsilon, sigma**3, sigma**6, _hoomd.int_as_scalar(style));

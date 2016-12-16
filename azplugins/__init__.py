@@ -1,1 +1,1 @@
-from hoomd.azplugins import pair
+import pair
