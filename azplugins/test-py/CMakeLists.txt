@@ -1,3 +1,6 @@
+# Copyright (c) 2016, Panagiotopoulos Group, Princeton University
+# This file is part of the azplugins project, released under the Modified BSD License.
+
 enable_testing()
 
 macro(add_script_test_cpu_mpi script)
