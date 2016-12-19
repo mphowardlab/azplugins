@@ -14,3 +14,8 @@ Not yet released
    potential.
 * `pair.colloid` implements the colloid (integrated Lennard-Jones) potential
   for colloidal suspensions.
+* A framework is configured for developing wall potentials.
+* `wall.colloid` implements the integrated Lennard-Jones potential between
+  a colloid and a half-plane wall.
+* `wall.lj93` implements the Lennard-Jones 9-3 potential between a point
+  and a half-plane wall.
