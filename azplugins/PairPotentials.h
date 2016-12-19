@@ -5,7 +5,7 @@
 
 /*!
  * \file PairPotentials.h
- * \brief Defines names of all pair potentials templated on evaluators.
+ * \brief Convenience inclusion of all pair potential evaluators.
  *
  * In HOOMD-blue, pair potentials are templated on a base class ForceCompute called PotentialPair,
  * which uses an evaluator functor to compute the actual details of the pair potential.

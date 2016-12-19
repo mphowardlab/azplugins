@@ -5,7 +5,7 @@
 
 /*!
  * \file WallPotentials.h
- * \brief Defines names of all wall potentials templated on evaluators.
+ * \brief Convenience inclusion of all wall potential evaluators.
  *
  * In HOOMD-blue, wall potentials are templated on a base class ForceCompute called PotentialExternal
  * (via a templated EvaluatorWall functor). This avoids code duplication of basic routines.
