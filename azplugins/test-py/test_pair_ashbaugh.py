@@ -5,10 +5,12 @@
 
 from hoomd import *
 from hoomd import md
-from hoomd import azplugins
 context.initialize()
+try:
+    from hoomd import azplugins
+except ImportError:
+    import azplugins
 import unittest
-import os
 
 # azplugins.pair.ashbaugh
 class pair_ashbaugh_tests(unittest.TestCase):

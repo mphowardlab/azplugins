@@ -54,7 +54,7 @@ import azplugins
 
 ### Testing
 
-All code is unittested at the Python level. If AZPlugins has been built as a HOOMD-blue component,
+All code is unittested at the Python level. If AZPlugins has been built as an internal HOOMD-blue component,
 it is automatically included into the testing tree. To run only the `azplugins` tests out of your build
 directory, use ctest:
 
@@ -62,3 +62,9 @@ directory, use ctest:
 ctest -R azplugins-*
 ```
 
+If AZPlugins has been built as an external Python package, all CTest options are available to you.
+To run all tests out of your build directory,
+
+```bash
+make test
+```
