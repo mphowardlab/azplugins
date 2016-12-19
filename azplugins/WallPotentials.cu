@@ -1,7 +1,7 @@
 // Maintainer: mphoward / Everyone is free to add additional potentials
 
 /*!
- * \file WallPotentialDrivers.cu
+ * \file WallPotentials.cu
  * \brief Defines the driver functions for computing wall forces on the GPU
  *
  * The driver function must have an explicit template instantiation for each
