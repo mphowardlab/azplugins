@@ -1,5 +1,6 @@
 # Maintainer: mphoward / Everyone is free to add additional potentials
 import hoomd
+from hoomd import _hoomd
 import _azplugins
 
 class colloid(hoomd.md.wall.wallpotential):
@@ -78,7 +79,7 @@ class colloid(hoomd.md.wall.wallpotential):
         lj1 = epsilon * sigma**6 / 7560.0
         lj2 = epsilon / 6.0
 
-        return _azplugins.make_wall_colloid_params(hoomd._hoomd.make_scalar2(lj1, lj2), coeff['r_cut']**2, coeff['r_extrap'])
+        return _azplugins.make_wall_colloid_params(_hoomd.make_scalar2(lj1, lj2), coeff['r_cut']**2, coeff['r_extrap'])
 
 class lj93(hoomd.md.wall.wallpotential):
     R""" Lennard-Jones 9-3 wall potential
@@ -152,4 +153,4 @@ class lj93(hoomd.md.wall.wallpotential):
         # lj coefficients
         lj1 = (2.0 / 15.0) * epsilon * sigma**9
         lj2 = epsilon * sigma**3
-        return _azplugins.make_wall_lj93_params(hoomd._hoomd.make_scalar2(lj1, lj2), coeff['r_cut']**2, coeff['r_extrap'])
+        return _azplugins.make_wall_lj93_params(_hoomd.make_scalar2(lj1, lj2), coeff['r_cut']**2, coeff['r_extrap'])

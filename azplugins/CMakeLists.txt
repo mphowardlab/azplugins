@@ -20,8 +20,12 @@ endif (ENABLE_CUDA)
 
 add_library (_${COMPONENT_NAME} SHARED ${_${COMPONENT_NAME}_sources} ${_CUDA_GENERATED_FILES})
 
+if(NOT DEFINED HOOMD_MD_LIB)
+set(HOOMD_MD_LIB _md)
+endif(NOT DEFINED HOOMD_MD_LIB)
+
 # link the library to its dependencies
-target_link_libraries(_${COMPONENT_NAME} ${HOOMD_LIBRARIES} _hoomd _md)
+target_link_libraries(_${COMPONENT_NAME} ${HOOMD_LIBRARIES} ${HOOMD_MD_LIB})
 
 # if we are compiling with MPI support built in, set appropriate
 # compiler/linker flags
@@ -55,6 +59,7 @@ install(TARGETS _${COMPONENT_NAME}
 MACRO(copy_file file)
     add_custom_command (
         OUTPUT ${file}
+        DEPENDS ${file}
         POST_BUILD
         COMMAND    ${CMAKE_COMMAND}
         ARGS       -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${file} ${CMAKE_CURRENT_BINARY_DIR}/${file}
