@@ -1,4 +1,8 @@
+# Copyright (c) 2016, Panagiotopoulos Group, Princeton University
+# This file is part of the azplugins project, released under the Modified BSD License.
+
 # Maintainer: mphoward / Everyone is free to add additional potentials
+
 import hoomd
 from hoomd import _hoomd
 import _azplugins
