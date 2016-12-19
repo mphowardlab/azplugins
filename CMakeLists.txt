@@ -25,5 +25,12 @@ endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 set(PYTHON_MODULE_BASE_DIR ${CMAKE_INSTALL_PREFIX})
 message(STATUS "Install plugin to: " ${PYTHON_MODULE_BASE_DIR})
 
+# setup unit tests
+enable_testing()
+option(BUILD_TESTING "Build unit tests" ON)
+if (BUILD_TESTING)
+    add_custom_target(test_all ALL)
+endif()
+
 # add subdirectories
 add_subdirectory(${PROJECT_NAME})

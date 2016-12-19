@@ -1,8 +1,28 @@
 # Copyright (c) 2016, Panagiotopoulos Group, Princeton University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-enable_testing()
+set(TEST_LIST_CPU
+    test_pair_ashbaugh
+    test_pair_colloid
+    test_wall_colloid
+    test_wall_lj93
+    )
 
+set(TEST_LIST_GPU
+    test_pair_ashbaugh
+    test_pair_colloid
+    test_wall_colloid
+    test_wall_lj93
+    )
+
+set(EXCLUDE_FROM_MPI
+   )
+
+set(MPI_ONLY
+    )
+
+# these macros are duplicates from other places in the hoomd code
+# eventually hoomd will hopefully adopt a single macro definition
 macro(add_script_test_cpu_mpi script)
     # execute on two processors
     SET(nproc 2)
@@ -43,26 +63,6 @@ macro(add_script_test_gpu script)
 
     add_script_test_gpu_mpi(${script})
 endmacro()
-
-set(TEST_LIST_CPU
-    test_pair_ashbaugh
-    test_pair_colloid
-    test_wall_colloid
-    test_wall_lj93
-    )
-
-set(TEST_LIST_GPU
-    test_pair_ashbaugh
-    test_pair_colloid
-    test_wall_colloid
-    test_wall_lj93
-    )
-
-set(EXCLUDE_FROM_MPI
-   )
-
-set(MPI_ONLY
-    )
 
 foreach (CUR_TEST ${TEST_LIST_CPU})
     add_script_test_cpu(${CUR_TEST})
