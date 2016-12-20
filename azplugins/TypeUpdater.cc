@@ -62,6 +62,9 @@ TypeUpdater::~TypeUpdater()
     m_pdata->getBoxChangeSignal().disconnect<TypeUpdater, &TypeUpdater::requestCheckRegion>(this);
     }
 
+/*!
+ * \param timestep Timestep update is called
+ */
 void TypeUpdater::update(unsigned int timestep)
     {
     if (m_check_types)
@@ -79,6 +82,9 @@ void TypeUpdater::update(unsigned int timestep)
     changeTypes(timestep);
     }
 
+/*!
+ * \param timestep Timestep update is called
+ */
 void TypeUpdater::changeTypes(unsigned int timestep)
     {
     if (m_prof) m_prof->push("type update");
@@ -111,6 +117,10 @@ void TypeUpdater::changeTypes(unsigned int timestep)
     if (m_prof) m_prof->pop();
     }
 
+/*!
+ * Validates the particle types to make sure they are in the range of accepted
+ * type indexes and that the two types are not equal.
+ */
 void TypeUpdater::checkTypes() const
     {
     if (m_inside_type >= m_pdata->getNTypes())
@@ -135,6 +145,10 @@ void TypeUpdater::checkTypes() const
         }
     }
 
+/*!
+ * Validates the region to make sure that it lies within the simulation box,
+ * and that the the low and high points of the region are not inverted.
+ */
 void TypeUpdater::checkRegion() const
     {
     // region cannot be inverted

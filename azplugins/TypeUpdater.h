@@ -23,10 +23,13 @@ namespace azplugins
 
 //! Particle type updater
 /*!
- * Flips particle types based on their z height
+ * Flips particle types based on their z height. Particles are classified as
+ * either inside or outside of the region, and can be flipped between these two
+ * types. Particles that are of neither the inside nor outside type are ignored.
  *
- * This could be easily extended to accommodate a generic region criteria, but
- * for now, the planar slab in z is all that is necessary.
+ * The region is defined by a slab along z. This could be easily extended to
+ * accommodate a generic region criteria, but for now, the planar slab in z is
+ * all that is necessary.
  */
 class TypeUpdater : public Updater
     {

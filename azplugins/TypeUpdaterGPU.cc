@@ -44,6 +44,9 @@ TypeUpdaterGPU::TypeUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
     m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "type_updater", m_exec_conf));
     }
 
+/*!
+ * \param timestep Timestep update is called
+ */
 void TypeUpdaterGPU::changeTypes(unsigned int timestep)
     {
     if (m_prof) m_prof->push(m_exec_conf, "type update");
@@ -52,6 +55,8 @@ void TypeUpdaterGPU::changeTypes(unsigned int timestep)
 
     m_tuner->begin();
     gpu::change_types_region(d_pos.data, m_inside_type, m_outside_type, m_z_lo, m_z_hi, m_pdata->getN(), m_tuner->getParam());
+    if (m_exec_conf->isCUDAErrorCheckingEnabled())
+        CHECK_CUDA_ERROR();
     m_tuner->end();
 
     if (m_prof) m_prof->pop();

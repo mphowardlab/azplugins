@@ -21,6 +21,11 @@
 namespace azplugins
 {
 
+//! Particle type updater on the GPU
+/*!
+ * See TypeUpdater for details. This class inherits and minimally implements
+ * the CPU methods from TypeUpdater on the GPU.
+ */
 class TypeUpdaterGPU : public TypeUpdater
     {
     public:
