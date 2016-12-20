@@ -80,6 +80,9 @@ void TypeUpdater::update(unsigned int timestep)
         }
 
     changeTypes(timestep);
+
+    // trigger a particle sort notification to force update of ghosts, etc.
+    m_pdata->notifyParticleSort();
     }
 
 /*!
