@@ -14,6 +14,9 @@ namespace py = pybind11;
 #include "PairPotentials.h"
 #include "WallPotentials.h"
 
+/* Updaters */
+#include "TypeUpdater.h"
+
 //! Plugins for soft matter
 namespace azplugins
 {
@@ -75,6 +78,9 @@ PYBIND11_PLUGIN(_azplugins)
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorAshbaugh>(m, "PairPotentialAshbaugh");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorColloid>(m, "PairPotentialColloid");
     azplugins::detail::export_ashbaugh_params(m);
+
+    /* Updaters */
+    azplugins::detail::export_TypeUpdater(m);
 
     /* Wall potentials */
     azplugins::detail::export_wall_potential<azplugins::detail::WallEvaluatorColloid>(m, "WallPotentialColloid");
