@@ -68,3 +68,8 @@ To run all tests out of your build directory,
 ```bash
 make test
 ```
+
+### Contributing
+
+All new pull requests are automatically tested on a Jenkins CI server.
+Pull request testing status is automatically displayed.
