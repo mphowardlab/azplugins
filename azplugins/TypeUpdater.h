@@ -41,6 +41,9 @@ class TypeUpdater : public Updater
                     Scalar z_lo,
                     Scalar z_hi);
 
+        //! Destructor
+        virtual ~TypeUpdater();
+
         //! Evaporate particles
         virtual void update(unsigned int timestep);
 

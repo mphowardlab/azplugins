@@ -146,6 +146,20 @@ class update_type_tests(unittest.TestCase):
         if comm.get_rank() == 0:
             np.testing.assert_array_equal(snap.particles.typeid, [1,1,2])
 
+    # test box change signal
+    def test_box_change(self):
+        snap = self.s.take_snapshot(all=True)
+        if comm.get_rank() == 0:
+            snap.particles.position[:,2] = [-2., 0., 2.]
+        self.s.restore_snapshot(snap)
+        run(1)
+
+        # shrink box smaller than region, which should trigger signal to check
+        # box and cause a runtime error
+        update.box_resize(L=5.0, period=None)
+        with self.assertRaises(RuntimeError):
+            run(1)
+
     def tearDown(self):
         del self.s, self.u
         context.initialize()

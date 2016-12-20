@@ -15,11 +15,21 @@ namespace azplugins
 
 /*!
  * \param sysdef System definition
+ *
+ * The system is initialized in a configuration that will be invalid on the
+ * first check of the types and region. This constructor requires that the user
+ * properly initialize the system via setters.
  */
 TypeUpdater::TypeUpdater(std::shared_ptr<SystemDefinition> sysdef)
         : Updater(sysdef), m_inside_type(0xffffffff), m_outside_type(0xffffffff),
-          m_z_lo(0.0), m_z_hi(0.0), m_check_types(true), m_check_region(true)
+          m_z_lo(1.0), m_z_hi(-1.0), m_check_types(true), m_check_region(true)
     {
+    m_exec_conf->msg->notice(5) << "Constructing TypeUpdater" << std::endl;
+
+    // subscribe to number of type signal, in case number of types is allowed to decrease in future versions of hoomd
+    m_pdata->getNumTypesChangeSignal().connect<TypeUpdater, &TypeUpdater::requestCheckTypes>(this);
+    // subscribe to box change signal, to ensure region stays in box
+    m_pdata->getBoxChangeSignal().connect<TypeUpdater, &TypeUpdater::requestCheckRegion>(this);
     }
 
 /*!
@@ -37,6 +47,19 @@ TypeUpdater::TypeUpdater(std::shared_ptr<SystemDefinition> sysdef,
         : Updater(sysdef), m_inside_type(inside_type), m_outside_type(outside_type),
           m_z_lo(z_lo), m_z_hi(z_hi), m_check_types(true), m_check_region(true)
     {
+    m_exec_conf->msg->notice(5) << "Constructing TypeUpdater" << std::endl;
+
+    // subscribe to number of type signal, in case number of types is allowed to decrease in future versions of hoomd
+    m_pdata->getNumTypesChangeSignal().connect<TypeUpdater, &TypeUpdater::requestCheckTypes>(this);
+    // subscribe to box change signal, to ensure region stays in box
+    m_pdata->getBoxChangeSignal().connect<TypeUpdater, &TypeUpdater::requestCheckRegion>(this);
+    }
+
+TypeUpdater::~TypeUpdater()
+    {
+    m_exec_conf->msg->notice(5) << "Destroying TypeUpdater" << std::endl;
+    m_pdata->getNumTypesChangeSignal().disconnect<TypeUpdater, &TypeUpdater::requestCheckTypes>(this);
+    m_pdata->getBoxChangeSignal().disconnect<TypeUpdater, &TypeUpdater::requestCheckRegion>(this);
     }
 
 void TypeUpdater::update(unsigned int timestep)
