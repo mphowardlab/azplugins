@@ -155,9 +155,9 @@ void TypeUpdater::checkTypes() const
 void TypeUpdater::checkRegion() const
     {
     // region cannot be inverted
-    if (m_z_lo > m_z_hi)
+    if (m_z_lo >= m_z_hi)
         {
-        m_exec_conf->msg->error() << "TypeUpdater: lower z bound " << m_z_lo << " > upper z bound " << m_z_hi << "." << std::endl;
+        m_exec_conf->msg->error() << "TypeUpdater: lower z bound " << m_z_lo << " >= upper z bound " << m_z_hi << "." << std::endl;
         throw std::runtime_error("Lower and upper region bounds inverted in TypeUpdater");
         }
 

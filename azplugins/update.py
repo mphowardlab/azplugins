@@ -123,6 +123,6 @@ class types(hoomd.update._updater):
             self.hi = hi
             self.cpp_updater.hi = hi
 
-        if self.lo > self.hi:
-            hoomd.context.msg.error('update.type: lower z bound ' + str(self.lo) + ' > upper z bound ' + str(self.hi) + '.\n')
+        if self.lo >= self.hi:
+            hoomd.context.msg.error('update.type: lower z bound ' + str(self.lo) + ' >= upper z bound ' + str(self.hi) + '.\n')
             raise ValueError('update.type: upper and lower bounds are inverted')
