@@ -150,7 +150,7 @@ class evaporate_particles_tests(unittest.TestCase):
         run(1)
         snap = self.s.take_snapshot(all=True)
         if comm.get_rank() == 0:
-            np.testing.assert_array_equal(list(snap.particles.typeid).count(1), 1)
+            self.assertEqual(list(snap.particles.typeid).count(1), 1)
 
     # test box change signal
     def test_box_change(self):
@@ -200,24 +200,24 @@ class evaporate_particles_big_test(unittest.TestCase):
         run(1)
         snap = self.s.take_snapshot(all=True)
         if comm.get_rank() == 0:
-            np.testing.assert_array_equal(list(snap.particles.typeid).count(1), 50)
+            self.assertEqual(list(snap.particles.typeid).count(1), 50)
 
         run(1)
         snap = self.s.take_snapshot(all=True)
         if comm.get_rank() == 0:
-            np.testing.assert_array_equal(list(snap.particles.typeid).count(1), 100)
+            self.assertEqual(list(snap.particles.typeid).count(1), 100)
 
         self.u.set_params(Nmax=900)
         run(1)
         snap = self.s.take_snapshot(all=True)
         if comm.get_rank() == 0:
-            np.testing.assert_array_equal(list(snap.particles.typeid).count(1), 1000)
+            self.assertEqual(list(snap.particles.typeid).count(1), 1000)
 
         self.u.set_params(Nmax=4000)
         run(1)
         snap = self.s.take_snapshot(all=True)
         if comm.get_rank() == 0:
-            np.testing.assert_array_equal(list(snap.particles.typeid).count(1), 5000)
+            self.assertEqual(list(snap.particles.typeid).count(1), 5000)
             np.testing.assert_array_equal(snap.particles.typeid, np.ones(snap.particles.N))
 
         run(1)

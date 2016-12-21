@@ -16,6 +16,7 @@
 #endif
 
 #include "TypeUpdater.h"
+#include <random>
 
 namespace azplugins
 {
@@ -72,19 +73,27 @@ class ParticleEvaporator : public TypeUpdater
             }
 
     protected:
-        unsigned int m_seed;        //!< Seed to evaporator pseudo-random number generator
-        unsigned int m_Nevap_max;   //!< Maximum number of particles to evaporate
-        GPUVector<unsigned int> m_mark; //!< Indexes of atoms that can be deleted
+        unsigned int m_seed;                //!< Seed to evaporator pseudo-random number generator
+        unsigned int m_Nevap_max;           //!< Maximum number of particles to evaporate
+        unsigned int m_Npick;               //!< Number of particles picked for evaporation on this rank
+        GPUVector<unsigned int> m_picks;    //!< Particles picked for evaporation on this rank
+        GPUVector<unsigned int> m_mark;     //!< Indexes of atoms that can be deleted
 
         //! Changes the particle types according to an update rule on the GPU
         virtual void changeTypes(unsigned int timestep);
 
-        //! Mark particles for evaporation
+        //! Mark particles as candidates for evaporation
         virtual unsigned int markParticles();
 
-        //! Apply evaporation
+        //! Apply evaporation to picks
         virtual void applyPicks();
-        std::vector<unsigned int> m_picks; //!< pick vector
+
+    private:
+        std::mt19937 m_rng; //!< Mersenne-Twister random number generator for evaporating
+        std::vector<unsigned int> m_all_picks;  //!< All picked particles
+
+        //! Make a random pick of particles across all ranks
+        void makeAllPicks(unsigned int N_pick, unsigned N_mark_total);
     };
 
 namespace detail
