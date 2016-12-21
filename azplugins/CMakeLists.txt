@@ -7,6 +7,7 @@ set(COMPONENT_NAME azplugins)
 
 set(_${COMPONENT_NAME}_sources
     module.cc
+    ParticleEvaporator.cc
     TypeUpdater.cc
     TypeUpdaterGPU.cc
     )
@@ -75,6 +76,7 @@ ENDMACRO(copy_file)
 
 set(files
     __init__.py
+    evaporate.py
     pair.py
     update.py
     wall.py

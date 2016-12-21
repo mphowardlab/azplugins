@@ -3,6 +3,7 @@
 
 # Maintainer: mphoward / All developers are free to add new modules
 
+import evaporate
 import pair
 import update
 import wall
