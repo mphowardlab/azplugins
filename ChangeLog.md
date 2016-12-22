@@ -21,3 +21,5 @@ Not yet released
   and a half-plane wall.
 * `update.types` allows for swapping of particle types based on a slab region
   of the simulation box.
+* `evaporate.particles` supports evaporation of single-particle fluids from
+  a slab region of the simulation box.
