@@ -159,7 +159,7 @@ void ParticleEvaporator::changeTypes(unsigned int timestep)
 
 unsigned int ParticleEvaporator::markParticles()
     {
-    ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::readwrite);
+    ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_mark(m_mark, access_location::host, access_mode::overwrite);
 
     unsigned int N_mark = 0;

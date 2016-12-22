@@ -98,7 +98,7 @@ class ParticleEvaporator : public TypeUpdater
 
 namespace detail
 {
-//! Export the ParticleEvaporator to python
+//! Export ParticleEvaporator to python
 void export_ParticleEvaporator(pybind11::module& m);
 } // end namespace detail
 

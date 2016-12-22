@@ -58,11 +58,13 @@ class TypeUpdaterGPU : public TypeUpdater
         //! Changes the particle types according to an update rule on the GPU
         virtual void changeTypes(unsigned int timestep);
 
+    private:
         std::unique_ptr<Autotuner> m_tuner; //!< Tuner for changing types
     };
 
 namespace detail
 {
+//! Export TypeUpdaterGPU to python
 void export_TypeUpdaterGPU(pybind11::module& m);
 } // end namespace detail
 
