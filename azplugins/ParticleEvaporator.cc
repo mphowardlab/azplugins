@@ -51,6 +51,16 @@ ParticleEvaporator::ParticleEvaporator(std::shared_ptr<SystemDefinition> sysdef,
 
 /*!
  * \param timestep Timestep update is called
+ *
+ * Particle evaporation proceeds in four steps:
+ *  1. Mark all possible particles for evaporation on the local rank, and compact their particle
+ *     indexes into an array running from 0 to \a N_mark.
+ *  2. Perform an MPI exclusive scan and reduction to determine the total number of marked particles on all
+ *     ranks and the global marked indexes that the rank owns.
+ *  3. Randomly choose up to m_Nevap_max particles from the global list. Each rank performs this task
+ *     independently using the same PRNG with the same seed. This guarantees the selection of the same
+ *     particles, and avoids any extra communication.
+ *  4. The random picks are applied by flipping the types of the particles.
  */
 void ParticleEvaporator::changeTypes(unsigned int timestep)
     {
