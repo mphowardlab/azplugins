@@ -17,6 +17,21 @@ namespace gpu
 {
 namespace kernel
 {
+/*!
+ * \param d_select_flags Flags identifying which particles to select (1 = select)
+ * \param d_mark Array of particle indexes
+ * \param d_pos Particle positions
+ * \param solvent_type Type index of solvent particles
+ * \param z_lo Lower bound of region in z
+ * \param z_hi Upper bound of region in z
+ * \param N Number of particles
+ *
+ * Using one thread per particle, all particle positions are checked. Any particles
+ * of type \a solvent_type that are in the slab bounded by \a z_lo and \a z_hi
+ * are flagged for evaporation in \a d_select_flags with a 1. (Others are flagged to 0.)
+ * The \a d_mark array is filled up with the particle indexes so that evaporate_select_mark
+ * can later select these particle indexes based on \a d_select_flags.
+ */
 __global__ void evaporate_setup_mark(unsigned char *d_select_flags,
                                      unsigned int *d_mark,
                                      const Scalar4 *d_pos,
@@ -33,13 +48,24 @@ __global__ void evaporate_setup_mark(unsigned char *d_select_flags,
     unsigned int type = __scalar_as_int(postype.w);
 
     // check for solvent particles in region as for an AABB
-    bool inside = (type == solvent_type && !(pos.z > z_hi || pos.z < z_lo));
+    bool evap = (type == solvent_type && !(pos.z > z_hi || pos.z < z_lo));
 
     // coalesce writes of all particles
-    d_select_flags[idx] = (inside) ? 1 : 0;
+    d_select_flags[idx] = (evap) ? 1 : 0;
     d_mark[idx] = idx;
     }
 
+/*!
+ * \param d_pos Particle positions
+ * \param d_picks Indexes of picked particles in \a d_mark
+ * \param d_mark Compacted array of particle indexes marked as candidates for evaporation
+ * \param evaporated_type Type index of evaporated particles
+ * \param N_pick Number of picks made
+ *
+ * Using one thread per particle, the types of picked particles are transformed
+ * to \a evaporated_type. See kernel::evaporate_setup_mark for details of how
+ * particles are marked as candidates for evaporation.
+ */
 __global__ void evaporate_apply_picks(Scalar4 *d_pos,
                                       const unsigned int *d_picks,
                                       const unsigned int *d_mark,
@@ -56,7 +82,18 @@ __global__ void evaporate_apply_picks(Scalar4 *d_pos,
     }
 }
 
-//! Kernel driver to change particle types in a region on the GPU
+/*!
+ * \param d_select_flags Flags identifying which particles to select (1 = select)
+ * \param d_mark Array of particle indexes
+ * \param d_pos Particle positions
+ * \param solvent_type Type index of solvent particles
+ * \param z_lo Lower bound of region in z
+ * \param z_hi Upper bound of region in z
+ * \param N Number of particles
+ * \param block_size Number of threads per block
+ *
+ * \sa kernel::evaporate_setup_mark
+ */
 cudaError_t evaporate_setup_mark(unsigned char *d_select_flags,
                                  unsigned int *d_mark,
                                  const Scalar4 *d_pos,
@@ -88,6 +125,29 @@ cudaError_t evaporate_setup_mark(unsigned char *d_select_flags,
     return cudaSuccess;
     }
 
+/*!
+ * \param d_mark Compacted array of particle indexes marked as candidates for evaporation
+ * \param d_num_mark Flag to store the total number of marked particles
+ * \param d_tmp_storage Temporary storage allocated on the device, NULL on first call
+ * \param tmp_storage_bytes Number of bytes necessary for temporary storage, 0 on first call
+ * \param d_select_flags Flags identifying which particles to select (1 = select)
+ * \param N Number of particles
+ *
+ * The CUB library is used to compact the particle indexes of the selected particles
+ * into \a d_mark based on the flags set in \a d_select_flags. The number of marked
+ * particles is also determined.
+ *
+ * \note This function must be called twice. On the first call, the temporary storage
+ *       required is sized and stored in \a tmp_storage_bytes. Device memory must be
+ *       allocated to \a d_tmp_storage, and then the function can be called again
+ *       to apply the transformation.
+ *
+ * \note Per CUB user group, DeviceSelect is in-place safe, and so input and output
+ *       do not require a double buffer.
+ *
+ * See kernel::evaporate_setup_mark for details of how particles are marked as candidates
+ * for evaporation.
+ */
 cudaError_t evaporate_select_mark(unsigned int *d_mark,
                                   unsigned int *d_num_mark,
                                   void *d_tmp_storage,
@@ -102,6 +162,16 @@ cudaError_t evaporate_select_mark(unsigned int *d_mark,
     return cudaSuccess;
     }
 
+/*!
+ * \param d_pos Particle positions
+ * \param d_picks Indexes of picked particles in \a d_mark
+ * \param d_mark Compacted array of particle indexes marked as candidates for evaporation
+ * \param evaporated_type Type index of evaporated particles
+ * \param N_pick Number of picks made
+ * \param block_size Number of threads per block
+ *
+ * \sa kernel::evaporate_apply_picks
+ */
 cudaError_t evaporate_apply_picks(Scalar4 *d_pos,
                                   const unsigned int *d_picks,
                                   const unsigned int *d_mark,

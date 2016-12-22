@@ -50,6 +50,14 @@ ParticleEvaporatorGPU::ParticleEvaporatorGPU(std::shared_ptr<SystemDefinition> s
     m_pick_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "evap_pick_particles", m_exec_conf));
     }
 
+/*!
+ * Particles are marked for evaporation in two phases. First, candidate particles
+ * are marked in gpu::evaporate_setup_mark. Then, the CUB library is used to select
+ * the indexes of these marked particles as possible picks in a compacted array.
+ * This method is less memory-efficient than the CPU implementation (marking
+ * particles requires O(N) memory rather than O(Npick)), but still seems
+ * to be the best implementation for the GPU.
+ */
 unsigned int ParticleEvaporatorGPU::markParticles()
     {
     if (m_pdata->getN() == 0)
@@ -108,6 +116,13 @@ unsigned int ParticleEvaporatorGPU::markParticles()
     return N_mark;
     }
 
+/*!
+ * Picks are applied on the GPU. Typically, the number of picks is small, so this
+ * kernel call will have significant overhead. However, it should typically still
+ * be faster than copying particle positions from device to host and back.
+ * This performance should be monitored in profiling if evaporation is noticed to
+ * be slow.
+ */
 void ParticleEvaporatorGPU::applyPicks()
     {
     ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::readwrite);

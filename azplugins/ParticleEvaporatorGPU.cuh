@@ -28,6 +28,7 @@ cudaError_t evaporate_setup_mark(unsigned char *d_select_flags,
                                  unsigned int N,
                                  unsigned int block_size);
 
+//! Drives CUB device selection routines for marked particles
 cudaError_t evaporate_select_mark(unsigned int *d_mark,
                                   unsigned int *d_num_mark,
                                   void *d_tmp_storage,
@@ -35,6 +36,7 @@ cudaError_t evaporate_select_mark(unsigned int *d_mark,
                                   const unsigned char *d_select_flags,
                                   unsigned int N);
 
+//! Updates particles types according to picks made on cpu
 cudaError_t evaporate_apply_picks(Scalar4 *d_pos,
                                   const unsigned int *d_picks,
                                   const unsigned int *d_mark,
