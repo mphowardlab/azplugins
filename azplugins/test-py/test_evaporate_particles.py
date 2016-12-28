@@ -152,6 +152,28 @@ class evaporate_particles_tests(unittest.TestCase):
         if comm.get_rank() == 0:
             self.assertEqual(list(snap.particles.typeid).count(1), 1)
 
+    # test that nothing quirky happens with empty region
+    def test_empty_region(self):
+        # check first with particles in region, but none of type to process
+        snap = self.s.take_snapshot(all=True)
+        if comm.get_rank() == 0:
+            snap.particles.typeid[:] = (2,2,2,2)
+        self.s.restore_snapshot(snap)
+        run(1)
+        snap = self.s.take_snapshot(all=True)
+        if comm.get_rank() == 0:
+            np.testing.assert_array_equal(snap.particles.typeid, [2,2,2,2])
+
+        # now check with particles of solvent type, but outside evaporation region
+        if comm.get_rank() == 0:
+            snap.particles.position[:,2] = (-7.5, -7.5, -7.5, -7.5)
+            snap.particles.typeid[:] = (0,0,0,0)
+        self.s.restore_snapshot(snap)
+        run(1)
+        snap = self.s.take_snapshot(all=True)
+        if comm.get_rank() == 0:
+            np.testing.assert_array_equal(snap.particles.typeid, (0,0,0,0))
+
     # test box change signal
     def test_box_change(self):
         snap = self.s.take_snapshot(all=True)
@@ -228,7 +250,6 @@ class evaporate_particles_big_test(unittest.TestCase):
     def tearDown(self):
         del self.s, self.u
         context.initialize()
-        
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])
