@@ -40,7 +40,7 @@ class types(hoomd.update._updater):
             When multiple :py:class:`update.types` instances exist, no checks are
             made to guarantee that regions do not overlap each other. This may lead
             to unexpected behavior depending on the update order and particle types.
-            It is the user's responsibility to ensure a sensible chosen of regions is made.
+            It is the user's responsibility to ensure a sensible choice of regions is made.
 
         Examples::
 
