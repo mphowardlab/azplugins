@@ -19,3 +19,5 @@ Not yet released
   a colloid and a half-plane wall.
 * `wall.lj93` implements the Lennard-Jones 9-3 potential between a point
   and a half-plane wall.
+* `update.types` allows for swapping of particle types based on a slab region
+  of the simulation box.

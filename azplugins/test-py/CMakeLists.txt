@@ -4,6 +4,7 @@
 set(TEST_LIST_CPU
     test_pair_ashbaugh
     test_pair_colloid
+    test_update_type
     test_wall_colloid
     test_wall_lj93
     )
@@ -11,6 +12,7 @@ set(TEST_LIST_CPU
 set(TEST_LIST_GPU
     test_pair_ashbaugh
     test_pair_colloid
+    test_update_type
     test_wall_colloid
     test_wall_lj93
     )

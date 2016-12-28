@@ -4,4 +4,5 @@
 # Maintainer: mphoward / All developers are free to add new modules
 
 import pair
+import update
 import wall
