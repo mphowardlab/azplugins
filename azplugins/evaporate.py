@@ -7,6 +7,125 @@ import hoomd
 from hoomd import _hoomd
 import _azplugins
 
+class implicit(hoomd.force._force):
+    R""" Implicit model for particle evaporation
+
+    Args:
+        interface (:py:mod:`hoomd.variant` or :py:obj:`float`): *z* position of interface
+        name (str): Name of the model instance
+
+    An evaporating solvent front is modeled implicitly by a purely repulsive
+    harmonic interface that pushes down on nonvolatile solutes. The potential
+    is truncated at its minimum, and has the following form:
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray*}
+        V(z) = & 0 & z < H \\
+               & \frac{\kappa}{2} (z-H)^2 & H \le z < H_{\rm c} \\
+               & \frac{\kappa}{2} (H_{\rm c} - H)^2 - F_g (z - H_{\rm c}) & z \ge H_{\rm c}
+        \end{eqnarray*}
+
+    Here, the interface is located at *z* height *H*, and may change with time.
+    The effective interface position *H* may be modified per-particle-type using a *offset*
+    (*offset* is added to *H* to determine the effective *H*).
+    :math:`\kappa` is a spring constant setting the strength of the interface
+    (:math:`\kappa` is a proxy for the surface tension). The harmonic potential
+    is truncated above a height :math:`H_{\rm c} = H + \Delta`, at which point a
+    constant force :math:`F_g` acts on the particle. This is meant to model the
+    effect of gravity once the interface moves below the particle.
+
+    Typically, good choices would be to set :math:`\kappa` to scale with the particle
+    radius squared, :math:`\Delta` equal to the particle radius, and
+    :math:`F_g = -\kappa \Delta` so that the potential is continued linearly
+    (the force is continuous) and also that :math:`F_g` scales with the cube of the
+    particle radius.
+
+    The following coefficinets must be set per unique particle type:
+
+    - :math:`\kappa` - *k* (energy per distance squared) - spring constant
+    - *offset (distance) - per-particle-type amount to shift *H*
+    - :math:`F_g` - *g* (force) - force to apply above :math:`H_{\rm c}`
+    - :math:`\Delta` - *cutoff* (distance) - sets cutoff at :math:`H_{\rm c} = H + \Delta`
+
+    Example::
+
+        # moving interface from H = 100. to H = 50.
+        interf = hoomd.variant.linear_interp([[0,100.],[1e6,50.]],zero=0)
+        evap = azplugins.evaporate.implicit(interface=interf)
+
+        # small particle has diameter 1.0
+        evap.force_coeff.set('S', k=50.0, offset=0.0, g=50.0*0.5, cutoff=0.5)
+        # big particle is twice as large (diameter 2.0), so all coefficients are scaled
+        evap.force_coeff.set('B', k=50.0*2**2, offset=0.0, g=50.0*2**3/2., cutoff=1.0)
+
+    .. warning::
+        Virial calculation has not been implemented for this model because it is
+        nonequilibrium. A warning will be raised if any calls to
+        :py:class:`hoomd.analyze.log` are made because the logger always requests
+        the virial flags. However, this warning can be safely ignored if the
+        pressure (tensor) is not being logged.
+
+    """
+    def __init__(self, interface, name=""):
+        hoomd.util.print_status_line()
+
+        # initialize the base class
+        hoomd.force._force.__init__(self,name)
+
+        # setup the (moving) interface variant
+        self.interface = hoomd.variant._setup_variant_input(interface)
+
+        # setup the coefficient vector
+        self.force_coeff = hoomd.external.coeff();
+        self.force_coeff.set_default_coeff('offset', 0.0)
+        self.required_coeffs = ['k','offset','g','cutoff']
+        self.metadata_fields = ['force_coeff','interface']
+
+        # create the c++ mirror class
+        if not hoomd.globals.exec_conf.isCUDAEnabled():
+            cpp_class = _external.MovingInterfaceForceCompute
+        else:
+            cpp_class = _external.MovingInterfaceForceComputeGPU
+        self.cpp_force = cpp_class(hoomd.context.current.system_definition, self.interface.cpp_variant)
+
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
+
+    def update_coeffs(self):
+        # check that the force coefficients are valid
+        if not self.force_coeff.verify(self.required_coeffs):
+           hoomd.globals.msg.error("Not all force coefficients are set\n")
+           raise RuntimeError("Error updating force coefficients")
+
+        # set all the params
+        pdata = hoomd.context.current.system_definition.getParticleData()
+        ntypes = pdata.getNTypes()
+        type_list = []
+        for i in range(0,ntypes):
+            type_list.append(pdata.getNameByType(i))
+
+        for i in range(0,ntypes):
+            coeff = {}
+            for c in self.required_coeffs:
+                coeff[c] = self.force_coeff.get(type_list[i], c)
+
+            if coeff['cutoff'] is None or coeff['cutoff'] is False:
+                coeff['cutoff'] = -1.0
+
+            self.cpp_force.setParams(i, coeff['k'], coeff['offset'], coeff['g'], coeff['cutoff'])
+
+    def get_metadata(self):
+        data = hoomd.force._force.get_metadata(self)
+
+        # make sure coefficients are up-to-date
+        self.update_coeffs()
+
+        data['force_coeff'] = self.force_coeff
+        data['interface'] = self.interface
+
+        return data
+
 class particles(hoomd.update._updater):
     def __init__(self, solvent, evaporated, lo, hi, seed, Nmax=False, period=1, phase=0):
         R""" Evaporate particles from a region.
