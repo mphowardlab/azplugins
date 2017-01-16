@@ -7,12 +7,15 @@ set(COMPONENT_NAME azplugins)
 
 set(_${COMPONENT_NAME}_sources
     module.cc
+    ParticleEvaporator.cc
+    ParticleEvaporatorGPU.cc
     TypeUpdater.cc
     TypeUpdaterGPU.cc
     )
 
 set(_${COMPONENT_NAME}_cu_sources
     PairPotentials.cu
+    ParticleEvaporatorGPU.cu
     TypeUpdaterGPU.cu
     WallPotentials.cu
     )
@@ -75,6 +78,7 @@ ENDMACRO(copy_file)
 
 set(files
     __init__.py
+    evaporate.py
     pair.py
     update.py
     wall.py
