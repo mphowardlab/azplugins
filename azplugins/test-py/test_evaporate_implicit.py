@@ -43,6 +43,14 @@ class evaporate_implicit_tests(unittest.TestCase):
         evap.force_coeff.set('A', k=50.0, offset=0.1, g=50.0*0.5)
         self.assertRaises(RuntimeError, evap.update_coeffs)
 
+    # test non-numeric values of cutoff
+    def test_cutoff_none(self):
+        evap = azplugins.evaporate.implicit(interface=self.interf)
+        evap.force_coeff.set('A', k=50.0, g=50.0*0.5, cutoff=False)
+        evap.update_coeffs()
+        evap.force_coeff.set('A', k=50.0, g=50.0*0.5, cutoff=None)
+        evap.update_coeffs()
+
     # test missing coefficients
     def test_missing_A(self):
         evap = azplugins.evaporate.implicit(interface=self.interf)
@@ -135,6 +143,8 @@ class evaporate_implicit_potential_tests(unittest.TestCase):
         self.assertAlmostEqual(f3[1], 0)
         self.assertAlmostEqual(f3[2], -kA/2.)
 
+        # disable B interactions for the next test
+        evap.force_coeff.set('B', cutoff=False)
         # advance the simulation two steps so that now the interface is at 4.0
         # in both verlet steps
         run(2)
@@ -145,12 +155,12 @@ class evaporate_implicit_potential_tests(unittest.TestCase):
         self.assertAlmostEqual(f0[1], 0)
         self.assertAlmostEqual(f0[2], -kA*0.5)
 
-        # particle 1 (type B) is experiencing the gravitational force now
-        self.assertAlmostEqual(evap.forces[1].energy, 0.5*kB*(dB/2.)**2 + (kB*dB/2.)*0.5)
+        # particle 1 (type B) should now be ignored by the cutoff
+        self.assertAlmostEqual(evap.forces[1].energy, 0.0)
         f1 = evap.forces[1].force
         self.assertAlmostEqual(f1[0], 0)
         self.assertAlmostEqual(f1[1], 0)
-        self.assertAlmostEqual(f1[2], -kB*dB/2.)
+        self.assertAlmostEqual(f1[2], 0)
 
         # particle 2 (type A) is also experiencing the gravitational force now
         self.assertAlmostEqual(evap.forces[2].energy, 0.5*kA*0.5**2 + (kA/2.)*1.0)
