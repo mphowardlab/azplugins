@@ -49,6 +49,10 @@ class implicit(hoomd.md.force._force):
     - :math:`F_g` - *g* (force) - force to apply above :math:`H_{\rm c}`
     - :math:`\Delta` - *cutoff* (distance) - sets cutoff at :math:`H_{\rm c} = H + \Delta`
 
+    .. note::
+        If *cutoff* is set to None, False, or a negative number, the interaction is
+        ignored for the particle type.
+
     Example::
 
         # moving interface from H = 100. to H = 50.
