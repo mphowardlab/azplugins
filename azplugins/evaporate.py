@@ -7,7 +7,7 @@ import hoomd
 from hoomd import _hoomd
 import _azplugins
 
-class implicit(hoomd.force._force):
+class implicit(hoomd.md.force._force):
     R""" Implicit model for particle evaporation
 
     Args:
@@ -45,7 +45,7 @@ class implicit(hoomd.force._force):
     The following coefficinets must be set per unique particle type:
 
     - :math:`\kappa` - *k* (energy per distance squared) - spring constant
-    - *offset (distance) - per-particle-type amount to shift *H*
+    - *offset (distance) - per-particle-type amount to shift *H*, default: 0.0
     - :math:`F_g` - *g* (force) - force to apply above :math:`H_{\rm c}`
     - :math:`\Delta` - *cutoff* (distance) - sets cutoff at :math:`H_{\rm c} = H + \Delta`
 
@@ -72,22 +72,22 @@ class implicit(hoomd.force._force):
         hoomd.util.print_status_line()
 
         # initialize the base class
-        hoomd.force._force.__init__(self,name)
+        hoomd.md.force._force.__init__(self,name)
 
         # setup the (moving) interface variant
         self.interface = hoomd.variant._setup_variant_input(interface)
 
         # setup the coefficient vector
-        self.force_coeff = hoomd.external.coeff();
+        self.force_coeff = hoomd.md.external.coeff();
         self.force_coeff.set_default_coeff('offset', 0.0)
         self.required_coeffs = ['k','offset','g','cutoff']
         self.metadata_fields = ['force_coeff','interface']
 
         # create the c++ mirror class
-        if not hoomd.globals.exec_conf.isCUDAEnabled():
-            cpp_class = _external.MovingInterfaceForceCompute
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            cpp_class = _azplugins.ImplicitEvaporator
         else:
-            cpp_class = _external.MovingInterfaceForceComputeGPU
+            cpp_class = _azplugins.ImplicitEvaporatorGPU
         self.cpp_force = cpp_class(hoomd.context.current.system_definition, self.interface.cpp_variant)
 
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
@@ -95,7 +95,7 @@ class implicit(hoomd.force._force):
     def update_coeffs(self):
         # check that the force coefficients are valid
         if not self.force_coeff.verify(self.required_coeffs):
-           hoomd.globals.msg.error("Not all force coefficients are set\n")
+           hoomd.context.msg.error("Not all force coefficients are set\n")
            raise RuntimeError("Error updating force coefficients")
 
         # set all the params
@@ -116,7 +116,7 @@ class implicit(hoomd.force._force):
             self.cpp_force.setParams(i, coeff['k'], coeff['offset'], coeff['g'], coeff['cutoff'])
 
     def get_metadata(self):
-        data = hoomd.force._force.get_metadata(self)
+        data = hoomd.md.force._force.get_metadata(self)
 
         # make sure coefficients are up-to-date
         self.update_coeffs()

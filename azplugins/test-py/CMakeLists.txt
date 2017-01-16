@@ -2,6 +2,7 @@
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 set(TEST_LIST_CPU
+    test_evaporate_implicit
     test_evaporate_particles
     test_pair_ashbaugh
     test_pair_colloid
@@ -11,6 +12,7 @@ set(TEST_LIST_CPU
     )
 
 set(TEST_LIST_GPU
+    test_evaporate_implicit
     test_evaporate_particles
     test_pair_ashbaugh
     test_pair_colloid
