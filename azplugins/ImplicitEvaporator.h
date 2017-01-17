@@ -41,7 +41,7 @@ class ImplicitEvaporator : public ForceCompute
                            std::shared_ptr<Variant> interf);
 
         //! Destructor
-        ~ImplicitEvaporator();
+        virtual ~ImplicitEvaporator();
 
         //! Set the per-type potential parameters
         /*!

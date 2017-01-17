@@ -24,6 +24,9 @@ namespace py = pybind11;
 
 /* Force computes */
 #include "ImplicitEvaporator.h"
+#ifdef ENABLE_CUDA
+#include "ImplicitEvaporatorGPU.h"
+#endif // ENABLE_CUDA
 
 //! Plugins for soft matter
 namespace azplugins
@@ -101,6 +104,7 @@ PYBIND11_PLUGIN(_azplugins)
 
     /* Force computes */
     azplugins::detail::export_ImplicitEvaporator(m);
+    azplugins::detail::export_ImplicitEvaporatorGPU(m);
 
     return m.ptr();
     }
