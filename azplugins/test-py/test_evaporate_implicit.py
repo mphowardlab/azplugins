@@ -127,21 +127,21 @@ class evaporate_implicit_potential_tests(unittest.TestCase):
         f1 = evap.forces[1].force
         self.assertAlmostEqual(f1[0], 0)
         self.assertAlmostEqual(f1[1], 0)
-        self.assertAlmostEqual(f1[2], -kB*0.5)
+        self.assertAlmostEqual(f1[2], -kB*0.5, 4)
 
         # particle 2 (type A) is also experiencing the harmonic potential
         self.assertAlmostEqual(evap.forces[2].energy, 0.5*kA*0.5**2)
         f2 = evap.forces[2].force
         self.assertAlmostEqual(f2[0], 0)
         self.assertAlmostEqual(f2[1], 0)
-        self.assertAlmostEqual(f2[2], -kA*0.5)
+        self.assertAlmostEqual(f2[2], -kA*0.5, 4)
 
         # particle 3 (type A) is experiencing the gravitational force
         self.assertAlmostEqual(evap.forces[3].energy, 0.5*kA*0.5**2 + (kA/2.)*1.0)
         f3 = evap.forces[3].force
         self.assertAlmostEqual(f3[0], 0)
         self.assertAlmostEqual(f3[1], 0)
-        self.assertAlmostEqual(f3[2], -kA/2.)
+        self.assertAlmostEqual(f3[2], -kA/2., 4)
 
         # disable B interactions for the next test
         evap.force_coeff.set('B', cutoff=False)
@@ -153,7 +153,7 @@ class evaporate_implicit_potential_tests(unittest.TestCase):
         f0 = evap.forces[0].force
         self.assertAlmostEqual(f0[0], 0)
         self.assertAlmostEqual(f0[1], 0)
-        self.assertAlmostEqual(f0[2], -kA*0.5)
+        self.assertAlmostEqual(f0[2], -kA*0.5, 4)
 
         # particle 1 (type B) should now be ignored by the cutoff
         self.assertAlmostEqual(evap.forces[1].energy, 0.0)
@@ -167,14 +167,14 @@ class evaporate_implicit_potential_tests(unittest.TestCase):
         f2 = evap.forces[2].force
         self.assertAlmostEqual(f2[0], 0)
         self.assertAlmostEqual(f2[1], 0)
-        self.assertAlmostEqual(f2[2], -kA*0.5)
+        self.assertAlmostEqual(f2[2], -kA*0.5, 4)
 
         # particle 3 (type A) is experiencing the gravitational force
         self.assertAlmostEqual(evap.forces[3].energy, 0.5*kA*0.5**2 + (kA/2.)*2.0)
         f3 = evap.forces[3].force
         self.assertAlmostEqual(f3[0], 0)
         self.assertAlmostEqual(f3[1], 0)
-        self.assertAlmostEqual(f3[2], -kA/2.)
+        self.assertAlmostEqual(f3[2], -kA/2., 4)
 
     def test_box_outside_error(self):
         evap = azplugins.evaporate.implicit(interface=11.0)
