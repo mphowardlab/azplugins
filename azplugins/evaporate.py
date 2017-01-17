@@ -5,7 +5,7 @@
 
 import hoomd
 from hoomd import _hoomd
-from hoomd import _md
+from hoomd.md import _md
 import _azplugins
 
 class implicit(hoomd.md.force._force):
