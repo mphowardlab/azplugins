@@ -17,6 +17,20 @@ namespace gpu
 namespace kernel
 {
 
+/*!
+ * \param d_force Particle forces
+ * \param d_virial Particle virial
+ * \param d_pos Particle positions
+ * \param d_params Per-type parameters
+ * \param interf_origin Position of interface origin
+ * \param N Number of particles
+ * \param ntypes Number of types
+ *
+ * Using one thread per particle, the force of the harmonic potential is computed
+ * per-particle. The per-particle-type parameters are cached into shared memory.
+ * This method does not compute the virial.
+ *
+ */
 __global__ void compute_implicit_evap_force(Scalar4 *d_force,
                                             Scalar *d_virial,
                                             const Scalar4 *d_pos,
@@ -70,6 +84,19 @@ __global__ void compute_implicit_evap_force(Scalar4 *d_force,
     }
 } // end namespace kernel
 
+/*!
+ * \param d_force Particle forces
+ * \param d_virial Particle virial
+ * \param d_pos Particle positions
+ * \param d_params Per-type parameters
+ * \param interf_origin Position of interface origin
+ * \param N Number of particles
+ * \param ntypes Number of types
+ * \param block_size Number of threads per block
+ *
+ * This kernel driver is a wrapper around kernel::compute_implicit_evap_force.
+ * The forces and virial are both set to zero before calculation.
+ */
 cudaError_t compute_implicit_evap_force(Scalar4 *d_force,
                                         Scalar *d_virial,
                                         const Scalar4 *d_pos,
@@ -77,8 +104,7 @@ cudaError_t compute_implicit_evap_force(Scalar4 *d_force,
                                         const Scalar interf_origin,
                                         const unsigned int N,
                                         const unsigned int ntypes,
-                                        const unsigned int block_size,
-                                        const unsigned int compute_capability)
+                                        const unsigned int block_size)
     {
     // zero the force and virial datasets before launch
     cudaMemset(d_force, 0, sizeof(Scalar4)*N);

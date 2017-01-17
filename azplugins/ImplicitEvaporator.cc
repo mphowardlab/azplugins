@@ -13,14 +13,14 @@
 namespace azplugins
 {
 /*!
- * \param sysdef SystemDefinition containing the ParticleData to compute forces on
- * \param interf Variant for how the interface moves during the simulation
+ * \param sysdef System definition
+ * \param interf Position of the interface
  */
 ImplicitEvaporator::ImplicitEvaporator(std::shared_ptr<SystemDefinition> sysdef,
                                        std::shared_ptr<Variant> interf)
-        : ForceCompute(sysdef), m_interf(interf)
+        : ForceCompute(sysdef), m_interf(interf), m_has_warned(false)
     {
-    m_exec_conf->msg->notice(5) << "Constructing MovingInterfaceCompute" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing ImplicitEvaporator" << std::endl;
 
     // allocate memory per type for parameters
     GPUArray<Scalar4> params(m_pdata->getNTypes(), m_exec_conf);
@@ -32,7 +32,7 @@ ImplicitEvaporator::ImplicitEvaporator(std::shared_ptr<SystemDefinition> sysdef,
 
 ImplicitEvaporator::~ImplicitEvaporator()
     {
-    m_exec_conf->msg->notice(5) << "Destroying MovingInterfaceCompute" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying ImplicitEvaporator" << std::endl;
 
     m_pdata->getNumTypesChangeSignal().disconnect<ImplicitEvaporator, &ImplicitEvaporator::reallocateParams>(this);
     }
@@ -43,18 +43,18 @@ ImplicitEvaporator::~ImplicitEvaporator()
 void ImplicitEvaporator::computeForces(unsigned int timestep)
     {
     PDataFlags flags = this->m_pdata->getFlags();
-    if (flags[pdata_flag::pressure_tensor] || flags[pdata_flag::isotropic_virial])
+    if (!m_has_warned && (flags[pdata_flag::pressure_tensor] || flags[pdata_flag::isotropic_virial]))
         {
-        m_exec_conf->msg->error() << "Moving interface with virial not supported" << std::endl;
-        throw std::runtime_error("Moving interface virial calculation is not implemented");
+        m_exec_conf->msg->warning() << "ImplicitEvaporator does not compute its virial contribution, pressure may be inaccurate" << std::endl;
+        m_has_warned = true;
         }
 
     const BoxDim& box = m_pdata->getGlobalBox();
     const Scalar interf_origin = m_interf->getValue(timestep);
     if (interf_origin > box.getHi().z || interf_origin < box.getLo().z)
         {
-        m_exec_conf->msg->error() << "Moving interface must be inside the simulation box" << std::endl;
-        throw std::runtime_error("Moving interface must be inside the simulation box");
+        m_exec_conf->msg->error() << "ImplicitEvaporator interface must be inside the simulation box" << std::endl;
+        throw std::runtime_error("ImplicitEvaporator interface must be inside the simulation box");
         }
 
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
@@ -97,6 +97,9 @@ void ImplicitEvaporator::computeForces(unsigned int timestep)
 
 namespace detail
 {
+/*!
+ * \param m Python module to export to
+ */
 void export_ImplicitEvaporator(pybind11::module& m)
     {
     namespace py = pybind11;

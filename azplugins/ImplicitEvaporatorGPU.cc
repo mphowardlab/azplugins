@@ -4,8 +4,8 @@
 // Maintainer: mphoward
 
 /*!
- * \file ParticleEvaporatorGPU.cc
- * \brief Definition of ParticleEvaporatorGPU
+ * \file ImplicitEvaporatorGPU.cc
+ * \brief Definition of ImplicitEvaporatorGPU
  */
 
 #include "ImplicitEvaporatorGPU.h"
@@ -15,8 +15,8 @@ namespace azplugins
 {
 
 /*!
- * \param sysdef SystemDefinition containing the ParticleData to compute forces on
- * \param interf Variant for how the interface moves during the simulation
+ * \param sysdef System definition
+ * \param interf Position of the interface
  */
 ImplicitEvaporatorGPU::ImplicitEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
                                              std::shared_ptr<Variant> interf)
@@ -31,18 +31,18 @@ ImplicitEvaporatorGPU::ImplicitEvaporatorGPU(std::shared_ptr<SystemDefinition> s
 void ImplicitEvaporatorGPU::computeForces(unsigned int timestep)
     {
     PDataFlags flags = this->m_pdata->getFlags();
-    if (flags[pdata_flag::pressure_tensor] || flags[pdata_flag::isotropic_virial])
+    if (!m_has_warned && (flags[pdata_flag::pressure_tensor] || flags[pdata_flag::isotropic_virial]))
         {
-        m_exec_conf->msg->error() << "Moving interface with virial not supported" << std::endl;
-        throw std::runtime_error("Moving interface virial calculation is not implemented");
+        m_exec_conf->msg->warning() << "ImplicitEvaporator does not compute its virial contribution, pressure may be inaccurate" << std::endl;
+        m_has_warned = true;
         }
 
     const BoxDim& box = m_pdata->getGlobalBox();
     const Scalar interf_origin = m_interf->getValue(timestep);
     if (interf_origin > box.getHi().z || interf_origin < box.getLo().z)
         {
-        m_exec_conf->msg->error() << "Moving interface must be inside the simulation box" << std::endl;
-        throw std::runtime_error("Moving interface must be inside the simulation box");
+        m_exec_conf->msg->error() << "ImplicitEvaporator interface must be inside the simulation box" << std::endl;
+        throw std::runtime_error("ImplicitEvaporator interface must be inside the simulation box");
         }
 
     ArrayHandle<Scalar4> d_force(m_force, access_location::device, access_mode::overwrite);
@@ -58,14 +58,16 @@ void ImplicitEvaporatorGPU::computeForces(unsigned int timestep)
                                        interf_origin,
                                        m_pdata->getN(),
                                        m_pdata->getNTypes(),
-                                       m_tuner->getParam(),
-                                       m_exec_conf->getComputeCapability()/10);
+                                       m_tuner->getParam());
     if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
     m_tuner->end();
     }
 
 namespace detail
 {
+/*!
+ * \param m Python module to export to
+ */
 void export_ImplicitEvaporatorGPU(pybind11::module& m)
     {
     namespace py = pybind11;

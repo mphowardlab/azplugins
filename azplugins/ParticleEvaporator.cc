@@ -246,7 +246,9 @@ void ParticleEvaporator::makeAllPicks(unsigned int N_pick, unsigned int N_mark_t
 
 namespace detail
 {
-//! Export the ParticleEvaporator to python
+/*!
+ * \param m Python module to export to
+ */
 void export_ParticleEvaporator(pybind11::module& m)
     {
     namespace py = pybind11;

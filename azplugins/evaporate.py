@@ -45,7 +45,7 @@ class implicit(hoomd.md.force._force):
     The following coefficinets must be set per unique particle type:
 
     - :math:`\kappa` - *k* (energy per distance squared) - spring constant
-    - *offset (distance) - per-particle-type amount to shift *H*, default: 0.0
+    - *offset* (distance) - per-particle-type amount to shift *H*, default: 0.0
     - :math:`F_g` - *g* (force) - force to apply above :math:`H_{\rm c}`
     - :math:`\Delta` - *cutoff* (distance) - sets cutoff at :math:`H_{\rm c} = H + \Delta`
 
@@ -69,7 +69,7 @@ class implicit(hoomd.md.force._force):
         nonequilibrium. A warning will be raised if any calls to
         :py:class:`hoomd.analyze.log` are made because the logger always requests
         the virial flags. However, this warning can be safely ignored if the
-        pressure (tensor) is not being logged.
+        pressure (tensor) is not being logged or the pressure is not of interest.
 
     """
     def __init__(self, interface, name=""):

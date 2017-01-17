@@ -22,11 +22,15 @@
 namespace azplugins
 {
 
-//! Implicit model for evaporation on the GPU
+//! Implicit solvent evaporator on the GPU
+/*!
+ * \warning The virial is not computed for this external potential, and a warning
+ *          will be raised the first time it is requested.
+ */
 class ImplicitEvaporatorGPU : public ImplicitEvaporator
     {
     public:
-        //! Constructs the compute
+        //! Constructor
         ImplicitEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
                               std::shared_ptr<Variant> interf);
 
@@ -55,7 +59,7 @@ class ImplicitEvaporatorGPU : public ImplicitEvaporator
 
 namespace detail
 {
-//! Exports the MovingInterfaceForceComputeGPU to python
+//! Exports the ImplicitEvaporatorGPU to python
 void export_ImplicitEvaporatorGPU(pybind11::module& m);
 } // end namespace detail
 

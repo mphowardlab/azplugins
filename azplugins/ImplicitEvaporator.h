@@ -23,20 +23,50 @@
 namespace azplugins
 {
 
-//! Adds a force modeling a moving liquid-vapor interface along the z axis
-/*! \ingroup computes
- * The moving interface compute acts on particles along the z direction, with the interface normal defined along +z
- * going from the liquid into the vapor phase. The interface potential is harmonic. It does not include an attractive
- * part (i.e., it is truncated at its minimum, and is zero for any negative displacements relative to the minimum.
- * The position of the minimum can be adjusted with an offset, which controls an effective contact angle.
- * The potential is cutoff at a certain distance above the interface, at which point it switches to a linear potential
- * with a fixed force constant. This models the gravitational force experienced by particles once the interface has moved
+//! Implicit solvent evaporator
+/*!
+ * Implicitly models the effect of solvent evaporation as a moving interface.
+ *
+ * The moving interface compute acts on particles along the z direction, with
+ * the interface normal defined along +z going from the liquid into the vapor phase.
+ * The interface potential is harmonic. It does not include an attractive
+ * part (i.e., it is truncated at its minimum, and is zero for any negative
+ * displacements relative to the minimum). The position of the minimum can be
+ * adjusted with an offset, which controls an effective contact angle.
+ * The potential is cutoff at a certain distance above the interface, at which
+ * point it switches to a linear potential with a fixed force constant. This models
+ * the gravitational force experienced by particles once the interface has moved
  * past the particles. In practice, this cutoff should be roughly the particle radius.
+ *
+ * The specific form of the potential is:
+ *
+ *      \f{eqnarray*}{
+ *      V(z) = & 0 & z < H \\
+ *             & \frac{\kappa}{2} (z-H)^2 & H \le z < H_{\rm c} \\
+ *             & \frac{\kappa}{2} (H_{\rm c} - H)^2 - F_g (z - H_{\rm c}) & z \ge H_{\rm c}
+ *      \f}
+ *
+ * with the following parameters:
+ *
+ *  - \f$\kappa\f$ - \a k (energy per distance squared) - spring constant
+ *  - \a offset (distance) - per-particle-type amount to shift \a H, default: 0.0
+ *  - \f$F_g\f$ - \a g (force) - force to apply above \f$H_{\rm c}\f$
+ *  - \f$\Delta\f$ - \a cutoff (distance) - sets cutoff at \f$H_{\rm c} = H + \Delta\f$
+ *
+ * \warning The temperature reported by ComputeThermo will likely not be accurate
+ *          during evaporation because the system is out-of-equilibrium,
+ *          and so may experience a net convective drift. This ForceCompute should
+ *          only be used with a Langevin thermostat, which does not rely on
+ *          computing the temperature of the system.
+ *
+ * \warning The virial is not computed for this external potential, and a warning
+ *          will be raised the first time it is requested.
+ *
  */
 class ImplicitEvaporator : public ForceCompute
     {
     public:
-        //! Constructs the compute
+        //! Constructor
         ImplicitEvaporator(std::shared_ptr<SystemDefinition> sysdef,
                            std::shared_ptr<Variant> interf);
 
@@ -53,6 +83,7 @@ class ImplicitEvaporator : public ForceCompute
          */
         void setParams(unsigned int type, Scalar k, Scalar offset, Scalar g, Scalar cutoff)
             {
+            assert(type < m_pdata->getNTypes());
             ArrayHandle<Scalar4> h_params(m_params, access_location::host, access_mode::readwrite);
             h_params.data[type] = make_scalar4(k, offset, g, cutoff);
             }
@@ -61,9 +92,10 @@ class ImplicitEvaporator : public ForceCompute
         //! Implements the force calculation
         virtual void computeForces(unsigned int timestep);
 
-        std::shared_ptr<Variant> m_interf;      //!< Variant for computing the current location of the interface
-
+        std::shared_ptr<Variant> m_interf;      //!< Current location of the interface
         GPUArray<Scalar4> m_params;             //!< Per-type array of parameters for the potential
+
+        bool m_has_warned;  //!< Flag if a warning has been issued about the virial
 
     private:
         //! Reallocate the per-type parameter arrays when the number of types changes

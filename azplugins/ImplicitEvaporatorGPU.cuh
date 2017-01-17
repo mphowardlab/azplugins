@@ -4,8 +4,8 @@
 // Maintainer: mphoward
 
 /*!
- * \file ParticleEvaporatorGPU.cuh
- * \brief Declaration of kernel drivers for ParticleEvaporatorGPU
+ * \file ImplicitEvaporatorGPU.cuh
+ * \brief Declaration of kernel drivers for ImplicitEvaporatorGPU
  */
 
 #ifndef AZPLUGINS_IMPLICIT_EVAPORATOR_GPU_CUH_
@@ -19,7 +19,7 @@ namespace azplugins
 namespace gpu
 {
 
-//! Kernel driver to build unsorted mpcd cell list
+//! Kernel driver to evaluate ImplicitEvaporatorGPU force
 cudaError_t compute_implicit_evap_force(Scalar4 *d_force,
                                         Scalar *d_virial,
                                         const Scalar4 *d_pos,
@@ -27,8 +27,8 @@ cudaError_t compute_implicit_evap_force(Scalar4 *d_force,
                                         const Scalar interf_origin,
                                         const unsigned int N,
                                         const unsigned int ntypes,
-                                        const unsigned int block_size,
-                                        const unsigned int compute_capability);
+                                        const unsigned int block_size);
+
 } // end namespace gpu
 } // end namespace azplugins
 

@@ -176,6 +176,23 @@ class evaporate_implicit_potential_tests(unittest.TestCase):
         self.assertAlmostEqual(f3[1], 0)
         self.assertAlmostEqual(f3[2], -kA/2.)
 
+    def test_box_outside_error(self):
+        evap = azplugins.evaporate.implicit(interface=11.0)
+        evap.force_coeff.set('A', k=0.0, g=0.0, cutoff=False)
+        evap.force_coeff.set('B', k=0.0, g=0.0, cutoff=False)
+
+        with self.assertRaises(RuntimeError):
+            run(1)
+
+    def test_log_warning(self):
+        evap = azplugins.evaporate.implicit(interface=5.0)
+        evap.force_coeff.set('A', k=1.0, g=1.0, cutoff=1.0)
+        evap.force_coeff.set('B', k=1.0, g=1.0, cutoff=1.0)
+
+        analyze.log(filename=None, quantities=['pressure'], period=1)
+        run(1)
+        run(1)
+
     def tearDown(self):
         context.initialize()
 
