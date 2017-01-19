@@ -23,3 +23,4 @@ Not yet released
   of the simulation box.
 * `evaporate.particles` supports evaporation of single-particle fluids from
   a slab region of the simulation box.
+* `evaporate.implicit` provides an implicit model for an evaporating solvent.
