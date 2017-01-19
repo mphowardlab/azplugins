@@ -15,11 +15,17 @@ namespace py = pybind11;
 #include "WallPotentials.h"
 
 /* Updaters */
-#include "ParticleEvaporator.h"
 #include "TypeUpdater.h"
+#include "ParticleEvaporator.h"
 #ifdef ENABLE_CUDA
 #include "TypeUpdaterGPU.h"
 #include "ParticleEvaporatorGPU.h"
+#endif // ENABLE_CUDA
+
+/* Force computes */
+#include "ImplicitEvaporator.h"
+#ifdef ENABLE_CUDA
+#include "ImplicitEvaporatorGPU.h"
 #endif // ENABLE_CUDA
 
 //! Plugins for soft matter
@@ -95,6 +101,10 @@ PYBIND11_PLUGIN(_azplugins)
     /* Wall potentials */
     azplugins::detail::export_wall_potential<azplugins::detail::WallEvaluatorColloid>(m, "WallPotentialColloid");
     azplugins::detail::export_wall_potential<azplugins::detail::WallEvaluatorLJ93>(m, "WallPotentialLJ93");
+
+    /* Force computes */
+    azplugins::detail::export_ImplicitEvaporator(m);
+    azplugins::detail::export_ImplicitEvaporatorGPU(m);
 
     return m.ptr();
     }

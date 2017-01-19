@@ -7,6 +7,8 @@ set(COMPONENT_NAME azplugins)
 
 set(_${COMPONENT_NAME}_sources
     module.cc
+    ImplicitEvaporator.cc
+    ImplicitEvaporatorGPU.cc
     ParticleEvaporator.cc
     ParticleEvaporatorGPU.cc
     TypeUpdater.cc
@@ -14,6 +16,7 @@ set(_${COMPONENT_NAME}_sources
     )
 
 set(_${COMPONENT_NAME}_cu_sources
+    ImplicitEvaporatorGPU.cu
     PairPotentials.cu
     ParticleEvaporatorGPU.cu
     TypeUpdaterGPU.cu
