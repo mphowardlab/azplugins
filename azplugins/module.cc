@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Panagiotopoulos Group, Princeton University
+// Copyright (c) 2016-2017, Panagiotopoulos Group, Princeton University
 // This file is part of the azplugins project, released under the Modified BSD License.
 
 // Maintainer: mphoward / Everyone is free to add additional objects
