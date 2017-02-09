@@ -3,9 +3,15 @@
 [TOC]
 
 ---------
-## v0.1.0
+## v0.2.0
 
 Not yet released
+
+*New features*
+
+## v0.1.0
+
+9 February 2017
 
 *New features*
 
