@@ -104,7 +104,9 @@ PYBIND11_PLUGIN(_azplugins)
 
     /* Force computes */
     azplugins::detail::export_ImplicitEvaporator(m);
+    #ifdef ENABLE_CUDA
     azplugins::detail::export_ImplicitEvaporatorGPU(m);
+    #endif // ENABLE_CUDA
 
     return m.ptr();
     }

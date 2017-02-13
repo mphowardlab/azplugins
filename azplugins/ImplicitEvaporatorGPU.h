@@ -52,7 +52,7 @@ class ImplicitEvaporatorGPU : public ImplicitEvaporator
     protected:
         //! Implements the force calculation
         virtual void computeForces(unsigned int timestep);
-    
+
     private:
         std::unique_ptr<Autotuner> m_tuner;   //!< Autotuner for block size
     };
