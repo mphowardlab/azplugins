@@ -3,7 +3,8 @@
 AZPlugins is a component (plugin) for [HOOMD-blue](http://glotzerlab.engin.umich.edu/hoomd-blue)
 which expands its functionality for tackling a variety of problems in soft matter physics.
 Currently, AZPlugins is tested against v2.1.2 of HOOMD-blue. See [ChangeLog.md](ChangeLog.md) for
-a list of recent development.
+a list of recent development. If you are interested in adding new code, please refer to the
+[CONTRIBUTING.md](contributor guidelines).
 
 ## Compiling AZPlugins
 
