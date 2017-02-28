@@ -32,6 +32,7 @@
 // All pair potential evaluators must be included here
 #include "PairEvaluatorAshbaugh.h"
 #include "PairEvaluatorColloid.h"
+#include "PairEvaluatorShiftedLJ.h"
 
 /*
  * The code below handles python exports using a templated function, and so

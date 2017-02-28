@@ -11,6 +11,8 @@ Not yet released
 
 * `restrain.position` implements position restraints for particles.
 * `restrain.orientation` implements orientation restraints for particles.
+* `pair.slj` implements a core-shifted Lennard-Jones potential that does
+  not read from the particle diameters.
 
 ## v0.1.0
 

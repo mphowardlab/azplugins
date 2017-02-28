@@ -54,7 +54,7 @@ class ashbaugh(hoomd.md.pair.pair):
         nl = hoomd.md.nlist.cell()
         ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist=nl)
         ash.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, lam=0.0)
-        ash.pair_coeff.set(['A','B'], 'B', epsilon=2.0, sigma=1.0, lam=0.5, r_cut=3.0, r_on=2.0);
+        ash.pair_coeff.set(['A','B'], 'B', epsilon=2.0, sigma=1.0, lam=0.5, r_cut=3.0, r_on=2.0)
 
     """
     def __init__(self, r_cut, nlist, name=None):
@@ -196,3 +196,92 @@ class colloid(hoomd.md.pair.pair):
             raise RuntimeError('Unknown interaction style')
 
         return _hoomd.make_scalar4(epsilon, sigma**3, sigma**6, _hoomd.int_as_scalar(style));
+
+class slj(hoomd.md.pair.pair):
+    R""" Core-shifted Lennard-Jones potential
+
+    Args:
+        r_cut (float): Default cutoff radius (in distance units).
+        nlist (:py:mod:`hoomd.md.nlist`): Neighbor list
+        name (str): Name of the force instance.
+
+    :py:class:`slj` is Lennard-Jones potential with the core (minimum) shifted by
+    an amount :math:`\Delta`. The form of the potential is similar to the standard
+    Lennard-Jones potential
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray*}
+        V(r)  = & 4 \varepsilon \left[ \left(\frac{\sigma}{r-\Delta} \right)^12
+                  - \alpha \left(\frac{\sigma}{r-\Delta} \right)^6 \right] & r < r_{\rm cut} \\
+              = & 0 & r \ge r_{\rm cut}
+        \end{eqnarray*}
+
+    Here, :math:`\varepsilon`, :math:`\sigma`, and :math:`\alpha` are the stanard
+    Lennard-Jones potential parameters, and :math:`\Delta` is the amount the potential
+    is shifted by. The minimum of the potential :math:`r_{\rm min}` is shifted to
+
+    .. math::
+
+        r_{\rm min} = 2^{1/6} \sigma + \Delta
+
+    Setting :math:`\Delta = 0` recovers the standard Lennard-Jones potential.
+    See :py:class:`hoomd.md.pair.pair` for details on how forces are calculated
+    and the available energy shifting and smoothing modes.
+    Use :py:meth:`pair_coeff.set <coeff.set>` to set potential coefficients.
+
+    The following coefficients must be set per unique pair of particle types:
+
+    - :math:`\varepsilon` - *epsilon* (in energy units)
+    - :math:`\sigma` - *sigma* (in distance units)
+    - :math:`\Delta` - *delta* (in distance units)
+    - :math:`\alpha` - *alpha* (unitless) - *optional*: defaults to 1.0
+    - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
+      - *optional*: defaults to the global r_cut specified in the pair command
+    - :math:`r_{\mathrm{on}}`- *r_on* (in distance units)
+      - *optional*: defaults to the global r_cut specified in the pair command
+
+    Example::
+
+        nl = hoomd.md.nlist.cell()
+        slj = azplugins.pair.slj(r_cut=3.0, nlist=nl)
+        slj.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, delta=1.0)
+        slj.pair_coeff.set(['A','B'], 'B', epsilon=2.0, sigma=1.0, alpha=0.5, delta=0.0, r_cut=3.0, r_on=2.0)
+
+    .. note::
+        Because of the form of the potential, square-root calls are necessary
+        to evaluate the potential and also to perform energy shifting. This will
+        incur a corresponding performance hit compared to the standard
+        Lennard-Jones potential even when :math:`\Delta=0`.
+
+    """
+    def __init__(self, r_cut, nlist, name=None):
+        hoomd.util.print_status_line()
+
+        # initialize the base class
+        hoomd.md.pair.pair.__init__(self, r_cut, nlist, name)
+
+        # create the c++ mirror class
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            self.cpp_class = _azplugins.PairPotentialShiftedLJ
+        else:
+            self.cpp_class = _azplugins.PairPotentialShiftedLJGPU
+            self.nlist.cpp_nlist.setStorageMode(_md.NeighborList.storageMode.full)
+        self.cpp_force = self.cpp_class(hoomd.context.current.system_definition, self.nlist.cpp_nlist, self.name)
+
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
+
+        # setup the coefficent options
+        self.required_coeffs = ['epsilon', 'sigma', 'delta', 'alpha']
+        self.pair_coeff.set_default_coeff('alpha', 1.0)
+
+    def process_coeff(self, coeff):
+        epsilon = coeff['epsilon']
+        sigma = coeff['sigma']
+        delta = coeff['delta']
+        alpha = coeff['alpha']
+
+        lj1 = 4.0 * epsilon * math.pow(sigma, 12.0)
+        lj2 = alpha * 4.0 * epsilon * math.pow(sigma, 6.0)
+        return _hoomd.make_scalar3(lj1, lj2, delta)

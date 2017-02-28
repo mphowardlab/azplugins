@@ -91,8 +91,9 @@ PYBIND11_PLUGIN(_azplugins)
 
     /* Pair potentials */
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorAshbaugh>(m, "PairPotentialAshbaugh");
-    azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorColloid>(m, "PairPotentialColloid");
     azplugins::detail::export_ashbaugh_params(m);
+    azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorColloid>(m, "PairPotentialColloid");
+    azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorShiftedLJ>(m, "PairPotentialShiftedLJ");
 
     /* Updaters */
     azplugins::detail::export_TypeUpdater(m);
