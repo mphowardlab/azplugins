@@ -24,8 +24,12 @@ namespace py = pybind11;
 
 /* Force computes */
 #include "ImplicitEvaporator.h"
+#include "OrientationRestraintCompute.h"
+#include "PositionRestraintCompute.h"
 #ifdef ENABLE_CUDA
 #include "ImplicitEvaporatorGPU.h"
+#include "OrientationRestraintComputeGPU.h"
+#include "PositionRestraintComputeGPU.h"
 #endif // ENABLE_CUDA
 
 //! Plugins for soft matter
@@ -104,8 +108,12 @@ PYBIND11_PLUGIN(_azplugins)
 
     /* Force computes */
     azplugins::detail::export_ImplicitEvaporator(m);
+    azplugins::detail::export_OrientationRestraintCompute(m);
+    azplugins::detail::export_PositionRestraintCompute(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_ImplicitEvaporatorGPU(m);
+    azplugins::detail::export_OrientationRestraintComputeGPU(m);
+    azplugins::detail::export_PositionRestraintComputeGPU(m);
     #endif // ENABLE_CUDA
 
     return m.ptr();

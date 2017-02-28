@@ -9,16 +9,22 @@ set(_${COMPONENT_NAME}_sources
     module.cc
     ImplicitEvaporator.cc
     ImplicitEvaporatorGPU.cc
+    OrientationRestraintCompute.cc
+    OrientationRestraintComputeGPU.cc
     ParticleEvaporator.cc
     ParticleEvaporatorGPU.cc
+    PositionRestraintCompute.cc
+    PositionRestraintComputeGPU.cc
     TypeUpdater.cc
     TypeUpdaterGPU.cc
     )
 
 set(_${COMPONENT_NAME}_cu_sources
     ImplicitEvaporatorGPU.cu
+    OrientationRestraintComputeGPU.cu
     PairPotentials.cu
     ParticleEvaporatorGPU.cu
+    PositionRestraintComputeGPU.cu
     TypeUpdaterGPU.cu
     WallPotentials.cu
     )
@@ -85,6 +91,7 @@ set(files
     pair.py
     update.py
     wall.py
+    restrain.py
     )
 
 install(FILES ${files}

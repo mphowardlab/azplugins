@@ -9,6 +9,9 @@ Not yet released
 
 *New features*
 
+* `restrain.position` implements position restraints for particles.
+* `restrain.orientation` implements orientation restraints for particles.
+
 ## v0.1.0
 
 9 February 2017
