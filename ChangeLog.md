@@ -9,6 +9,8 @@ Not yet released
 
 *New features*
 
+* `analyze.rdf` implements a radial distribution function calculator
+  between particle groups for small problem sizes.
 * `restrain.position` implements position restraints for particles.
 * `restrain.orientation` implements orientation restraints for particles.
 * `pair.slj` implements a core-shifted Lennard-Jones potential that does

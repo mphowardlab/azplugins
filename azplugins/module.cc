@@ -32,6 +32,12 @@ namespace py = pybind11;
 #include "PositionRestraintComputeGPU.h"
 #endif // ENABLE_CUDA
 
+/* Analyzers */
+#include "RDFAnalyzer.h"
+#ifdef ENABLE_CUDA
+#include "RDFAnalyzerGPU.h"
+#endif // ENABLE_CUDA
+
 //! Plugins for soft matter
 namespace azplugins
 {
@@ -115,6 +121,12 @@ PYBIND11_PLUGIN(_azplugins)
     azplugins::detail::export_ImplicitEvaporatorGPU(m);
     azplugins::detail::export_OrientationRestraintComputeGPU(m);
     azplugins::detail::export_PositionRestraintComputeGPU(m);
+    #endif // ENABLE_CUDA
+
+    /* Analyzers */
+    azplugins::detail::export_RDFAnalyzer(m);
+    #ifdef ENABLE_CUDA
+    azplugins::detail::export_RDFAnalyzerGPU(m);
     #endif // ENABLE_CUDA
 
     return m.ptr();

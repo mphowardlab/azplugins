@@ -15,6 +15,8 @@ set(_${COMPONENT_NAME}_sources
     ParticleEvaporatorGPU.cc
     PositionRestraintCompute.cc
     PositionRestraintComputeGPU.cc
+    RDFAnalyzer.cc
+    RDFAnalyzerGPU.cc
     TypeUpdater.cc
     TypeUpdaterGPU.cc
     )
@@ -25,6 +27,7 @@ set(_${COMPONENT_NAME}_cu_sources
     PairPotentials.cu
     ParticleEvaporatorGPU.cu
     PositionRestraintComputeGPU.cu
+    RDFAnalyzerGPU.cu
     TypeUpdaterGPU.cu
     WallPotentials.cu
     )
@@ -87,6 +90,7 @@ ENDMACRO(copy_file)
 
 set(files
     __init__.py
+    analyze.py
     evaporate.py
     pair.py
     update.py

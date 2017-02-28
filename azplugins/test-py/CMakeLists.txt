@@ -2,6 +2,7 @@
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 set(TEST_LIST_CPU
+    test_analyze_rdf
     test_evaporate_implicit
     test_evaporate_particles
     test_pair_ashbaugh
@@ -13,6 +14,7 @@ set(TEST_LIST_CPU
     )
 
 set(TEST_LIST_GPU
+    test_analyze_rdf
     test_evaporate_implicit
     test_evaporate_particles
     test_pair_ashbaugh
@@ -24,7 +26,8 @@ set(TEST_LIST_GPU
     )
 
 set(EXCLUDE_FROM_MPI
-   )
+    test_analyze_rdf
+    )
 
 set(MPI_ONLY
     )
