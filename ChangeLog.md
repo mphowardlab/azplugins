@@ -16,6 +16,11 @@ Not yet released
 * `pair.slj` implements a core-shifted Lennard-Jones potential that does
   not read from the particle diameters.
 
+*Other updates*
+
+* Source code guidelines and a pull request checklist are discussed in a
+  new `CONTRIBUTING.md`.
+
 ## v0.1.0
 
 9 February 2017
