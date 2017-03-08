@@ -3,6 +3,15 @@
 [TOC]
 
 ---------
+## v0.2.1
+
+Not yet released
+
+*Bug fixes*
+
+* Adds restraint module to ctest list and warns user about running
+  with orientation restraints in single precision.
+
 ## v0.2.0
 
 28 February 2017

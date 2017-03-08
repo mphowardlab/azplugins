@@ -8,6 +8,8 @@ set(TEST_LIST_CPU
     test_pair_ashbaugh
     test_pair_colloid
     test_pair_slj
+    test_restrain_orientation
+    test_restrain_position
     test_update_type
     test_wall_colloid
     test_wall_lj93
@@ -20,6 +22,8 @@ set(TEST_LIST_GPU
     test_pair_ashbaugh
     test_pair_colloid
     test_pair_slj
+    test_restrain_orientation
+    test_restrain_position
     test_update_type
     test_wall_colloid
     test_wall_lj93
@@ -27,6 +31,8 @@ set(TEST_LIST_GPU
 
 set(EXCLUDE_FROM_MPI
     test_analyze_rdf
+    test_restrain_orientation
+    test_restrain_position
     )
 
 set(MPI_ONLY

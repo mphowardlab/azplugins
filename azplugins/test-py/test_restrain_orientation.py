@@ -89,9 +89,9 @@ class restrain_orientation_tests(unittest.TestCase):
             n_ref = qv_mult(r,(1,0,0))
             gamma = np.dot(n_i,n_ref)
             expected_energy = k * ( 1. - gamma * gamma )
-            self.assertAlmostEqual(self.s.particles[i].net_energy,expected_energy)
+            self.assertAlmostEqual(self.s.particles[i].net_energy,expected_energy, 5)
             expected_torque = 2. * k * gamma * np.cross(n_i,n_ref)
-            np.testing.assert_array_almost_equal(self.s.particles[i].net_torque,expected_torque)
+            np.testing.assert_array_almost_equal(self.s.particles[i].net_torque,expected_torque, 5)
 
     def tearDown(self):
         del self.s

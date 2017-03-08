@@ -39,6 +39,12 @@ OrientationRestraintCompute::OrientationRestraintCompute(std::shared_ptr<SystemD
         }
     #endif
 
+    // single precision is dangerous for rotational dynamics
+    // (the energy and torque may not be conservative)
+    #ifdef SINGLE_PRECISION
+    m_exec_conf->msg->warning() << "restrain.orientation: energy and torques may not be conservative in SINGLE precision" << std::endl;
+    #endif
+
     setInitialOrientations();
 
     m_logname_list.push_back("restraint_orientation_energy");
