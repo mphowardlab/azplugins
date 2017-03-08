@@ -11,6 +11,8 @@ Not yet released
 
 * Adds restraint module to ctest list and warns user about running
   with orientation restraints in single precision.
+* Fix examples in contribution guidelines so that formatting of
+  pull request checklist is OK.
 
 ## v0.2.0
 

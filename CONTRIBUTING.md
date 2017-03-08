@@ -45,6 +45,11 @@ error handling.
 Write the python implementation of your new feature first, then implement
 the C++ header file. Finally, implement the details of the algorithm.
 
+## Add your feature or fix to the changelog
+
+All new features or fixes should be documented with a short description
+in the changelog for the appropriate target version.
+
 # Source code guidelines
 
 ## Use current copyright notice and identify the maintainer of the code
@@ -155,15 +160,7 @@ color::colorEnum c = color::red;
 
 Include guards should be used in all headers. The guard should be named after the
 directory and file, and be followed by a trailing underscore. For example, the
-include guard for `azplugins/CoolUpdater.h` should be
-```c++
-#ifndef AZPLUGINS_COOL_UPDATER_H_
-#define AZPLUGINS_COOL_UPDATER_H_
-
-// class declaration goes here
-
-#endif // AZPLUGINS_COOL_UPDATER_H_
-```
+include guard for `azplugins/CoolUpdater.h` should be `AZPLUGINS_COOL_UPDATER_H_`.
 
 ## Include the necessary headers, and do not include extraneous headers
 
@@ -176,11 +173,6 @@ Do not leave behind headers that are unused, e.g. `<iostream>`.
 Headers that include STL headers, pybind11, etc. cannot be compiled by
 NVCC. A preprocessor error should be raised to warn the developer of
 complications arising from this.
-```c++
-#ifdef NVCC
-#error This header cannot be compiled by nvcc
-#endif
-```
 
 ## const correctness
 
@@ -208,13 +200,6 @@ Code that is commented-out should not be left behind. Most likely, you should
 delete this unused code, and let git take care of it. If it must be left around
 "just in case", remove comment marks and place it in an `#if 0` block to prevent
 compilation.
-```c++
-#if 0
-// Here goes some super complicated optimized pathway I tried and decided to keep
-    {
-    }
-#endif
-```
 
 ## Code line length
 
@@ -282,15 +267,7 @@ and their companion kernels should be in `azplugins::gpu::kernel`.
 
 Include guards should be used in all headers. The guard should be named after the
 directory and file, and be followed by a trailing underscore. For example, the
-include guard for `azplugins/CoolUpdaterGPU.cuh` should be
-```c++
-#ifndef AZPLUGINS_COOL_UPDATER_GPU_CUH_
-#define AZPLUGINS_COOL_UPDATER_GPU_CUH_
-
-// cuda code goes here
-
-#endif // AZPLUGINS_COOL_UPDATER_CUH_
-```
+include guard for `azplugins/CoolUpdaterGPU.cuh` should be `AZPLUGINS_COOL_UPDATER_GPU_CUH_`.
 
 ## Kernel naming conventions
 
