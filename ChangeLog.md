@@ -9,6 +9,7 @@ Not yet released
 
 *Bug fixes*
 
+* Fix import hoomd.md error in `analyze.rdf`.
 * Adds restraint module to ctest list and warns user about running
   with orientation restraints in single precision.
 * Fix examples in contribution guidelines so that formatting of

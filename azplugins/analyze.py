@@ -5,6 +5,7 @@
 
 import hoomd
 from hoomd import _hoomd
+from hoomd.md import _md
 import _azplugins
 import numpy
 
