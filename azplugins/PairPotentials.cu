@@ -28,6 +28,11 @@ template cudaError_t compute_pair_potential<azplugins::detail::PairEvaluatorColl
     (const pair_args_t& pair_args,
      const typename azplugins::detail::PairEvaluatorColloid::param_type *d_params);
 
+//! Kernel driver for LJ 12-4 pair potential
+template cudaError_t compute_pair_potential<azplugins::detail::PairEvaluatorLJ124>
+     (const pair_args_t& pair_args,
+     const typename azplugins::detail::PairEvaluatorLJ124::param_type *d_params);
+
 //! Kernel driver for core-shifted Lennard-Jones pair potential
 template cudaError_t compute_pair_potential<azplugins::detail::PairEvaluatorShiftedLJ>
     (const pair_args_t& pair_args,

@@ -7,6 +7,10 @@
 
 Not yet released
 
+*New features*
+
+* `pair.lj124` implements the 12-4 Lennard-Jones potential.
+
 *Bug fixes*
 
 * Fix import hoomd.md error in `analyze.rdf`.

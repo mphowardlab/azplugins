@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Panagiotopoulos Group, Princeton University
+// Copyright (c) 2015-2017, Panagiotopoulos Group, Princeton University
 // This file is part of the azplugins project, released under the Modified BSD License.
 
 // Maintainer: mphoward / Everyone is free to add additional objects
@@ -99,6 +99,7 @@ PYBIND11_PLUGIN(_azplugins)
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorAshbaugh>(m, "PairPotentialAshbaugh");
     azplugins::detail::export_ashbaugh_params(m);
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorColloid>(m, "PairPotentialColloid");
+    azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorLJ124>(m, "PairPotentialLJ124");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorShiftedLJ>(m, "PairPotentialShiftedLJ");
 
     /* Updaters */

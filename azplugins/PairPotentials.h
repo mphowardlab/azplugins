@@ -32,6 +32,7 @@
 // All pair potential evaluators must be included here
 #include "PairEvaluatorAshbaugh.h"
 #include "PairEvaluatorColloid.h"
+#include "PairEvaluatorLJ124.h"
 #include "PairEvaluatorShiftedLJ.h"
 
 /*
