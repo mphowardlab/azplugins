@@ -33,6 +33,7 @@
 #include "PairEvaluatorAshbaugh.h"
 #include "PairEvaluatorColloid.h"
 #include "PairEvaluatorLJ124.h"
+#include "PairEvaluatorLJ96.h"
 #include "PairEvaluatorShiftedLJ.h"
 
 /*
