@@ -10,6 +10,7 @@ Not yet released
 *New features*
 
 * `pair.lj124` implements the 12-4 Lennard-Jones potential.
+* `pair.lj96` implements the 9-6 Lennard-Jones potential.
 
 *Bug fixes*
 
