@@ -5,7 +5,7 @@
 ---------
 ## v0.3.0
 
-Not yet released.
+22 August 2017
 
 *Release notes*
 
