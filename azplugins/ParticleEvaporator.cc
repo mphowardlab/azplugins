@@ -9,7 +9,6 @@
  */
 
 #include "ParticleEvaporator.h"
-#include "hoomd/extern/saruprng.h"
 #include <algorithm>
 
 namespace azplugins
