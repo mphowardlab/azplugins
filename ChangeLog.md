@@ -18,6 +18,7 @@ bug fixes on the main code paths.
 
 * `pair.lj124` implements the 12-4 Lennard-Jones potential.
 * `pair.lj96` implements the 9-6 Lennard-Jones potential.
+* A framework is configured for developing anisotropic pair potentials.
 
 *Bug fixes*
 

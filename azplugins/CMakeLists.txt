@@ -22,6 +22,7 @@ set(_${COMPONENT_NAME}_sources
     )
 
 set(_${COMPONENT_NAME}_cu_sources
+    AnisoPairPotentials.cu
     ImplicitEvaporatorGPU.cu
     OrientationRestraintComputeGPU.cu
     PairPotentials.cu
