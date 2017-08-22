@@ -3,9 +3,16 @@
 [TOC]
 
 ---------
-## v0.2.1
+## v0.3.0
 
-Not yet released
+Not yet released.
+
+*Release notes*
+
+This version of the plugin is now tested against HOOMD-blue v2.1.9.
+Users running older versions of HOOMD-blue are recommended to upgrade
+their installations in order to ensure compatibility and the latest
+bug fixes on the main code paths.
 
 *New features*
 
@@ -19,6 +26,9 @@ Not yet released
   with orientation restraints in single precision.
 * Fix examples in contribution guidelines so that formatting of
   pull request checklist is OK.
+* Remove unused include from particle evaporator which caused
+  compilation errors with newer versions of hoomd where the header
+  was removed.
 
 ## v0.2.0
 
