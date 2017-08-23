@@ -9,7 +9,7 @@
  */
 
 #include "ParticleEvaporatorGPU.cuh"
-#include "hoomd/extern/cub/cub.cuh"
+#include "hoomd/extern/cub/cub/cub.cuh"
 
 namespace azplugins
 {

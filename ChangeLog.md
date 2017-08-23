@@ -3,6 +3,14 @@
 [TOC]
 
 ---------
+## v0.3.1
+
+Not yet released.
+
+*Bug fixes*
+
+* Fix path to cub headers.
+
 ## v0.3.0
 
 22 August 2017
