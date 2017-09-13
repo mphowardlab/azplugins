@@ -6,6 +6,7 @@ set(TEST_LIST_CPU
     test_evaporate_implicit
     test_evaporate_particles
     test_pair_ashbaugh
+    test_pair_ashbaugh24
     test_pair_lj124
     test_pair_lj96
     test_pair_colloid
@@ -23,6 +24,7 @@ set(TEST_LIST_GPU
     test_evaporate_implicit
     test_evaporate_particles
     test_pair_ashbaugh
+    test_pair_ashbaugh24
     test_pair_lj124
     test_pair_lj96
     test_pair_colloid

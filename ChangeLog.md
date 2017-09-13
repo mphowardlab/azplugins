@@ -9,6 +9,7 @@ Not yet released.
 
 *New features*
 
+* `pair.ashbaugh24` implements a Ashbaugh-Hatch 48-24 Lennard-Jones potential.
 * `pair.two_patch_morse` implements the two-patch Morse anisotropic potential.
 
 *Bug fixes*

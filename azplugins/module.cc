@@ -115,6 +115,7 @@ PYBIND11_PLUGIN(_azplugins)
 
     /* Pair potentials */
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorAshbaugh>(m, "PairPotentialAshbaugh");
+    azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorAshbaugh24>(m, "PairPotentialAshbaugh24");
     azplugins::detail::export_ashbaugh_params(m);
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorColloid>(m, "PairPotentialColloid");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorLJ124>(m, "PairPotentialLJ124");

@@ -23,6 +23,11 @@ template cudaError_t compute_pair_potential<azplugins::detail::PairEvaluatorAshb
     (const pair_args_t& pair_args,
      const typename azplugins::detail::PairEvaluatorAshbaugh::param_type *d_params);
 
+//! Kernel driver for a Ashbaugh-Hatch 48- 24 pair potential
+template cudaError_t compute_pair_potential<azplugins::detail::PairEvaluatorAshbaugh24>
+     (const pair_args_t& pair_args,
+     const typename azplugins::detail::PairEvaluatorAshbaugh24::param_type *d_params);
+
 //! Kernel driver for colloid (integrated Lennard-Jones) pair potential
 template cudaError_t compute_pair_potential<azplugins::detail::PairEvaluatorColloid>
     (const pair_args_t& pair_args,
