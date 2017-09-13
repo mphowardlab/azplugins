@@ -43,7 +43,7 @@ namespace detail
  * - \verbatim lj2 = epsilon * pow(sigma,3.0) \endverbatim
  *
  * The force acting on the particle is then
- * \f [ F(r)/r = \frac{\varepsilon}{r^2} \left ( \frac{6}{5}\left(\frac{\sigma}{r}\right)^9 - 3 \left(\frac{\sigma}{r}\right)^3 \right) \f]
+ * \f[ F(r)/r = \frac{\varepsilon}{r^2} \left ( \frac{6}{5}\left(\frac{\sigma}{r}\right)^9 - 3 \left(\frac{\sigma}{r}\right)^3 \right) \f]
  */
 class WallEvaluatorLJ93
     {
@@ -91,7 +91,7 @@ class WallEvaluatorLJ93
         //! Evaluate the force and energy
         /*!
          * \param force_divr Holds the computed force divided by r
-         * \param pair_eng Holds the computed pair energy
+         * \param energy Holds the computed pair energy
          * \param energy_shift If true, the potential is shifted to zero at the cutoff
          *
          * \returns True if the energy calculation occurs

@@ -36,7 +36,7 @@ namespace detail
  */
 struct ashbaugh_params
     {
-    Scalar lj1; //<! The coefficient for 1/r^12
+    Scalar lj1; //!< The coefficient for 1/r^12
     Scalar lj2; //!< The coefficient for 1/r^6
     Scalar lambda; //!< Controls the attractive tail, between 0 and 1
     Scalar rwcasq; //!< The square of the location of the LJ potential minimum

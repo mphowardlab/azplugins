@@ -35,7 +35,7 @@ namespace azplugins
  *
  * The force is computed as
  *
- * \f[ F(\mathbf{r}) = - \mathbf{k} \mathbf{\Delta r}
+ * \f[ F(\mathbf{r}) = - \mathbf{k} \mathbf{\Delta r} \f]
  *
  */
 class PositionRestraintCompute : public ForceCompute

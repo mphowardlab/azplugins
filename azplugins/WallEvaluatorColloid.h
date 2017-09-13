@@ -37,7 +37,7 @@ namespace detail
  *
  * with force
  * \f[ F(r)/r = 6 C_1 \left( \frac{8(a/r) - 1}{(z-a)^8} + \frac{8(a/r) + 1}{(z+a)^8} \right)
- *            - C_2 \left( \frac{4 a^2(a/z)}{(z^2-a^2)^2} \right )
+ *            - C_2 \left( \frac{4 a^2(a/z)}{(z^2-a^2)^2} \right ) \f]
  *
  * where \f$ C_1 = A \sigma^6 / 7560 \f$ and \f$ C_2 = A/6 \f$ are constants, \f$ \sigma \f$ is the Lennard-Jones
  * diameter for particles in the sphere and the wall, and \f$A\f$ is the effective Hamaker constant, which properly
@@ -141,7 +141,7 @@ class WallEvaluatorColloid
         //! Evaluate the force and energy
         /*!
          * \param force_divr Holds the computed force divided by r
-         * \param pair_eng Holds the computed pair energy
+         * \param energy Holds the computed pair energy
          * \param energy_shift If true, the potential is shifted to zero at the cutoff
          *
          * \returns True if the energy calculation occurs
