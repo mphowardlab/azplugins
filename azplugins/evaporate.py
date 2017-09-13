@@ -83,7 +83,7 @@ class implicit(hoomd.md.force._force):
         self.interface = hoomd.variant._setup_variant_input(interface)
 
         # setup the coefficient vector
-        self.force_coeff = hoomd.md.external.coeff();
+        self.force_coeff = hoomd.md.external.coeff()
         self.force_coeff.set_default_coeff('offset', 0.0)
         self.required_coeffs = ['k','offset','g','cutoff']
         self.metadata_fields = ['force_coeff','interface']

@@ -48,7 +48,7 @@ class position(force._force):
 
     """
     def __init__(self, group, k, name=""):
-        hoomd.util.print_status_line();
+        hoomd.util.print_status_line()
 
         # initialize the base class
         force._force.__init__(self,name)
@@ -80,7 +80,7 @@ class position(force._force):
             springs.set_params(k=[1.,2.,3.]))
 
         """
-        hoomd.util.print_status_line();
+        hoomd.util.print_status_line()
 
         try:
             kx, ky, kz = k
@@ -112,7 +112,7 @@ class position(force._force):
             springs.set_reference_positions(lattice)
 
         """
-        hoomd.util.print_status_line();
+        hoomd.util.print_status_line()
         hoomd.util.quiet_status()
         # try to cast as ndarray
         try:
@@ -139,10 +139,10 @@ class position(force._force):
             springs.set_reference_position(0,lattice)
 
         """
-        hoomd.util.print_status_line();
+        hoomd.util.print_status_line()
 
         try:
-            xyz = _hoomd.make_scalar4(ref_pos[0],ref_pos[1],ref_pos[2],0.0);
+            xyz = _hoomd.make_scalar4(ref_pos[0],ref_pos[1],ref_pos[2],0.0)
         except:
             hoomd.context.msg.error('restrain.orientation.set_positions: ref_pos must be a 3-item iterable composed of scalars\n')
             raise ValueError('ref_pos must be a 3-item iterable composed of scalars')
@@ -181,7 +181,7 @@ class orientation(force._force):
 
     """
     def __init__(self, group, k, name=""):
-        hoomd.util.print_status_line();
+        hoomd.util.print_status_line()
 
         # initialize the base class
         force._force.__init__(self,name)
@@ -211,7 +211,7 @@ class orientation(force._force):
             field.set_params(k=1.)
 
         """
-        hoomd.util.print_status_line();
+        hoomd.util.print_status_line()
 
         try:
             k = float(k)
@@ -234,7 +234,7 @@ class orientation(force._force):
             field.set_reference_orientations(directors)
 
         """
-        hoomd.util.print_status_line();
+        hoomd.util.print_status_line()
         hoomd.util.quiet_status()
         # try to cast as ndarray
         try:
@@ -261,9 +261,9 @@ class orientation(force._force):
             field.set_reference_orientation(0,director)
 
         """
-        hoomd.util.print_status_line();
+        hoomd.util.print_status_line()
         try:
-            xyzw = _hoomd.make_scalar4(ref_orient[0],ref_orient[1],ref_orient[2],ref_orient[3]);
+            xyzw = _hoomd.make_scalar4(ref_orient[0],ref_orient[1],ref_orient[2],ref_orient[3])
         except:
             hoomd.context.msg.error('restrain.orientation.set_orientation: ref_orient must be a 4-item iterable composed of scalars\n')
             raise ValueError('ref_orient must be a 4-item iterable composed of scalars')

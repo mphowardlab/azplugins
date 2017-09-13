@@ -23,87 +23,87 @@ class pair_ashbaugh_tests(unittest.TestCase):
 
     # basic test of creation
     def test(self):
-        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl);
-        ash.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, alpha=1.0, lam=0.5, r_cut=2.5, r_on=2.0);
-        ash.update_coeffs();
+        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl)
+        ash.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, alpha=1.0, lam=0.5, r_cut=2.5, r_on=2.0)
+        ash.update_coeffs()
 
     # test missing coefficients
     def test_set_missing_epsilon(self):
-        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl);
-        ash.pair_coeff.set('A', 'A', sigma=1.0, lam=0.5);
-        self.assertRaises(RuntimeError, ash.update_coeffs);
+        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl)
+        ash.pair_coeff.set('A', 'A', sigma=1.0, lam=0.5)
+        self.assertRaises(RuntimeError, ash.update_coeffs)
 
     # test missing coefficients
     def test_set_missing_sigma(self):
-        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl);
-        ash.pair_coeff.set('A', 'A', epsilon=1.0, lam=0.5);
-        self.assertRaises(RuntimeError, ash.update_coeffs);
+        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl)
+        ash.pair_coeff.set('A', 'A', epsilon=1.0, lam=0.5)
+        self.assertRaises(RuntimeError, ash.update_coeffs)
 
     # test missing coefficients
     def test_set_missing_lam(self):
-        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl);
-        ash.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0);
-        self.assertRaises(RuntimeError, ash.update_coeffs);
+        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl)
+        ash.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0)
+        self.assertRaises(RuntimeError, ash.update_coeffs)
 
     # test missing coefficients
     def test_missing_AA(self):
-        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl);
-        self.assertRaises(RuntimeError, ash.update_coeffs);
+        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl)
+        self.assertRaises(RuntimeError, ash.update_coeffs)
 
     # test set params
     def test_set_params(self):
-        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl);
-        ash.set_params(mode="no_shift");
-        ash.set_params(mode="shift");
-        ash.set_params(mode="xplor");
-        self.assertRaises(RuntimeError, ash.set_params, mode="blah");
+        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl)
+        ash.set_params(mode="no_shift")
+        ash.set_params(mode="shift")
+        ash.set_params(mode="xplor")
+        self.assertRaises(RuntimeError, ash.set_params, mode="blah")
 
     # test default coefficients
     def test_default_coeff(self):
-        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl);
+        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl)
         # (r_cut, and r_on are default)
         ash.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, lam=0.5)
         ash.update_coeffs()
 
     # test max rcut
     def test_max_rcut(self):
-        ash = azplugins.pair.ashbaugh(r_cut=2.5, nlist = self.nl);
+        ash = azplugins.pair.ashbaugh(r_cut=2.5, nlist = self.nl)
         ash.pair_coeff.set('A', 'A', sigma=1.0, epsilon=1.0)
-        self.assertAlmostEqual(2.5, ash.get_max_rcut());
+        self.assertAlmostEqual(2.5, ash.get_max_rcut())
         ash.pair_coeff.set('A', 'A', r_cut = 2.0)
-        self.assertAlmostEqual(2.0, ash.get_max_rcut());
+        self.assertAlmostEqual(2.0, ash.get_max_rcut())
 
     # test specific nlist subscription
     def test_nlist_subscribe(self):
-        ash = azplugins.pair.ashbaugh(r_cut=2.5, nlist = self.nl);
+        ash = azplugins.pair.ashbaugh(r_cut=2.5, nlist = self.nl)
 
         ash.pair_coeff.set('A', 'A', sigma = 1.0, epsilon=1.0)
-        self.nl.update_rcut();
-        self.assertAlmostEqual(2.5, self.nl.r_cut.get_pair('A','A'));
+        self.nl.update_rcut()
+        self.assertAlmostEqual(2.5, self.nl.r_cut.get_pair('A','A'))
 
         ash.pair_coeff.set('A', 'A', r_cut = 2.0)
-        self.nl.update_rcut();
-        self.assertAlmostEqual(2.0, self.nl.r_cut.get_pair('A','A'));
+        self.nl.update_rcut()
+        self.assertAlmostEqual(2.0, self.nl.r_cut.get_pair('A','A'))
 
     # test coeff list
     def test_coeff_list(self):
-        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl);
-        ash.pair_coeff.set(['A', 'B'], ['A', 'C'], epsilon=1.0, sigma=1.0, lam=0.5, r_cut=2.5, r_on=2.0);
-        ash.update_coeffs();
+        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl)
+        ash.pair_coeff.set(['A', 'B'], ['A', 'C'], epsilon=1.0, sigma=1.0, lam=0.5, r_cut=2.5, r_on=2.0)
+        ash.update_coeffs()
 
     # test adding types
     def test_type_add(self):
-        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl);
-        ash.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, lam=0.5);
+        ash = azplugins.pair.ashbaugh(r_cut=3.0, nlist = self.nl)
+        ash.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, lam=0.5)
         self.s.particles.types.add('B')
-        self.assertRaises(RuntimeError, ash.update_coeffs);
+        self.assertRaises(RuntimeError, ash.update_coeffs)
         ash.pair_coeff.set('A', 'B', epsilon=1.0, sigma=1.0, lam=0.5)
         ash.pair_coeff.set('B', 'B', epsilon=1.0, sigma=1.0, lam=0.5)
-        ash.update_coeffs();
+        ash.update_coeffs()
 
     def tearDown(self):
         del self.s, self.nl
-        context.initialize();
+        context.initialize()
 
 # test the validity of the pair potential
 class potential_ashbaugh_tests(unittest.TestCase):
@@ -243,7 +243,7 @@ class potential_ashbaugh_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.nl
-        context.initialize();
+        context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

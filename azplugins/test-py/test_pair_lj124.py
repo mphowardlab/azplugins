@@ -23,81 +23,81 @@ class pair_lj124_tests(unittest.TestCase):
 
     # basic test of creation
     def test(self):
-        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl);
-        lj124.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, alpha=1.0, r_cut=2.5, r_on=2.0);
-        lj124.update_coeffs();
+        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl)
+        lj124.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, alpha=1.0, r_cut=2.5, r_on=2.0)
+        lj124.update_coeffs()
 
     # test missing coefficients
     def test_set_missing_epsilon(self):
-        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl);
-        lj124.pair_coeff.set('A', 'A', sigma=1.0);
-        self.assertRaises(RuntimeError, lj124.update_coeffs);
+        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl)
+        lj124.pair_coeff.set('A', 'A', sigma=1.0)
+        self.assertRaises(RuntimeError, lj124.update_coeffs)
 
     # test missing coefficients
     def test_set_missing_sigma(self):
-        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl);
-        lj124.pair_coeff.set('A', 'A', epsilon=1.0);
-        self.assertRaises(RuntimeError, lj124.update_coeffs);
+        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl)
+        lj124.pair_coeff.set('A', 'A', epsilon=1.0)
+        self.assertRaises(RuntimeError, lj124.update_coeffs)
 
     # test missing coefficients
     def test_missing_AA(self):
-        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl);
-        self.assertRaises(RuntimeError, lj124.update_coeffs);
+        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl)
+        self.assertRaises(RuntimeError, lj124.update_coeffs)
 
     # test set params
     def test_set_params(self):
-        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl);
-        lj124.set_params(mode="no_shift");
-        lj124.set_params(mode="shift");
-        lj124.set_params(mode="xplor");
-        self.assertRaises(RuntimeError, lj124.set_params, mode="blah");
+        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl)
+        lj124.set_params(mode="no_shift")
+        lj124.set_params(mode="shift")
+        lj124.set_params(mode="xplor")
+        self.assertRaises(RuntimeError, lj124.set_params, mode="blah")
 
     # test default coefficients
     def test_default_coeff(self):
-        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl);
+        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl)
         # (r_cut, and r_on are default)
         lj124.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0)
         lj124.update_coeffs()
 
     # test max rcut
     def test_max_rcut(self):
-        lj124 = azplugins.pair.lj124(r_cut=2.5, nlist = self.nl);
+        lj124 = azplugins.pair.lj124(r_cut=2.5, nlist = self.nl)
         lj124.pair_coeff.set('A', 'A', sigma=1.0, epsilon=1.0)
-        self.assertAlmostEqual(2.5, lj124.get_max_rcut());
+        self.assertAlmostEqual(2.5, lj124.get_max_rcut())
         lj124.pair_coeff.set('A', 'A', r_cut = 2.0)
-        self.assertAlmostEqual(2.0, lj124.get_max_rcut());
+        self.assertAlmostEqual(2.0, lj124.get_max_rcut())
 
     # test specific nlist subscription
     def test_nlist_subscribe(self):
-        lj124 = azplugins.pair.lj124(r_cut=2.5, nlist = self.nl);
+        lj124 = azplugins.pair.lj124(r_cut=2.5, nlist = self.nl)
 
         lj124.pair_coeff.set('A', 'A', sigma = 1.0, epsilon=1.0)
-        self.nl.update_rcut();
-        self.assertAlmostEqual(2.5, self.nl.r_cut.get_pair('A','A'));
+        self.nl.update_rcut()
+        self.assertAlmostEqual(2.5, self.nl.r_cut.get_pair('A','A'))
 
         lj124.pair_coeff.set('A', 'A', r_cut = 2.0)
-        self.nl.update_rcut();
-        self.assertAlmostEqual(2.0, self.nl.r_cut.get_pair('A','A'));
+        self.nl.update_rcut()
+        self.assertAlmostEqual(2.0, self.nl.r_cut.get_pair('A','A'))
 
     # test coeff list
     def test_coeff_list(self):
-        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl);
-        lj124.pair_coeff.set(['A', 'B'], ['A', 'C'], epsilon=1.0, sigma=1.0, r_cut=2.5, r_on=2.0);
-        lj124.update_coeffs();
+        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl)
+        lj124.pair_coeff.set(['A', 'B'], ['A', 'C'], epsilon=1.0, sigma=1.0, r_cut=2.5, r_on=2.0)
+        lj124.update_coeffs()
 
     # test adding types
     def test_type_add(self):
-        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl);
-        lj124.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0);
+        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist = self.nl)
+        lj124.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0)
         self.s.particles.types.add('B')
-        self.assertRaises(RuntimeError, lj124.update_coeffs);
+        self.assertRaises(RuntimeError, lj124.update_coeffs)
         lj124.pair_coeff.set('A', 'B', epsilon=1.0, sigma=1.0)
         lj124.pair_coeff.set('B', 'B', epsilon=1.0, sigma=1.0)
-        lj124.update_coeffs();
+        lj124.update_coeffs()
 
     def tearDown(self):
         del self.s, self.nl
-        context.initialize();
+        context.initialize()
 
 # test the validity of the pair potential
 class potential_lj124_tests(unittest.TestCase):
@@ -203,7 +203,7 @@ class potential_lj124_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.nl
-        context.initialize();
+        context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

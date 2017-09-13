@@ -23,87 +23,87 @@ class pair_slj_tests(unittest.TestCase):
 
     # basic test of creation
     def test(self):
-        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl);
-        slj.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, alpha=1.0, delta=1.0, r_cut=2.5, r_on=2.0);
-        slj.update_coeffs();
+        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl)
+        slj.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, alpha=1.0, delta=1.0, r_cut=2.5, r_on=2.0)
+        slj.update_coeffs()
 
     # test missing epsilon coefficient
     def test_set_missing_epsilon(self):
-        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl);
-        slj.pair_coeff.set('A', 'A', sigma=1.0, delta=1.0);
-        self.assertRaises(RuntimeError, slj.update_coeffs);
+        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl)
+        slj.pair_coeff.set('A', 'A', sigma=1.0, delta=1.0)
+        self.assertRaises(RuntimeError, slj.update_coeffs)
 
     # test missing sigma coefficient
     def test_set_missing_sigma(self):
-        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl);
-        slj.pair_coeff.set('A', 'A', epsilon=1.0, delta=1.0);
-        self.assertRaises(RuntimeError, slj.update_coeffs);
+        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl)
+        slj.pair_coeff.set('A', 'A', epsilon=1.0, delta=1.0)
+        self.assertRaises(RuntimeError, slj.update_coeffs)
 
     # test missing delta coefficient
     def test_set_missing_delta(self):
-        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl);
-        slj.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0);
-        self.assertRaises(RuntimeError, slj.update_coeffs);
+        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl)
+        slj.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0)
+        self.assertRaises(RuntimeError, slj.update_coeffs)
 
     # test missing type coefficients
     def test_missing_AA(self):
-        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl);
-        self.assertRaises(RuntimeError, slj.update_coeffs);
+        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl)
+        self.assertRaises(RuntimeError, slj.update_coeffs)
 
     # test set params
     def test_set_params(self):
-        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl);
-        slj.set_params(mode="no_shift");
-        slj.set_params(mode="shift");
-        slj.set_params(mode="xplor");
-        self.assertRaises(RuntimeError, slj.set_params, mode="blah");
+        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl)
+        slj.set_params(mode="no_shift")
+        slj.set_params(mode="shift")
+        slj.set_params(mode="xplor")
+        self.assertRaises(RuntimeError, slj.set_params, mode="blah")
 
     # test default coefficients
     def test_default_coeff(self):
-        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl);
+        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl)
         # (r_cut, and r_on are default)
         slj.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, delta=1.0)
         slj.update_coeffs()
 
     # test max rcut
     def test_max_rcut(self):
-        slj = azplugins.pair.slj(r_cut=2.5, nlist = self.nl);
+        slj = azplugins.pair.slj(r_cut=2.5, nlist = self.nl)
         slj.pair_coeff.set('A', 'A', sigma=1.0, epsilon=1.0, delta=1.0)
-        self.assertAlmostEqual(2.5, slj.get_max_rcut());
+        self.assertAlmostEqual(2.5, slj.get_max_rcut())
         slj.pair_coeff.set('A', 'A', r_cut = 2.0)
-        self.assertAlmostEqual(2.0, slj.get_max_rcut());
+        self.assertAlmostEqual(2.0, slj.get_max_rcut())
 
     # test specific nlist subscription
     def test_nlist_subscribe(self):
-        slj = azplugins.pair.slj(r_cut=2.5, nlist = self.nl);
+        slj = azplugins.pair.slj(r_cut=2.5, nlist = self.nl)
 
         slj.pair_coeff.set('A', 'A', sigma = 1.0, epsilon=1.0, delta=1.0)
-        self.nl.update_rcut();
-        self.assertAlmostEqual(2.5, self.nl.r_cut.get_pair('A','A'));
+        self.nl.update_rcut()
+        self.assertAlmostEqual(2.5, self.nl.r_cut.get_pair('A','A'))
 
         slj.pair_coeff.set('A', 'A', r_cut = 2.0)
-        self.nl.update_rcut();
-        self.assertAlmostEqual(2.0, self.nl.r_cut.get_pair('A','A'));
+        self.nl.update_rcut()
+        self.assertAlmostEqual(2.0, self.nl.r_cut.get_pair('A','A'))
 
     # test coeff list
     def test_coeff_list(self):
-        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl);
-        slj.pair_coeff.set(['A', 'B'], ['A', 'C'], epsilon=1.0, sigma=1.0, delta=1.0, r_cut=2.5, r_on=2.0);
-        slj.update_coeffs();
+        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl)
+        slj.pair_coeff.set(['A', 'B'], ['A', 'C'], epsilon=1.0, sigma=1.0, delta=1.0, r_cut=2.5, r_on=2.0)
+        slj.update_coeffs()
 
     # test adding types
     def test_type_add(self):
-        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl);
-        slj.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, delta=1.0);
+        slj = azplugins.pair.slj(r_cut=3.0, nlist = self.nl)
+        slj.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, delta=1.0)
         self.s.particles.types.add('B')
-        self.assertRaises(RuntimeError, slj.update_coeffs);
+        self.assertRaises(RuntimeError, slj.update_coeffs)
         slj.pair_coeff.set('A', 'B', epsilon=1.0, sigma=1.0, delta=1.0)
         slj.pair_coeff.set('B', 'B', epsilon=1.0, sigma=1.0, delta=1.0)
-        slj.update_coeffs();
+        slj.update_coeffs()
 
     def tearDown(self):
         del self.s, self.nl
-        context.initialize();
+        context.initialize()
 
 # test the validity of the pair potential
 class potential_slj_tests(unittest.TestCase):
@@ -207,7 +207,7 @@ class potential_slj_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.nl
-        context.initialize();
+        context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

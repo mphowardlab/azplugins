@@ -160,10 +160,10 @@ class colloid(hoomd.md.pair.pair):
 
     """
     def __init__(self, r_cut, nlist=None, name=None):
-        hoomd.util.print_status_line();
+        hoomd.util.print_status_line()
 
         # initialize the base class
-        hoomd.md.pair.pair.__init__(self, r_cut, nlist, name);
+        hoomd.md.pair.pair.__init__(self, r_cut, nlist, name)
 
         # create the c++ mirror class
         if not hoomd.context.exec_conf.isCUDAEnabled():
@@ -173,16 +173,16 @@ class colloid(hoomd.md.pair.pair):
             self.nlist.cpp_nlist.setStorageMode(_md.NeighborList.storageMode.full)
         self.cpp_force = self.cpp_class(hoomd.context.current.system_definition, self.nlist.cpp_nlist, self.name)
 
-        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name);
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
 
         # setup the coefficent options
-        self.required_coeffs = ['epsilon', 'sigma', 'style'];
-        self.pair_coeff.set_default_coeff('sigma', 1.0);
+        self.required_coeffs = ['epsilon', 'sigma', 'style']
+        self.pair_coeff.set_default_coeff('sigma', 1.0)
 
     ## Process the coefficients
     def process_coeff(self, coeff):
-        epsilon = coeff['epsilon'];
-        sigma = coeff['sigma'];
+        epsilon = coeff['epsilon']
+        sigma = coeff['sigma']
         style = coeff['style']
 
         if style == 'slv-slv':
@@ -195,7 +195,7 @@ class colloid(hoomd.md.pair.pair):
             hoomd.context.msg.error('Unknown interaction style\n')
             raise RuntimeError('Unknown interaction style')
 
-        return _hoomd.make_scalar4(epsilon, sigma**3, sigma**6, _hoomd.int_as_scalar(style));
+        return _hoomd.make_scalar4(epsilon, sigma**3, sigma**6, _hoomd.int_as_scalar(style))
 
 class lj124(hoomd.md.pair.pair):
     R""" LJ 12-4 potential
@@ -231,7 +231,7 @@ class lj124(hoomd.md.pair.pair):
         nl = hoomd.md.nlist.cell()
         lj124 = azplugins.pair.lj124(r_cut=3.0, nlist=nl)
         lj124.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0)
-        lj124.pair_coeff.set(['A','B'], 'B', epsilon=2.0, sigma=1.0, alpha=0.5);
+        lj124.pair_coeff.set(['A','B'], 'B', epsilon=2.0, sigma=1.0, alpha=0.5)
 
     """
     def __init__(self, r_cut, nlist, name=None):
@@ -382,7 +382,7 @@ class lj96(hoomd.md.pair.pair):
         nl = hoomd.md.nlist.cell()
         lj96 = azplugins.pair.lj96(r_cut=3.0, nlist=nl)
         lj96.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0)
-        lj96.pair_coeff.set(['A','B'], 'B', epsilon=2.0, sigma=1.0, alpha=0.5);
+        lj96.pair_coeff.set(['A','B'], 'B', epsilon=2.0, sigma=1.0, alpha=0.5)
 
     """
     def __init__(self, r_cut, nlist, name=None):
