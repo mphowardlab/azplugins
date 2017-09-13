@@ -30,6 +30,7 @@
 #define AZPLUGINS_ANISO_PAIR_POTENTIALS_H_
 
 // All anisotropic pair potential evaluators must be included here
+#include "AnisoPairEvaluatorTwoPatchMorse.h"
 
 /*
  * The code below handles python exports using a templated function, and so

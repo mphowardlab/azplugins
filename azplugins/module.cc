@@ -68,6 +68,23 @@ void export_ashbaugh_params(py::module& m)
     m.def("make_ashbaugh_params", &make_ashbaugh_params);
     }
 
+//! Helper function export the Two-Patch Morse pair potential parameters
+/*!
+* \sa two_patch_morse_params
+*/
+void export_two_patch_morse_params(py::module& m)
+    {
+    py::class_<two_patch_morse_params>(m, "two_patch_morse_params")
+    .def(py::init<>())
+    .def_readwrite("Mdeps", &two_patch_morse_params::Mdeps)
+    .def_readwrite("Mrinv", &two_patch_morse_params::Mrinv)
+    .def_readwrite("req", &two_patch_morse_params::req)
+    .def_readwrite("omega", &two_patch_morse_params::omega)
+    .def_readwrite("alpha", &two_patch_morse_params::alpha)
+    ;
+    m.def("make_two_patch_morse_params", &make_two_patch_morse_params);
+    }
+
 } // end namespace detail
 
 // document other namespaces that may crop up in other parts of the package
@@ -105,6 +122,8 @@ PYBIND11_PLUGIN(_azplugins)
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorShiftedLJ>(m, "PairPotentialShiftedLJ");
 
     /* Anisotropic pair potentials */
+    azplugins::detail::export_aniso_pair_potential<azplugins::detail::AnisoPairEvaluatorTwoPatchMorse>(m, "AnisoPairPotentialTwoPatchMorse");
+    azplugins::detail::export_two_patch_morse_params(m);
 
     /* Updaters */
     azplugins::detail::export_TypeUpdater(m);

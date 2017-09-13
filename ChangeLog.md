@@ -7,6 +7,10 @@
 
 Not yet released.
 
+*New features*
+
+* `pair.two_patch_morse` implements the two-patch Morse anisotropic potential.
+
 *Bug fixes*
 
 * Fix path to cub headers.

@@ -419,3 +419,88 @@ class slj(hoomd.md.pair.pair):
         lj1 = 4.0 * epsilon * math.pow(sigma, 12.0)
         lj2 = alpha * 4.0 * epsilon * math.pow(sigma, 6.0)
         return _hoomd.make_scalar3(lj1, lj2, delta)
+
+class two_patch_morse(hoomd.md.pair.ai_pair):
+    R""" Two patches with Morse potential
+
+    Args:
+        r_cut (float): Default cutoff radius (in distance units).
+        nlist (:py:mod:`hoomd.md.nlist`): Neighbor list
+        name (str): Name of the force instance.
+
+    :py:class:`two_patch_morse` is a Morse potential which is modulated by an orientation-dependent
+    function. The potential is smoothed to zero force (making it purely attractive) when :math:`r < r_{\rm eq}` if *repulsion* is false.
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray*}
+        V_{M2P} (\vec{r}_{ij}, \hat{n}_i, \hat{n}_j) = & V_M(|\vec{r}_{ij}|) \Omega(\hat{r}_{ij} \cdot \hat{n}_i) \Omega(\hat{r}_{ij} \cdot \hat{n}_j)
+        V_M(r) = &\left\{ \begin{matrix}
+        -M_d,
+        &
+        r < r_{\rm eq} \text{ and } {\rm !repulsion}
+        \\
+        M_d \left( \left[ 1 - \exp\left( -\frac{r-r_{\rm eq}}{M_r}\right) \right]^2 - 1 \right),
+        &
+        \text{otherwise}
+        \end{matrix}
+        \right.
+        \Omega(\gamma) = & \frac{1}{1+\exp[-\omega (\gamma^2 - \alpha)]}
+        \end{eqnarray*}
+
+    Here, :math:`vec{r}_{ij}` is the displacement vector between particles :math:`i` and :math:`j`,
+    :math:`|\vec{r}_{ij}|` is the magnitude of that displacement, and :math:`\hat{n}` is the normalized
+    orientation vector of the particle. The parameters :math:`M_d`, :math:`M_r`, and :math:`r_{\rm eq}`
+    control the depth, width, and position of the potential well. The parameters :math:`\alpha` and
+    :math:`\omega` control the width and steepness of the orientation dependence.
+
+    Use :py:meth:`pair_coeff.set <coeff.set>` to set potential coefficients.
+
+    The following coefficients must be set per unique pair of particle types:
+
+    - :math:`\M_d` - *Md* (in energy units)
+    - :math:`\M_r` - *Mr* (in distance units)
+    - :math:`\r_{\rm eq}` - *req* (in distance units)
+    - :math:`\omega` - *omega* (unitless)
+    - :math:`\alpha` - *alpha* (unitless)
+    - *repulsion* (boolean)
+    - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
+      - *optional*: defaults to the global r_cut specified in the pair command
+
+    Example::
+
+        nl = hoomd.md.nlist.cell()
+        m2p = azplugins.pair.two_patch_morse(r_cut=1.6, nlist=nl)
+        m2p.pair_coeff.set('A', 'A', Md=1.8347, Mr=0.0302, req=1.0043, omega=20, alpha=0.50, repulsion=True)
+
+    """
+    def __init__(self, r_cut, nlist, name=None):
+        hoomd.util.print_status_line();
+
+        # initialize the base class
+        hoomd.md.pair.ai_pair.__init__(self, r_cut, nlist, name);
+
+        # create the c++ mirror class
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            self.cpp_class = _azplugins.AnisoPairPotentialTwoPatchMorse
+        else:
+            self.cpp_class = _azplugins.AnisoPairPotentialTwoPatchMorseGPU
+            self.nlist.cpp_nlist.setStorageMode(_md.NeighborList.storageMode.full)
+        self.cpp_force = self.cpp_class(hoomd.context.current.system_definition, self.nlist.cpp_nlist, self.name)
+
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
+
+        # setup the coefficients
+        self.required_coeffs = ['Md', 'Mr', 'req', 'omega', 'alpha','repulsion']
+        self.pair_coeff.set_default_coeff('repulsion', True)
+
+    def process_coeff(self, coeff):
+        Md        = coeff['Md'];
+        Mr        = coeff['Mr'];
+        req       = coeff['req'];
+        omega     = coeff['omega'];
+        alpha     = coeff['alpha'];
+        repulsion = coeff['repulsion'];
+
+        return _azplugins.make_two_patch_morse_params(Md, 1.0/Mr, req, omega, alpha, repulsion)

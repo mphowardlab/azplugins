@@ -18,6 +18,10 @@ namespace azplugins
 namespace gpu
 {
 
+//! Kernel driver for Two-patch Morse anisotropic pair potential
+template cudaError_t compute_aniso_pair_potential<azplugins::detail::AnisoPairEvaluatorTwoPatchMorse>
+    (const a_pair_args_t& pair_args,
+     const typename azplugins::detail::AnisoPairEvaluatorTwoPatchMorse::param_type *d_params);
 
 } // end namespace gpu
 } // end namespace azplugins
