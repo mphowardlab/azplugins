@@ -23,6 +23,7 @@ set(_${COMPONENT_NAME}_sources
 
 set(_${COMPONENT_NAME}_cu_sources
     AnisoPairPotentials.cu
+    BondPotentials.cu
     ImplicitEvaporatorGPU.cu
     OrientationRestraintComputeGPU.cu
     PairPotentials.cu
@@ -92,6 +93,7 @@ ENDMACRO(copy_file)
 set(files
     __init__.py
     analyze.py
+    bond.py
     evaporate.py
     pair.py
     update.py

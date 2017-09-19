@@ -3,7 +3,7 @@
 [TOC]
 
 ---------
-## v0.3.1
+## v0.4.0
 
 Not yet released.
 
@@ -11,6 +11,7 @@ Not yet released.
 
 * `pair.ashbaugh24` implements a Ashbaugh-Hatch 48-24 Lennard-Jones potential.
 * `pair.two_patch_morse` implements the two-patch Morse anisotropic potential.
+* A framework is configured for developing bond potentials.
 
 *Bug fixes*
 
