@@ -7,11 +7,17 @@
 
 Not yet released.
 
+*Release notes*
+
+This version of the plugin **requires** HOOMD-blue v2.2.1 in order
+to ensure all necessary header files are available.
+
 *New features*
 
 * `pair.ashbaugh24` implements a Ashbaugh-Hatch 48-24 Lennard-Jones potential.
 * `pair.two_patch_morse` implements the two-patch Morse anisotropic potential.
 * A framework is configured for developing bond potentials.
+* A framework is configured for developing special pair potentials.
 
 *Bug fixes*
 
