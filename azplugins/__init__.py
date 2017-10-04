@@ -7,6 +7,7 @@ import analyze
 import bond
 import evaporate
 import pair
+import restrain
+import special_pair
 import update
 import wall
-import restrain

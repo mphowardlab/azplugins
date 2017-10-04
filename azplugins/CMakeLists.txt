@@ -30,6 +30,7 @@ set(_${COMPONENT_NAME}_cu_sources
     ParticleEvaporatorGPU.cu
     PositionRestraintComputeGPU.cu
     RDFAnalyzerGPU.cu
+    SpecialPairPotentials.cu
     TypeUpdaterGPU.cu
     WallPotentials.cu
     )
@@ -96,9 +97,10 @@ set(files
     bond.py
     evaporate.py
     pair.py
+    restrain.py
+    special_pair.py
     update.py
     wall.py
-    restrain.py
     )
 
 install(FILES ${files}

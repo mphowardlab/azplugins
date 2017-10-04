@@ -14,6 +14,7 @@ namespace py = pybind11;
 #include "AnisoPairPotentials.h"
 #include "BondPotentials.h"
 #include "PairPotentials.h"
+#include "SpecialPairPotentials.h"
 #include "WallPotentials.h"
 
 /* Updaters */
@@ -128,6 +129,8 @@ PYBIND11_PLUGIN(_azplugins)
     /* Anisotropic pair potentials */
     azplugins::detail::export_aniso_pair_potential<azplugins::detail::AnisoPairEvaluatorTwoPatchMorse>(m, "AnisoPairPotentialTwoPatchMorse");
     azplugins::detail::export_two_patch_morse_params(m);
+
+    /* Special pair potentials */
 
     /* Updaters */
     azplugins::detail::export_TypeUpdater(m);
