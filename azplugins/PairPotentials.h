@@ -36,6 +36,7 @@
 #include "PairEvaluatorLJ124.h"
 #include "PairEvaluatorLJ96.h"
 #include "PairEvaluatorShiftedLJ.h"
+#include "PairEvaluatorSpline.h"
 
 /*
  * The code below handles python exports using a templated function, and so

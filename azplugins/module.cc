@@ -123,6 +123,7 @@ PYBIND11_PLUGIN(_azplugins)
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorLJ124>(m, "PairPotentialLJ124");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorLJ96>(m,"PairPotentialLJ96");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorShiftedLJ>(m, "PairPotentialShiftedLJ");
+    azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorSpline>(m, "PairPotentialSpline");
 
     /* bond potentials */
 

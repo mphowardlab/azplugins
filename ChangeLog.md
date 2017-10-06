@@ -15,6 +15,7 @@ to ensure all necessary header files are available.
 *New features*
 
 * `pair.ashbaugh24` implements a Ashbaugh-Hatch 48-24 Lennard-Jones potential.
+* `pair.spline` implements a cubic spline potential.
 * `pair.two_patch_morse` implements the two-patch Morse anisotropic potential.
 * A framework is configured for developing bond potentials.
 * A framework is configured for developing special pair potentials.
