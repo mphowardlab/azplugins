@@ -11,6 +11,7 @@
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 namespace py = pybind11;
 
+/* Potentials */
 #include "AnisoPairPotentials.h"
 #include "BondPotentials.h"
 #include "PairPotentials.h"
@@ -125,11 +126,12 @@ PYBIND11_PLUGIN(_azplugins)
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorShiftedLJ>(m, "PairPotentialShiftedLJ");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorSpline>(m, "PairPotentialSpline");
 
-    /* bond potentials */
-
     /* Anisotropic pair potentials */
     azplugins::detail::export_aniso_pair_potential<azplugins::detail::AnisoPairEvaluatorTwoPatchMorse>(m, "AnisoPairPotentialTwoPatchMorse");
     azplugins::detail::export_two_patch_morse_params(m);
+
+    /* Bond potentials */
+    azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENE>(m, "BondPotentialFENE");
 
     /* Special pair potentials */
 

@@ -18,5 +18,11 @@ namespace azplugins
 namespace gpu
 {
 
+//! Kernel driver for fene  bond potential
+template cudaError_t compute_bond_potential<azplugins::detail::BondEvaluatorFENE>
+    (const bond_args_t& bond_args,
+     const typename azplugins::detail::BondEvaluatorFENE::param_type *d_params,
+     unsigned int *d_flags);
+
 } // end namespace gpu
 } // end namespace azplugins

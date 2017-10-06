@@ -29,6 +29,7 @@
 #define AZPLUGINS_BOND_POTENTIALS_H_
 
 // All bonded potential evaluators must be included here
+#include "BondEvaluatorFENE.h"
 
 /*
  * The code below handles python exports using a templated function, and so
