@@ -18,5 +18,13 @@ namespace azplugins
 namespace gpu
 {
 
+//! LJ 9-6 special pair potential
+typedef azplugins::detail::SpecialPairEvaluator<azplugins::detail::PairEvaluatorLJ96> SpecialPairEvaluatorLJ96;
+//! Kernel driver for LJ 9-6 special pair potential
+template cudaError_t compute_special_pair_potential<SpecialPairEvaluatorLJ96>
+     (const bond_args_t& bond_args,
+      const typename SpecialPairEvaluatorLJ96::param_type *d_params,
+      unsigned int *d_flags);
+
 } // end namespace gpu
 } // end namespace azplugins

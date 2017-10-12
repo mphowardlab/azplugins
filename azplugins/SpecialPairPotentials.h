@@ -10,17 +10,16 @@
  * In HOOMD-blue, special pair potentials are templated on a base class ForceCompute called PotentialSpecialPair,
  * which uses an evaluator functor to compute the actual details of the special pair potential.
  *
+ * All special pair potentials must be templated on an existing pair potential evaluator. See PairPotentials.h
+ * for more details on writing such an evaluator.
+ *
  * To add a new special pair potential, take the following steps:
- *  1. Create an evaluator functor for your potential, for example SpecialPairEvaluatorMyGreatPotential.h.
- *     This file should be included below. You can follow one of the other evaluator functors as
- *     an example for the details.
+ *  1. Explicitly instantiate a template for a CUDA driver for your potential in SpecialPairPotentials.cu.
  *
- *  2. Explicitly instantiate a template for a CUDA driver for your potential in SpecialPairPotentials.cu.
- *
- *  3. Expose the special pair potential on the python level in module.cc using export_special_pair_potential and
+ *  2. Expose the special pair potential on the python level in module.cc using export_special_pair_potential and
  *     add the mirror python object to special_pair.py.
  *
- *  4. Write a unit test for the potential in test-py. Two types of tests should be conducted: one that
+ *  3. Write a unit test for the potential in test-py. Two types of tests should be conducted: one that
  *     checks that all methods work on the python object, and one that validates the force and energy between
  *     particle pairs at fixed distances.
  */
@@ -28,7 +27,8 @@
 #ifndef AZPLUGINS_SPECIAL_PAIR_POTENTIALS_H_
 #define AZPLUGINS_SPECIAL_PAIR_POTENTIALS_H_
 
-// All special pair potential evaluators must be included here
+#include "SpecialPairEvaluator.h"
+#include "PairPotentials.h"
 
 /*
  * The code below handles python exports using a templated function, and so
@@ -48,18 +48,40 @@ namespace azplugins
 {
 namespace detail
 {
+//! Helper function export the special pair potential parameters
+/*!
+* \sa special_pair_params
+*/
+template<class evaluator>
+void export_special_pair_params(py::module& m)
+{
+    const std::string name = "special_pair_params_" + evaluator::getName();
+
+    py::class_<typename SpecialPairEvaluator<evaluator>::param_type>(m, name.c_str())
+    .def(py::init<>())
+    .def_readwrite("params", &SpecialPairEvaluator<evaluator>::param_type::params)
+    .def_readwrite("rcutsq", &SpecialPairEvaluator<evaluator>::param_type::rcutsq)
+    .def_readwrite("energy_shift", &SpecialPairEvaluator<evaluator>::param_type::energy_shift)
+    ;
+    m.def(("make_" + name).c_str(), &make_special_pair_params<evaluator>);
+}
+
 //! Exports the special pair potential to the python module
 template<class evaluator>
 void export_special_pair_potential(py::module& m, const std::string& name)
     {
-    typedef ::PotentialSpecialPair<evaluator> pair_potential_cpu;
+    typedef SpecialPairEvaluator<evaluator> special_evaluator;
+    typedef ::PotentialSpecialPair<special_evaluator> pair_potential_cpu;
     export_PotentialSpecialPair<pair_potential_cpu>(m, name);
 
     #ifdef ENABLE_CUDA
-    typedef ::PotentialSpecialPairGPU<evaluator, azplugins::gpu::compute_special_pair_potential<evaluator> > pair_potential_gpu;
+    typedef ::PotentialSpecialPairGPU<special_evaluator, azplugins::gpu::compute_special_pair_potential<special_evaluator>> pair_potential_gpu;
     export_PotentialSpecialPairGPU<pair_potential_gpu, pair_potential_cpu>(m, name + "GPU");
     #endif // ENABLE_CUDA
+
+    export_special_pair_params<evaluator>(m);
     }
+
 } // end namespace detail
 } // end namespace azplugins
 #endif // NVCC

@@ -16,6 +16,7 @@ set(TEST_LIST_CPU
     test_pair_two_patch_morse
     test_restrain_orientation
     test_restrain_position
+    test_special_pair_lj96
     test_update_type
     test_wall_colloid
     test_wall_lj93
@@ -36,6 +37,7 @@ set(TEST_LIST_GPU
     test_pair_two_patch_morse
     test_restrain_orientation
     test_restrain_position
+    test_special_pair_lj96
     test_update_type
     test_wall_colloid
     test_wall_lj93

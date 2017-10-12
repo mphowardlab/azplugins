@@ -134,6 +134,7 @@ PYBIND11_PLUGIN(_azplugins)
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENE>(m, "BondPotentialFENE");
 
     /* Special pair potentials */
+    azplugins::detail::export_special_pair_potential<azplugins::detail::PairEvaluatorLJ96>(m,"SpecialPairPotentialLJ96");
 
     /* Updaters */
     azplugins::detail::export_TypeUpdater(m);

@@ -14,13 +14,15 @@ to ensure all necessary header files are available.
 
 *New features*
 
+* A framework is configured for developing bond potentials.
 * `bond.fene` implements a standard FENE potential that is cleaned up compared
    to the version found in HOOMD.
 * `pair.ashbaugh24` implements a Ashbaugh-Hatch 48-24 Lennard-Jones potential.
 * `pair.spline` implements a cubic spline potential.
 * `pair.two_patch_morse` implements the two-patch Morse anisotropic potential.
-* A framework is configured for developing bond potentials.
-* A framework is configured for developing special pair potentials.
+* A framework is configured for developing special pair potentials from existing
+  pair potentials.
+* `special_pair.lj96` implements the LJ 9-6 potential as a special pair.
 
 *Bug fixes*
 
