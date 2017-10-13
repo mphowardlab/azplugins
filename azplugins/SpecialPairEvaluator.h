@@ -35,13 +35,8 @@ namespace detail
  * SpecialPairEvaluator is a convenience wrapper around an existing pair potential. Internally,
  * an \a evaluator is created when the force is computed. The \a evaluator parameters are wrapped
  * in an internal struct that also stores the cutoff radius and energy shifting mode, which are
- * necessary to evaluate a standard pair potential.
- *
- * This class increases the overhead of special pair evaluation because diameter and charge member
- * variables are always created, and the parameters are also stored both in the SpecialPairEvaluator
- * and in the instance of \a evaluator. However, the development convenience is worth it.
- * Eventually, \a rcutsq and \a energy_shift parameters should be moved into the base potential
- * so that the same pair evaluator can be used for both.
+ * necessary to evaluate a standard pair potential. This saves considerable development overhead
+ * since the same evaluators can be reused between pair potentials and special pair potentials.
  */
 template<class evaluator>
 class SpecialPairEvaluator
@@ -61,7 +56,8 @@ class SpecialPairEvaluator
          * \param params Special pair potential parameters, given by typedef above
          */
         DEVICE SpecialPairEvaluator<evaluator>(Scalar rsq, const param_type& params)
-            : m_rsq(rsq), m_params(params) { }
+            : m_eval(rsq, params.rcutsq, params.params), m_shift(params.energy_shift)
+            { }
 
         //! Special pair potential needs diameter if the potential it templates on needs diameter
         DEVICE static bool needsDiameter()
@@ -76,8 +72,7 @@ class SpecialPairEvaluator
          */
         DEVICE void setDiameter(Scalar di, Scalar dj)
             {
-            m_di = di;
-            m_dj = dj;
+            m_eval.setDiameter(di, dj);
             }
 
         //! Special pair potential needs charge if the potential it templates on needs charge
@@ -93,8 +88,7 @@ class SpecialPairEvaluator
          */
         DEVICE void setCharge(Scalar qi, Scalar qj)
             {
-            m_qi = qi;
-            m_qj = qj;
+            m_eval.setCharge(qi,qj);
             }
 
         //! Evaluate the force and energy
@@ -109,16 +103,7 @@ class SpecialPairEvaluator
          */
         DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng)
             {
-            //! Create the evaluator on which this special pair evaluator is templated
-            evaluator eval(m_rsq, m_params.rcutsq, m_params.params);
-
-            //! Gives the created evaluator the stashed diameter and charge values, if needed
-            if (evaluator::needsDiameter())
-                eval.setDiameter(m_di, m_dj);
-            if (evaluator::needsCharge())
-                eval.setCharge(m_qi, m_qj);
-
-            eval.evalForceAndEnergy(force_divr, pair_eng, m_params.energy_shift);
+            m_eval.evalForceAndEnergy(force_divr, pair_eng, m_shift);
             return true;
             }
 
@@ -131,12 +116,8 @@ class SpecialPairEvaluator
         #endif
 
     private:
-        Scalar m_rsq;           //!< Distance between particles in pair
-        param_type m_params;    //!< Parameters for special pair potential
-        Scalar m_di;            //!< Diameter of i-th particle
-        Scalar m_dj;            //!< Diameter of j-th particle
-        Scalar m_qi;            //!< Charge of i-th particle
-        Scalar m_qj;            //!< Charge of j-th particle
+        evaluator m_eval;   //!< Evaluator for this pair potential
+        bool m_shift;       //!< If true, shift the energy to zero at the cutoff
     };
 
 //! Convenience function for making special pair parameters.
