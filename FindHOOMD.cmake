@@ -87,10 +87,10 @@ include (CMake_preprocessor_flags)
 # setup the install directories
 include (CMake_install_options)
 
+# setup MPI support
+include (HOOMDMPISetup)
 # Find the python executable and libraries
 include (HOOMDPythonSetup)
-# setup numpy
-include (HOOMDNumpySetup)
 # Find CUDA and set it up
 include (HOOMDCUDASetup)
 # Set default CFlags
@@ -99,10 +99,10 @@ include (HOOMDCFlagsSetup)
 include (HOOMDOSSpecificSetup)
 # setup common libraries used by all targets in this project
 include (HOOMDCommonLibsSetup)
+# setup numpy
+include (HOOMDNumpySetup)
 # setup macros
 include (HOOMDMacros)
-# setup MPI support
-include (HOOMDMPISetup)
 
 set(HOOMD_LIB ${HOOMD_ROOT}/_hoomd.so)
 set(HOOMD_MD_LIB ${HOOMD_ROOT}/md/_md.so)
@@ -112,7 +112,6 @@ set(HOOMD_CGCMM_LIB ${HOOMD_ROOT}/cgcmm/_cgcmm.so)
 set(HOOMD_METAL_LIB ${HOOMD_ROOT}/metal/_metal.so)
 set(HOOMD_DEPRECATED_LIB ${HOOMD_ROOT}/deprecated/_deprecated.so)
 
-set(HOOMD_LIBRARIES ${HOOMD_LIB} ${HOOMD_COMMON_LIBS})
 set(HOOMD_LIBRARIES ${HOOMD_LIB} ${HOOMD_COMMON_LIBS})
 
 endif (HOOMD_FOUND)

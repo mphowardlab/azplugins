@@ -6,6 +6,13 @@
 project(azplugins)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6.2 FATAL_ERROR)
 
+# set the cmake policy to enable finding LOCATION in testing, per hoomd usage
+if (CMAKE_MAJOR_VERSION VERSION_GREATER 2)
+if(COMMAND cmake_policy)
+    cmake_policy(SET CMP0026 OLD)
+endif(COMMAND cmake_policy)
+endif()
+
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 SET(CMAKE_INSTALL_RPATH "$ORIGIN/..:$ORIGIN")
 

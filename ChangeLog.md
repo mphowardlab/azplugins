@@ -23,11 +23,13 @@ to ensure all necessary header files are available.
 * A framework is configured for developing special pair potentials from existing
   pair potentials.
 * `special_pair.lj96` implements the LJ 9-6 potential as a special pair.
+* A framework is configured for writing and running compiled unit tests with upp11.
 
 *Bug fixes*
 
 * Fix path to cub headers.
 * Add missing status line prints.
+* Fix possible linker errors for MPI libraries.
 
 ## v0.3.0
 

@@ -54,12 +54,12 @@ target_link_libraries(_${COMPONENT_NAME} ${HOOMD_LIBRARIES} ${HOOMD_MD_LIB})
 # if we are compiling with MPI support built in, set appropriate
 # compiler/linker flags
 if (ENABLE_MPI)
-   if(MPI_COMPILE_FLAGS)
+   if(MPI_CXX_COMPILE_FLAGS)
        set_target_properties(_${COMPONENT_NAME} PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
-   endif(MPI_COMPILE_FLAGS)
-   if(MPI_LINK_FLAGS)
+   endif(MPI_CXX_COMPILE_FLAGS)
+   if(MPI_CXX_LINK_FLAGS)
        set_target_properties(_${COMPONENT_NAME} PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-   endif(MPI_LINK_FLAGS)
+   endif(MPI_CXX_LINK_FLAGS)
 endif(ENABLE_MPI)
 
 ##################################
@@ -115,4 +115,5 @@ add_custom_target(copy_${COMPONENT_NAME} ALL DEPENDS ${files})
 
 if (BUILD_TESTING)
     add_subdirectory(test-py)
+    add_subdirectory(test)
 endif()
