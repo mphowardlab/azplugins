@@ -205,6 +205,8 @@ class particles(hoomd.update._updater):
             azplugins.evaporate.particles(solvent='S', evaporated='Z', lo=-15.0, hi=-10.0, seed=77, period=10)
 
         """
+        hoomd.util.print_status_line()
+
         hoomd.update._updater.__init__(self)
 
         if not hoomd.context.exec_conf.isCUDAEnabled():
@@ -239,6 +241,8 @@ class particles(hoomd.update._updater):
             updt.set_params(hi=4.0, Nmax=10)
 
         """
+        hoomd.util.print_status_line()
+
         if solvent is not None:
             self.solvent = solvent
             try:

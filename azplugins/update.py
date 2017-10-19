@@ -61,6 +61,8 @@ class types(hoomd.update._updater):
             ig.set_gamma('B', gamma=0.0)
 
         """
+        hoomd.util.print_status_line()
+
         hoomd.update._updater.__init__(self)
 
         if not hoomd.context.exec_conf.isCUDAEnabled():
@@ -93,6 +95,8 @@ class types(hoomd.update._updater):
             updt.set_params(hi=4.0)
 
         """
+        hoomd.util.print_status_line()
+
         if inside is not None:
             self.inside = inside
             try:
