@@ -27,6 +27,7 @@ to ensure all necessary header files are available.
 *Bug fixes*
 
 * Fix path to cub headers.
+* Add missing status line prints.
 
 ## v0.3.0
 
