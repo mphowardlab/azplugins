@@ -33,6 +33,7 @@ to ensure all necessary header files are available.
 * Fix possible linker errors for MPI libraries.
 * Plugins now build when `ENABLE_CUDA=OFF`.
 * CMake exits gracefully when the MD component is not available from hoomd.
+* Plugins now compile with debug flags.
 
 ## v0.3.0
 
