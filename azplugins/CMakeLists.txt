@@ -5,22 +5,69 @@
 
 set(COMPONENT_NAME azplugins)
 
+###############################
+# Configure for internal build if required libraries are not set
+if(NOT DEFINED HOOMD_EXTERNAL_BUILD)
+    set(HOOMD_EXTERNAL_BUILD OFF)
+endif(NOT DEFINED HOOMD_EXTERNAL_BUILD)
+
+if(HOOMD_EXTERNAL_BUILD)
+    # the md component is always required
+    if (NOT EXISTS ${HOOMD_MD_LIB})
+        message(FATAL_ERROR "azplugins requires hoomd installation with MD component.")
+    endif (NOT EXISTS ${HOOMD_MD_LIB})
+
+    # the mpcd library is optional
+    if(EXISTS ${HOOMD_MPCD_LIB})
+        set(BUILD_MPCD ON)
+        message(STATUS "mpcd library detected in hoomd installation, building MPCD components.")
+    else(EXISTS ${HOOMD_MPCD_LIB})
+        set(BUILD_MPCD OFF)
+        set(HOOMD_MPCD_LIB "")
+        message(STATUS "mpcd library not detected in hoomd installation, skipping MPCD components.")
+    endif(EXISTS ${HOOMD_MPCD_LIB})
+else(HOOMD_EXTERNAL_BUILD)
+    # the md component is always required
+    if (NOT BUILD_MD)
+        message(FATAL_ERROR "azplugins requires hoomd installation with MD component.")
+    endif (NOT BUILD_MD)
+    set(HOOMD_MD_LIB _md)
+
+    # mpcd is optional
+    if (BUILD_MPCD)
+        set(HOOMD_MPCD_LIB _mpcd)
+    else (BUILD_MPCD)
+        set(HOOMD_MPCD_LIB "")
+    endif (BUILD_MPCD)
+endif(HOOMD_EXTERNAL_BUILD)
+##############################
+
+##############################
+# List of all source files
+# base / cpu c++ source files
 set(_${COMPONENT_NAME}_sources
     module.cc
     ImplicitEvaporator.cc
-    ImplicitEvaporatorGPU.cc
     OrientationRestraintCompute.cc
-    OrientationRestraintComputeGPU.cc
     ParticleEvaporator.cc
-    ParticleEvaporatorGPU.cc
     PositionRestraintCompute.cc
-    PositionRestraintComputeGPU.cc
     RDFAnalyzer.cc
-    RDFAnalyzerGPU.cc
     TypeUpdater.cc
-    TypeUpdaterGPU.cc
     )
 
+# cuda-enabled c++ source files
+if(ENABLE_CUDA)
+list(APPEND _${COMPONENT_NAME}_sources
+    ImplicitEvaporatorGPU.cc
+    OrientationRestraintComputeGPU.cc
+    ParticleEvaporatorGPU.cc
+    PositionRestraintComputeGPU.cc
+    RDFAnalyzerGPU.cc
+    TypeUpdaterGPU.cc
+    )
+endif(ENABLE_CUDA)
+
+# cuda cu source files
 set(_${COMPONENT_NAME}_cu_sources
     AnisoPairPotentials.cu
     BondPotentials.cu
@@ -35,8 +82,46 @@ set(_${COMPONENT_NAME}_cu_sources
     WallPotentials.cu
     )
 
+# python files
+set(py_files
+    __init__.py
+    analyze.py
+    bond.py
+    evaporate.py
+    pair.py
+    restrain.py
+    special_pair.py
+    update.py
+    wall.py
+    )
+
+###
+## MPCD component source files
+###
+if(BUILD_MPCD)
+# mpcd python files
+list(APPEND py_files
+    )
+# mpcd c++ files
+list(APPEND _${COMPONENT_NAME}_sources
+    )
+# mpcd c++/cu cuda files
+if(ENABLE_CUDA)
+list(APPEND _${COMPONENT_NAME}_sources
+    )
+list(APPEND _${COMPONENT_NAME}_cu_sources
+    )
+endif(ENABLE_CUDA)
+endif(BUILD_MPCD)
+##############################
+
 # Need to define NO_IMPORT_ARRAY in every file but module.cc
 set_source_files_properties(${_${COMPONENT_NAME}_sources} ${_${COMPONENT_NAME}_cu_sources} PROPERTIES COMPILE_DEFINITIONS NO_IMPORT_ARRAY)
+
+# if MPCD component is enabled, need to define with a macro for source code
+if(BUILD_MPCD)
+add_definitions(-DENABLE_MPCD)
+endif(BUILD_MPCD)
 
 if (ENABLE_CUDA)
 CUDA_COMPILE(_CUDA_GENERATED_FILES ${_${COMPONENT_NAME}_cu_sources} OPTIONS ${CUDA_ADDITIONAL_OPTIONS} SHARED)
@@ -44,12 +129,8 @@ endif (ENABLE_CUDA)
 
 add_library (_${COMPONENT_NAME} SHARED ${_${COMPONENT_NAME}_sources} ${_CUDA_GENERATED_FILES})
 
-if(NOT DEFINED HOOMD_MD_LIB)
-set(HOOMD_MD_LIB _md)
-endif(NOT DEFINED HOOMD_MD_LIB)
-
 # link the library to its dependencies
-target_link_libraries(_${COMPONENT_NAME} ${HOOMD_LIBRARIES} ${HOOMD_MD_LIB})
+target_link_libraries(_${COMPONENT_NAME} ${HOOMD_LIBRARIES} ${HOOMD_MD_LIB} ${HOOMD_MPCD_LIB})
 
 # if we are compiling with MPI support built in, set appropriate
 # compiler/linker flags
@@ -91,27 +172,16 @@ MACRO(copy_file file)
     )
 ENDMACRO(copy_file)
 
-set(files
-    __init__.py
-    analyze.py
-    bond.py
-    evaporate.py
-    pair.py
-    restrain.py
-    special_pair.py
-    update.py
-    wall.py
-    )
 
-install(FILES ${files}
+install(FILES ${py_files}
         DESTINATION ${PYTHON_MODULE_BASE_DIR}/${COMPONENT_NAME}
        )
 
-foreach(file ${files})
+foreach(file ${py_files})
     copy_file(${file})
 endforeach()
 
-add_custom_target(copy_${COMPONENT_NAME} ALL DEPENDS ${files})
+add_custom_target(copy_${COMPONENT_NAME} ALL DEPENDS ${py_files})
 
 if (BUILD_TESTING)
     add_subdirectory(test-py)

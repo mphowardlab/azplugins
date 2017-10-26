@@ -108,10 +108,12 @@ set(HOOMD_LIB ${HOOMD_ROOT}/_hoomd.so)
 set(HOOMD_MD_LIB ${HOOMD_ROOT}/md/_md.so)
 set(HOOMD_DEM_LIB ${HOOMD_ROOT}/dem/_dem.so)
 set(HOOMD_HPMC_LIB ${HOOMD_ROOT}/hpmc/_hpmc.so)
+set(HOOMD_MPCD_LIB ${HOOMD_ROOT}/mpcd/_mpcd.so)
 set(HOOMD_CGCMM_LIB ${HOOMD_ROOT}/cgcmm/_cgcmm.so)
 set(HOOMD_METAL_LIB ${HOOMD_ROOT}/metal/_metal.so)
 set(HOOMD_DEPRECATED_LIB ${HOOMD_ROOT}/deprecated/_deprecated.so)
 
 set(HOOMD_LIBRARIES ${HOOMD_LIB} ${HOOMD_COMMON_LIBS})
+set(HOOMD_EXTERNAL_BUILD ON)
 
 endif (HOOMD_FOUND)
