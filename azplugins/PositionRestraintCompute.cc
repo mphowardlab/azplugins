@@ -48,7 +48,7 @@ PositionRestraintCompute::~PositionRestraintCompute()
 
 void PositionRestraintCompute::setInitialPositions()
     {
-    assert(m_ref_pos);
+    assert(m_ref_pos.getNumElements() == m_pdata->getN());
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<Scalar4> h_ref_pos(m_ref_pos, access_location::host, access_mode::overwrite);

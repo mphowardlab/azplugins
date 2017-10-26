@@ -57,7 +57,7 @@ OrientationRestraintCompute::~OrientationRestraintCompute()
 
 void OrientationRestraintCompute::setInitialOrientations()
     {
-    assert(m_ref_orient);
+    assert(m_ref_orient.getNumElements() == m_pdata->getN());
 
     ArrayHandle<Scalar4> h_orient(m_pdata->getOrientationArray(), access_location::host, access_mode::read);
     ArrayHandle<Scalar4> h_ref_orient(m_ref_orient, access_location::host, access_mode::overwrite);
