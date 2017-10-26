@@ -65,11 +65,11 @@ class pair_ash24_tests(unittest.TestCase):
         ash24 = azplugins.pair.ashbaugh24(r_cut=1.5, nlist = self.nl)
 
         ash24.pair_coeff.set('A', 'A', sigma=1.0, epsilon=1.0, lam=1.0)
-        self.nl.update_rcut();
+        self.nl.update_rcut()
         self.assertAlmostEqual(1.5, self.nl.r_cut.get_pair('A','A'))
 
         ash24.pair_coeff.set('A', 'A', r_cut=2.0)
-        self.nl.update_rcut();
+        self.nl.update_rcut()
         self.assertAlmostEqual(2.0, self.nl.r_cut.get_pair('A','A'))
 
     # test coeff list
@@ -86,7 +86,7 @@ class pair_ash24_tests(unittest.TestCase):
         self.assertRaises(RuntimeError, ash24.update_coeffs)
         ash24.pair_coeff.set('A', 'B', epsilon=1.0, sigma=1.0, lam=1.0)
         ash24.pair_coeff.set('B', 'B', epsilon=1.0, sigma=1.0, lam=1.0)
-        ash24.update_coeffs();
+        ash24.update_coeffs()
 
     def tearDown(self):
         del self.s, self.nl

@@ -634,10 +634,10 @@ class two_patch_morse(hoomd.md.pair.ai_pair):
 
     """
     def __init__(self, r_cut, nlist, name=None):
-        hoomd.util.print_status_line();
+        hoomd.util.print_status_line()
 
         # initialize the base class
-        hoomd.md.pair.ai_pair.__init__(self, r_cut, nlist, name);
+        hoomd.md.pair.ai_pair.__init__(self, r_cut, nlist, name)
 
         # create the c++ mirror class
         if not hoomd.context.exec_conf.isCUDAEnabled():
@@ -654,11 +654,11 @@ class two_patch_morse(hoomd.md.pair.ai_pair):
         self.pair_coeff.set_default_coeff('repulsion', True)
 
     def process_coeff(self, coeff):
-        Md        = coeff['Md'];
-        Mr        = coeff['Mr'];
-        req       = coeff['req'];
-        omega     = coeff['omega'];
-        alpha     = coeff['alpha'];
-        repulsion = coeff['repulsion'];
+        Md        = coeff['Md']
+        Mr        = coeff['Mr']
+        req       = coeff['req']
+        omega     = coeff['omega']
+        alpha     = coeff['alpha']
+        repulsion = coeff['repulsion']
 
         return _azplugins.make_two_patch_morse_params(Md, 1.0/Mr, req, omega, alpha, repulsion)

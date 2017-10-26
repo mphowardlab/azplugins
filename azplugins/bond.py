@@ -47,26 +47,26 @@ class fene(hoomd.md.bond._bond):
 
     """
     def __init__(self, name=None):
-        hoomd.util.print_status_line();
+        hoomd.util.print_status_line()
 
         # check that some bonds are defined
         if hoomd.context.current.system_definition.getBondData().getNGlobal() == 0:
-            hoomd.context.msg.error("azplugins.bond.fene(): No bonds are defined.\n");
-            raise RuntimeError("Error creating bond forces");
+            hoomd.context.msg.error("azplugins.bond.fene(): No bonds are defined.\n")
+            raise RuntimeError("Error creating bond forces")
 
         # initialize the base class
-        hoomd.md.bond._bond.__init__(self, name);
+        hoomd.md.bond._bond.__init__(self, name)
 
         # create the c++ mirror class
         if not hoomd.context.exec_conf.isCUDAEnabled():
-            self.cpp_force = _azplugins.BondPotentialFENE(hoomd.context.current.system_definition,self.name);
+            self.cpp_force = _azplugins.BondPotentialFENE(hoomd.context.current.system_definition,self.name)
         else:
-            self.cpp_force =  _azplugins.BondPotentialFENE(hoomd.context.current.system_definition,self.name);
+            self.cpp_force =  _azplugins.BondPotentialFENE(hoomd.context.current.system_definition,self.name)
 
-        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name);
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
 
         # setup the coefficient options
-        self.required_coeffs = ['k','r0','epsilon','sigma'];
+        self.required_coeffs = ['k','r0','epsilon','sigma']
 
     def process_coeff(self, coeff):
         k = coeff['k']
@@ -89,4 +89,4 @@ class fene(hoomd.md.bond._bond):
             hoomd.context.msg.error("azplugins.bond.fene(): r0 must be non-zero.\n")
             raise ValueError('r0 must be non-zero')
 
-        return _hoomd.make_scalar4(k, r0, lj1, lj2);
+        return _hoomd.make_scalar4(k, r0, lj1, lj2)
