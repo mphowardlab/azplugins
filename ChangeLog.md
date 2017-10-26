@@ -30,6 +30,8 @@ to ensure all necessary header files are available.
 * Fix path to cub headers.
 * Add missing status line prints.
 * Fix possible linker errors for MPI libraries.
+* Plugins now build when `ENABLE_CUDA=OFF`.
+* CMake exits gracefully when the MD component is not available from hoomd.
 
 ## v0.3.0
 
