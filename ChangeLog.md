@@ -24,6 +24,7 @@ to ensure all necessary header files are available.
   pair potentials.
 * `special_pair.lj96` implements the LJ 9-6 potential as a special pair.
 * A framework is configured for writing and running compiled unit tests with upp11.
+* All source code is now automatically validated for formatting.
 
 *Bug fixes*
 
