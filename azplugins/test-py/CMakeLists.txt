@@ -89,7 +89,7 @@ macro(add_script_test_cpu script)
 endmacro()
 
 macro(add_script_test_gpu script)
-    add_test(azplugins-${script}-gpu ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${script}.py "--mode=gpu")
+    add_test(azplugins-${script}-gpu ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${script}.py "--mode=gpu" "--gpu_error_checking")
     set_tests_properties(azplugins-${script}-gpu PROPERTIES ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH}")
 
     add_script_test_gpu_mpi(${script})

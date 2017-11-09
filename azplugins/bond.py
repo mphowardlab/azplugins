@@ -61,7 +61,7 @@ class fene(hoomd.md.bond._bond):
         if not hoomd.context.exec_conf.isCUDAEnabled():
             self.cpp_force = _azplugins.BondPotentialFENE(hoomd.context.current.system_definition,self.name)
         else:
-            self.cpp_force =  _azplugins.BondPotentialFENE(hoomd.context.current.system_definition,self.name)
+            self.cpp_force =  _azplugins.BondPotentialFENEGPU(hoomd.context.current.system_definition,self.name)
 
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
 

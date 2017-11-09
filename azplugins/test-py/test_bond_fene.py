@@ -15,7 +15,7 @@ import unittest
 # azplugins.bond.fene
 class bond_fene_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2, box=data.boxdim(L=20), particle_types=['A'],bond_types = ['bond'])
+        snap = data.make_snapshot(N=2, box=data.boxdim(L=20), particle_types=['A'], bond_types=['bond'])
 
         if comm.get_rank() == 0:
             snap.bonds.resize(1)
@@ -28,49 +28,49 @@ class bond_fene_tests(unittest.TestCase):
     # basic test of creation
     def test(self):
         fene = azplugins.bond.fene()
-        fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, k=30,r0=1.5)
+        fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, k=30, r0=1.5)
         fene.update_coeffs()
 
     # test missing coefficients
     def test_set_missing_epsilon(self):
         fene = azplugins.bond.fene()
-        fene.bond_coeff.set('bond', sigma=1.0, lam=1.0, k=30,r0=1.5)
+        fene.bond_coeff.set('bond', sigma=1.0, k=30, r0=1.5)
         self.assertRaises(RuntimeError, fene.update_coeffs)
 
     def test_set_missing_sigma(self):
         fene = azplugins.bond.fene()
-        fene.bond_coeff.set('bond', epsilon=1.0, lam=1.0, k=30,r0=1.5)
+        fene.bond_coeff.set('bond', epsilon=1.0, k=30, r0=1.5)
         self.assertRaises(RuntimeError, fene.update_coeffs)
 
     def test_set_missing_k(self):
         fene = azplugins.bond.fene()
-        fene.bond_coeff.set('bond', epsilon=1.0,sigma=1.0, lam=1,r0=1.5)
+        fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, r0=1.5)
         self.assertRaises(RuntimeError, fene.update_coeffs)
 
     def test_set_missing_r0(self):
         fene = azplugins.bond.fene()
-        fene.bond_coeff.set('bond', epsilon=1.0,sigma=1.0, lam=1,k=30)
+        fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, k=30)
         self.assertRaises(RuntimeError, fene.update_coeffs)
 
      # test coefficients = 0
     def test_set_zero_epsilon(self):
         fene = azplugins.bond.fene()
-        fene.bond_coeff.set('bond', epsilon=0, sigma=1.0, lam=1.0, k=30,r0=1.5)
+        fene.bond_coeff.set('bond', epsilon=0, sigma=1.0, k=30,r0=1.5)
         self.assertRaises(ValueError, fene.update_coeffs)
 
     def test_set_zero_sigma(self):
         fene = azplugins.bond.fene()
-        fene.bond_coeff.set('bond', epsilon=1.0, sigma=0.0, lam=1.0, k=30,r0=1.5)
+        fene.bond_coeff.set('bond', epsilon=1.0, sigma=0.0, k=30, r0=1.5)
         self.assertRaises(ValueError, fene.update_coeffs)
 
     def test_set_zero_k(self):
         fene = azplugins.bond.fene()
-        fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, lam=1.0, k=0,r0=1.5)
+        fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, k=0, r0=1.5)
         self.assertRaises(ValueError, fene.update_coeffs)
 
     def test_set_zero_r0(self):
         fene = azplugins.bond.fene()
-        fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, lam=1.0, k=30,r0=0)
+        fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, k=30, r0=0)
         self.assertRaises(ValueError, fene.update_coeffs)
 
     def tearDown(self):
