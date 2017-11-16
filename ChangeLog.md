@@ -5,7 +5,7 @@
 ---------
 ## v0.4.0
 
-Not yet released.
+16 November 2017
 
 *Release notes*
 
@@ -17,6 +17,8 @@ to ensure all necessary header files are available.
 * A framework is configured for developing bond potentials.
 * `bond.fene` implements a standard FENE potential that is cleaned up compared
    to the version found in HOOMD.
+* `bond.fene24` implements the FENE potential with the Ashbaugh-Hatch-style
+  48-24 Lennard-Jones potential repulsion.
 * `pair.ashbaugh24` implements a Ashbaugh-Hatch 48-24 Lennard-Jones potential.
 * `pair.spline` implements a cubic spline potential.
 * `pair.two_patch_morse` implements the two-patch Morse anisotropic potential.
