@@ -30,6 +30,7 @@
 
 // All bonded potential evaluators must be included here
 #include "BondEvaluatorFENE.h"
+#include "BondEvaluatorFENEAsh24.h"
 
 /*
  * The code below handles python exports using a templated function, and so

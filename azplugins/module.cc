@@ -53,6 +53,24 @@ namespace azplugins
  */
 namespace detail
 {
+//! Helper function export the Ashbaugh-Hatch-24-48 bond potential parameters
+/*!
+* \sa ashbaugh_params
+*/
+void export_ashbaugh_bond_params(py::module& m)
+    {
+    py::class_<ashbaugh_bond_params>(m, "ashbaugh_bond_params")
+    .def(py::init<>())
+    .def_readwrite("lj1", &ashbaugh_bond_params::lj1)
+    .def_readwrite("lj2", &ashbaugh_bond_params::lj2)
+    .def_readwrite("lam", &ashbaugh_bond_params::lambda)
+    .def_readwrite("rwcasq", &ashbaugh_bond_params::rwcasq)
+    .def_readwrite("wca_shift", &ashbaugh_bond_params::wca_shift)
+    .def_readwrite("K", &ashbaugh_bond_params::K)
+    .def_readwrite("r0", &ashbaugh_bond_params::r_0)
+    ;
+    m.def("make_ashbaugh_bond_params", &make_ashbaugh_bond_params);
+    }
 
 //! Helper function export the Ashbaugh-Hatch pair potential parameters
 /*!
@@ -132,7 +150,8 @@ PYBIND11_PLUGIN(_azplugins)
 
     /* Bond potentials */
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENE>(m, "BondPotentialFENE");
-
+    azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENEAsh24>(m, "BondPotentialFENEAsh24");
+    azplugins::detail::export_ashbaugh_bond_params(m);
     /* Special pair potentials */
     azplugins::detail::export_special_pair_potential<azplugins::detail::PairEvaluatorLJ96>(m,"SpecialPairPotentialLJ96");
 
