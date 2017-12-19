@@ -19,9 +19,11 @@ namespace py = pybind11;
 #include "WallPotentials.h"
 
 /* Updaters */
+#include "ReversePerturbationFlow.h"
 #include "TypeUpdater.h"
 #include "ParticleEvaporator.h"
 #ifdef ENABLE_CUDA
+#include "ReversePerturbationFlowGPU.h"
 #include "TypeUpdaterGPU.h"
 #include "ParticleEvaporatorGPU.h"
 #endif // ENABLE_CUDA
@@ -156,9 +158,11 @@ PYBIND11_PLUGIN(_azplugins)
     azplugins::detail::export_special_pair_potential<azplugins::detail::PairEvaluatorLJ96>(m,"SpecialPairPotentialLJ96");
 
     /* Updaters */
+    azplugins::detail::export_ReversePerturbationFlow(m);
     azplugins::detail::export_TypeUpdater(m);
     azplugins::detail::export_ParticleEvaporator(m); // this must follow TypeUpdater because TypeUpdater is the python base class
     #ifdef ENABLE_CUDA
+    azplugins::detail::export_ReversePerturbationFlowGPU(m);
     azplugins::detail::export_TypeUpdaterGPU(m);
     azplugins::detail::export_ParticleEvaporatorGPU(m);
     #endif // ENABLE_CUDA

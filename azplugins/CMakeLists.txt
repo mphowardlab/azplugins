@@ -52,6 +52,7 @@ set(_${COMPONENT_NAME}_sources
     ParticleEvaporator.cc
     PositionRestraintCompute.cc
     RDFAnalyzer.cc
+    ReversePerturbationFlow.cc
     TypeUpdater.cc
     )
 
@@ -63,6 +64,7 @@ list(APPEND _${COMPONENT_NAME}_sources
     ParticleEvaporatorGPU.cc
     PositionRestraintComputeGPU.cc
     RDFAnalyzerGPU.cc
+    ReversePerturbationFlowGPU.cc
     TypeUpdaterGPU.cc
     )
 endif(ENABLE_CUDA)
@@ -77,6 +79,7 @@ set(_${COMPONENT_NAME}_cu_sources
     ParticleEvaporatorGPU.cu
     PositionRestraintComputeGPU.cu
     RDFAnalyzerGPU.cu
+    ReversePerturbationFlowGPU.cu
     SpecialPairPotentials.cu
     TypeUpdaterGPU.cu
     WallPotentials.cu
@@ -88,6 +91,7 @@ set(py_files
     analyze.py
     bond.py
     evaporate.py
+    flow.py
     pair.py
     restrain.py
     special_pair.py
@@ -171,7 +175,6 @@ MACRO(copy_file file)
         COMMENT    "Copy hoomd/${COMPONENT_NAME}/${file}"
     )
 ENDMACRO(copy_file)
-
 
 install(FILES ${py_files}
         DESTINATION ${PYTHON_MODULE_BASE_DIR}/${COMPONENT_NAME}

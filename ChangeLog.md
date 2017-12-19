@@ -3,6 +3,13 @@
 [TOC]
 
 ---------
+## v0.5.0
+
+*New features*
+* `flow.reverse_perturbation` implements the reverse perturbation method
+  for generating shear flow. This implementation is significantly more stable
+  than the HOOMD-blue release, but does not currently support MPI.
+
 ## v0.4.0
 
 16 November 2017
