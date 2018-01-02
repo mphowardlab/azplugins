@@ -75,6 +75,7 @@ set(_${COMPONENT_NAME}_cu_sources
     AnisoPairPotentials.cu
     BondPotentials.cu
     BounceBackNVEGPU.cu
+    DPDPotentials.cu
     ImplicitEvaporatorGPU.cu
     OrientationRestraintComputeGPU.cu
     PairPotentials.cu
@@ -92,6 +93,7 @@ set(py_files
     __init__.py
     analyze.py
     bond.py
+    dpd.py
     evaporate.py
     flow.py
     integrate.py
