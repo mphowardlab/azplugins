@@ -5,6 +5,7 @@ set(TEST_LIST_CPU
     test_analyze_rdf
     test_bond_fene
     test_bond_fene24
+    test_dpd_general
     test_evaporate_implicit
     test_evaporate_particles
     test_integrate_slit
@@ -29,6 +30,7 @@ set(TEST_LIST_GPU
     test_analyze_rdf
     test_bond_fene
     test_bond_fene24
+    test_dpd_general
     test_evaporate_implicit
     test_evaporate_particles
     test_integrate_slit

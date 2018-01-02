@@ -14,6 +14,7 @@ namespace py = pybind11;
 /* Potentials */
 #include "AnisoPairPotentials.h"
 #include "BondPotentials.h"
+#include "DPDPotentials.h"
 #include "PairPotentials.h"
 #include "SpecialPairPotentials.h"
 #include "WallPotentials.h"
@@ -157,10 +158,14 @@ PYBIND11_PLUGIN(_azplugins)
     azplugins::detail::export_aniso_pair_potential<azplugins::detail::AnisoPairEvaluatorTwoPatchMorse>(m, "AnisoPairPotentialTwoPatchMorse");
     azplugins::detail::export_two_patch_morse_params(m);
 
+    /* DPD potentials */
+    azplugins::detail::export_dpd_potential<azplugins::detail::DPDEvaluatorGeneralWeight>(m, "DPDPotentialGeneralWeight");
+
     /* Bond potentials */
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENE>(m, "BondPotentialFENE");
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENEAsh24>(m, "BondPotentialFENEAsh24");
     azplugins::detail::export_ashbaugh_bond_params(m);
+
     /* Special pair potentials */
     azplugins::detail::export_special_pair_potential<azplugins::detail::PairEvaluatorLJ96>(m,"SpecialPairPotentialLJ96");
 
