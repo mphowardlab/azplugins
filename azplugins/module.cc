@@ -44,6 +44,13 @@ namespace py = pybind11;
 #include "RDFAnalyzerGPU.h"
 #endif // ENABLE_CUDA
 
+/* Integrators */
+#include "BounceBackGeometry.h"
+#include "BounceBackNVE.h"
+#ifdef ENABLE_CUDA
+#include "BounceBackNVEGPU.h"
+#endif // ENABLE_CUDA
+
 //! Plugins for soft matter
 namespace azplugins
 {
@@ -185,6 +192,14 @@ PYBIND11_PLUGIN(_azplugins)
     azplugins::detail::export_RDFAnalyzer(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_RDFAnalyzerGPU(m);
+    #endif // ENABLE_CUDA
+
+    /* Integrators */
+    azplugins::detail::export_boundary(m);
+    azplugins::detail::export_SlitGeometry(m);
+    azplugins::detail::export_BounceBackNVE<mpcd::detail::SlitGeometry>(m);
+    #ifdef ENABLE_CUDA
+    azplugins::detail::export_BounceBackNVEGPU<mpcd::detail::SlitGeometry>(m);
     #endif // ENABLE_CUDA
 
     return m.ptr();

@@ -7,6 +7,7 @@ set(TEST_LIST_CPU
     test_bond_fene24
     test_evaporate_implicit
     test_evaporate_particles
+    test_integrate_slit
     test_pair_ashbaugh
     test_pair_ashbaugh24
     test_pair_lj124
@@ -30,6 +31,7 @@ set(TEST_LIST_GPU
     test_bond_fene24
     test_evaporate_implicit
     test_evaporate_particles
+    test_integrate_slit
     test_pair_ashbaugh
     test_pair_ashbaugh24
     test_pair_lj124

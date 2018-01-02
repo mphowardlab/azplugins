@@ -173,5 +173,6 @@ class PairEvaluatorAshbaugh24
 } // end namespace azplugins
 
 #undef DEVICE
+#undef HOSTDEVICE
 
 #endif // AZPLUGINS_PAIR_EVALUATOR_ASHBAUGH24_H_

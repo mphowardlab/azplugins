@@ -47,6 +47,7 @@ endif(HOOMD_EXTERNAL_BUILD)
 # base / cpu c++ source files
 set(_${COMPONENT_NAME}_sources
     module.cc
+    BounceBackGeometry.cc
     ImplicitEvaporator.cc
     OrientationRestraintCompute.cc
     ParticleEvaporator.cc
@@ -73,6 +74,7 @@ endif(ENABLE_CUDA)
 set(_${COMPONENT_NAME}_cu_sources
     AnisoPairPotentials.cu
     BondPotentials.cu
+    BounceBackNVEGPU.cu
     ImplicitEvaporatorGPU.cu
     OrientationRestraintComputeGPU.cu
     PairPotentials.cu
@@ -92,6 +94,7 @@ set(py_files
     bond.py
     evaporate.py
     flow.py
+    integrate.py
     pair.py
     restrain.py
     special_pair.py
