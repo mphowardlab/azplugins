@@ -5,10 +5,22 @@
 ---------
 ## v0.5.0
 
+Not yet released
+
+*Release notes*
+
+This version of the plugin **requires** HOOMD-blue v2.2.2 in order to
+ensure all necessary header files are available.
+
 *New features*
 * `flow.reverse_perturbation` implements the reverse perturbation method
   for generating shear flow. This implementation is significantly more stable
   than the HOOMD-blue release, but does not currently support MPI.
+* `integrate.slit` supports NVE integration with bounce-back rules in the slit
+  geometry. Other bounce back geometries can also be configured.
+* `dpd.general` implements a generalized DPD potential where the exponent of
+  the dissipative weight function can be adjusted. A framework is also
+  implemented for adding other DPD potentials.
 
 ## v0.4.0
 
