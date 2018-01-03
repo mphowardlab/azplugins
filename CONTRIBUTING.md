@@ -56,7 +56,7 @@ in the changelog for the appropriate target version.
 
 This makes it easier to update the copyright year over year.
 ```c++
-// Copyright (c) 2016-2017, Panagiotopoulos Group, Princeton University
+// Copyright (c) 2016-2018, Panagiotopoulos Group, Princeton University
 // This file is part of the azplugins project, released under the Modified BSD License.
 
 // Maintainer: your-bitbucket-username

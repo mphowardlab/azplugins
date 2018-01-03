@@ -1,7 +1,7 @@
 Modified BSD License
 ====================
 
-**Copyright (c) 2016-2017, Panagiotopoulos Group, Princeton University**
+**Copyright (c) 2016-2018, Panagiotopoulos Group, Princeton University**
 
 _All rights reserved._
 
