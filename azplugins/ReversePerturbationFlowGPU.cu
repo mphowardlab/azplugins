@@ -13,6 +13,7 @@
 #include "hoomd/extern/cub/cub/cub.cuh"
 #include <thrust/sort.h>
 #include <thrust/device_vector.h>
+#include <thrust/functional.h>
 
 namespace azplugins
 {
@@ -246,15 +247,15 @@ cudaError_t sort_pair_array(Scalar2 *d_slab_pairs,
     }
 
 //! Functor to select elements from a Scalar2 where the x-component is nonzero.
-struct NotZero
+struct NotZero : public thrust::unary_function<Scalar2, bool>
     {
     //! Selection operator
     /*!
      * \param in0  Scalar2 input
      * \returns True if \a in0.x is not zero.
      */
-    __host__ __device__ __forceinline__
-    bool operator()(Scalar2 &in) const
+    __host__ __device__
+    bool operator()(const Scalar2 &in) const
         {
         return (__scalar_as_int(in.x) != 0);
         }
@@ -414,7 +415,7 @@ cudaError_t swap_momentum_pairs(const Scalar2 *d_layer_hi,
     }
 
 //! Transforms a Scalar2 to return the momentum from the y-component
-struct GetMomentum
+struct GetMomentum : public thrust::unary_function<Scalar2, Scalar>
     {
     //! Transform operator
     /*!
@@ -422,8 +423,8 @@ struct GetMomentum
      *
      * \returns The y-component (=momentum) of a Scalar2
      */
-    __host__ __device__ __forceinline__
-    Scalar operator()(Scalar2 &in0) const
+    __host__ __device__
+    Scalar operator()(const Scalar2 &in0) const
         {
         return in0.y;
         }
@@ -452,13 +453,13 @@ Scalar calc_momentum_exchange(Scalar2 *d_layer_hi,
     Scalar momentum_layer_hi = thrust::transform_reduce(t_layer_hi,
                                                         t_layer_hi + num_pairs,
                                                         GetMomentum(),
-                                                        0.0,
-                                                        thrust::plus<float>());
+                                                        Scalar(0.0),
+                                                        thrust::plus<Scalar>());
     Scalar momentum_layer_lo = thrust::transform_reduce(t_layer_lo,
                                                         t_layer_lo + num_pairs,
                                                         GetMomentum(),
-                                                        0.0,
-                                                        thrust::plus<float>());
+                                                        Scalar(0.0),
+                                                        thrust::plus<Scalar>());
 
     Scalar momentum_exchange = momentum_layer_lo - momentum_layer_hi;
     return momentum_exchange;
