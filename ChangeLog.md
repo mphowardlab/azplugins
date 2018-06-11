@@ -13,6 +13,7 @@ This version of the plugin **requires** HOOMD-blue v2.2.2 in order to
 ensure all necessary header files are available.
 
 *New features*
+
 * `flow.reverse_perturbation` implements the reverse perturbation method
   for generating shear flow. This implementation is significantly more stable
   than the HOOMD-blue release, but does not currently support MPI.
@@ -21,6 +22,9 @@ ensure all necessary header files are available.
 * `dpd.general` implements a generalized DPD potential where the exponent of
   the dissipative weight function can be adjusted. A framework is also
   implemented for adding other DPD potentials.
+* `flow.langevin` and `flow.brownian` support Langevin and Brownian dynamics in
+   external flow fields. Currently, the supported fields are `flow.quiescent`
+   and `flow.parabolic`, but additional fields can be included by templating.
 
 ## v0.4.0
 
