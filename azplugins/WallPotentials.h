@@ -38,7 +38,6 @@
  */
 #ifndef NVCC
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
-namespace py = pybind11;
 
 #include "hoomd/md/PotentialExternal.h"
 #include "hoomd/md/EvaluatorWalls.h"
@@ -62,8 +61,9 @@ namespace detail
  * a corresponding GPU class called nameGPU is exported.
  */
 template< class evaluator >
-void export_wall_potential(py::module& m, const std::string& name)
+void export_wall_potential(pybind11::module& m, const std::string& name)
     {
+    namespace py = pybind11;
     typedef ::EvaluatorWalls<evaluator> wall_evaluator;
     typedef ::PotentialExternal<wall_evaluator> wall_potential_cpu;
     export_PotentialExternal<wall_potential_cpu>(m, name);

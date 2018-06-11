@@ -84,6 +84,8 @@ set(_${COMPONENT_NAME}_cu_sources
     RDFAnalyzerGPU.cu
     ReversePerturbationFlowGPU.cu
     SpecialPairPotentials.cu
+    TwoStepBrownianFlowGPU.cu
+    TwoStepLangevinFlowGPU.cu
     TypeUpdaterGPU.cu
     WallPotentials.cu
     )

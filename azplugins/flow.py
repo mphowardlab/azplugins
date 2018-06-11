@@ -1,11 +1,484 @@
 # Copyright (c) 2016-2018, Panagiotopoulos Group, Princeton University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: astatt / Everyone is free to add additional updaters
+# Maintainer: astatt / mphoward
 
 import hoomd
 from hoomd import _hoomd
 import _azplugins
+
+class quiescent(object):
+    """ Quiescent fluid profile
+
+    Example::
+
+        u = azplugins.flow.quiescent()
+
+    """
+    def __init__(self):
+        hoomd.util.print_status_line()
+        self._cpp = _azplugins.QuiescentFluid()
+
+    def __call__(self, r):
+        """ Computes the velocity profile
+
+        Args:
+            r (list): Position to evaluate profile
+
+        Example::
+
+            >>> u = azplugins.flow.quiescent()
+            >>> print u([0.0, 0.1, 0.3])
+            0.0
+            >>> print u((0.5, -0.2, 1.6))
+            0.0
+
+        """
+        hoomd.util.print_status_line()
+
+        u = self._cpp(_hoomd.make_scalar3(r[0], r[1], r[2]))
+        return (u.x, u.y, u.z)
+
+class parabolic(object):
+    """ Parabolic flow profile between parallel plates
+
+    Args:
+         U (float): Mean velocity
+         H (float): Channel half-width
+
+    This flow field generates the parabolic flow profile in a slit geomtry:
+
+    .. math::
+
+        u_x(z) = \frac{3}{2}U \left[1 - \left(\frac{z}{H}\right)^2 \right]
+
+    The flow is along *x* with the gradient in *z*. The distance between the
+    two plates is :math:`2H`, and the channel is centered around :math:`z=0`.
+    The mean flow velocity is *U*.
+
+    Example::
+
+        u = azplugins.flow.parabolic(U = 2.0, H = 0.5)
+
+    Note:
+        Creating a flow profile does **not** imply anything about the simulation
+        box boundaries. It is the responsibility of the user to construct
+        appropriate bounding walls commensurate with the flow profile geometry.
+
+    """
+    def __init__(self, U, H):
+        hoomd.util.print_status_line()
+        self._cpp = _azplugins.ParabolicFlow(U, H)
+
+    def __call__(self, r):
+        """ Computes the velocity profile
+
+        Args:
+            r (list): Position to evaluate profile
+
+        Example::
+
+            >>> u = azplugins.flow.parabolic(U = 2.0, H = 0.5)
+            >>> print u([0.0, 0.1, 0.3])
+            2.0
+            >>> print u((0.5, -0.2, 1.6))
+            0.0
+
+        """
+        hoomd.util.print_status_line()
+
+        u = self._cpp(_hoomd.make_scalar3(r[0], r[1], r[2]))
+        return (u.x, u.y, u.z)
+
+class brownian(hoomd.md.integrate._integration_method):
+    R""" Brownian dynamics.
+
+    Args:
+        group (:py:mod:`hoomd.group`): Group of particles to apply this method to.
+        kT (:py:mod:`hoomd.variant` or :py:obj:`float`): Temperature of the simulation (in energy units).
+        flow (:py:class:`parabolic` or :py:class:`quiescent`): Flow profile
+        seed (int): Random seed to use for generating :math:`\vec{F}_\mathrm{R}`.
+        dscale (bool): Control :math:`\lambda` options. If 0 or False, use :math:`\gamma` values set per type. If non-zero, :math:`\gamma = \lambda d_i`.
+        noiseless (bool): If set true, there will be no noise (random force)
+
+    :py:class:`brownian` integrates particles forward in time according to the overdamped Langevin equations of motion,
+    sometimes called Brownian dynamics, or the diffusive limit.
+
+    .. math::
+
+        \frac{d\vec{x}}{dt} = \vec{v}_0 + \frac{\vec{F}_\mathrm{C} + \vec{F}_\mathrm{R}}{\gamma}
+
+        \langle \vec{F}_\mathrm{R} \rangle = 0
+
+        \langle |\vec{F}_\mathrm{R}|^2 \rangle = 2 d k T \gamma / \delta t
+
+
+    where :math:`\vec{F}_\mathrm{C}` is the force on the particle from all potentials and constraint forces,
+    :math:`\gamma` is the drag coefficient, :math:`\vec{F}_\mathrm{R}`
+    is a uniform random force, :math:`\vec{v}` is the particle's velocity, :math:`\vec{v}_0` is an
+    imposed flow field and :math:`d` is the dimensionality
+    of the system. The magnitude of the random force is chosen via the fluctuation-dissipation theorem
+    to be consistent with the specified drag and temperature, :math:`T`.
+    When :math:`kT=0`, the random force :math:`\vec{F}_\mathrm{R}=0`.
+
+    :py:class:`brownian` generates random numbers by hashing together the particle tag, user seed, and current
+    time step index. See `C. L. Phillips et. al. 2011 <http://dx.doi.org/10.1016/j.jcp.2011.05.021>`_ for more
+    information.
+
+    .. attention::
+        Change the seed if you reset the simulation time step to 0. If you keep the same seed, the simulation
+        will continue with the same sequence of random numbers used previously and may cause unphysical correlations.
+
+    :py:class:`brownian` uses the integrator from `I. Snook, The Langevin and Generalised Langevin Approach to the Dynamics of
+    Atomic, Polymeric and Colloidal Systems, 2007, section 6.2.5 <http://dx.doi.org/10.1016/B978-0-444-52129-3.50028-6>`_,
+    with the exception that :math:`\vec{F}_\mathrm{R}` is drawn from a uniform random number distribution.
+
+    .. warning::
+        In Brownian dynamics, particle velocities are completely decoupled from positions
+        and the particles are approximately massless. Accordingly, :py:class:`brownian` does
+        not modify the velocities of particles. :py:class:`hoomd.compute.thermo` will
+        **not** report appropriate temperatures and pressures if logged or needed by other
+        commands. This behavior differs from the HOOMD Brownian dynamics implementation.
+
+    Brownian dynamics neglects the acceleration term in the Langevin equation. This assumption is valid when
+    overdamped: :math:`\frac{m}{\gamma} \ll \delta t`. Use :py:class:`langevin` if your system is not overdamped.
+
+    You can specify :math:`\gamma` in two ways:
+
+    1. Use :py:class:`set_gamma()` to specify it directly, with independent values for each particle type in the system.
+    2. Specify :math:`\lambda` which scales the particle diameter to :math:`\gamma = \lambda d_i`. The units of
+       :math:`\lambda` are mass / distance / time.
+
+    :py:class:`brownian` must be used with integrate.mode_standard.
+
+    *T* can be a variant type, allowing for temperature ramps in simulation runs.
+
+    A :py:class:`hoomd.compute.thermo` is automatically created and associated with *group*.
+
+    Examples::
+
+        group_all = hoomd.group.all()
+        u = azplugins.flow.parabolic(U=2.0, H=1.0)
+        azplugins.flow.brownian(group=group_all, kT=1.0, flow=u, seed=5)
+        azplugins.flow.brownian(group=group_all, kT=hoomd.variant.linear_interp([(0, 4.0), (1e6, 1.0)]), flow=u, seed=10)
+
+    """
+    def __init__(self, group, kT, flow, seed, dscale=False, noiseless=False):
+        hoomd.util.print_status_line()
+
+        # initialize base class
+        super(brownian, self).__init__()
+
+        # setup the variant inputs
+        kT = hoomd.variant._setup_variant_input(kT)
+
+        # create the compute thermo
+        hoomd.compute._get_unique_thermo(group=group)
+
+        if dscale is False or dscale == 0:
+            use_lambda = False
+        else:
+            use_lambda = True
+
+        # construct the correct flow field
+        use_gpu = hoomd.context.exec_conf.isCUDAEnabled()
+        if type(flow) is parabolic:
+            if not use_gpu:
+                cpp_class = _azplugins.BrownianParabolicFlow
+            else:
+                cpp_class = _azplugins.BrownianParabolicFlowGPU
+        elif type(flow) is quiescent:
+            if not use_gpu:
+                cpp_class = _azplugins.BrownianQuiescentFluid
+            else:
+                cpp_class = _azplugins.BrownianQuiescentFluidGPU
+        else:
+            hoomd.context.msg.error('flow.brownian: flow field type not recognized\n')
+            raise TypeError('Flow field type not recognized')
+
+        self.cpp_method = cpp_class(hoomd.context.current.system_definition,
+                                    group.cpp_group,
+                                    kT.cpp_variant,
+                                    flow._cpp,
+                                    seed,
+                                    use_lambda,
+                                    float(dscale),
+                                    noiseless)
+        self.cpp_method.validateGroup()
+
+        # store metadata
+        self.group = group
+        self.kT = kT
+        self.flow = flow
+        self.seed = seed
+        self.dscale = dscale
+        self.noiseless = noiseless
+        self.metadata_fields = ['group', 'kT', 'seed', 'dscale','noiseless']
+
+    def set_params(self, kT=None, flow=None, noiseless=None):
+        R""" Change langevin integrator parameters.
+
+        Args:
+            kT (:py:mod:`hoomd.variant` or :py:obj:`float`): New temperature (if set) (in energy units).
+            flow (object): Flow field object
+            noiseless (bool): If true, do not apply the random noise in the equations of motion
+
+        Examples::
+
+            brownian.set_params(kT=2.0)
+
+        Note:
+            Because of the way flow fields are implemented, the type of *flow*
+            is not permitted to change after the integrator is constructed.
+            If you need to change the flow field type, disable the current
+            integrator and create a new one.
+
+        """
+        hoomd.util.print_status_line()
+        self.check_initialization()
+
+        # change the parameters
+        if kT is not None:
+            # setup the variant inputs
+            kT = hoomd.variant._setup_variant_input(kT)
+            self.cpp_method.setT(kT.cpp_variant)
+            self.kT = kT
+
+        if flow is not None:
+            if type(flow) is type(self.flow):
+                self.cpp_method.setFlowField(flow._cpp)
+                self.flow = flow
+            else:
+                hoomd.context.msg.error('flow.langevin: flow profile type cannot change after construction')
+                raise TypeError('Flow profile type cannot change after construction')
+
+        if noiseless is not None:
+            self.cpp_method.setNoiseless(noiseless)
+            self.noiseless = noiseless
+
+    def set_gamma(self, a, gamma):
+        R""" Set gamma for a particle type.
+
+        Args:
+            a (str): Particle type name
+            gamma (float): :math:`\gamma` for particle type a (in units of force/velocity)
+
+        :py:meth:`set_gamma()` sets the coefficient :math:`\gamma` for a single particle type, identified
+        by name. The default is 1.0 if not specified for a type.
+
+        It is not an error to specify gammas for particle types that do not exist in the simulation.
+        This can be useful in defining a single simulation script for many different types of particles
+        even when some simulations only include a subset.
+
+        Examples::
+
+            langevin.set_gamma('A', gamma=2.0)
+
+        """
+        hoomd.util.print_status_line()
+        self.check_initialization()
+        a = str(a)
+
+        ntypes = hoomd.context.current.system_definition.getParticleData().getNTypes()
+        type_list = []
+        for i in range(0,ntypes):
+            type_list.append(hoomd.context.current.system_definition.getParticleData().getNameByType(i))
+
+        # change the parameters
+        for i in range(0,ntypes):
+            if a == type_list[i]:
+                self.cpp_method.setGamma(i,gamma)
+
+class langevin(hoomd.md.integrate._integration_method):
+    R""" Langevin dynamics.
+
+    Args:
+        group (:py:mod:`hoomd.group`): Group of particles to apply this method to.
+        kT (:py:mod:`hoomd.variant` or :py:obj:`float`): Temperature of the simulation (in energy units).
+        flow (:py:class:`parabolic` or :py:class:`quiescent`): Flow profile
+        seed (int): Random seed to use for generating :math:`\vec{F}_\mathrm{R}`.
+        dscale (bool): Control :math:`\lambda` options. If 0 or False, use :math:`\gamma` values set per type. If non-zero, :math:`\gamma = \lambda d_i`.
+        noiseless (bool): If set true, there will be no noise (random force)
+
+    :py:class:`langevin` integrates particles forward in time according to the Langevin equations of motion:
+
+    .. math::
+
+        m \frac{d\vec{v}}{dt} = \vec{F}_\mathrm{C} - \gamma \cdot (\vec{v} - \vec{v}_0) + \vec{F}_\mathrm{R}
+
+        \langle \vec{F}_\mathrm{R} \rangle = 0
+
+        \langle |\vec{F}_\mathrm{R}|^2 \rangle = 2 d kT \gamma / \delta t
+
+    where :math:`\vec{F}_\mathrm{C}` is the force on the particle from all potentials and constraint forces,
+    :math:`\gamma` is the drag coefficient, :math:`\vec{v}` is the particle's velocity,
+    :math:`\vec{v}_0` is an impose flow field, :math:`\vec{F}_\mathrm{R}`
+    is a uniform random force, and :math:`d` is the dimensionality of the system (2 or 3).  The magnitude of
+    the random force is chosen via the fluctuation-dissipation theorem
+    to be consistent with the specified drag and temperature, :math:`T`.
+    When :math:`kT=0`, the random force :math:`\vec{F}_\mathrm{R}=0`.
+
+    :py:class:`langevin` generates random numbers by hashing together the particle tag, user seed, and current
+    time step index. See `C. L. Phillips et. al. 2011 <http://dx.doi.org/10.1016/j.jcp.2011.05.021>`_ for more
+    information.
+
+    .. attention::
+        Change the seed if you reset the simulation time step to 0. If you keep the same seed, the simulation
+        will continue with the same sequence of random numbers used previously and may cause unphysical correlations.
+
+    Langevin dynamics includes the acceleration term in the Langevin equation and is useful for gently thermalizing
+    systems using a small gamma. This assumption is valid when underdamped: :math:`\frac{m}{\gamma} \gg \delta t`.
+    Use :py:class:`brownian` if your system is not underdamped.
+
+    :py:class:`langevin` uses the same integrator as :py:class:`nve` with the additional force term
+    :math:`- \gamma \cdot \vec{v} + \vec{F}_\mathrm{R}`. The random force :math:`\vec{F}_\mathrm{R}` is drawn
+    from a uniform random number distribution.
+
+    You can specify :math:`\gamma` in two ways:
+
+    1. Use :py:class:`set_gamma()` to specify it directly, with independent values for each particle type in the system.
+    2. Specify :math:`\lambda` which scales the particle diameter to :math:`\gamma = \lambda d_i`. The units of
+       :math:`\lambda` are mass / distance / time.
+
+    :py:class:`langevin` must be used with :py:class:`mode_standard`.
+
+    *T* can be a variant type, allowing for temperature ramps in simulation runs.
+
+    A :py:class:`hoomd.compute.thermo` is automatically created and associated with *group*.
+
+    Examples::
+
+        group_all = hoomd.group.all()
+        u = azplugins.flow.parabolic(U=2.0, H=1.0)
+        azplugins.flow.langevin(group=group_all, kT=1.0, flow=u, seed=5)
+        azplugins.flow.langevin(group=group_all, kT=hoomd.variant.linear_interp([(0, 4.0), (1e6, 1.0)]), flow=u, seed=10)
+
+    """
+    def __init__(self, group, kT, flow, seed, dscale=False, noiseless=False):
+        hoomd.util.print_status_line()
+
+        # initialize base class
+        super(langevin, self).__init__()
+
+        # setup the variant inputs
+        kT = hoomd.variant._setup_variant_input(kT)
+
+        # create the compute thermo
+        hoomd.compute._get_unique_thermo(group=group)
+
+        if dscale is False or dscale == 0:
+            use_lambda = False
+        else:
+            use_lambda = True
+
+        # construct the correct flow field
+        use_gpu = hoomd.context.exec_conf.isCUDAEnabled()
+        if type(flow) is parabolic:
+            if not use_gpu:
+                cpp_class = _azplugins.LangevinParabolicFlow
+            else:
+                cpp_class = _azplugins.LangevinParabolicFlowGPU
+        elif type(flow) is quiescent:
+            if not use_gpu:
+                cpp_class = _azplugins.LangevinQuiescentFluid
+            else:
+                cpp_class = _azplugins.LangevinQuiescentFluidGPU
+        else:
+            hoomd.context.msg.error('flow.langevin: flow field type not recognized\n')
+            raise TypeError('Flow field type not recognized')
+
+        self.cpp_method = cpp_class(hoomd.context.current.system_definition,
+                                    group.cpp_group,
+                                    kT.cpp_variant,
+                                    flow._cpp,
+                                    seed,
+                                    use_lambda,
+                                    float(dscale),
+                                    noiseless)
+        self.cpp_method.validateGroup()
+
+        # store metadata
+        self.group = group
+        self.kT = kT
+        self.flow = flow
+        self.seed = seed
+        self.dscale = dscale
+        self.noiseless = noiseless
+        self.metadata_fields = ['group', 'kT', 'seed', 'dscale','noiseless']
+
+    def set_params(self, kT=None, flow=None, noiseless=None):
+        R""" Change langevin integrator parameters.
+
+        Args:
+            kT (:py:mod:`hoomd.variant` or :py:obj:`float`): New temperature (if set) (in energy units).
+            flow (object): Flow field object
+            noiseless (bool): If true, do not apply the random noise in the equations of motion
+
+        Examples::
+
+            langevin.set_params(kT=2.0)
+
+        Note:
+            Because of the way flow fields are implemented, the type of *flow*
+            is not permitted to change after the integrator is constructed.
+            If you need to change the flow field type, disable the current
+            integrator and create a new one.
+
+        """
+        hoomd.util.print_status_line()
+        self.check_initialization()
+
+        # change the parameters
+        if kT is not None:
+            # setup the variant inputs
+            kT = hoomd.variant._setup_variant_input(kT)
+            self.cpp_method.setT(kT.cpp_variant)
+            self.kT = kT
+
+        if flow is not None:
+            if type(flow) is type(self.flow):
+                self.cpp_method.setFlowField(flow._cpp)
+                self.flow = flow
+            else:
+                hoomd.context.msg.error('flow.langevin: flow profile type cannot change after construction')
+                raise TypeError('Flow profile type cannot change after construction')
+
+        if noiseless is not None:
+            self.cpp_method.setNoiseless(noiseless)
+            self.noiseless = noiseless
+
+    def set_gamma(self, a, gamma):
+        R""" Set gamma for a particle type.
+
+        Args:
+            a (str): Particle type name
+            gamma (float): :math:`\gamma` for particle type a (in units of force/velocity)
+
+        :py:meth:`set_gamma()` sets the coefficient :math:`\gamma` for a single particle type, identified
+        by name. The default is 1.0 if not specified for a type.
+
+        It is not an error to specify gammas for particle types that do not exist in the simulation.
+        This can be useful in defining a single simulation script for many different types of particles
+        even when some simulations only include a subset.
+
+        Examples::
+
+            langevin.set_gamma('A', gamma=2.0)
+
+        """
+        hoomd.util.print_status_line()
+        self.check_initialization()
+        a = str(a)
+
+        ntypes = hoomd.context.current.system_definition.getParticleData().getNTypes()
+        type_list = []
+        for i in range(0,ntypes):
+            type_list.append(hoomd.context.current.system_definition.getParticleData().getNameByType(i))
+
+        # change the parameters
+        for i in range(0,ntypes):
+            if a == type_list[i]:
+                self.cpp_method.setGamma(i,gamma)
 
 class reverse_perturbation(hoomd.update._updater):
     R""" Updater class for a shear flow according to the algorithm

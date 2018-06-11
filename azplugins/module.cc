@@ -48,8 +48,13 @@ namespace py = pybind11;
 /* Integrators */
 #include "BounceBackGeometry.h"
 #include "BounceBackNVE.h"
+#include "FlowFields.h"
+#include "TwoStepBrownianFlow.h"
+#include "TwoStepLangevinFlow.h"
 #ifdef ENABLE_CUDA
 #include "BounceBackNVEGPU.h"
+#include "TwoStepBrownianFlowGPU.h"
+#include "TwoStepLangevinFlowGPU.h"
 #endif // ENABLE_CUDA
 
 //! Plugins for soft matter
@@ -139,7 +144,6 @@ namespace kernel
 } // end namespace gpu
 } // end namespace azplugins
 
-
 PYBIND11_PLUGIN(_azplugins)
     {
     pybind11::module m("_azplugins");
@@ -200,6 +204,18 @@ PYBIND11_PLUGIN(_azplugins)
     #endif // ENABLE_CUDA
 
     /* Integrators */
+    azplugins::detail::export_QuiescentFluid(m);
+    azplugins::detail::export_ParabolicFlow(m);
+    azplugins::detail::export_TwoStepBrownianFlow<azplugins::ParabolicFlow>(m, "BrownianParabolicFlow");
+    azplugins::detail::export_TwoStepBrownianFlow<azplugins::QuiescentFluid>(m, "BrownianQuiescentFluid");
+    azplugins::detail::export_TwoStepLangevinFlow<azplugins::ParabolicFlow>(m, "LangevinParabolicFlow");
+    azplugins::detail::export_TwoStepLangevinFlow<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluid");
+    #ifdef ENABLE_CUDA
+    azplugins::detail::export_TwoStepBrownianFlowGPU<azplugins::ParabolicFlow>(m, "BrownianParabolicFlowGPU");
+    azplugins::detail::export_TwoStepBrownianFlowGPU<azplugins::QuiescentFluid>(m, "BrownianQuiescentFluidGPU");
+    azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::ParabolicFlow>(m, "LangevinParabolicFlowGPU");
+    azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluidGPU");
+    #endif // ENABLE_CUDA
     azplugins::detail::export_boundary(m);
     azplugins::detail::export_SlitGeometry(m);
     azplugins::detail::export_BounceBackNVE<mpcd::detail::SlitGeometry>(m);

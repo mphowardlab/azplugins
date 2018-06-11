@@ -8,6 +8,10 @@ set(TEST_LIST_CPU
     test_dpd_general
     test_evaporate_implicit
     test_evaporate_particles
+    test_flow_brownian
+    test_flow_langevin
+    test_flow_parabolic
+    test_flow_quiescent
     test_integrate_slit
     test_pair_ashbaugh
     test_pair_ashbaugh24
@@ -33,6 +37,8 @@ set(TEST_LIST_GPU
     test_dpd_general
     test_evaporate_implicit
     test_evaporate_particles
+    test_flow_brownian
+    test_flow_langevin
     test_integrate_slit
     test_pair_ashbaugh
     test_pair_ashbaugh24

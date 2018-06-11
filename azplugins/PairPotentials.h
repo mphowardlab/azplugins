@@ -44,7 +44,6 @@
  */
 #ifndef NVCC
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
-namespace py = pybind11;
 
 #include "hoomd/md/PotentialPair.h"
 #ifdef ENABLE_CUDA
@@ -58,7 +57,7 @@ namespace detail
 {
 //! Exports the pair potential to the python module
 template<class evaluator>
-void export_pair_potential(py::module& m, const std::string& name)
+void export_pair_potential(pybind11::module& m, const std::string& name)
     {
     typedef ::PotentialPair<evaluator> pair_potential_cpu;
     export_PotentialPair<pair_potential_cpu>(m, name);
