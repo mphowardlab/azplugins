@@ -29,6 +29,14 @@ namespace py = pybind11;
 #include "ParticleEvaporatorGPU.h"
 #endif // ENABLE_CUDA
 
+/* MPCD */
+#ifdef ENABLE_MPCD
+#include "MPCDReversePerturbationFlow.h"
+#ifdef ENABLE_CUDA
+#include "MPCDReversePerturbationFlowGPU.h"
+#endif // ENABLE_CUDA
+#endif // ENABLE_MPCD
+
 /* Force computes */
 #include "ImplicitEvaporator.h"
 #include "OrientationRestraintCompute.h"
@@ -196,6 +204,14 @@ PYBIND11_PLUGIN(_azplugins)
     azplugins::detail::export_OrientationRestraintComputeGPU(m);
     azplugins::detail::export_PositionRestraintComputeGPU(m);
     #endif // ENABLE_CUDA
+
+    /* MPCD */
+    #ifdef ENABLE_MPCD
+    azplugins::detail::export_MPCDReversePerturbationFlow(m);
+    #ifdef ENABLE_CUDA
+    azplugins::detail::export_MPCDReversePerturbationFlowGPU(m);
+    #endif // ENABLE_CUDA
+    #endif // ENABLE_MPCD
 
     /* Analyzers */
     azplugins::detail::export_RDFAnalyzer(m);

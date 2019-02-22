@@ -91,4 +91,5 @@ class ReversePerturbationSorter
 } // end namespace azplugins
 
 #undef HOSTDEVICE
+
 #endif // AZPLUGINS_REVERSE_PERTURBATION_UTILITIES_H_

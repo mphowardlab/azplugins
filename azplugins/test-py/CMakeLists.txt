@@ -57,14 +57,19 @@ set(TEST_LIST_GPU
     test_wall_lj93
     )
 
+set(MPCD_ONLY
+    test_mpcd_reverse_perturbation
+    )
+
+set(MPI_ONLY
+    )
+
 set(EXCLUDE_FROM_MPI
     test_analyze_rdf
     test_restrain_orientation
     test_restrain_position
     test_flow_reverse_perturbation
-    )
-
-set(MPI_ONLY
+    test_mpcd_reverse_perturbation
     )
 
 # these macros are duplicates from other places in the hoomd code
@@ -78,7 +83,7 @@ macro(add_script_test_cpu_mpi script)
                 COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${nproc}
                 ${MPIEXEC_POSTFLAGS} ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${script}.py "--mode=cpu")
                 set_tests_properties(azplugins-${script}-mpi-cpu PROPERTIES ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH}")
-            endif()
+        endif()
     endif(ENABLE_MPI)
 endmacro()
 
@@ -113,16 +118,29 @@ endmacro()
 foreach (CUR_TEST ${TEST_LIST_CPU})
     add_script_test_cpu(${CUR_TEST})
 endforeach (CUR_TEST)
-
+if (BUILD_MPCD)
+foreach (CUR_TEST ${MPCD_ONLY})
+    add_script_test_cpu(${CUR_TEST})
+endforeach (CUR_TEST)
+endif (BUILD_MPCD)
+if (ENABLE_MPI)
 foreach (CUR_TEST ${MPI_ONLY})
     add_script_test_cpu_mpi(${CUR_TEST})
 endforeach (CUR_TEST)
+endif (ENABLE_MPI)
 
 if (ENABLE_CUDA)
 foreach (CUR_TEST ${TEST_LIST_GPU})
     add_script_test_gpu(${CUR_TEST})
 endforeach (CUR_TEST)
+if (BUILD_MPCD)
+foreach (CUR_TEST ${MPCD_ONLY})
+    add_script_test_gpu(${CUR_TEST})
+endforeach (CUR_TEST)
+endif (BUILD_MPCD)
+if (ENABLE_MPI)
 foreach (CUR_TEST ${MPI_ONLY})
     add_script_test_gpu_mpi(${CUR_TEST})
 endforeach (CUR_TEST)
+endif (ENABLE_MPI)
 endif (ENABLE_CUDA)

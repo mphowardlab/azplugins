@@ -112,15 +112,19 @@ set(py_files
 if(BUILD_MPCD)
 # mpcd python files
 list(APPEND py_files
+    mpcd.py
     )
 # mpcd c++ files
 list(APPEND _${COMPONENT_NAME}_sources
+    MPCDReversePerturbationFlow.cc
     )
 # mpcd c++/cu cuda files
 if(ENABLE_CUDA)
 list(APPEND _${COMPONENT_NAME}_sources
+    MPCDReversePerturbationFlowGPU.cc
     )
 list(APPEND _${COMPONENT_NAME}_cu_sources
+    MPCDReversePerturbationFlowGPU.cu
     )
 endif(ENABLE_CUDA)
 endif(BUILD_MPCD)
