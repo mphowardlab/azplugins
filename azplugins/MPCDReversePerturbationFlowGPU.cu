@@ -10,9 +10,9 @@
 
 #include "MPCDReversePerturbationFlowGPU.cuh"
 #include "ReversePerturbationUtilities.h"
-#include "hoomd/extern/cub/cub/cub.cuh"
 #include <thrust/sort.h>
 #include <thrust/device_vector.h>
+#include "hoomd/extern/cub/cub/cub.cuh"
 
 namespace azplugins
 {
