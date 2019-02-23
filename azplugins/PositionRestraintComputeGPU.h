@@ -21,7 +21,7 @@
 namespace azplugins
 {
 //! Adds a restraining force to groups of particles on the GPU
-class PositionRestraintComputeGPU : public PositionRestraintCompute
+class PYBIND11_EXPORT PositionRestraintComputeGPU : public PositionRestraintCompute
     {
     public:
         //! Constructs the compute

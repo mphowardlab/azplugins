@@ -26,7 +26,7 @@ void export_boundary(pybind11::module& m)
 void export_SlitGeometry(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<mpcd::detail::SlitGeometry, std::shared_ptr<const mpcd::detail::SlitGeometry> >(m, "SlitGeometry")
+    py::class_<mpcd::detail::SlitGeometry, std::shared_ptr<mpcd::detail::SlitGeometry> >(m, "SlitGeometry")
         .def(py::init<Scalar, Scalar, mpcd::detail::boundary>())
         .def("getH", &mpcd::detail::SlitGeometry::getH)
         .def("getVelocity", &mpcd::detail::SlitGeometry::getVelocity)

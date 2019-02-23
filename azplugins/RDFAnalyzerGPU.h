@@ -23,7 +23,7 @@ namespace azplugins
 {
 
 //! Radial distribution function analyzer for the GPU
-class RDFAnalyzerGPU : public RDFAnalyzer
+class PYBIND11_EXPORT RDFAnalyzerGPU : public RDFAnalyzer
     {
     public:
         //! Constructor

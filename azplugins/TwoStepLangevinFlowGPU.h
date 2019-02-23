@@ -23,7 +23,7 @@ namespace azplugins
 {
 
 template<class FlowField>
-class TwoStepLangevinFlowGPU : public azplugins::TwoStepLangevinFlow<FlowField>
+class PYBIND11_EXPORT TwoStepLangevinFlowGPU : public azplugins::TwoStepLangevinFlow<FlowField>
     {
     public:
         //! Constructor

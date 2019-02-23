@@ -38,7 +38,7 @@ namespace azplugins
  * \f[ F(\mathbf{r}) = - \mathbf{k} \mathbf{\Delta r} \f]
  *
  */
-class PositionRestraintCompute : public ForceCompute
+class PYBIND11_EXPORT PositionRestraintCompute : public ForceCompute
     {
     public:
         //! Constructs the compute

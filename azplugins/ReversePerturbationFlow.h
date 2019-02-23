@@ -28,7 +28,7 @@ namespace azplugins
  *
  * A flow is induced by swapping momentum in x direction based on particle position in z-direction.
  */
-class ReversePerturbationFlow : public Updater
+class PYBIND11_EXPORT ReversePerturbationFlow : public Updater
     {
     public:
         //! Constructor

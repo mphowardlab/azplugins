@@ -31,7 +31,7 @@ namespace azplugins
  * accommodate a generic region criteria, but for now, the planar slab in z is
  * all that is necessary.
  */
-class TypeUpdater : public Updater
+class PYBIND11_EXPORT TypeUpdater : public Updater
     {
     public:
         //! Simple constructor

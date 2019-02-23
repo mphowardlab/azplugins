@@ -53,7 +53,7 @@ template<class evaluator>
 void export_dpd_potential(py::module& m, const std::string& name)
     {
     typedef ::PotentialPair<evaluator> base_cpu;
-    export_PotentialPair<base_cpu>(m, name);
+    export_PotentialPair<base_cpu>(m, name + "Base");
 
     typedef ::PotentialPairDPDThermo<evaluator> dpd_cpu;
     export_PotentialPairDPDThermo<dpd_cpu, base_cpu>(m, name);

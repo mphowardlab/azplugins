@@ -23,7 +23,7 @@ namespace azplugins
 {
 
 template<class FlowField>
-class TwoStepBrownianFlowGPU : public azplugins::TwoStepBrownianFlow<FlowField>
+class PYBIND11_EXPORT TwoStepBrownianFlowGPU : public azplugins::TwoStepBrownianFlow<FlowField>
     {
     public:
         //! Constructor

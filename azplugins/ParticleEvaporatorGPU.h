@@ -27,7 +27,7 @@ namespace azplugins
  * See ParticleEvaporator for details. This class inherits and minimally implements
  * the CPU methods from ParticleEvaporator on the GPU.
  */
-class ParticleEvaporatorGPU : public ParticleEvaporator
+class PYBIND11_EXPORT ParticleEvaporatorGPU : public ParticleEvaporator
     {
     public:
         //! Simple constructor

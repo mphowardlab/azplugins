@@ -82,7 +82,7 @@ macro(add_script_test_cpu_mpi script)
             add_test(NAME azplugins-${script}-mpi-cpu
                 COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${nproc}
                 ${MPIEXEC_POSTFLAGS} ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${script}.py "--mode=cpu")
-                set_tests_properties(azplugins-${script}-mpi-cpu PROPERTIES ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH}")
+            set_tests_properties(azplugins-${script}-mpi-cpu PROPERTIES ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH}")
         endif()
     endif(ENABLE_MPI)
 endmacro()

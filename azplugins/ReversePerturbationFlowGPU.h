@@ -26,7 +26,7 @@ namespace azplugins
  * See ReversePerturbationFlow for details. This class inherits and minimally implements
  * the CPU methods from ReversePerturbationFlow on the GPU.
  */
-class ReversePerturbationFlowGPU : public ReversePerturbationFlow
+class PYBIND11_EXPORT ReversePerturbationFlowGPU : public ReversePerturbationFlow
     {
     public:
         //! Constructor with parameters

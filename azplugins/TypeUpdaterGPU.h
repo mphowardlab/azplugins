@@ -26,7 +26,7 @@ namespace azplugins
  * See TypeUpdater for details. This class inherits and minimally implements
  * the CPU methods from TypeUpdater on the GPU.
  */
-class TypeUpdaterGPU : public TypeUpdater
+class PYBIND11_EXPORT TypeUpdaterGPU : public TypeUpdater
     {
     public:
         //! Simple constructor

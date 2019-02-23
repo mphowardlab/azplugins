@@ -36,7 +36,7 @@ namespace azplugins
  *
  * \todo Use a CellList to accelerate the calculation.
  */
-class RDFAnalyzer : public Analyzer
+class PYBIND11_EXPORT RDFAnalyzer : public Analyzer
     {
     public:
         //! Constructor

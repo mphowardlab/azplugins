@@ -26,7 +26,7 @@ namespace azplugins
  * See BounceBackNVE for more details.
  */
 template<class Geometry>
-class BounceBackNVEGPU : public BounceBackNVE<Geometry>
+class PYBIND11_EXPORT BounceBackNVEGPU : public BounceBackNVE<Geometry>
     {
     public:
         //! Constructor

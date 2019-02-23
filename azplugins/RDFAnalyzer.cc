@@ -9,6 +9,7 @@
  */
 
 #include "RDFAnalyzer.h"
+#include "hoomd/extern/pybind/include/pybind11/stl.h"
 
 namespace azplugins
 {

@@ -29,7 +29,7 @@ namespace azplugins
  *
  * A flow is induced by swapping velocities in x direction based on particle position in z-direction.
  */
-class MPCDReversePerturbationFlow : public Updater
+class PYBIND11_EXPORT MPCDReversePerturbationFlow : public Updater
     {
     public:
         //! Constructor

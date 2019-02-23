@@ -27,7 +27,7 @@ namespace azplugins
  * \note Only translational motion is supported by this integrator.
  */
 template<class FlowField>
-class TwoStepLangevinFlow : public TwoStepLangevinBase
+class PYBIND11_EXPORT TwoStepLangevinFlow : public TwoStepLangevinBase
     {
     public:
         //! Constructor

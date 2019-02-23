@@ -38,7 +38,7 @@ namespace azplugins
  * \f[ \mathbf{\tau}(\theta) = -k \left[ 1 - 2 \left( \hat{n}_i \cdot \hat{n}_{i,\mathrm{ref}} \right) \right] \left( \hat{n}_i \times \hat{n}_{i,\mathrm{ref}} \right) \f]
  *
  */
-class OrientationRestraintCompute : public ForceCompute
+class PYBIND11_EXPORT OrientationRestraintCompute : public ForceCompute
     {
     public:
         //! Constructs the compute

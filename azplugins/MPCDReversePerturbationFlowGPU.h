@@ -26,7 +26,7 @@ namespace azplugins
  * See MPCDReversePerturbationFlow for details. This class inherits and minimally implements
  * the CPU methods from MPCDReversePertubationFlow on the GPU.
  */
-class MPCDReversePerturbationFlowGPU : public MPCDReversePerturbationFlow
+class PYBIND11_EXPORT MPCDReversePerturbationFlowGPU : public MPCDReversePerturbationFlow
     {
     public:
         //! Constructor with parameters

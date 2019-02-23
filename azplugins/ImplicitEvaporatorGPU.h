@@ -27,7 +27,7 @@ namespace azplugins
  * \warning The virial is not computed for this external potential, and a warning
  *          will be raised the first time it is requested.
  */
-class ImplicitEvaporatorGPU : public ImplicitEvaporator
+class PYBIND11_EXPORT ImplicitEvaporatorGPU : public ImplicitEvaporator
     {
     public:
         //! Constructor

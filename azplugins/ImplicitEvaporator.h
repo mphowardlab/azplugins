@@ -63,7 +63,7 @@ namespace azplugins
  *          will be raised the first time it is requested.
  *
  */
-class ImplicitEvaporator : public ForceCompute
+class PYBIND11_EXPORT ImplicitEvaporator : public ForceCompute
     {
     public:
         //! Constructor

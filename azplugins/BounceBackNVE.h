@@ -33,7 +33,7 @@ namespace azplugins
  * slip near the surface from the acceleration.
  */
 template<class Geometry>
-class BounceBackNVE : public ::IntegrationMethodTwoStep
+class PYBIND11_EXPORT BounceBackNVE : public ::IntegrationMethodTwoStep
     {
     public:
         //! Constructor

@@ -99,8 +99,6 @@ include (HOOMDCFlagsSetup)
 include (HOOMDOSSpecificSetup)
 # setup common libraries used by all targets in this project
 include (HOOMDCommonLibsSetup)
-# setup numpy
-include (HOOMDNumpySetup)
 # setup macros
 include (HOOMDMacros)
 

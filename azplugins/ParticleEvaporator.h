@@ -43,7 +43,7 @@ namespace azplugins
  *          are typically uncoupled (non-interacting). Hence, their velocities
  *          make a meaningless contribution to the reported temperature.
  */
-class ParticleEvaporator : public TypeUpdater
+class PYBIND11_EXPORT ParticleEvaporator : public TypeUpdater
     {
     public:
         //! Simple constructor

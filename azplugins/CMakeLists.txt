@@ -130,9 +130,6 @@ endif(ENABLE_CUDA)
 endif(BUILD_MPCD)
 ##############################
 
-# Need to define NO_IMPORT_ARRAY in every file but module.cc
-set_source_files_properties(${_${COMPONENT_NAME}_sources} ${_${COMPONENT_NAME}_cu_sources} PROPERTIES COMPILE_DEFINITIONS NO_IMPORT_ARRAY)
-
 # if MPCD component is enabled, need to define with a macro for source code
 if(BUILD_MPCD)
 add_definitions(-DENABLE_MPCD)
@@ -142,10 +139,25 @@ if (ENABLE_CUDA)
 CUDA_COMPILE(_CUDA_GENERATED_FILES ${_${COMPONENT_NAME}_cu_sources} OPTIONS ${CUDA_ADDITIONAL_OPTIONS} SHARED)
 endif (ENABLE_CUDA)
 
-add_library (_${COMPONENT_NAME} SHARED ${_${COMPONENT_NAME}_sources} ${_CUDA_GENERATED_FILES})
+pybind11_add_module(_${COMPONENT_NAME} SHARED ${_${COMPONENT_NAME}_sources} ${_CUDA_GENERATED_FILES} NO_EXTRAS)
+if (NOT HOOMD_EXTERNAL_BUILD)
+if (APPLE)
+if (BUILD_MPCD)
+    set_target_properties(_${COMPONENT_NAME} PROPERTIES INSTALL_RPATH "@loader_path/..;@loader_path/../md;@loader_path/../mpcd;@loader_path")
+else (BUILD_MPCD)
+    set_target_properties(_${COMPONENT_NAME} PROPERTIES INSTALL_RPATH "@loader_path/..;@loader_path/../md;@loader_path")
+endif (BUILD_MPCD)
+else (APPLE)
+if (BUILD_MPCD)
+    set_target_properties(_${COMPONENT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/..;$ORIGIN/../md;$ORIGIN/../mpcd;$ORIGIN")
+else (BUILD_MPCD)
+    set_target_properties(_${COMPONENT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/..;$ORIGIN/../md;$ORIGIN")
+endif (BUILD_MPCD)
+endif (APPLE)
+endif (NOT HOOMD_EXTERNAL_BUILD)
 
 # link the library to its dependencies
-target_link_libraries(_${COMPONENT_NAME} ${HOOMD_LIBRARIES} ${HOOMD_MD_LIB} ${HOOMD_MPCD_LIB})
+target_link_libraries(_${COMPONENT_NAME} PRIVATE ${HOOMD_MD_LIB} ${HOOMD_MPCD_LIB} ${HOOMD_LIBRARIES})
 
 # if we are compiling with MPI support built in, set appropriate
 # compiler/linker flags
@@ -158,15 +170,6 @@ if (ENABLE_MPI)
    endif(MPI_CXX_LINK_FLAGS)
 endif(ENABLE_MPI)
 
-##################################
-# change the name of the library to be a valid python module
-# tweak the properties of the output to make a functional python module
-set_target_properties(_${COMPONENT_NAME} PROPERTIES PREFIX "" OUTPUT_NAME "_${COMPONENT_NAME}")
-
-# .dylib is not recognized as a python module by python on Mac OS X
-if(APPLE)
-    set_target_properties(_${COMPONENT_NAME} PROPERTIES SUFFIX ".so")
-endif(APPLE)
 fix_cudart_rpath(_${COMPONENT_NAME})
 
 # install the library
