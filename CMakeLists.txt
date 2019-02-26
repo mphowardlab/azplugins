@@ -14,26 +14,10 @@ if(COMMAND cmake_policy)
 endif(COMMAND cmake_policy)
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
-SET(CMAKE_INSTALL_RPATH "$ORIGIN/..:$ORIGIN")
-
-include(FindHOOMD.cmake)
-# try to deduce the hoomd version, since FindHOOMD does not support versioning now.
-set(find_hoomd_version "
-from __future__ import print_function
-import sys,os
-sys.stdout = open(os.devnull, 'w')
-import hoomd
-print(hoomd.__version__, file=sys.stderr, end='')")
-execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "${find_hoomd_version}" ERROR_VARIABLE hoomd_version)
-if(hoomd_version MATCHES "^Traceback*")
-    message(STATUS "HOOMD version: not deduced, ensure that it is >= 2.2.2.")
-else()
-    message(STATUS "HOOMD version: " ${hoomd_version})
-    if(hoomd_version VERSION_LESS "2.2.2")
-    message(FATAL_ERROR "HOOMD version must be >= 2.2.2")
-    endif(hoomd_version VERSION_LESS "2.2.2")
-endif(hoomd_version MATCHES "^Traceback*")
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake ${CMAKE_MODULE_PATH})
+find_package(HOOMD 2.3.0 REQUIRED)
+include_directories(${HOOMD_INCLUDE_DIRS})
+set(HOOMD_EXTERNAL_BUILD ON)
 
 # plugins must be built as shared libraries
 if (ENABLE_STATIC)
@@ -44,9 +28,7 @@ set(BUILD_SHARED_LIBS on)
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX ${HOOMD_ROOT} CACHE PATH "Installation prefix" FORCE)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-
 set(PYTHON_MODULE_BASE_DIR ${CMAKE_INSTALL_PREFIX})
-message(STATUS "Install plugin to: " ${PYTHON_MODULE_BASE_DIR})
 
 # setup unit tests
 enable_testing()

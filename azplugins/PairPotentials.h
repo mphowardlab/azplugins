@@ -16,7 +16,8 @@
  *     This file should be included below. You can follow one of the other evaluator functors as
  *     an example for the details.
  *
- *  2. Explicitly instantiate a template for a CUDA driver for your potential in PairPotentials.cu.
+ *  2. Explicitly instantiate a template for a CUDA driver for your potential in its own .cu file. Add this
+ *     file to CMakeLists.txt.
  *
  *  3. Expose the pair potential on the python level in module.cc using export_pair_potential and
  *     add the mirror python object to pair.py.

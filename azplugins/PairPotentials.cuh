@@ -7,8 +7,7 @@
  * \file PairPotentials.cuh
  * \brief Declares driver function for computing pair forces on the GPU
  *
- * A templated function for each driver should be instantiated in
- * PairPotentials.cu.
+ * A templated function for each driver should be instantiated in its own .cu file.
  */
 
 #ifndef AZPLUGINS_PAIR_POTENTIAL_DRIVERS_CUH_

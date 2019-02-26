@@ -11,35 +11,18 @@ if(NOT DEFINED HOOMD_EXTERNAL_BUILD)
     set(HOOMD_EXTERNAL_BUILD OFF)
 endif(NOT DEFINED HOOMD_EXTERNAL_BUILD)
 
-if(HOOMD_EXTERNAL_BUILD)
-    # the md component is always required
-    if (NOT EXISTS ${HOOMD_MD_LIB})
-        message(FATAL_ERROR "azplugins requires hoomd installation with MD component.")
-    endif (NOT EXISTS ${HOOMD_MD_LIB})
-
-    # the mpcd library is optional
-    if(EXISTS ${HOOMD_MPCD_LIB})
-        set(BUILD_MPCD ON)
-        message(STATUS "mpcd library detected in hoomd installation, building MPCD components.")
-    else(EXISTS ${HOOMD_MPCD_LIB})
-        set(BUILD_MPCD OFF)
-        set(HOOMD_MPCD_LIB "")
-        message(STATUS "mpcd library not detected in hoomd installation, skipping MPCD components.")
-    endif(EXISTS ${HOOMD_MPCD_LIB})
-else(HOOMD_EXTERNAL_BUILD)
-    # the md component is always required
-    if (NOT BUILD_MD)
-        message(FATAL_ERROR "azplugins requires hoomd installation with MD component.")
-    endif (NOT BUILD_MD)
-    set(HOOMD_MD_LIB _md)
-
+# the md component is always required
+if (NOT BUILD_MD)
+    message(FATAL_ERROR "azplugins requires hoomd installation with MD component.")
+endif (NOT BUILD_MD)
+# configure the library names if this is an internal build
+if(NOT HOOMD_EXTERNAL_BUILD)
+    set(HOOMD_MD_LIBRARY _md)
     # mpcd is optional
     if (BUILD_MPCD)
-        set(HOOMD_MPCD_LIB _mpcd)
-    else (BUILD_MPCD)
-        set(HOOMD_MPCD_LIB "")
+        set(HOOMD_MPCD_LIBRARY _mpcd)
     endif (BUILD_MPCD)
-endif(HOOMD_EXTERNAL_BUILD)
+endif(NOT HOOMD_EXTERNAL_BUILD)
 ##############################
 
 ##############################
@@ -78,7 +61,13 @@ set(_${COMPONENT_NAME}_cu_sources
     DPDPotentials.cu
     ImplicitEvaporatorGPU.cu
     OrientationRestraintComputeGPU.cu
-    PairPotentials.cu
+    PairPotentialAshbaugh.cu
+    PairPotentialAshbaugh24.cu
+    PairPotentialColloid.cu
+    PairPotentialLJ96.cu
+    PairPotentialLJ124.cu
+    PairPotentialShiftedLJ.cu
+    PairPotentialSpline.cu
     ParticleEvaporatorGPU.cu
     PositionRestraintComputeGPU.cu
     RDFAnalyzerGPU.cu
@@ -157,7 +146,7 @@ endif (APPLE)
 endif (NOT HOOMD_EXTERNAL_BUILD)
 
 # link the library to its dependencies
-target_link_libraries(_${COMPONENT_NAME} PRIVATE ${HOOMD_MD_LIB} ${HOOMD_MPCD_LIB} ${HOOMD_LIBRARIES})
+target_link_libraries(_${COMPONENT_NAME} PRIVATE ${HOOMD_MD_LIBRARY} ${HOOMD_MPCD_LIBRARY} ${HOOMD_LIBRARIES})
 
 # if we are compiling with MPI support built in, set appropriate
 # compiler/linker flags

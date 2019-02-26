@@ -152,10 +152,8 @@ namespace kernel
 } // end namespace gpu
 } // end namespace azplugins
 
-PYBIND11_PLUGIN(_azplugins)
+PYBIND11_MODULE(_azplugins, m)
     {
-    pybind11::module m("_azplugins");
-
     /* Pair potentials */
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorAshbaugh>(m, "PairPotentialAshbaugh");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorAshbaugh24>(m, "PairPotentialAshbaugh24");
@@ -238,6 +236,4 @@ PYBIND11_PLUGIN(_azplugins)
     #ifdef ENABLE_CUDA
     azplugins::detail::export_BounceBackNVEGPU<mpcd::detail::SlitGeometry>(m);
     #endif // ENABLE_CUDA
-
-    return m.ptr();
     }
