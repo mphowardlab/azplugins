@@ -5,7 +5,7 @@
 ---------
 ## v0.6.0
 
-Not yet released.
+25 February 2019
 
 *Release notes*
 
