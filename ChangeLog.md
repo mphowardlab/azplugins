@@ -3,6 +3,31 @@
 [TOC]
 
 ---------
+## v0.6.0
+
+Not yet released.
+
+*Release notes*
+
+This version of the plugin **requires** HOOMD-blue v2.3.0 for compatibility
+with the embedded pybind11 library. Be sure to update your git submodules
+when recompiling and installing HOOMD-blue.
+
+azplugins is now maintained by Michael P. Howard and will be hosted on
+GitHub (https://github.com/mphoward/azplugins).
+
+*New features*
+
+* `mpcd.reverse_perturbation` implements the reverse perturbation method in
+  the optional MPCD module to simulate shear flow.
+
+*Other changes*
+
+* The azplugins license and packaging has been updated to reflect the
+  project continuation.
+* `FindHOOMD.cmake` has been improved to support `find_package` and detect
+   the installed version of HOOOMD.
+
 ## v0.5.0
 
 11 June 2018
