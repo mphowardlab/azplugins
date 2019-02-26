@@ -1,9 +1,6 @@
-Modified BSD License
-====================
+Copyright (c) 2018-2019, Michael P. Howard
 
-**Copyright (c) 2016-2018, Panagiotopoulos Group, Princeton University**
-
-_All rights reserved._
+All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:

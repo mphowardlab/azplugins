@@ -1,4 +1,4 @@
-Contributions are encouraged using pull requests on Bitbucket for feature / fix branches.
+Contributions are encouraged using pull requests on GitHub for feature / fix branches.
 
 # New feature guidelines
 
@@ -6,8 +6,8 @@ Contributions are encouraged using pull requests on Bitbucket for feature / fix 
 
 Each new feature or fix should be implemented as a git branch off master.
 Name the branch after the feature or fix being done. For example, a new pair
-potential could be `pair_cool`, while a bug fix branch could be
-`fix_sky_is_orange`.
+potential could be `feature/pair_cool`, while a bug fix branch could be
+`bugfix/sky_is_orange`.
 
 ## Write sphinx documentation for user-facing API
 
@@ -45,10 +45,9 @@ error handling.
 Write the python implementation of your new feature first, then implement
 the C++ header file. Finally, implement the details of the algorithm.
 
-## Add your feature or fix to the changelog
+## Add your feature or fix to the credits
 
-All new features or fixes should be documented with a short description
-in the changelog for the appropriate target version.
+All new features or fixes should give credit to the author in `CREDITS.md`.
 
 # Source code guidelines
 
@@ -56,7 +55,7 @@ in the changelog for the appropriate target version.
 
 This makes it easier to update the copyright year over year.
 ```c++
-// Copyright (c) 2016-2018, Panagiotopoulos Group, Princeton University
+// Copyright (c) 2018-2019, Michael P. Howard
 // This file is part of the azplugins project, released under the Modified BSD License.
 
 // Maintainer: your-bitbucket-username
@@ -295,19 +294,23 @@ if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
 ## Optimize for the latest hardware
 
 Optimize your code to run on the latest hardware. Do not maintain workarounds
-for hardware older than compute capability 3.0. (This typically means do not
-include a "Fermi workaround" for emulating large 1D grids.)
+for hardware older than compute capability 3.5. (This typically means do not
+include a "Fermi workaround" for emulating large 1D grids, and do not waste
+effort with textures.)
 
 ## Use intrinsics for global memory reads
 
-Take advantage of `__ldg` intrinsic on compute capability 3.5 or newer, and use
-texture fetches on compute capability 3.0. This is facilitated automatically
-by hoomd wrapper functions, which should be used.
+Take advantage of `__ldg` intrinsic for compute capability 3.5 or newer.
 
 ## Cache small parameters into shared memory
 
 For per-type or per-pair coefficients, cache these values into shared memory
 at kernel launch time.
+
+## Use libraries where available
+
+Take advantage of efficient routines that already exist in CUB, Thrust, or
+internal to HOOMD (e.g., WarpTools).
 
 
 # Python guidelines

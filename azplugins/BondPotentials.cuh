@@ -1,7 +1,7 @@
-// Copyright (c) 2016-2018, Panagiotopoulos Group, Princeton University
+// Copyright (c) 2018-2019, Michael P. Howard
 // This file is part of the azplugins project, released under the Modified BSD License.
 
-// Maintainer: astatt
+// Maintainer: mphoward
 
 /*!
  * \file BondPotentials.cuh
