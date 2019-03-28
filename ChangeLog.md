@@ -1,8 +1,14 @@
 # AZPlugins Change Log
 
-[TOC]
-
 ---------
+## v0.6.1
+
+28 March 2019
+
+*Bug fixes*
+
+* Fix thrust template parameters in `mpcd.reverse_perturbation` for CUDA 9 & 10.
+
 ## v0.6.0
 
 25 February 2019
