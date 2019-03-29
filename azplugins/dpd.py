@@ -6,7 +6,7 @@
 import hoomd
 from hoomd import _hoomd
 from hoomd.md import _md
-import _azplugins
+from azplugins import _azplugins
 
 class general(hoomd.md.pair.pair):
     R""" Dissipative Particle Dynamics with generalized weight function

@@ -5,9 +5,8 @@
 
 import hoomd
 from hoomd import _hoomd
-from hoomd.md import _md
 from hoomd.md import force
-import _azplugins
+from azplugins import _azplugins
 import numpy
 
 class position(force._force):

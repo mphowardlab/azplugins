@@ -5,8 +5,7 @@
 
 import hoomd
 from hoomd import _hoomd
-from hoomd.md import _md
-import _azplugins
+from azplugins import _azplugins
 import math
 
 class fene(hoomd.md.bond._bond):
