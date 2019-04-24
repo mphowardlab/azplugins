@@ -1,0 +1,122 @@
+version: 2.1
+
+executors:
+  mphoward:
+    docker:
+      - image: mphoward/ci:hoomd2.5.1-ubuntu18.04
+    working_directory: /home/ci/project
+
+commands:
+  checkout_with_submodules:
+    steps:
+      - checkout:
+          path: code
+      - run:
+          name: Update submodules
+          working_directory: code
+          command: git submodule update --init
+
+  ext_build:
+    steps:
+      - run:
+          name: Configure
+          command: |
+            mkdir build
+            cd build
+            cmake ../code -DPYTHON_EXECUTABLE=${PYTHON} -DBUILD_TESTING=ON
+      - run:
+          name: Compile
+          command: |
+            cd build
+            make -j2
+
+  test:
+    steps:
+      - run:
+          name: Test
+          working_directory: build
+          no_output_timeout: 1h
+          command: |
+            ctest --no-compress-output -T test --output-on-failure -R azplugins
+      - run:
+          name: Copy test results
+          command: mkdir test-results && cp build/Testing/**/Test.xml test-results/
+      - store_artifacts:
+          path: test-results
+          destination: test-results
+      - store_test_results:
+          path: test-results
+
+jobs:
+  ext_build:
+    parameters:
+      python-version:
+        type: string
+        default: "3"
+      hoomd-config:
+        type: string
+    executor:
+      name: mphoward
+    environment:
+      PYTHONPATH: "/home/ci/project/build:/opt/hoomd/python<< parameters.python-version>>/<< parameters.hoomd-config >>"
+      PYTHON: "/usr/bin/python<< parameters.python-version >>"
+    steps:
+      - checkout_with_submodules
+      - ext_build
+
+  ext_build_and_test:
+    parameters:
+      python-version:
+        type: string
+        default: "3"
+      hoomd-config:
+        type: string
+    executor:
+      name: mphoward
+    environment:
+      PYTHONPATH: "/home/ci/project/build:/opt/hoomd/python<< parameters.python-version>>/<< parameters.hoomd-config >>"
+      PYTHON: "/usr/bin/python<< parameters.python-version >>"
+    steps:
+      - checkout_with_submodules
+      - ext_build
+      - test
+
+workflows:
+  workflow:
+    jobs:
+      - ext_build_and_test:
+          name: py3-nocuda-nompi-double
+          hoomd-config: "nocuda/nompi/double"
+
+      - ext_build_and_test:
+          name: py3-nocuda-nompi-single
+          hoomd-config: "nocuda/nompi/single"
+
+      - ext_build_and_test:
+          name: py3-nocuda-mpi-double
+          hoomd-config: "nocuda/mpi/double"
+
+      - ext_build_and_test:
+          name: py3-nocuda-mpi-single
+          hoomd-config: "nocuda/mpi/single"
+
+      - ext_build:
+          name: py3-cuda-nompi-double
+          hoomd-config: "cuda/nompi/double"
+
+      - ext_build:
+          name: py3-cuda-nompi-single
+          hoomd-config: "cuda/nompi/single"
+
+      - ext_build:
+          name: py3-cuda-mpi-double
+          hoomd-config: "cuda/mpi/double"
+
+      - ext_build:
+          name: py3-cuda-mpi-single
+          hoomd-config: "cuda/mpi/single"
+
+      - ext_build_and_test:
+          name: py2-nocuda-nompi-double
+          python-version: "2"
+          hoomd-config: "nocuda/nompi/double"
