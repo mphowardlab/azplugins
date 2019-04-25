@@ -23,7 +23,29 @@ commands:
           command: |
             mkdir build
             cd build
-            cmake ../code -DPYTHON_EXECUTABLE=${PYTHON} -DBUILD_TESTING=ON
+            cmake ../code -DPYTHON_EXECUTABLE=${PYTHON} -DBUILD_TESTING=on
+      - run:
+          name: Compile
+          command: |
+            cd build
+            make -j2
+
+  int_build:
+    parameters:
+      build-mpcd:
+        type: boolean
+    steps:
+      - run:
+          name: Link plugin
+          command: |
+            cd /home/ci/hoomd/hoomd
+            ln -s /home/ci/project/code/azplugins azplugins
+      - run:
+          name: Configure
+          command: |
+            mkdir build
+            cd build
+            cmake /home/ci/hoomd -DPYTHON_EXECUTABLE=${PYTHON} -DENABLE_CUDA=off -DENABLE_MPI=off -DSINGLE_PRECISION=off -DENABLE_TBB=off -DBUILD_CGCMM=off -DBUILD_DEM=off -DBUILD_DEPRECATED=off -DBUILD_HPMC=off -DBUILD_JIT=off -DBUILD_METAL=off -DBUILD_MPCD=<< parameters.build-mpcd >> -DBUILD_TESTING=on
       - run:
           name: Compile
           command: |
@@ -81,6 +103,25 @@ jobs:
       - ext_build
       - test
 
+  int_build_and_test:
+    parameters:
+      python-version:
+        type: string
+        default: "3"
+      build-mpcd:
+        type: boolean
+        default: on
+    executor:
+      name: mphoward
+    environment:
+      PYTHONPATH: "/home/ci/project/build"
+      PYTHON: "/usr/bin/python<< parameters.python-version >>"
+    steps:
+      - checkout_with_submodules
+      - int_build:
+          build-mpcd: << parameters.build-mpcd >>
+      - test
+
 workflows:
   workflow:
     jobs:
@@ -120,3 +161,14 @@ workflows:
           name: py2-nocuda-nompi-double
           python-version: "2"
           hoomd-config: "nocuda/nompi/double"
+
+      - int_build_and_test:
+          name: py3-internal
+
+      - int_build_and_test:
+          name: py3-internal-nompcd
+          build-mpcd: off
+
+      - int_build_and_test:
+          name: py2-internal
+          python-version: "2"
