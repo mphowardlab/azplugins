@@ -54,7 +54,7 @@ foreach (CUR_TEST ${TEST_LIST})
         add_test(NAME ${CUR_TEST_NAME}
                  COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_POSTFLAGS} $<TARGET_FILE:${CUR_TEST_EXE}>)
     else()
-        add_test(NAME ${CUR_TEST_NAME} COMMAND $<TARGET_FILE:${CUR_EXE_FULL}>)
+        add_test(NAME ${CUR_TEST_NAME} COMMAND $<TARGET_FILE:${CUR_TEST_EXE}>)
     endif()
 endforeach(CUR_TEST)
 
@@ -68,5 +68,5 @@ foreach (CUR_TEST ${MPI_TEST_LIST})
     add_test(NAME ${CUR_TEST_NAME} COMMAND
              ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG}
              ${NProc_${CUR_TEST}} ${MPIEXEC_POSTFLAGS}
-             $<TARGET_FILE:{CUR_EXE_FULL}>)
+             $<TARGET_FILE:${CUR_EXE_FULL}>)
 endforeach(CUR_TEST)
