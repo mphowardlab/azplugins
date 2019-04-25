@@ -4,7 +4,8 @@
 # Maintainer: astatt / Everyone is free to add additional methods for mpcd
 
 import hoomd
-from azplugins import _azplugins
+
+from . import _azplugins
 
 class reverse_perturbation(hoomd.update._updater):
     R""" Updater class for a shear flow according to the algorithm

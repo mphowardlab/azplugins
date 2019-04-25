@@ -5,7 +5,8 @@
 
 import hoomd
 from hoomd import _hoomd
-from azplugins import _azplugins
+
+from . import _azplugins
 
 class colloid(hoomd.md.wall.wallpotential):
     R""" Colloid (integrated Lennard-Jones) wall potential

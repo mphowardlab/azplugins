@@ -3,10 +3,12 @@
 
 # Maintainer: astatt / Everyone is free to add additional potentials
 
+import math
+
 import hoomd
 from hoomd import _hoomd
-from azplugins import _azplugins
-import math
+
+from . import _azplugins
 
 class fene(hoomd.md.bond._bond):
     R""" FENE bond potential.

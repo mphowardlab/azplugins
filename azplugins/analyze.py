@@ -3,9 +3,10 @@
 
 # Maintainer: mphoward / Everyone is free to add additional analyzers
 
-import hoomd
-from azplugins import _azplugins
 import numpy
+import hoomd
+
+from . import _azplugins
 
 class rdf(hoomd.analyze._analyzer):
     R""" Radial distribution function calculator

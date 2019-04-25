@@ -4,7 +4,8 @@
 # Maintainer: mphoward
 
 import hoomd
-from azplugins import _azplugins
+
+from . import _azplugins
 
 class implicit(hoomd.md.force._force):
     R""" Implicit model for particle evaporation

@@ -5,7 +5,8 @@
 
 import hoomd
 from hoomd import _hoomd
-from azplugins import _azplugins
+
+from . import _azplugins
 
 class quiescent(object):
     """ Quiescent fluid profile

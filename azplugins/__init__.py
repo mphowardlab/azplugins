@@ -10,18 +10,18 @@ try:
     from hoomd.mpcd import _mpcd
 except ImportError:
     pass
-from azplugins import _azplugins
+from . import _azplugins
 
-from azplugins import analyze
-from azplugins import bond
-from azplugins import dpd
-from azplugins import evaporate
-from azplugins import flow
-from azplugins import integrate
-from azplugins import pair
-from azplugins import restrain
-from azplugins import special_pair
-from azplugins import update
-from azplugins import wall
+from . import analyze
+from . import bond
+from . import dpd
+from . import evaporate
+from . import flow
+from . import integrate
+from . import pair
+from . import restrain
+from . import special_pair
+from . import update
+from . import wall
 
 __version__ = '0.6.0'
