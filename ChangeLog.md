@@ -1,6 +1,24 @@
 # AZPlugins Change Log
 
 ---------
+## v0.6.2
+
+25 April 2019
+
+*Release notes*
+
+All commits and pull requests are now automatically tested against HOOMD 2.5.1
+on CircleCI. Unit tests are run for CPU-only build configurations. CUDA-enabled
+builds are tested for compilation, but their unit tests cannot be run on CircleCI.
+The CI test environment is available on Docker Hub (https://hub.docker.com/r/mphoward/ci),
+and tests for new code should be run locally on a GPU.
+
+*Bug fixes*
+
+* Fix import statements in azplugins modules for python3.
+* Fix HOOMD version parsing in CMake for external builds.
+* Fix CMake errors in testing for certain build configurations.
+
 ## v0.6.1
 
 28 March 2019
