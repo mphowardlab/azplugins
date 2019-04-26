@@ -8,14 +8,16 @@ import sys
 import re
 
 pattern = re.compile('#define HOOMD_VERSION "([0-9\.]+)"')
+
+version="HOOMD_VERSION-NOTFOUND"
 try:
     with open(sys.argv[1]) as f:
         for line in f:
             match = pattern.match(line)
             if match:
-                print(match.group(1), end="")
-                exit()
+                version = match.group(1)
+                break
 except:
     pass
 
-print("HOOMD_VERSION-NOTFOUND", end="")
+print(version, end="")

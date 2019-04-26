@@ -4,8 +4,8 @@
 # Maintainer: mphoward / Everyone is free to add additional updaters
 
 import hoomd
-from hoomd import _hoomd
-import _azplugins
+
+from . import _azplugins
 
 class types(hoomd.update._updater):
     def __init__(self, inside, outside, lo, hi, period=1, phase=0):

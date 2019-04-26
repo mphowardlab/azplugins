@@ -3,12 +3,12 @@
 
 # Maintainer: wes_reinhart
 
+import numpy
 import hoomd
 from hoomd import _hoomd
-from hoomd.md import _md
 from hoomd.md import force
-import _azplugins
-import numpy
+
+from . import _azplugins
 
 class position(force._force):
     R""" Add a harmonic restraining potential based on initial (or specified) position

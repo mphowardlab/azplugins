@@ -3,11 +3,12 @@
 
 # Maintainer: mphoward / Everyone is free to add additional potentials
 
+import math
+
 import hoomd
 from hoomd import _hoomd
-from hoomd.md import _md
-import _azplugins
-import math
+
+from . import _azplugins
 
 class lj96(hoomd.md.special_pair._special_pair):
     R""" LJ special pair potential.
