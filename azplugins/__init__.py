@@ -15,4 +15,4 @@ import special_pair
 import update
 import wall
 
-__version__ = '0.6.0'
+__version__ = '0.6.2'
