@@ -55,6 +55,10 @@ namespace py = pybind11;
 
 /* Integrators */
 #include "BounceBackGeometry.h"
+#ifdef ENABLE_MPCD
+#include "hoomd/mpcd/BoundaryCondition.h"
+#include "hoomd/mpcd/SlitGeometry.h"
+#endif // ENABLE_MPCD
 #include "BounceBackNVE.h"
 #include "FlowFields.h"
 #include "TwoStepBrownianFlow.h"
@@ -230,8 +234,8 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::ParabolicFlow>(m, "LangevinParabolicFlowGPU");
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluidGPU");
     #endif // ENABLE_CUDA
-    azplugins::detail::export_boundary(m);
-    azplugins::detail::export_SlitGeometry(m);
+    //azplugins::detail::export_boundary(m);
+    //azplugins::detail::export_SlitGeometry(m);
     azplugins::detail::export_BounceBackNVE<mpcd::detail::SlitGeometry>(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_BounceBackNVEGPU<mpcd::detail::SlitGeometry>(m);

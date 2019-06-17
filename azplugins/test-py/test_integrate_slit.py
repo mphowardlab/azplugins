@@ -46,7 +46,7 @@ class integrate_slit_tests(unittest.TestCase):
         self.assertEqual(slit.boundary, "no_slip")
         self.assertAlmostEqual(slit.cpp_method.geometry.getH(), 4.)
         self.assertAlmostEqual(slit.cpp_method.geometry.getVelocity(), 0.)
-        self.assertEqual(slit.cpp_method.geometry.getBoundaryCondition(), azplugins._azplugins.boundary.no_slip)
+        self.assertEqual(slit.cpp_method.geometry.getBoundaryCondition(), hoomd.mpcd._mpcd.boundary.no_slip)
 
         # change H and also ensure other parameters stay the same
         slit.set_params(H=2.)
@@ -55,7 +55,7 @@ class integrate_slit_tests(unittest.TestCase):
         self.assertEqual(slit.boundary, "no_slip")
         self.assertAlmostEqual(slit.cpp_method.geometry.getH(), 2.)
         self.assertAlmostEqual(slit.cpp_method.geometry.getVelocity(), 0.)
-        self.assertEqual(slit.cpp_method.geometry.getBoundaryCondition(), azplugins._azplugins.boundary.no_slip)
+        self.assertEqual(slit.cpp_method.geometry.getBoundaryCondition(), hoomd.mpcd._mpcd.boundary.no_slip)
 
         # change V
         slit.set_params(V=0.1)
@@ -65,7 +65,7 @@ class integrate_slit_tests(unittest.TestCase):
         # change BCs
         slit.set_params(boundary="slip")
         self.assertEqual(slit.boundary, "slip")
-        self.assertEqual(slit.cpp_method.geometry.getBoundaryCondition(), azplugins._azplugins.boundary.slip)
+        self.assertEqual(slit.cpp_method.geometry.getBoundaryCondition(), hoomd.mpcd._mpcd.boundary.slip)
 
     # test for invalid boundary conditions being set
     def test_bad_boundary(self):

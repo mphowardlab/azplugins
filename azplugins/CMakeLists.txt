@@ -15,6 +15,10 @@ endif(NOT DEFINED HOOMD_EXTERNAL_BUILD)
 if (NOT BUILD_MD)
     message(FATAL_ERROR "azplugins requires hoomd installation with MD component.")
 endif (NOT BUILD_MD)
+# the md component is always required
+if (NOT BUILD_MPCD)
+    message(FATAL_ERROR "azplugins requires hoomd installation with MPCD enabled.")
+endif (NOT BUILD_MPCD)
 # configure the library names if this is an internal build
 if(NOT HOOMD_EXTERNAL_BUILD)
     set(HOOMD_MD_LIBRARY _md)
@@ -30,7 +34,7 @@ endif(NOT HOOMD_EXTERNAL_BUILD)
 # base / cpu c++ source files
 set(_${COMPONENT_NAME}_sources
     module.cc
-    BounceBackGeometry.cc
+    #BounceBackGeometry.cc
     ImplicitEvaporator.cc
     OrientationRestraintCompute.cc
     ParticleEvaporator.cc
