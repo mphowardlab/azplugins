@@ -10,7 +10,6 @@
  */
 
 #include "BounceBackNVEGPU.cuh"
-//#include "BounceBackGeometry.h"
 #ifdef ENABLE_MPCD
 #include "hoomd/mpcd/BoundaryCondition.h"
 #include "hoomd/mpcd/SlitGeometry.h"

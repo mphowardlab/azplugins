@@ -1,6 +1,12 @@
 # AZPlugins Change Log
 
 ---------
+
+18 June 2019
+
+Added support for HOOMD 2.6.0. This breaks backwards compatibility because headers
+from hoomd/mpcd are needed for compilation.
+
 ## v0.6.2
 
 25 April 2019

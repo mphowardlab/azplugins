@@ -34,7 +34,7 @@ endif(NOT HOOMD_EXTERNAL_BUILD)
 # base / cpu c++ source files
 set(_${COMPONENT_NAME}_sources
     module.cc
-    #BounceBackGeometry.cc
+    BounceBackGeometry.cc
     ImplicitEvaporator.cc
     OrientationRestraintCompute.cc
     ParticleEvaporator.cc
