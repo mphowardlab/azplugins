@@ -166,9 +166,5 @@ workflows:
           name: py3-internal
 
       - int_build_and_test:
-          name: py3-internal-nompcd
-          build-mpcd: off
-
-      - int_build_and_test:
           name: py2-internal
           python-version: "2"
