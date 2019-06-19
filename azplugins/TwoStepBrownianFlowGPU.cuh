@@ -14,7 +14,8 @@
 #include <cuda_runtime.h>
 #include "hoomd/BoxDim.h"
 #include "hoomd/HOOMDMath.h"
-#include "hoomd/Saru.h"
+#include "hoomd/RandomNumbers.h"
+#include "RNGIdentifiers.h"
 
 namespace azplugins
 {
@@ -102,10 +103,11 @@ __global__ void brownian_flow(Scalar4 *d_pos,
     Scalar coeff = fast::sqrt(Scalar(6.0)*gamma*T/dt);
     if (noiseless)
         coeff = Scalar(0.0);
-    hoomd::detail::Saru s(d_tag[idx], timestep, seed);
-    const Scalar3 random_force = coeff * make_scalar3(s.s<Scalar>(-1.0, 1.0),
-                                                      s.s<Scalar>(-1.0, 1.0),
-                                                      s.s<Scalar>(-1.0, 1.0));
+
+    // draw random force
+    hoomd::RandomGenerator(azplugins::RNGIdentifier::TwoStepBrownianFlow, seed, d_tag[idx], timestep);
+    hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
+    const Scalar3 random_force = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 
     // get the conservative force
     const Scalar4 net_force = d_net_force[idx];

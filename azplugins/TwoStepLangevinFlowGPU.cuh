@@ -14,7 +14,8 @@
 #include <cuda_runtime.h>
 #include "hoomd/BoxDim.h"
 #include "hoomd/HOOMDMath.h"
-#include "hoomd/Saru.h"
+#include "hoomd/RandomNumbers.h"
+#include "RNGIdentifiers.h"
 
 namespace azplugins
 {
@@ -110,14 +111,13 @@ __global__ void langevin_flow_step2(Scalar4 *d_vel,
     // get the flow field at the current position
     const Scalar3 flow_vel = flow_field(make_scalar3(postype.x, postype.y, postype.z));
 
-    // compute random force
+    // compute the random force
     Scalar coeff = fast::sqrt(Scalar(6.0) * gamma * T / dt);
     if (noiseless)
         coeff = Scalar(0.0);
-    hoomd::detail::Saru s(d_tag[idx], timestep, seed);
-    const Scalar3 random = coeff * make_scalar3(s.s<Scalar>(-1.0, 1.0),
-                                                s.s<Scalar>(-1.0, 1.0),
-                                                s.s<Scalar>(-1.0, 1.0));
+    hoomd::RandomGenerator(azplugins::RNGIdentifier::TwoStepLangevinFlow, seed, d_tag[idx], timestep);
+    hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
+    const Scalar3 random = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 
     const Scalar4 velmass = d_vel[idx];
     Scalar3 vel = make_scalar3(velmass.x, velmass.y, velmass.z);

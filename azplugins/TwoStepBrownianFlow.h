@@ -16,8 +16,10 @@
 #endif
 
 #include "hoomd/md/TwoStepLangevinBase.h"
-#include "hoomd/Saru.h"
+#include "hoomd/RandomNumbers.h"
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
+
+#include "RNGIdentifiers.h"
 
 namespace azplugins
 {
@@ -146,10 +148,11 @@ void TwoStepBrownianFlow<FlowField>::integrateStepOne(unsigned int timestep)
         Scalar coeff = fast::sqrt(Scalar(6.0)*gamma*currentTemp/m_deltaT);
         if (m_noiseless)
             coeff = Scalar(0.0);
-        hoomd::detail::Saru s(h_tag.data[idx], timestep, m_seed);
-        const Scalar3 random_force = coeff * make_scalar3(s.s<Scalar>(-1.0, 1.0),
-                                                          s.s<Scalar>(-1.0, 1.0),
-                                                          s.s<Scalar>(-1.0, 1.0));
+
+        // draw random force
+        hoomd::RandomGenerator(azplugins::RNGIdentifier::TwoStepBrownianFlow, m_seed, h_tag.data[idx], timestep);
+        hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
+        const Scalar3 random_force = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 
         // get the conservative force
         const Scalar4 net_force = h_net_force.data[idx];
