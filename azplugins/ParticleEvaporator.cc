@@ -9,6 +9,8 @@
  */
 
 #include "ParticleEvaporator.h"
+#include "hoomd/RandomNumbers.h"
+#include "RNGIdentifiers.h"
 #include <algorithm>
 
 namespace azplugins
@@ -24,9 +26,7 @@ namespace azplugins
  */
 ParticleEvaporator::ParticleEvaporator(std::shared_ptr<SystemDefinition> sysdef, unsigned int seed)
     : TypeUpdater(sysdef), m_seed(seed), m_Nevap_max(0xffffffff), m_Npick(0), m_picks(m_exec_conf), m_mark(m_exec_conf)
-    {
-    m_rng.seed(seed);
-    }
+    {}
 
 /*!
  * \param sysdef System definition
@@ -44,9 +44,7 @@ ParticleEvaporator::ParticleEvaporator(std::shared_ptr<SystemDefinition> sysdef,
                                        unsigned int seed)
         : TypeUpdater(sysdef, inside_type, outside_type, z_lo, z_hi),
           m_seed(seed), m_Nevap_max(0xffffffff), m_Npick(0), m_picks(m_exec_conf), m_mark(m_exec_conf)
-    {
-    m_rng.seed(seed);
-    }
+    {}
 
 /*!
  * \param timestep Timestep update is called
@@ -111,7 +109,7 @@ void ParticleEvaporator::changeTypes(unsigned int timestep)
         }
     else // do the more complicated random selection
         {
-        makeAllPicks(m_Nevap_max, N_mark_total);
+        makeAllPicks(timestep, m_Nevap_max, N_mark_total);
 
         /*
          * Select the picks that lie on my rank, with reindexing to local mark indexes.
@@ -208,6 +206,7 @@ void ParticleEvaporator::applyPicks()
     }
 
 /*!
+ * \param timestep Current timestep
  * \param N_pick Number of particles to pick
  * \param N_mark_total Total number of particles marked for picking
  *
@@ -215,13 +214,15 @@ void ParticleEvaporator::applyPicks()
  * out of the possible particles across all ranks. The result is stored in
  * \a m_all_picks.
  */
-void ParticleEvaporator::makeAllPicks(unsigned int N_pick, unsigned int N_mark_total)
+void ParticleEvaporator::makeAllPicks(unsigned int timestep, unsigned int N_pick, unsigned int N_mark_total)
     {
     assert(N_pick <= N_mark_total);
 
     // fill up vector which we will randomly shuffle
     m_all_picks.resize(N_mark_total);
     std::iota(m_all_picks.begin(), m_all_picks.end(), 0);
+
+    hoomd::RandomGenerator rng(azplugins::RNGIdentifiers::ParticleEvaporator, m_seed, timestep);
 
     // random shuffle (fisher-yates) to get picks, seeded the same across all ranks
     auto begin = m_all_picks.begin();
@@ -230,10 +231,10 @@ void ParticleEvaporator::makeAllPicks(unsigned int N_pick, unsigned int N_mark_t
     unsigned int N_choose = N_pick;
     while (N_choose-- && left > 1)
         {
-        std::uniform_int_distribution<size_t> rand_shift(0, left-1);
+        hoomd::UniformIntDistribution rand_shift(left-1);
 
         auto r = begin;
-        std::advance(r, rand_shift(m_rng));
+        std::advance(r, rand_shift(rng));
         std::swap(*begin, *r);
         ++begin;
         --left;
