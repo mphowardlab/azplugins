@@ -15,7 +15,7 @@ endif(NOT DEFINED HOOMD_EXTERNAL_BUILD)
 if (NOT BUILD_MD)
     message(FATAL_ERROR "azplugins requires hoomd installation with MD component.")
 endif (NOT BUILD_MD)
-# the md component is always required
+# the mpcd component is always required
 if (NOT BUILD_MPCD)
     message(FATAL_ERROR "azplugins requires hoomd installation with MPCD enabled.")
 endif (NOT BUILD_MPCD)

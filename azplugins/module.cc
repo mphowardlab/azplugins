@@ -55,10 +55,6 @@ namespace py = pybind11;
 
 /* Integrators */
 #include "BounceBackGeometry.h"
-#ifdef ENABLE_MPCD
-#include "hoomd/mpcd/BoundaryCondition.h"
-#include "hoomd/mpcd/SlitGeometry.h"
-#endif // ENABLE_MPCD
 #include "BounceBackNVE.h"
 #include "FlowFields.h"
 #include "TwoStepBrownianFlow.h"

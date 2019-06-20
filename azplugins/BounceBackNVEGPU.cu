@@ -11,8 +11,7 @@
 
 #include "BounceBackNVEGPU.cuh"
 #ifdef ENABLE_MPCD
-#include "hoomd/mpcd/BoundaryCondition.h"
-#include "hoomd/mpcd/SlitGeometry.h"
+#include "BounceBackGeometry.h"
 #endif // ENABLE_MPCD
 
 namespace azplugins
