@@ -3,7 +3,7 @@ version: 2.1
 executors:
   mphoward:
     docker:
-      - image: mphoward/ci:hoomd2.5.1-ubuntu18.04
+      - image: mphoward/ci:hoomd2.6.0-ubuntu18.04
     working_directory: /home/ci/project
 
 commands:
@@ -164,10 +164,6 @@ workflows:
 
       - int_build_and_test:
           name: py3-internal
-
-      - int_build_and_test:
-          name: py3-internal-nompcd
-          build-mpcd: off
 
       - int_build_and_test:
           name: py2-internal
