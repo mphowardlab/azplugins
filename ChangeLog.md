@@ -2,10 +2,19 @@
 
 ---------
 
-18 June 2019
+## v0.7.0
 
-Added support for HOOMD 2.6.0. This breaks backwards compatibility because headers
-from hoomd/mpcd are needed for compilation.
+Not yet released.
+
+*Release notes*
+
+This version of the plugin **requires** HOOMD-blue v2.6.0 for compatibility
+with the new streaming geometries in its MPCD component. HOOMD-blue **must**
+be built with the MPCD component.
+
+*Bug fixes*
+
+* Fix compilation errors with HOOMD-blue v2.6.0.
 
 ## v0.6.2
 
