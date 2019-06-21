@@ -10,9 +10,7 @@
  */
 
 #include "BounceBackNVEGPU.cuh"
-#ifdef ENABLE_MPCD
 #include "BounceBackGeometry.h"
-#endif // ENABLE_MPCD
 
 namespace azplugins
 {
