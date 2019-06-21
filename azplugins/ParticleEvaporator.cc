@@ -222,7 +222,7 @@ void ParticleEvaporator::makeAllPicks(unsigned int timestep, unsigned int N_pick
     m_all_picks.resize(N_mark_total);
     std::iota(m_all_picks.begin(), m_all_picks.end(), 0);
 
-    hoomd::RandomGenerator rng(azplugins::RNGIdentifiers::ParticleEvaporator, m_seed, timestep);
+    hoomd::RandomGenerator rng(azplugins::RNGIdentifier::ParticleEvaporator, m_seed, timestep);
 
     // random shuffle (fisher-yates) to get picks, seeded the same across all ranks
     auto begin = m_all_picks.begin();
