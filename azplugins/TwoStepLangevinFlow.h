@@ -193,7 +193,7 @@ void TwoStepLangevinFlow<FlowField>::integrateStepTwo(unsigned int timestep)
         Scalar coeff = fast::sqrt(Scalar(6.0)*gamma*currentTemp/m_deltaT);
         if (m_noiseless)
             coeff = Scalar(0.0);
-        hoomd::RandomGenerator(azplugins::RNGIdentifier::TwoStepLangevinFlow, m_seed, h_tag.data[idx], timestep);
+        hoomd::RandomGenerator rng(azplugins::RNGIdentifier::TwoStepLangevinFlow, m_seed, h_tag.data[idx], timestep);
         hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
         const Scalar3 random = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 

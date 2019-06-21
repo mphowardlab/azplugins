@@ -105,7 +105,7 @@ __global__ void brownian_flow(Scalar4 *d_pos,
         coeff = Scalar(0.0);
 
     // draw random force
-    hoomd::RandomGenerator(azplugins::RNGIdentifier::TwoStepBrownianFlow, seed, d_tag[idx], timestep);
+    hoomd::RandomGenerator rng(azplugins::RNGIdentifier::TwoStepBrownianFlow, seed, d_tag[idx], timestep);
     hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
     const Scalar3 random_force = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 

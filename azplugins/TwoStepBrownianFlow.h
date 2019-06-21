@@ -150,7 +150,7 @@ void TwoStepBrownianFlow<FlowField>::integrateStepOne(unsigned int timestep)
             coeff = Scalar(0.0);
 
         // draw random force
-        hoomd::RandomGenerator(azplugins::RNGIdentifier::TwoStepBrownianFlow, m_seed, h_tag.data[idx], timestep);
+        hoomd::RandomGenerator rng(azplugins::RNGIdentifier::TwoStepBrownianFlow, m_seed, h_tag.data[idx], timestep);
         hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
         const Scalar3 random_force = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 

@@ -115,7 +115,7 @@ __global__ void langevin_flow_step2(Scalar4 *d_vel,
     Scalar coeff = fast::sqrt(Scalar(6.0) * gamma * T / dt);
     if (noiseless)
         coeff = Scalar(0.0);
-    hoomd::RandomGenerator(azplugins::RNGIdentifier::TwoStepLangevinFlow, seed, d_tag[idx], timestep);
+    hoomd::RandomGenerator rng(azplugins::RNGIdentifier::TwoStepLangevinFlow, seed, d_tag[idx], timestep);
     hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
     const Scalar3 random = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 
