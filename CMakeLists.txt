@@ -15,7 +15,7 @@ endif(COMMAND cmake_policy)
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake ${CMAKE_MODULE_PATH})
-find_package(HOOMD 2.3.0 REQUIRED)
+find_package(HOOMD 2.6.0 REQUIRED)
 include_directories(${HOOMD_INCLUDE_DIRS})
 set(HOOMD_EXTERNAL_BUILD ON)
 

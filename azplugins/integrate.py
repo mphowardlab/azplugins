@@ -4,7 +4,7 @@
 # Maintainer: mphoward / Everyone is free to add additional potentials
 
 import hoomd
-
+from hoomd.mpcd import _mpcd
 from . import _azplugins
 
 class _bounce_back(hoomd.md.integrate._integration_method):
@@ -48,9 +48,9 @@ class _bounce_back(hoomd.md.integrate._integration_method):
 
         """
         if bc == "no_slip":
-            return _azplugins.boundary.no_slip
+            return _mpcd.boundary.no_slip
         elif bc == "slip":
-            return _azplugins.boundary.slip
+            return _mpcd.boundary.slip
         else:
             hoomd.context.msg.error("azplugins.integrate: boundary condition " + bc + " not recognized.\n")
             raise ValueError("Unrecognized streaming boundary condition")
@@ -125,7 +125,7 @@ class slit(_bounce_back):
         self.boundary = boundary
 
         bc = self._process_boundary(boundary)
-        geom = _azplugins.SlitGeometry(H, V, bc)
+        geom = _mpcd.SlitGeometry(H, V, bc)
 
         self.cpp_method = cpp_class(hoomd.context.current.system_definition, group.cpp_group, geom)
         self.cpp_method.validateGroup()
@@ -158,4 +158,4 @@ class slit(_bounce_back):
             self.boundary = boundary
 
         bc = self._process_boundary(self.boundary)
-        self.cpp_method.geometry = _azplugins.SlitGeometry(self.H,self.V,bc)
+        self.cpp_method.geometry = _mpcd.SlitGeometry(self.H,self.V,bc)
