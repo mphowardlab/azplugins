@@ -16,8 +16,10 @@
 #endif
 
 #include "hoomd/md/TwoStepLangevinBase.h"
-#include "hoomd/Saru.h"
+#include "hoomd/RandomNumbers.h"
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
+
+#include "RNGIdentifiers.h"
 
 namespace azplugins
 {
@@ -191,10 +193,9 @@ void TwoStepLangevinFlow<FlowField>::integrateStepTwo(unsigned int timestep)
         Scalar coeff = fast::sqrt(Scalar(6.0)*gamma*currentTemp/m_deltaT);
         if (m_noiseless)
             coeff = Scalar(0.0);
-        hoomd::detail::Saru s(h_tag.data[idx], timestep, m_seed);
-        const Scalar3 random = coeff * make_scalar3(s.s<Scalar>(-1.0, 1.0),
-                                                    s.s<Scalar>(-1.0, 1.0),
-                                                    s.s<Scalar>(-1.0, 1.0));
+        hoomd::RandomGenerator rng(azplugins::RNGIdentifier::TwoStepLangevinFlow, m_seed, h_tag.data[idx], timestep);
+        hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
+        const Scalar3 random = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 
         const Scalar4 velmass = h_vel.data[idx];
         Scalar3 vel = make_scalar3(velmass.x, velmass.y, velmass.z);

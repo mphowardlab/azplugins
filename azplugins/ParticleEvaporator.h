@@ -16,7 +16,6 @@
 #endif
 
 #include "TypeUpdater.h"
-#include <random>
 
 namespace azplugins
 {
@@ -89,11 +88,10 @@ class PYBIND11_EXPORT ParticleEvaporator : public TypeUpdater
         virtual void applyPicks();
 
     private:
-        std::mt19937 m_rng; //!< Mersenne-Twister random number generator for evaporating
         std::vector<unsigned int> m_all_picks;  //!< All picked particles
 
         //! Make a random pick of particles across all ranks
-        void makeAllPicks(unsigned int N_pick, unsigned N_mark_total);
+        void makeAllPicks(unsigned int timestep, unsigned int N_pick, unsigned N_mark_total);
     };
 
 namespace detail

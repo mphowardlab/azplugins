@@ -12,7 +12,8 @@
 #define AZPLUGINS_DPD_EVALUATOR_GENERAL_WEIGHT_H_
 
 #include "hoomd/HOOMDMath.h"
-#include "hoomd/Saru.h"
+#include "hoomd/RandomNumbers.h"
+#include "RNGIdentifiers.h"
 
 #ifdef NVCC
 #define DEVICE __device__
@@ -195,10 +196,9 @@ class DPDEvaluatorGeneralWeight
                    m_oj = m_j;
                    }
 
-                hoomd::detail::Saru rng(m_oi, m_oj, m_seed + m_timestep);
-
                 // Generate a single random number
-                Scalar alpha = rng.s<Scalar>(-1,1);
+                hoomd::RandomGenerator rng(azplugins::RNGIdentifier::DPDEvaluatorGeneralWeight, m_seed, m_oi, m_oj, m_timestep);
+                Scalar alpha = hoomd::UniformDistribution<Scalar>(-1,1)(rng);
 
                 // conservative dpd
                 force_divr = a*(rinv - rcutinv);
