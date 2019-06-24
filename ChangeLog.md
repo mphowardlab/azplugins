@@ -4,7 +4,7 @@
 
 ## v0.7.0
 
-Not yet released.
+24 June 2019
 
 *Release notes*
 
@@ -15,6 +15,13 @@ be built with the MPCD component.
 *Bug fixes*
 
 * Fix compilation errors with HOOMD-blue v2.6.0.
+
+*Other changes*
+
+* random123 is used as the random number generator throughout azplugins.
+  This API is more robust and stable than Saru, but sequences of random
+  numbers drawn for a given seed will change. New features using random
+  numbers should add a unique 32-bit identifier to `RNGIdentifiers.h`.
 
 ## v0.6.2
 
