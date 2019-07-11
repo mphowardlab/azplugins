@@ -12,10 +12,8 @@
 #define AZPLUGINS_MPCD_SINE_GEOMETRY_H_
 
 #include "hoomd/mpcd/BoundaryCondition.h"
-#include "hoomd/mpcd/SystemData.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
-#include "hoomd/mpcd/BoundaryCondition.h"
 
 #ifdef NVCC
 #define HOSTDEVICE __host__ __device__ inline

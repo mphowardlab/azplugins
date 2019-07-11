@@ -9,9 +9,9 @@
  */
 
 #include "MPCDSineGeometryFillerGPU.cuh"
-#include "hoomd/ParticleDataUtilities.h"
 #include "hoomd/RandomNumbers.h"
-#include "hoomd/RNGIdentifiers.h"
+#include "RNGIdentifiers.h"
+#include "hoomd/mpcd/ParticleDataUtilities.h"
 
 namespace azplugins
 {
@@ -46,7 +46,7 @@ namespace kernel
 __global__ void slit_draw_particles(Scalar4 *d_pos,
                                     Scalar4 *d_vel,
                                     unsigned int *d_tag,
-                                    const mpcd::detail::SlitGeometry geom,
+                                    const azplugins::detail::SineGeometry geom,
                                     const Scalar z_min,
                                     const Scalar z_max,
                                     const BoxDim box,
@@ -83,7 +83,7 @@ __global__ void slit_draw_particles(Scalar4 *d_pos,
     d_tag[pidx] = tag;
 
     // initialize random number generator for positions and velocity
-    hoomd::RandomGenerator rng(hoomd::RNGIdentifier::SlitGeometryFiller, seed, tag, timestep);
+    hoomd::RandomGenerator rng(RNGIdentifier::SineGeometryFiller, seed, tag, timestep);
     d_pos[pidx] = make_scalar4(hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng),
                                hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng),
                                hoomd::UniformDistribution<Scalar>(lo.z, hi.z)(rng),
@@ -125,7 +125,7 @@ __global__ void slit_draw_particles(Scalar4 *d_pos,
 cudaError_t slit_draw_particles(Scalar4 *d_pos,
                                 Scalar4 *d_vel,
                                 unsigned int *d_tag,
-                                const mpcd::detail::SlitGeometry& geom,
+                                const azplugins::detail::SineGeometry& geom,
                                 const Scalar z_min,
                                 const Scalar z_max,
                                 const BoxDim& box,

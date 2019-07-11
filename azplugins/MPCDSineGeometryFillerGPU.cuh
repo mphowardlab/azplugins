@@ -17,6 +17,7 @@
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
 
+
 namespace azplugins
 {
 namespace gpu
@@ -26,7 +27,7 @@ namespace gpu
 cudaError_t slit_draw_particles(Scalar4 *d_pos,
                                 Scalar4 *d_vel,
                                 unsigned int *d_tag,
-                                const mpcd::detail::SlitGeometry& geom,
+                                const azplugins::detail::SineGeometry& geom,
                                 const Scalar z_min,
                                 const Scalar z_max,
                                 const BoxDim& box,

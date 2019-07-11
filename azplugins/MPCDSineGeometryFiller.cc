@@ -10,7 +10,7 @@
 
 #include "MPCDSineGeometryFiller.h"
 #include "hoomd/RandomNumbers.h"
-#include "hoomd/RNGIdentifiers.h"
+#include "RNGIdentifiers.h"
 
 namespace azplugins
 {
@@ -37,8 +37,8 @@ void SineGeometryFiller::computeNumFill()
     const Scalar cell_size = m_cl->getCellSize();
     if (!m_geom->validateBox(global_box, cell_size))
         {
-        m_exec_conf->msg->error() << "Invalid slit geometry for global box, cannot fill virtual particles." << std::endl;
-        throw std::runtime_error("Invalid slit geometry for global box");
+        m_exec_conf->msg->error() << "Invalid sine geometry for global box, cannot fill virtual particles." << std::endl;
+        throw std::runtime_error("Invalid sine geometry for global box");
         }
 
     // box and slit geometry
@@ -94,7 +94,7 @@ void SineGeometryFiller::drawParticles(unsigned int timestep)
     for (unsigned int i=0; i < m_N_fill; ++i)
         {
         const unsigned int tag = m_first_tag + i;
-        hoomd::RandomGenerator rng(hoomd::RNGIdentifier::SlitGeometryFiller, m_seed, tag, timestep);
+        hoomd::RandomGenerator rng(RNGIdentifier::SineGeometryFiller, m_seed, tag, timestep);
         signed char sign = (i >= m_N_lo) - (i < m_N_lo);
         if (sign == -1) // bottom
             {

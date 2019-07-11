@@ -15,7 +15,7 @@
 #error This header cannot be compiled by nvcc
 #endif
 
-#include "MCPDSineGeometryFiller.h"
+#include "MPCDSineGeometryFiller.h"
 #include "hoomd/Autotuner.h"
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 
@@ -41,7 +41,7 @@ class PYBIND11_EXPORT SineGeometryFillerGPU : public SineGeometryFiller
          */
         virtual void setAutotunerParams(bool enable, unsigned int period)
             {
-            mpcd::SineGeometryFiller::setAutotunerParams(enable, period);
+            SineGeometryFiller::setAutotunerParams(enable, period);
 
             m_tuner->setEnabled(enable); m_tuner->setPeriod(period);
             }
