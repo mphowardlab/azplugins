@@ -17,6 +17,8 @@
 
 #include "hoomd/mpcd/BoundaryCondition.h"
 #include "hoomd/mpcd/SlitGeometry.h"
+#include "hoomd/mpcd/BoundaryCondition.h"
+#include "MPCDSineGeometry.h"
 
 #ifndef NVCC
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
@@ -26,6 +28,8 @@ namespace azplugins
 namespace detail
 {
 
+//! Export SineGeometry to python
+void export_SineGeometry(pybind11::module& m);
 
 } // end namespace detail
 } // end namespace azplugins

@@ -149,3 +149,151 @@ class reverse_perturbation(hoomd.update._updater):
             self.target_momentum = target_momentum
             self.cpp_updater.target_momentum = target_momentum
 
+
+class sine(hoomd.mpcd.stream._streaming_method):
+    r""" Parallel plate (slit) streaming geometry.
+
+    Args:
+        H (float): channel half-width
+        V (float): wall speed (default: 0)
+        boundary (str): boundary condition at wall ("slip" or "no_slip"")
+        period (int): Number of integration steps between collisions
+
+    The slit geometry represents a fluid confined between two infinite parallel
+    plates. The slit is centered around the origin, and the walls are placed
+    at :math:`z=-H` and :math:`z=+H`, so the total channel width is *2H*.
+    The walls may be put into motion, moving with speeds :math:`-V` and
+    :math:`+V` in the *x* direction, respectively. If combined with a
+    no-slip boundary condition, this motion can be used to generate simple
+    shear flow.
+
+    The "inside" of the :py:class:`slit` is the space where :math:`|z| < H`.
+
+    Examples::
+
+        stream.slit(period=10, H=30.)
+        stream.slit(period=1, H=25., V=0.1)
+
+    .. versionadded:: 2.6
+
+    """
+    def __init__(self, H, V=0.0, boundary="no_slip", period=1):
+        hoomd.util.print_status_line()
+
+        hoomd.mpcd.stream._streaming_method.__init__(self, period)
+
+        self.metadata_fields += ['H','V','boundary']
+        self.H = H
+        self.V = V
+        self.boundary = boundary
+
+        bc = self._process_boundary(boundary)
+
+        # create the base streaming class
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            stream_class = _azplugins.ConfinedStreamingMethodSine
+        else:
+            stream_class = _azplugins.ConfinedStreamingMethodGPUSine
+        self._cpp = stream_class(hoomd.context.current.mpcd.data,
+                                 hoomd.context.current.system.getCurrentTimeStep(),
+                                 self.period,
+                                 0,
+                                 _azplugins.SineGeometry(H,V,bc))
+
+    def set_filler(self, density, kT, seed, type='A'):
+        r""" Add virtual particles to slit channel.
+
+        Args:
+            density (float): Density of virtual particles.
+            kT (float): Temperature of virtual particles.
+            seed (int): Seed to pseudo-random number generator for virtual particles.
+            type (str): Type of the MPCD particles to fill with.
+
+        The virtual particle filler draws particles within the volume *outside* the
+        slit walls that could be overlapped by any cell that is partially *inside*
+        the slit channel (between the parallel plates). The particles are drawn from
+        the velocity distribution consistent with *kT* and with the given *density*.
+        The mean of the distribution is zero in *y* and *z*, but is equal to the wall
+        speed in *x*. Typically, the virtual particle density and temperature are set
+        to the same conditions as the solvent.
+
+        The virtual particles will act as a weak thermostat on the fluid, and so energy
+        is no longer conserved. Momentum will also be sunk into the walls.
+
+        Example::
+
+            slit.set_filler(density=5.0, kT=1.0, seed=42)
+
+        .. versionadded:: 2.6
+
+        """
+        hoomd.util.print_status_line()
+
+        type_id = hoomd.context.current.mpcd.particles.getTypeByName(type)
+        T = hoomd.variant._setup_variant_input(kT)
+
+        if self._filler is None:
+            if not hoomd.context.exec_conf.isCUDAEnabled():
+                fill_class = _azplugins.SineGeometryFiller
+            else:
+                fill_class = _azplugins.SineGeometryFillerGPU
+            self._filler = fill_class(hoomd.context.current.mpcd.data,
+                                      density,
+                                      type_id,
+                                      T.cpp_variant,
+                                      seed,
+                                      self._cpp.geometry)
+        else:
+            self._filler.setDensity(density)
+            self._filler.setType(type_id)
+            self._filler.setTemperature(T.cpp_variant)
+            self._filler.setSeed(seed)
+
+    def remove_filler(self):
+        """ Remove the virtual particle filler.
+
+        Example::
+
+            slit.remove_filler()
+
+        .. versionadded:: 2.6
+
+        """
+        hoomd.util.print_status_line()
+
+        self._filler = None
+
+    def set_params(self, H=None, V=None, boundary=None):
+        """ Set parameters for the slit geometry.
+
+        Args:
+            H (float): channel half-width
+            V (float): wall speed (default: 0)
+            boundary (str): boundary condition at wall ("slip" or "no_slip"")
+
+        Changing any of these parameters will require the geometry to be
+        constructed and validated, so do not change these too often.
+
+        Examples::
+
+            slit.set_params(H=15.0)
+            slit.set_params(V=0.2, boundary="no_slip")
+
+        .. versionadded:: 2.6
+
+        """
+        hoomd.util.print_status_line()
+
+        if H is not None:
+            self.H = H
+
+        if V is not None:
+            self.V = V
+
+        if boundary is not None:
+            self.boundary = boundary
+
+        bc = self._process_boundary(self.boundary)
+        self._cpp.geometry = _azplugins.SineGeometry(self.H,self.V,bc)
+        if self._filler is not None:
+            self._filler.setGeometry(self._cpp.geometry)

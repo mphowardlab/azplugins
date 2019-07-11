@@ -32,8 +32,13 @@ namespace py = pybind11;
 /* MPCD */
 #ifdef ENABLE_MPCD
 #include "MPCDReversePerturbationFlow.h"
+#include "hoomd/mpcd/ConfinedStreamingMethod.h"
+#include "MPCDSineGeometry.h"
+#include "MPCDSineGeometryFiller.h"
 #ifdef ENABLE_CUDA
 #include "MPCDReversePerturbationFlowGPU.h"
+#include "hoomd/mpcd/ConfinedStreamingMethodGPU.h"
+#include "MPCDSineGeometryFillerGPU.h"
 #endif // ENABLE_CUDA
 #endif // ENABLE_MPCD
 
@@ -218,11 +223,17 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_PositionRestraintComputeGPU(m);
     #endif // ENABLE_CUDA
 
-    /* MPCD */
+
+    /* MPCD components */
     #ifdef ENABLE_MPCD
+    azplugins::detail::export_SineGeometry(m);
+    mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::SineGeometry>(m);
     azplugins::detail::export_MPCDReversePerturbationFlow(m);
+    azplugins::detail::export_SineGeometryFiller(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_MPCDReversePerturbationFlowGPU(m);
+    azplugins::detail::export_SineGeometryFillerGPU(m);
+    mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SineGeometry>(m);
     #endif // ENABLE_CUDA
     #endif // ENABLE_MPCD
 
