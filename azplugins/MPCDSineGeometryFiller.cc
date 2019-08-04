@@ -22,7 +22,7 @@ SineGeometryFiller::SineGeometryFiller(std::shared_ptr<mpcd::SystemData> sysdata
                                              std::shared_ptr<const detail::SineGeometry> geom)
     : mpcd::VirtualParticleFiller(sysdata, density, type, T, seed), m_geom(geom)
     {
-    m_exec_conf->msg->notice(5) << "Constructing MPCD SlitGeometryFiller" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing MPCD SineGeometryFiller" << std::endl;
     }
 
 SineGeometryFiller::~SineGeometryFiller()

@@ -13,10 +13,13 @@
 #include "RNGIdentifiers.h"
 #include "hoomd/mpcd/ParticleDataUtilities.h"
 
+
 namespace azplugins
 {
+
 namespace gpu
 {
+
 namespace kernel
 {
 /*!
@@ -142,7 +145,7 @@ cudaError_t slit_draw_particles(Scalar4 *d_pos,
     {
     const unsigned int N_tot = N_lo + N_hi;
     if (N_tot == 0) return cudaSuccess;
-
+    
     static unsigned int max_block_size = UINT_MAX;
     if (max_block_size == UINT_MAX)
         {

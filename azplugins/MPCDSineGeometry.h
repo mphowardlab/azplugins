@@ -12,8 +12,12 @@
 #define AZPLUGINS_MPCD_SINE_GEOMETRY_H_
 
 #include "hoomd/mpcd/BoundaryCondition.h"
+#include "hoomd/mpcd/ConfinedStreamingMethodGPU.cuh"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
+#include "MPCDSineGeometry.h"
+
+#include <iostream>
 
 #ifdef NVCC
 #define HOSTDEVICE __host__ __device__ inline
@@ -26,6 +30,7 @@ namespace azplugins
 {
 namespace detail
 {
+
 //! Parallel plate (slit) geometry
 /*!
  * This class defines the geometry consistent with two infinite parallel plates. When the plates are
@@ -110,7 +115,6 @@ class __attribute__((visibility("default"))) SineGeometry
             pos.x -= vel.x*dt;
             pos.y -= vel.y*dt;
             pos.z = sign*m_H;
-
             // update velocity according to boundary conditions
             // no-slip requires reflection of the tangential components
             if (m_bc ==  mpcd::detail::boundary::no_slip)

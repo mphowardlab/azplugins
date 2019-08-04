@@ -22,7 +22,7 @@ SineGeometryFillerGPU::SineGeometryFillerGPU(std::shared_ptr<mpcd::SystemData> s
                                                    std::shared_ptr<const detail::SineGeometry> geom)
     : SineGeometryFiller(sysdata, density, type, T, seed, geom)
     {
-    m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "mpcd_slit_filler", m_exec_conf));
+    m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "mpcd_sine_filler", m_exec_conf));
     }
 
 /*!
