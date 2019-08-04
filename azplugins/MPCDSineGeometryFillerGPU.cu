@@ -1,11 +1,11 @@
-// Copyright (c) 2009-2019 The Regents of the University of Michigan
-// This file is part of the HOOMD-blue project, released under the BSD 3-Clause License.
+// Copyright (c) 2018-2019, Michael P. Howard
+// This file is part of the azplugins project, released under the Modified BSD License.
 
-// Maintainer: mphoward
+// Maintainer: astatt
 
 /*!
- * \file mpcd/SlitGeometryFillerGPU.cu
- * \brief Defines GPU functions and kernels used by mpcd::SlitGeometryFillerGPU
+ * \file MPCDSineGeometryFillerGPU.cu
+ * \brief Defines GPU functions and kernels used by azplugins::gpu::SineGeometryFillerGPU
  */
 
 #include "MPCDSineGeometryFillerGPU.cuh"
@@ -46,7 +46,7 @@ namespace kernel
  * a particle tag and local particle index. A random position is drawn within the cuboid. A random velocity
  * is drawn consistent with the speed of the moving wall.
  */
-__global__ void slit_draw_particles(Scalar4 *d_pos,
+__global__ void sine_draw_particles(Scalar4 *d_pos,
                                     Scalar4 *d_vel,
                                     unsigned int *d_tag,
                                     const azplugins::detail::SineGeometry geom,
@@ -125,7 +125,7 @@ __global__ void slit_draw_particles(Scalar4 *d_pos,
  *
  * \sa kernel::slit_draw_particles
  */
-cudaError_t slit_draw_particles(Scalar4 *d_pos,
+cudaError_t sine_draw_particles(Scalar4 *d_pos,
                                 Scalar4 *d_vel,
                                 unsigned int *d_tag,
                                 const azplugins::detail::SineGeometry& geom,
@@ -145,7 +145,7 @@ cudaError_t slit_draw_particles(Scalar4 *d_pos,
     {
     const unsigned int N_tot = N_lo + N_hi;
     if (N_tot == 0) return cudaSuccess;
-    
+
     static unsigned int max_block_size = UINT_MAX;
     if (max_block_size == UINT_MAX)
         {
@@ -159,7 +159,7 @@ cudaError_t slit_draw_particles(Scalar4 *d_pos,
 
     unsigned int run_block_size = min(block_size, max_block_size);
     dim3 grid(N_tot / run_block_size + 1);
-    kernel::slit_draw_particles<<<grid, run_block_size>>>(d_pos,
+    kernel::sine_draw_particles<<<grid, run_block_size>>>(d_pos,
                                                           d_vel,
                                                           d_tag,
                                                           geom,

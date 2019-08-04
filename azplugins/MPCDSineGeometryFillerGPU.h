@@ -1,11 +1,12 @@
-// Copyright (c) 2009-2019 The Regents of the University of Michigan
-// This file is part of the HOOMD-blue project, released under the BSD 3-Clause License.
+// Copyright (c) 2018-2019, Michael P. Howard
+// This file is part of the azplugins project, released under the Modified BSD License.
 
-// Maintainer: mphoward
+// Maintainer: astatt
+
 
 /*!
- * \file mpcd/SlitGeometryFillerGPU.h
- * \brief Definition of virtual particle filler for mpcd::detail::SlitGeometry on the GPU.
+ * \file MPCDSineGeometryFillerGPU.h
+ * \brief Definition of virtual particle filler for azplugins::detail::SineGeometry on the GPU.
  */
 
 #ifndef AZPLUGINS_MPCD_SINE_GEOMETRY_FILLER_GPU_H_
@@ -22,7 +23,7 @@
 namespace azplugins
 {
 
-//! Adds virtual particles to the MPCD particle data for SlitGeometry using the GPU
+//! Adds virtual particles to the MPCD particle data for SineGeometry using the GPU
 class PYBIND11_EXPORT SineGeometryFillerGPU : public SineGeometryFiller
     {
     public:
@@ -56,8 +57,8 @@ class PYBIND11_EXPORT SineGeometryFillerGPU : public SineGeometryFiller
 
 namespace detail
 {
-//! Export SlitGeometryFillerGPU to python
+//! Export SineGeometryFillerGPU to python
 void export_SineGeometryFillerGPU(pybind11::module& m);
 } // end namespace detail
-} // end namespace mpcd
-#endif // MPCD_SLIT_GEOMETRY_FILLER_GPU_H_
+} // end namespace azplugins
+#endif // AZPLUGINS_MPCD_SINE_GEOMETRY_FILLER_GPU_H_

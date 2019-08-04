@@ -1,7 +1,8 @@
-// Copyright (c) 2009-2019 The Regents of the University of Michigan
-// This file is part of the HOOMD-blue project, released under the BSD 3-Clause License.
+// Copyright (c) 2018-2019, Michael P. Howard
+// This file is part of the azplugins project, released under the Modified BSD License.
 
-// Maintainer: mphoward
+// Maintainer: astatt
+
 
 #ifndef AZPLUGINS_MPCD_SINE_GEOMETRY_FILLER_GPU_CUH_
 #define AZPLUGINS_MPCD_SINE_GEOMETRY_FILLER_GPU_CUH_
@@ -24,7 +25,7 @@ namespace gpu
 {
 
 //! Draw virtual particles in the SlitGeometry
-cudaError_t slit_draw_particles(Scalar4 *d_pos,
+cudaError_t sine_draw_particles(Scalar4 *d_pos,
                                 Scalar4 *d_vel,
                                 unsigned int *d_tag,
                                 const azplugins::detail::SineGeometry& geom,

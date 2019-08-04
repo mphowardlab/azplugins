@@ -1,11 +1,12 @@
-// Copyright (c) 2009-2019 The Regents of the University of Michigan
-// This file is part of the HOOMD-blue project, released under the BSD 3-Clause License.
+// Copyright (c) 2018-2019, Michael P. Howard
+// This file is part of the azplugins project, released under the Modified BSD License.
 
-// Maintainer: mphoward
+// Maintainer: astatt
+
 
 /*!
- * \file mpcd/SlitGeometry.h
- * \brief Definition of the MPCD slit channel geometry
+ * \file MPCDSineGeometry.h
+ * \brief Definition of the MPCD sine channel geometry
  */
 
 #ifndef AZPLUGINS_MPCD_SINE_GEOMETRY_H_
@@ -31,30 +32,14 @@ namespace azplugins
 namespace detail
 {
 
-//! Parallel plate (slit) geometry
+//! Sine channel geometry
 /*!
- * This class defines the geometry consistent with two infinite parallel plates. When the plates are
- * in relative motion, Couette flow can be generated in the channel. If a uniform body force is applied to
- * the fluid, the parabolic Poiseuille flow profile is created. Both flow profiles require the enforcement
- * of no-slip boundary conditions.
- *
- * The channel geometry is defined by two parameters: the channel half-width \a H, and the velocity of the
- * plates \a V. The total distance between the plates is \f$2H\f$. The plates are stacked in the
- * \a z direction, and are centered about the origin \f$z=0\f$. The upper plate moves in the \f$+x\f$ direction
- * with velocity \a V, and the lower plate moves in the \f$-x\f$ direction with velocity \f$-V\f$. Hence, for
- * no-slip boundary conditions there is a velocity profile:
- *
- * \f[
- *      v_x(z) = \frac{Vz}{H}
- * \f]
- *
- * This gives an effective shear rate \f$\dot\gamma = V/H\f$, and the shear stress is $\sigma_{xz}\f$.
- *
+ * This class defines a channel with sine walls.
+
  * The geometry enforces boundary conditions \b only on the MPCD solvent particles. Additional interactions
  * are required with any embedded particles using appropriate wall potentials.
  *
- * The wall boundary conditions can optionally be changed to slip conditions. For these BCs, the previous
- * discussion of the various flow profiles no longer applies.
+ * The wall boundary conditions can optionally be changed to slip conditions.
  */
 class __attribute__((visibility("default"))) SineGeometry
     {
@@ -199,4 +184,4 @@ class __attribute__((visibility("default"))) SineGeometry
 } // end namespace azplugins
 #undef HOSTDEVICE
 
-#endif // AZPLUGINS_MPCD_SINE__GEOMETRY_H_
+#endif // AZPLUGINS_MPCD_SINE_GEOMETRY_H_
