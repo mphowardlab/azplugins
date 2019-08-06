@@ -129,6 +129,7 @@ list(APPEND _${COMPONENT_NAME}_sources
     MPCDSineGeometryFillerGPU.cc
     )
 list(APPEND _${COMPONENT_NAME}_cu_sources
+    MPCDStreamingMethod.cu
     MPCDReversePerturbationFlowGPU.cu
     MPCDSineGeometryFillerGPU.cu
     )

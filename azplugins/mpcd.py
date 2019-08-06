@@ -177,18 +177,22 @@ class sine(hoomd.mpcd.stream._streaming_method):
     .. versionadded:: 2.6
 
     """
-    def __init__(self, H, V=0.0, boundary="no_slip", period=1):
+    def __init__(self, H,h,p, V=0.0, boundary="no_slip", period=1):
         hoomd.util.print_status_line()
 
         hoomd.mpcd.stream._streaming_method.__init__(self, period)
 
-        self.metadata_fields += ['H','V','boundary']
+        self.metadata_fields += ['L','H','h','p','V','boundary']
         self.H = H
+        self.h = h
+        self.p = p
         self.V = V
         self.boundary = boundary
 
         bc = self._process_boundary(boundary)
-
+        system = hoomd.data.system_data(hoomd.context.current.system_definition)
+        Lx = system.sysdef.getParticleData().getGlobalBox().getL().x
+        self.L = Lx
         # create the base streaming class
         if not hoomd.context.exec_conf.isCUDAEnabled():
             stream_class = _azplugins.ConfinedStreamingMethodSine
@@ -198,7 +202,7 @@ class sine(hoomd.mpcd.stream._streaming_method):
                                  hoomd.context.current.system.getCurrentTimeStep(),
                                  self.period,
                                  0,
-                                 _azplugins.SineGeometry(H,V,bc))
+                                 _azplugins.SineGeometry(Lx,H,h,p,V,bc))
 
     def set_filler(self, density, kT, seed, type='A'):
         r""" Add virtual particles to slit channel.
@@ -263,7 +267,7 @@ class sine(hoomd.mpcd.stream._streaming_method):
 
         self._filler = None
 
-    def set_params(self, H=None, V=None, boundary=None):
+    def set_params(self, H=None, h=None, p=None, V=None, boundary=None):
         """ Set parameters for the slit geometry.
 
         Args:
@@ -287,6 +291,12 @@ class sine(hoomd.mpcd.stream._streaming_method):
         if H is not None:
             self.H = H
 
+        if h is not None:
+            self.h = h
+
+        if p is not None:
+            self.p = p
+
         if V is not None:
             self.V = V
 
@@ -294,6 +304,6 @@ class sine(hoomd.mpcd.stream._streaming_method):
             self.boundary = boundary
 
         bc = self._process_boundary(self.boundary)
-        self._cpp.geometry = _azplugins.SineGeometry(self.H,self.V,bc)
+        self._cpp.geometry = _azplugins.SineGeometry(self.L,self.H,self.h,self.p,self.V,bc)
         if self._filler is not None:
             self._filler.setGeometry(self._cpp.geometry)

@@ -38,7 +38,7 @@ void SineGeometryFillerGPU::drawParticles(unsigned int timestep)
     const unsigned int first_idx = m_mpcd_pdata->getN() + m_mpcd_pdata->getNVirtual() - m_N_fill;
 
     m_tuner->begin();
-    gpu::slit_draw_particles(d_pos.data,
+    gpu::sine_draw_particles(d_pos.data,
                                    d_vel.data,
                                    d_tag.data,
                                    *m_geom,

@@ -35,28 +35,35 @@ void SineGeometryFiller::computeNumFill()
     // as a precaution, validate the global box with the current cell list
     const BoxDim& global_box = m_pdata->getGlobalBox();
     const Scalar cell_size = m_cl->getCellSize();
-    if (!m_geom->validateBox(global_box, cell_size))
+    const Scalar max_shift = m_cl->getMaxGridShift();
+    if (!m_geom->validateBox(global_box, cell_size, max_shift))
         {
         m_exec_conf->msg->error() << "Invalid sine geometry for global box, cannot fill virtual particles." << std::endl;
         throw std::runtime_error("Invalid sine geometry for global box");
         }
 
-    // box and slit geometry
+    // box and sine geometry
     const BoxDim& box = m_pdata->getBox();
     const Scalar3 L = box.getL();
     const Scalar A = L.x * L.y;
-    const Scalar H = m_geom->getH();
+    const Scalar H = m_geom->getHwide();
+    const Scalar h = m_geom->getHnarrow();
+    const Scalar r = m_geom->getRepetitions();
+    const Scalar pi_period_div_L = 2*M_PI*r/L.x;
 
     // default is not to fill anything
     m_z_min = -H; m_z_max = H;
     m_N_hi = m_N_lo = 0;
+
+    // This geometry needs a larger filler thickness than just a single cell_size because of its curved bounds.
+    const Scalar filler_thickness = cell_size +  0.5*(H-h)*fast::sin((1+max_shift)*cell_size*pi_period_div_L);
 
     /*
      * Determine the lowest / highest extent of a cell containing a particle within the channel.
      * This is done by round the walls onto the cell grid away from zero, and then including the
      * max shift of this cell edge.
      */
-    const Scalar max_shift = m_cl->getMaxGridShift();
+
     const Scalar global_lo = global_box.getLo().z;
     if (box.getHi().z >= H)
         {
@@ -98,11 +105,11 @@ void SineGeometryFiller::drawParticles(unsigned int timestep)
         signed char sign = (i >= m_N_lo) - (i < m_N_lo);
         if (sign == -1) // bottom
             {
-            lo.z = m_z_min; hi.z = -m_geom->getH();
+            lo.z = m_z_min; hi.z = -m_geom->getHwide();
             }
         else // top
             {
-            lo.z = m_geom->getH(); hi.z = m_z_max;
+            lo.z = m_geom->getHwide(); hi.z = m_z_max;
             }
 
         const unsigned int pidx = first_idx + i;

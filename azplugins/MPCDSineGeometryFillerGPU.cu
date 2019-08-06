@@ -26,7 +26,7 @@ namespace kernel
  * \param d_pos Particle positions
  * \param d_vel Particle velocities
  * \param d_tag Particle tags
- * \param geom Slit geometry to fill
+ * \param geom Sine geometry to fill
  * \param z_min Lower bound to lower fill region
  * \param z_max Upper bound to upper fill region
  * \param box Local simulation box
@@ -73,11 +73,11 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
     Scalar3 hi = box.getHi();
     if (sign == -1) // bottom
         {
-        lo.z = z_min; hi.z = -geom.getH();
+        lo.z = z_min; hi.z = -geom.getHwide();
         }
     else // top
         {
-        lo.z = geom.getH(); hi.z = z_max;
+        lo.z = geom.getHwide(); hi.z = z_max;
         }
 
     // particle tag and index
@@ -150,7 +150,7 @@ cudaError_t sine_draw_particles(Scalar4 *d_pos,
     if (max_block_size == UINT_MAX)
         {
         cudaFuncAttributes attr;
-        cudaFuncGetAttributes(&attr, (const void*)kernel::slit_draw_particles);
+        cudaFuncGetAttributes(&attr, (const void*)kernel::sine_draw_particles);
         max_block_size = attr.maxThreadsPerBlock;
         }
 

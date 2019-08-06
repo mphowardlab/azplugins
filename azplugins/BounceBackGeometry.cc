@@ -18,14 +18,18 @@ namespace azplugins
 {
 namespace detail
 {
+
 void export_SineGeometry(pybind11::module& m)
     {
     namespace py = pybind11;
     py::class_<SineGeometry, std::shared_ptr<SineGeometry> >(m, "SineGeometry")
-        .def(py::init<Scalar, Scalar, mpcd::detail::boundary>())
-        .def("getH", &SineGeometry::getH)
-        .def("getVelocity", &SineGeometry::getVelocity)
-        .def("getBoundaryCondition", &SineGeometry::getBoundaryCondition);
-}
+    .def(py::init<Scalar, Scalar, Scalar, Scalar,Scalar, mpcd::detail::boundary>())
+    .def("getHwide", &SineGeometry::getHwide)
+    .def("getHnarrow", &SineGeometry::getHnarrow)
+    .def("getPeriod", &SineGeometry::getPeriod)
+    .def("getVelocity", &SineGeometry::getVelocity)
+    .def("getBoundaryCondition", &SineGeometry::getBoundaryCondition);
+    }
+
 } // end namespace detail
 } // end namespace azplugins
