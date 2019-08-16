@@ -5,6 +5,7 @@
 
 project(azplugins)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0 FATAL_ERROR)
+cmake_policy(SET CMP0074 OLD)
 
 # set the cmake policy to enable finding LOCATION in testing, per hoomd usage
 if (CMAKE_MAJOR_VERSION VERSION_GREATER 2)
