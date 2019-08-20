@@ -1,3 +1,8 @@
+# Copyright (c) 2018-2019, Michael P. Howard
+# This file is part of the azplugins project, released under the Modified BSD License.
+
+# Maintainer: mphoward
+
 r"""Utility methods for interfacing with the HOOMD API."""
 import hoomd
 

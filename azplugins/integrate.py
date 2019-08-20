@@ -177,7 +177,7 @@ class slit_pore(_bounce_back):
     the walls are placed at :math:`z=-H` and :math:`z=+H`, and they extend from :math:`x=-L` to :math:`x=+L`
     (total length *2L*). Additional solid walls with normals in *x* prevent penetration into the regions
     above / below the plates. The plates are infinite in *y*. Outside the pore, the simulation box has full periodic
-    boundaries; it is not confined by any walls. This model hence mimics a narrow pore in, e.g., a membrane.
+    boundaries, and it is not confined by any walls. This model hence mimics a narrow pore in, e.g., a membrane.
 
     Note:
         It may be necessary to add additional 'ghost' particles near the boundaries in order to correctly enforce the
