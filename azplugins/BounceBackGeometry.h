@@ -18,6 +18,11 @@
 #include "hoomd/mpcd/BoundaryCondition.h"
 #include "hoomd/mpcd/SlitGeometry.h"
 
+#if (HOOMD_VERSION_MAJOR >= 2) && (HOOMD_MINOR_VERSION >= 7)
+#define AZPLUGINS_API_INTEGRATE_SLIT_PORE
+#include "hoomd/mpcd/SlitPoreGeometry.h"
+#endif
+
 #ifndef NVCC
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 

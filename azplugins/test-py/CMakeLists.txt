@@ -13,6 +13,7 @@ set(TEST_LIST_CPU
     test_flow_parabolic
     test_flow_quiescent
     test_integrate_slit
+    test_integrate_slit_pore
     test_pair_ashbaugh
     test_pair_ashbaugh24
     test_pair_lj124
@@ -40,6 +41,7 @@ set(TEST_LIST_GPU
     test_flow_brownian
     test_flow_langevin
     test_integrate_slit
+    test_integrate_slit_pore
     test_pair_ashbaugh
     test_pair_ashbaugh24
     test_pair_lj124

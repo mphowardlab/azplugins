@@ -87,6 +87,7 @@ set(_${COMPONENT_NAME}_cu_sources
 set(py_files
     __init__.py
     analyze.py
+    api.py
     bond.py
     dpd.py
     evaporate.py

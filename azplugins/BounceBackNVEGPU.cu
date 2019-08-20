@@ -21,6 +21,12 @@ namespace gpu
 template cudaError_t nve_bounce_step_one<mpcd::detail::SlitGeometry>
     (const bounce_args_t& args, const mpcd::detail::SlitGeometry& geom);
 
+#if AZPLUGINS_API_INTEGRATE_SLIT_PORE
+//! Template instantiation of slit pore geometry streaming
+template cudaError_t nve_bounce_step_one<mpcd::detail::SlitPoreGeometry>
+    (const bounce_args_t& args, const mpcd::detail::SlitPoreGeometry& geom);
+#endif
+
 namespace kernel
 {
 //! Kernel for applying second step of velocity Verlet algorithm with bounce back

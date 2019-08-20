@@ -231,7 +231,13 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluidGPU");
     #endif // ENABLE_CUDA
     azplugins::detail::export_BounceBackNVE<mpcd::detail::SlitGeometry>(m);
+    #if AZPLUGINS_API_INTEGRATE_SLIT_PORE
+    azplugins::detail::export_BounceBackNVE<mpcd::detail::SlitPoreGeometry>(m);
+    #endif
     #ifdef ENABLE_CUDA
     azplugins::detail::export_BounceBackNVEGPU<mpcd::detail::SlitGeometry>(m);
+    #if AZPLUGINS_API_INTEGRATE_SLIT_PORE
+    azplugins::detail::export_BounceBackNVEGPU<mpcd::detail::SlitPoreGeometry>(m);
+    #endif
     #endif // ENABLE_CUDA
     }

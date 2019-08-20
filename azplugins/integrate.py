@@ -6,6 +6,7 @@
 import hoomd
 from hoomd.mpcd import _mpcd
 from . import _azplugins
+from . import api
 
 class _bounce_back(hoomd.md.integrate._integration_method):
     """ NVE integration with bounce-back rules.
@@ -159,3 +160,107 @@ class slit(_bounce_back):
 
         bc = self._process_boundary(self.boundary)
         self.cpp_method.geometry = _mpcd.SlitGeometry(self.H,self.V,bc)
+
+@api.require('2.7.0')
+class slit_pore(_bounce_back):
+    """ NVE integration with bounce-back rules in a slit pore channel.
+
+    Args:
+        group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
+        H (float): channel half-width.
+        L (float): pore half-length.
+        boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
+
+    This integration method applies to particles in *group* in the parallel-plate (slit) pore geometry. This geometry
+    is characterized by a half-width *H* in *z*, so that the distance between the plates is :math:`2H`, and a
+    half-length *L* in *x*, so that the total pore length is :math:`2L`. The slit pore is centered around the origin:
+    the walls are placed at :math:`z=-H` and :math:`z=+H`, and they extend from :math:`x=-L` to :math:`x=+L`
+    (total length *2L*). Additional solid walls with normals in *x* prevent penetration into the regions
+    above / below the plates. The plates are infinite in *y*. Outside the pore, the simulation box has full periodic
+    boundaries; it is not confined by any walls. This model hence mimics a narrow pore in, e.g., a membrane.
+
+    Note:
+        It may be necessary to add additional 'ghost' particles near the boundaries in order to correctly enforce the
+        boundary conditions and to reduce density fluctuations near the wall.
+
+    HOOMD uses a periodic simulation box, but the geometry imposes inherent non-periodic boundary conditions. You
+    **must** ensure that the box is sufficiently large to enclose the geometry (i.e., :math:`L_x > 2L` and
+    :math:`L_z > 2H`). An error will be raised if the simulation box is not large enough to contain the geometry.
+    Additionally, all particles must lie initially **inside** the geometry (i.e., all particles are between the plates
+    or outside the pore). The particle configuration will be validated on the first call to :py:meth:`hoomd.run()`,
+    and an error will be raised if this condition is not met.
+
+    Note:
+        You must also ensure that particles do not self-interact through the periodic boundaries. This is usually
+        achieved for simple pair potentials by padding the box size by the largest cutoff radius. Failure to do so
+        may result in unphysical interactions.
+
+    :py:class:`slit_pore` is an integration method. It must be used with :py:class:`hoomd.md.mode_standard`.
+
+    Warning:
+        Bounce-back methods do not support anisotropic integration. If an anisotropic pair potential is specified,
+        the torques will be ignored during the integration, and the particle orientations will not be updated. Do
+        **not** use a bounce-back integrator with anisotropic particles or rigid bodies.
+
+    A :py:class:`hoomd.compute.thermo` is automatically specified and associated with *group*.
+
+    Examples::
+
+        all = group.all()
+        integrate.slit_pore(group=all, H=10.0, L=10.)
+
+    :py:class:`slit_pore` **requires** HOOMD >= 2.7.0.
+
+    """
+    def __init__(self, group, H, L, boundary="no_slip"):
+        hoomd.util.print_status_line()
+
+        # initialize base class
+        _bounce_back.__init__(self,group)
+        self.metadata_fields += ['H','L']
+
+        # initialize the c++ class
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            cpp_class = _azplugins.BounceBackNVESlitPore
+        else:
+            cpp_class = _azplugins.BounceBackNVESlitPoreGPU
+
+        self.H = H
+        self.L = L
+        self.boundary = boundary
+
+        bc = self._process_boundary(boundary)
+        geom = _mpcd.SlitPoreGeometry(H, L, bc)
+
+        self.cpp_method = cpp_class(hoomd.context.current.system_definition, group.cpp_group, geom)
+        self.cpp_method.validateGroup()
+
+    def set_params(self, H=None, L=None, boundary=None):
+        """ Set parameters for the slit pore geometry.
+
+        Args:
+            H (float): channel half-width.
+            L (float): pore half-length.
+            boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
+
+        Examples::
+
+            slit_pore.set_params(H=8.)
+            slit_pore.set_params(L=2.0)
+            slit_pore.set_params(boundary='slip')
+            slit_pore.set_params(H=5, L=4., boundary='no_slip')
+
+        """
+        hoomd.util.print_status_line()
+
+        if H is not None:
+            self.H = H
+
+        if L is not None:
+            self.L = L
+
+        if boundary is not None:
+            self.boundary = boundary
+
+        bc = self._process_boundary(self.boundary)
+        self.cpp_method.geometry = _mpcd.SlitPoreGeometry(self.H,self.L,bc)
