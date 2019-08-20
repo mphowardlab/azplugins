@@ -2,6 +2,15 @@
 
 ---------
 
+## v0.7.1
+
+20 August 2019
+
+*Bug fixes*
+
+* Silence a warning in CMake >= 3.12.
+* Fix a link error in compiled unit tests.
+
 ## v0.7.0
 
 24 June 2019
