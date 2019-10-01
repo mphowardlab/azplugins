@@ -85,7 +85,7 @@ class PYBIND11_EXPORT PlaneRestraintCompute : public ForceCompute
     protected:
         std::shared_ptr<ParticleGroup> m_group; //!< Group to apply forces to
 
-        Scalar3 m_o;    //!< Point on the 1d line
+        Scalar3 m_o;    //!< Point in the plane
         Scalar3 m_n;    //!< Unit normal
         Scalar m_k;     //!< Spring constant
 

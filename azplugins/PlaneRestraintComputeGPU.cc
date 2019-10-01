@@ -16,10 +16,10 @@ namespace azplugins
  * \param k Spring constant.
  */
 PlaneRestraintComputeGPU::PlaneRestraintComputeGPU(std::shared_ptr<SystemDefinition> sysdef,
-                                                           std::shared_ptr<ParticleGroup> group,
-                                                           Scalar3 point,
-                                                           Scalar3 normal,
-                                                           Scalar k)
+                                                   std::shared_ptr<ParticleGroup> group,
+                                                   Scalar3 point,
+                                                   Scalar3 normal,
+                                                   Scalar k)
     : PlaneRestraintCompute(sysdef, group, point, normal, k)
     {
     m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "harmonic_plane", m_exec_conf));
