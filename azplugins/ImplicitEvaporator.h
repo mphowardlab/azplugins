@@ -26,9 +26,7 @@ namespace azplugins
 //! Implicit solvent evaporator
 /*!
  * Implicitly models the effect of solvent evaporation as a moving interface.
- *
- * The moving interface compute acts on particles along the z direction, with
- * the interface normal defined along +z going from the liquid into the vapor phase.
+ * The moving interface compute acts on particles along the inward normal.
  * The interface potential is harmonic. It does not include an attractive
  * part (i.e., it is truncated at its minimum, and is zero for any negative
  * displacements relative to the minimum). The position of the minimum can be
@@ -52,6 +50,10 @@ namespace azplugins
  *  - \a offset (distance) - per-particle-type amount to shift \a H, default: 0.0
  *  - \f$F_g\f$ - \a g (force) - force to apply above \f$H_{\rm c}\f$
  *  - \f$\Delta\f$ - \a cutoff (distance) - sets cutoff at \f$H_{\rm c} = H + \Delta\f$
+ *
+ * The meaning of \f$z\f$ is the distance from some origin, and \f$H\f$ is the distance of
+ * the interface (e.g., a plane, sphere, etc.) from that same origin. This class doesn't
+ * actually compute anything on its own. Deriving classes should implement this geometry.
  *
  * \warning The temperature reported by ComputeThermo will likely not be accurate
  *          during evaporation because the system is out-of-equilibrium,
@@ -89,15 +91,15 @@ class PYBIND11_EXPORT ImplicitEvaporator : public ForceCompute
             }
 
     protected:
-        //! Implements the force calculation
-        virtual void computeForces(unsigned int timestep);
-
         std::shared_ptr<Variant> m_interf;      //!< Current location of the interface
         GPUArray<Scalar4> m_params;             //!< Per-type array of parameters for the potential
 
-        bool m_has_warned;  //!< Flag if a warning has been issued about the virial
+        //! Method to compute the forces
+        virtual void computeForces(unsigned int timestep);
 
     private:
+        bool m_has_warned;  //!< Flag if a warning has been issued about the virial
+
         //! Reallocate the per-type parameter arrays when the number of types changes
         void reallocateParams()
             {

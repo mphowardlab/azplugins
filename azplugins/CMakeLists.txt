@@ -36,6 +36,8 @@ set(_${COMPONENT_NAME}_sources
     module.cc
     BounceBackGeometry.cc
     ImplicitEvaporator.cc
+    ImplicitDropletEvaporator.cc
+    ImplicitPlaneEvaporator.cc
     OrientationRestraintCompute.cc
     ParticleEvaporator.cc
     PositionRestraintCompute.cc
@@ -48,6 +50,8 @@ set(_${COMPONENT_NAME}_sources
 if(ENABLE_CUDA)
 list(APPEND _${COMPONENT_NAME}_sources
     ImplicitEvaporatorGPU.cc
+    ImplicitDropletEvaporatorGPU.cc
+    ImplicitPlaneEvaporatorGPU.cc
     OrientationRestraintComputeGPU.cc
     ParticleEvaporatorGPU.cc
     PositionRestraintComputeGPU.cc
@@ -63,7 +67,8 @@ set(_${COMPONENT_NAME}_cu_sources
     BondPotentials.cu
     BounceBackNVEGPU.cu
     DPDPotentials.cu
-    ImplicitEvaporatorGPU.cu
+    ImplicitDropletEvaporatorGPU.cu
+    ImplicitPlaneEvaporatorGPU.cu
     OrientationRestraintComputeGPU.cu
     PairPotentialAshbaugh.cu
     PairPotentialAshbaugh24.cu

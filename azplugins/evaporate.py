@@ -13,6 +13,7 @@ class implicit(hoomd.md.force._force):
     Args:
         interface (:py:mod:`hoomd.variant` or :py:obj:`float`): *z* position of interface
         name (str): Name of the model instance
+        geometry (str): Drying geometry ("film" or "droplet").
 
     An evaporating solvent front is modeled implicitly by a purely repulsive
     harmonic interface that pushes down on nonvolatile solutes. The potential
@@ -41,6 +42,15 @@ class implicit(hoomd.md.force._force):
     :math:`F_g = -\kappa \Delta` so that the potential is continued linearly
     (the force is continuous) and also that :math:`F_g` scales with the cube of the
     particle radius.
+
+    The drying *geometry* determines the physical meaning of *z* and *H*. Currently,
+    it can be:
+
+    - *film*: A drying thin film (planar geometry), where *z* is the particle's
+              z-coordinate of the particle and *H* is then the film height.
+              This is the default value.
+    - *droplet*: A drying droplet (spherical geometry), where *z* is the particle's
+                 radial distance from the origin and *H* is then the droplet radius.
 
     The following coefficinets must be set per unique particle type:
 
@@ -72,7 +82,7 @@ class implicit(hoomd.md.force._force):
         pressure (tensor) is not being logged or the pressure is not of interest.
 
     """
-    def __init__(self, interface, name=""):
+    def __init__(self, interface, name="", geometry='film'):
         hoomd.util.print_status_line()
 
         # initialize the base class
@@ -80,18 +90,31 @@ class implicit(hoomd.md.force._force):
 
         # setup the (moving) interface variant
         self.interface = hoomd.variant._setup_variant_input(interface)
+        self.geometry = geometry
 
         # setup the coefficient vector
         self.force_coeff = hoomd.md.external.coeff()
         self.force_coeff.set_default_coeff('offset', 0.0)
         self.required_coeffs = ['k','offset','g','cutoff']
-        self.metadata_fields = ['force_coeff','interface']
+        self.metadata_fields = ['force_coeff','interface','geometry']
 
         # create the c++ mirror class
         if not hoomd.context.exec_conf.isCUDAEnabled():
-            cpp_class = _azplugins.ImplicitEvaporator
+            if geometry == 'film':
+                cpp_class = _azplugins.ImplicitPlaneEvaporator
+            elif geometry == 'droplet':
+                cpp_class = _azplugins.ImplicitDropletEvaporator
+            else:
+                hoomd.context.msg.error('Unrecognized implicit drying geometry {}\n'.format(geometry))
+                raise ValueError('Unrecognized implicit drying geometry')
         else:
-            cpp_class = _azplugins.ImplicitEvaporatorGPU
+            if geometry == 'film':
+                cpp_class = _azplugins.ImplicitPlaneEvaporatorGPU
+            elif geometry == 'droplet':
+                cpp_class = _azplugins.ImplicitDropletEvaporatorGPU
+            else:
+                hoomd.context.msg.error('Unrecognized implicit drying geometry {}\n'.format(geometry))
+                raise ValueError('Unrecognized implicit drying geometry')
         self.cpp_force = cpp_class(hoomd.context.current.system_definition, self.interface.cpp_variant)
 
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
@@ -127,6 +150,7 @@ class implicit(hoomd.md.force._force):
 
         data['force_coeff'] = self.force_coeff
         data['interface'] = self.interface
+        data['geometry'] = self.geometry
 
         return data
 
