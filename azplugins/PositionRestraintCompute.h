@@ -15,6 +15,7 @@
 #error This header cannot be compiled by nvcc
 #endif
 
+#include "hoomd/Autotuner.h"
 #include "hoomd/ForceCompute.h"
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 

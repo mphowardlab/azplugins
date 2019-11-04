@@ -38,6 +38,7 @@ set(_${COMPONENT_NAME}_sources
     ImplicitEvaporator.cc
     OrientationRestraintCompute.cc
     ParticleEvaporator.cc
+    PlaneRestraintCompute.cc
     PositionRestraintCompute.cc
     RDFAnalyzer.cc
     ReversePerturbationFlow.cc
@@ -50,6 +51,7 @@ list(APPEND _${COMPONENT_NAME}_sources
     ImplicitEvaporatorGPU.cc
     OrientationRestraintComputeGPU.cc
     ParticleEvaporatorGPU.cc
+    PlaneRestraintComputeGPU.cc
     PositionRestraintComputeGPU.cc
     RDFAnalyzerGPU.cc
     ReversePerturbationFlowGPU.cc
@@ -73,6 +75,7 @@ set(_${COMPONENT_NAME}_cu_sources
     PairPotentialShiftedLJ.cu
     PairPotentialSpline.cu
     ParticleEvaporatorGPU.cu
+    PlaneRestraintComputeGPU.cu
     PositionRestraintComputeGPU.cu
     RDFAnalyzerGPU.cu
     ReversePerturbationFlowGPU.cu

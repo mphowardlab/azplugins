@@ -10,6 +10,100 @@ from hoomd.md import force
 
 from . import _azplugins
 
+class plane(force._force):
+    r"""Apply a harmonic potential to restrain particles to a plane.
+
+    Args:
+        group (:py:mod:`hoomd.group`): Group of particles to apply potential to.
+        point (tuple): Point in the plane.
+        normal (tuple): Normal of the plane.
+        k (float): Harmonic spring constant.
+
+    The harmonic potential is:
+
+    .. math::
+
+        U(d) = \frac{k}{2} d^2
+
+    where *k* is the spring constant and *d* is the distance of the point from the plane:
+
+    .. math::
+
+        d = (\mathbf{r)-\mathbf{p}) \cdot \mathbf{n}
+
+    where **r** is the **unwrapped** particle position, **p** is a point in the plane,
+    and **n** is the unit normal of the plane.
+
+    The reason that **r** is unwrapped is to ensure that the harmonic potential is always
+    increasing. Wrapping **r** would introduce force discontinuities and set a maximum value
+    for *U*. However, the virial contribution is still computed by applying the force at the
+    wrapped position, as the same force is applied to all images.
+
+    This potential is especially useful if a group of particles needs to be restrained to a
+    region of space.
+
+    Examples::
+
+        hp = azplugins.restrain.plane(group=hoomd.group.all(), point=(0,0,0), normal=(0,0,1), k=10.0)
+
+    """
+    def __init__(self, group, point, normal, k):
+        hoomd.util.print_status_line()
+
+        # initialize the base class
+        force._force.__init__(self)
+
+        # create the c++ mirror class
+        if hoomd.context.exec_conf.isCUDAEnabled():
+            _cpp = _azplugins.PlaneRestraintComputeGPU
+        else:
+            _cpp = _azplugins.PlaneRestraintCompute
+
+        # process the parameters
+        _p = _hoomd.make_scalar3(point[0],point[1],point[2])
+        _n = _hoomd.make_scalar3(normal[0],normal[1],normal[2])
+
+        self.cpp_force = _cpp(hoomd.context.current.system_definition,
+                              group.cpp_group,
+                              _p,
+                              _n,
+                              k)
+
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
+
+    def set_params(self,point=None, normal=None, k=None):
+        R""" Update the plane geometry or spring constant.
+
+        Args:
+            point (tuple): Point in the plane.
+            normal (tuple): Normal of the plane.
+            k (float): Harmonic spring constant.
+
+        Parameters are only updated if they are specified.
+
+        Examples::
+
+            hp.set_params(point=(1,0,0))
+            hp.set_params(point=(0,1,0), normal=(0,1,0), k=5.0)
+
+        """
+        hoomd.util.print_status_line()
+        self.check_initialization()
+
+        if point is not None:
+            _p = _hoomd.make_scalar3(point[0],point[1],point[2])
+            self.cpp_force.setPoint(_p)
+
+        if normal is not None:
+            _n = _hoomd.make_scalar3(normal[0], normal[1], normal[2])
+            self.cpp_force.setNormal(_n)
+
+        if k is not None:
+            self.cpp_force.setForceConstant(k)
+
+    def update_coeffs(self):
+        pass
+
 class position(force._force):
     R""" Add a harmonic restraining potential based on initial (or specified) position
 

@@ -14,6 +14,7 @@
 - `pair.ashbaugh`: Ashbaugh-Hatch pair potential.
 - `pair.colloid`: Integrated Lennard-Jones pair potential.
 - `pair.slj`: Modified core-shifted Lennard-Jones pair potential.
+- `restrain.plane`: Harmonic plane restraints.
 - `update.types`: Type changer by region.
 - `wall.colloid`: Integrated Lennard-Jones wall potential.
 - `wall.lj93`: 9-3 Lennard-Jones wall potential.
