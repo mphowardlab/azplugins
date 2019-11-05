@@ -2,6 +2,17 @@
 
 ---------
 
+## v0.8.0
+
+5 November 2019
+
+*New features*
+
+* `evaporate.implicit` now supports evaporation in both film and droplet
+  geometries. The default geometry remains the film.
+* `restrain.plane` allows particles to be harmonically restrained by their
+  distance relative to a plane.
+
 ## v0.7.1
 
 20 August 2019
