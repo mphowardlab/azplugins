@@ -7,7 +7,7 @@
 - Original software design and plugin frameworks.
 - `analyze.rdf`: Radial distribution function calculator.
 - `dpd.general`: Generalized DPD pair potential.
-- `evaporate.implicit`: Moving harmonic potential to simulate drying.
+- `evaporate.implicit`: Moving harmonic potential to simulate drying in films and droplets.
 - `evaporate.particles`: Particle type changer to simulate explicit drying.
 - `flow.brownian` / `flow.langevin` and imposed flow framework.
 - `integrate.slit` and bounce-back integrator framework.
