@@ -44,7 +44,7 @@ void ImplicitEvaporator::computeForces(unsigned int timestep)
     PDataFlags flags = m_pdata->getFlags();
     if (!m_has_warned && (flags[pdata_flag::pressure_tensor] || flags[pdata_flag::isotropic_virial]))
         {
-        m_exec_conf->msg->warning() << "ImplicitPlaneEvaporator does not compute its virial contribution, pressure may be inaccurate" << std::endl;
+        m_exec_conf->msg->warning() << "ImplicitEvaporator does not compute its virial contribution, pressure may be inaccurate" << std::endl;
         m_has_warned = true;
         }
     }

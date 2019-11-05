@@ -23,12 +23,12 @@ class implicit(hoomd.md.force._force):
         :nowrap:
 
         \begin{eqnarray*}
-        V(z) = & 0 & z < H \\
-               & \frac{\kappa}{2} (z-H)^2 & H \le z < H_{\rm c} \\
-               & \frac{\kappa}{2} (H_{\rm c} - H)^2 - F_g (z - H_{\rm c}) & z \ge H_{\rm c}
+        V(d) = & 0 & d < H \\
+               & \frac{\kappa}{2} (d-H)^2 & H \le d < H_{\rm c} \\
+               & \frac{\kappa}{2} (H_{\rm c} - H)^2 - F_g (d - H_{\rm c}) & d \ge H_{\rm c}
         \end{eqnarray*}
 
-    Here, the interface is located at *z* height *H*, and may change with time.
+    Here, the interface is located at height *H*, and may change with time.
     The effective interface position *H* may be modified per-particle-type using a *offset*
     (*offset* is added to *H* to determine the effective *H*).
     :math:`\kappa` is a spring constant setting the strength of the interface
@@ -43,13 +43,12 @@ class implicit(hoomd.md.force._force):
     (the force is continuous) and also that :math:`F_g` scales with the cube of the
     particle radius.
 
-    The drying *geometry* determines the physical meaning of *z* and *H*. Currently,
+    The drying *geometry* determines the physical meaning of *d* and *H*. Currently,
     it can be:
 
-    - *film*: A drying thin film (planar geometry), where *z* is the particle's
-              z-coordinate of the particle and *H* is then the film height.
-              This is the default value.
-    - *droplet*: A drying droplet (spherical geometry), where *z* is the particle's
+    - *film*: A drying thin film (planar geometry), where *d* is the particle's
+              z-coordinate and *H* is then the film height. This is the default value.
+    - *droplet*: A drying droplet (spherical geometry), where *d* is the particle's
                  radial distance from the origin and *H* is then the droplet radius.
 
     The following coefficinets must be set per unique particle type:
