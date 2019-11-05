@@ -4,11 +4,11 @@
 // Maintainer: mphoward
 
 /*!
- * \file ImplicitEvaporatorGPU.cu
- * \brief Definition of kernel drivers and kernels for ImplicitEvaporatorGPU
+ * \file ImplicitPlaneEvaporatorGPU.cu
+ * \brief Definition of kernel drivers and kernels for ImplicitPlaneEvaporatorGPU
  */
 
-#include "ImplicitEvaporatorGPU.cuh"
+#include "ImplicitPlaneEvaporatorGPU.cuh"
 
 namespace azplugins
 {

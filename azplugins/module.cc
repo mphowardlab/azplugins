@@ -39,11 +39,15 @@ namespace py = pybind11;
 
 /* Force computes */
 #include "ImplicitEvaporator.h"
+#include "ImplicitDropletEvaporator.h"
+#include "ImplicitPlaneEvaporator.h"
 #include "OrientationRestraintCompute.h"
 #include "PlaneRestraintCompute.h"
 #include "PositionRestraintCompute.h"
 #ifdef ENABLE_CUDA
 #include "ImplicitEvaporatorGPU.h"
+#include "ImplicitDropletEvaporatorGPU.h"
+#include "ImplicitPlaneEvaporatorGPU.h"
 #include "OrientationRestraintComputeGPU.h"
 #include "PlaneRestraintComputeGPU.h"
 #include "PositionRestraintComputeGPU.h"
@@ -197,11 +201,15 @@ PYBIND11_MODULE(_azplugins, m)
 
     /* Force computes */
     azplugins::detail::export_ImplicitEvaporator(m);
+    azplugins::detail::export_ImplicitDropletEvaporator(m);
+    azplugins::detail::export_ImplicitPlaneEvaporator(m);
     azplugins::detail::export_OrientationRestraintCompute(m);
     azplugins::detail::export_PlaneRestraintCompute(m);
     azplugins::detail::export_PositionRestraintCompute(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_ImplicitEvaporatorGPU(m);
+    azplugins::detail::export_ImplicitDropletEvaporatorGPU(m);
+    azplugins::detail::export_ImplicitPlaneEvaporatorGPU(m);
     azplugins::detail::export_OrientationRestraintComputeGPU(m);
     azplugins::detail::export_PlaneRestraintComputeGPU(m);
     azplugins::detail::export_PositionRestraintComputeGPU(m);

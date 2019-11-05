@@ -81,12 +81,19 @@ class evaporate_implicit_tests(unittest.TestCase):
     def test_scalar_interface(self):
         evap = azplugins.evaporate.implicit(interface=5.0)
 
+    # test geometry is settable and checked
+    def test_geometry(self):
+        azplugins.evaporate.implicit(interface=5.0, geometry='film')
+        azplugins.evaporate.implicit(interface=5.0, geometry='droplet')
+        with self.assertRaises(ValueError):
+            azplugins.evaporate.implicit(interface=5.0, geometry='foobar')
+
     def tearDown(self):
         del self.s, self.interf
         context.initialize()
 
 # test the validity of the potential
-class evaporate_implicit_potential_tests(unittest.TestCase):
+class evaporate_implicit_film_potential_tests(unittest.TestCase):
     def setUp(self):
         if comm.get_num_ranks() > 1:
             comm.decomposition(nx=2, ny=1, nz=1)
@@ -106,7 +113,7 @@ class evaporate_implicit_potential_tests(unittest.TestCase):
 
     # test the calculation of force and potential
     def test_potential(self):
-        evap = azplugins.evaporate.implicit(interface=variant.linear_interp([[0,5.0],[1,5.0],[2,4.0],[3,4.0]]))
+        evap = azplugins.evaporate.implicit(interface=variant.linear_interp([[0,5.0],[1,5.0],[2,4.0],[3,4.0]]), geometry='film')
         kA = 50.0
         dB = 2.0
         kB = kA*dB**2
@@ -177,7 +184,7 @@ class evaporate_implicit_potential_tests(unittest.TestCase):
         self.assertAlmostEqual(f3[2], -kA/2., 4)
 
     def test_box_outside_error(self):
-        evap = azplugins.evaporate.implicit(interface=11.0)
+        evap = azplugins.evaporate.implicit(interface=11.0, geometry='film')
         evap.force_coeff.set('A', k=0.0, g=0.0, cutoff=False)
         evap.force_coeff.set('B', k=0.0, g=0.0, cutoff=False)
 
@@ -185,13 +192,115 @@ class evaporate_implicit_potential_tests(unittest.TestCase):
             run(1)
 
     def test_log_warning(self):
-        evap = azplugins.evaporate.implicit(interface=5.0)
+        evap = azplugins.evaporate.implicit(interface=5.0, geometry='film')
         evap.force_coeff.set('A', k=1.0, g=1.0, cutoff=1.0)
         evap.force_coeff.set('B', k=1.0, g=1.0, cutoff=1.0)
 
         analyze.log(filename=None, quantities=['pressure'], period=1)
         run(1)
         run(1)
+
+    def tearDown(self):
+        context.initialize()
+
+# test the validity of the potential
+class evaporate_implicit_droplet_potential_tests(unittest.TestCase):
+    def setUp(self):
+        if comm.get_num_ranks() > 1:
+            comm.decomposition(nx=2, ny=1, nz=1)
+
+        snap = data.make_snapshot(N=4, box=data.boxdim(L=20),particle_types=['A','B'])
+        if comm.get_rank() == 0:
+            snap.particles.position[0] = (0,0,4.6)
+            snap.particles.position[1] = (0,0,-5.4)
+            snap.particles.position[2] = (0,5.6,0)
+            snap.particles.position[3] = (6.6,0,0)
+            snap.particles.typeid[:] = (0,1,0,0)
+        init.read_snapshot(snap)
+
+        # integrator with zero timestep to compute forces
+        md.integrate.mode_standard(dt=0)
+        md.integrate.nve(group = group.all())
+
+    # test the calculation of force and potential
+    def test_potential(self):
+        evap = azplugins.evaporate.implicit(interface=variant.linear_interp([[0,5.0],[1,5.0],[2,4.0],[3,4.0]]), geometry='droplet')
+        kA = 50.0
+        dB = 2.0
+        kB = kA*dB**2
+        evap.force_coeff.set('A', k=kA, offset=0.1, g=kA/2., cutoff=0.5)
+        evap.force_coeff.set('B', k=kB, offset=-0.1, g=kB*dB/2., cutoff=dB/2.)
+
+        # in the first run step, the interface stays at 5.0 in both verlet steps
+        run(1)
+        # particle 0 is outside the interaction range
+        self.assertAlmostEqual(evap.forces[0].energy, 0)
+        f0 = evap.forces[0].force
+        self.assertAlmostEqual(f0[0], 0)
+        self.assertAlmostEqual(f0[1], 0)
+        self.assertAlmostEqual(f0[2], 0)
+
+        # particle 1 (type B) is experiencing the harmonic potential in +z
+        self.assertAlmostEqual(evap.forces[1].energy, 0.5*kB*0.5**2, 4)
+        f1 = evap.forces[1].force
+        self.assertAlmostEqual(f1[0], 0)
+        self.assertAlmostEqual(f1[1], 0)
+        self.assertAlmostEqual(f1[2], kB*0.5, 4)
+
+        # particle 2 (type A) is also experiencing the harmonic potential in -y
+        self.assertAlmostEqual(evap.forces[2].energy, 0.5*kA*0.5**2, 4)
+        f2 = evap.forces[2].force
+        self.assertAlmostEqual(f2[0], 0)
+        self.assertAlmostEqual(f2[1], -kA*0.5, 4)
+        self.assertAlmostEqual(f2[2], 0)
+
+        # particle 3 (type A) is experiencing the gravitational force in -x
+        self.assertAlmostEqual(evap.forces[3].energy, 0.5*kA*0.5**2 + (kA/2.)*1.0, 4)
+        f3 = evap.forces[3].force
+        self.assertAlmostEqual(f3[0], -kA/2., 4)
+        self.assertAlmostEqual(f3[1], 0)
+        self.assertAlmostEqual(f3[2], 0)
+
+        # disable B interactions for the next test
+        evap.force_coeff.set('B', cutoff=False)
+        # advance the simulation two steps so that now the interface is at 4.0
+        # in both verlet steps
+        run(2)
+        # particle 0 is now inside the harmonic region, -x
+        self.assertAlmostEqual(evap.forces[0].energy, 0.5*kA*0.5**2, 4)
+        f0 = evap.forces[0].force
+        self.assertAlmostEqual(f0[0], 0)
+        self.assertAlmostEqual(f0[1], 0)
+        self.assertAlmostEqual(f0[2], -kA*0.5, 4)
+
+        # particle 1 (type B) should now be ignored by the cutoff
+        self.assertAlmostEqual(evap.forces[1].energy, 0)
+        f1 = evap.forces[1].force
+        self.assertAlmostEqual(f1[0], 0)
+        self.assertAlmostEqual(f1[1], 0)
+        self.assertAlmostEqual(f1[2], 0)
+
+        # particle 2 (type A) is also experiencing the gravitational force now
+        self.assertAlmostEqual(evap.forces[2].energy, 0.5*kA*0.5**2 + (kA/2.)*1.0, 4)
+        f2 = evap.forces[2].force
+        self.assertAlmostEqual(f2[0], 0)
+        self.assertAlmostEqual(f2[1], -kA*0.5, 4)
+        self.assertAlmostEqual(f2[2], 0)
+
+        # particle 3 (type A) is experiencing the gravitational force
+        self.assertAlmostEqual(evap.forces[3].energy, 0.5*kA*0.5**2 + (kA/2.)*2.0, 4)
+        f3 = evap.forces[3].force
+        self.assertAlmostEqual(f3[0], -kA/2., 4)
+        self.assertAlmostEqual(f3[1], 0)
+        self.assertAlmostEqual(f3[2], 0)
+
+    def test_box_outside_error(self):
+        evap = azplugins.evaporate.implicit(interface=11.0, geometry='droplet')
+        evap.force_coeff.set('A', k=0.0, g=0.0, cutoff=False)
+        evap.force_coeff.set('B', k=0.0, g=0.0, cutoff=False)
+
+        with self.assertRaises(RuntimeError):
+            run(1)
 
     def tearDown(self):
         context.initialize()

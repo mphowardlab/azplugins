@@ -24,8 +24,9 @@ namespace azplugins
 
 //! Implicit solvent evaporator on the GPU
 /*!
- * \warning The virial is not computed for this external potential, and a warning
- *          will be raised the first time it is requested.
+ * This class does not implement any force evaluation on its own, as the geometry should be
+ * implemented by deriving classes. It exists as a thin layer between ImplicitEvaporator
+ * to remove some boilerplate of setting up the autotuners.
  */
 class PYBIND11_EXPORT ImplicitEvaporatorGPU : public ImplicitEvaporator
     {
@@ -33,9 +34,6 @@ class PYBIND11_EXPORT ImplicitEvaporatorGPU : public ImplicitEvaporator
         //! Constructor
         ImplicitEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
                               std::shared_ptr<Variant> interf);
-
-        //! Destructor
-        virtual ~ImplicitEvaporatorGPU() {};
 
         //! Set autotuner parameters
         /*!
@@ -50,10 +48,6 @@ class PYBIND11_EXPORT ImplicitEvaporatorGPU : public ImplicitEvaporator
             }
 
     protected:
-        //! Implements the force calculation
-        virtual void computeForces(unsigned int timestep);
-
-    private:
         std::unique_ptr<Autotuner> m_tuner;   //!< Autotuner for block size
     };
 

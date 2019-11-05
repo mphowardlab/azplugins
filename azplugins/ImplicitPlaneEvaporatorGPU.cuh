@@ -4,12 +4,12 @@
 // Maintainer: mphoward
 
 /*!
- * \file ImplicitEvaporatorGPU.cuh
- * \brief Declaration of kernel drivers for ImplicitEvaporatorGPU
+ * \file ImplicitPlaneEvaporatorGPU.cuh
+ * \brief Declaration of kernel drivers for ImplicitPlaneEvaporatorGPU
  */
 
-#ifndef AZPLUGINS_IMPLICIT_EVAPORATOR_GPU_CUH_
-#define AZPLUGINS_IMPLICIT_EVAPORATOR_GPU_CUH_
+#ifndef AZPLUGINS_IMPLICIT_PLANE_EVAPORATOR_GPU_CUH_
+#define AZPLUGINS_IMPLICIT_PLANE_EVAPORATOR_GPU_CUH_
 
 #include <cuda_runtime.h>
 #include "hoomd/HOOMDMath.h"
@@ -19,7 +19,7 @@ namespace azplugins
 namespace gpu
 {
 
-//! Kernel driver to evaluate ImplicitEvaporatorGPU force
+//! Kernel driver to evaluate ImplicitPlaneEvaporatorGPU force
 cudaError_t compute_implicit_evap_force(Scalar4 *d_force,
                                         Scalar *d_virial,
                                         const Scalar4 *d_pos,
@@ -32,4 +32,4 @@ cudaError_t compute_implicit_evap_force(Scalar4 *d_force,
 } // end namespace gpu
 } // end namespace azplugins
 
-#endif // AZPLUGINS_IMPLICIT_EVAPORATOR_GPU_CUH_
+#endif // AZPLUGINS_IMPLICIT_PLANE_EVAPORATOR_GPU_CUH_
