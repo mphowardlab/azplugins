@@ -65,10 +65,10 @@ endif(ENABLE_CUDA)
 
 # cuda cu source files
 set(_${COMPONENT_NAME}_cu_sources
-    AnisoPairPotentials.cu
+    AnisoPairPotentialTwoPatchMorse.cu
     BondPotentials.cu
     BounceBackNVEGPU.cu
-    DPDPotentials.cu
+    DPDPotentialGeneralWeight.cu
     ImplicitDropletEvaporatorGPU.cu
     ImplicitPlaneEvaporatorGPU.cu
     OrientationRestraintComputeGPU.cu

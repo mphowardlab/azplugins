@@ -11,18 +11,12 @@
 #ifndef AZPLUGINS_PAIR_EVALUATOR_ASHBAUGH24_H_
 #define AZPLUGINS_PAIR_EVALUATOR_ASHBAUGH24_H_
 
-#ifndef NVCC
-#include <string>
-#endif
-
-#include "hoomd/HOOMDMath.h"
 #include "PairEvaluatorAshbaugh.h"
+
 #ifdef NVCC
 #define DEVICE __device__
-#define HOSTDEVICE __host__ __device__
 #else
 #define DEVICE
-#define HOSTDEVICE
 #endif
 
 namespace azplugins
@@ -65,7 +59,7 @@ namespace detail
  *
  * Here, WCA means the repulsive part of the Lennard-Jones 48-24 potential.
  */
-class PairEvaluatorAshbaugh24
+class PairEvaluatorAshbaugh24 : public PairEvaluatorAshbaugh
     {
     public:
         //! Define the parameter type used by this pair potential evaluator
@@ -80,28 +74,8 @@ class PairEvaluatorAshbaugh24
          * The functor initializes its members from \a _params.
          */
         DEVICE PairEvaluatorAshbaugh24(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-          : rsq(_rsq), rcutsq(_rcutsq),lj1(_params.lj1), lj2(_params.lj2), lambda(_params.lambda),
-              rwcasq(_params.rwcasq), wca_shift(_params.wca_shift)
-            {
-            }
-
-        //! LJ 48-24 potential does not need diameter
-        DEVICE static bool needsDiameter() { return false; }
-        //! Accept the optional diameter values
-        /*!
-         * \param di Diameter of particle i
-         * \param dj Diameter of particle j
-         */
-        DEVICE void setDiameter(Scalar di, Scalar dj) { }
-
-        //! LJ 48-24 potential does not need charge
-        DEVICE static bool needsCharge() { return false; }
-        //! Accept the optional charge values
-        /*!
-         * \param qi Charge of particle i
-         * \param qj Charge of particle j
-         */
-        DEVICE void setCharge(Scalar qi, Scalar qj) { }
+          : PairEvaluatorAshbaugh(_rsq,_rcutsq,_params)
+            {}
 
         //! Evaluate the force and energy
         /*!
@@ -158,21 +132,11 @@ class PairEvaluatorAshbaugh24
             return std::string("ashbaugh24");
             }
         #endif
-
-    protected:
-        Scalar rsq;     //!< Stored rsq from the constructor
-        Scalar rcutsq;  //!< Stored rcutsq from the constructor
-        Scalar lj1;     //!< lj1 parameter extracted from the params passed to the constructor
-        Scalar lj2;     //!< lj2 parameter extracted from the params passed to the constructor
-        Scalar lambda;  //!< lambda parameter
-        Scalar rwcasq;  //!< WCA cutoff radius squared
-        Scalar wca_shift; //!< Energy shift for WCA part of the potential
     };
 
 } // end namespace detail
 } // end namespace azplugins
 
 #undef DEVICE
-#undef HOSTDEVICE
 
 #endif // AZPLUGINS_PAIR_EVALUATOR_ASHBAUGH24_H_

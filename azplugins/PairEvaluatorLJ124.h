@@ -11,11 +11,7 @@
 #ifndef AZPLUGINS_PAIR_EVALUATOR_LJ124_H_
 #define AZPLUGINS_PAIR_EVALUATOR_LJ124_H_
 
-#ifndef NVCC
-#include <string>
-#endif
-
-#include "hoomd/HOOMDMath.h"
+#include "PairEvaluator.h"
 
 #ifdef NVCC
 #define DEVICE __device__
@@ -44,7 +40,7 @@ namespace detail
  * - \a lj1 = 1.5 * sqrt(3.0) * epsilon * pow(sigma,12.0)
  * - \a lj2 = alpha * 1.5 * sqrt(3.0) * epsilon * pow(sigma,4.0);
  */
-class PairEvaluatorLJ124
+class PairEvaluatorLJ124 : public PairEvaluator
     {
     public:
         //! Define the parameter type used by this pair potential evaluator
@@ -59,25 +55,8 @@ class PairEvaluatorLJ124
          * The functor initializes its members from \a _params.
          */
         DEVICE PairEvaluatorLJ124(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-          : rsq(_rsq), rcutsq(_rcutsq), lj1(_params.x), lj2(_params.y) { }
-
-        //! LJ 12-4 potential does not need diameter
-        DEVICE static bool needsDiameter() { return false; }
-        //! Accept the optional diameter values
-        /*!
-         * \param di Diameter of particle i
-         * \param dj Diameter of particle j
-         */
-        DEVICE void setDiameter(Scalar di, Scalar dj) { }
-
-        //! LJ 12-4 potential does not need charge
-        DEVICE static bool needsCharge() { return false; }
-        //! Accept the optional charge values
-        /*!
-         * \param qi Charge of particle i
-         * \param qj Charge of particle j
-         */
-        DEVICE void setCharge(Scalar qi, Scalar qj) { }
+          : PairEvaluator(_rsq,_rcutsq), lj1(_params.x), lj2(_params.y)
+          {}
 
         //! Evaluate the force and energy
         /*!
@@ -123,8 +102,6 @@ class PairEvaluatorLJ124
         #endif
 
     protected:
-        Scalar rsq;     //!< Stored rsq from the constructor
-        Scalar rcutsq;  //!< Stored rcutsq from the constructor
         Scalar lj1;     //!< lj1 parameter extracted from the params passed to the constructor
         Scalar lj2;     //!< lj2 parameter extracted from the params passed to the constructor
     };
