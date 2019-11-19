@@ -37,7 +37,7 @@ class variant_sphere_tests(unittest.TestCase):
 
         # evaluated in Mathematica at this timestep
         R = s.cpp_variant.getValue(500)
-        self.assertAlmostEqual(R, 1.947130481045981)
+        self.assertAlmostEqual(R, 1.947130481045981, 5)
 
         # should now be 0, since has exceeded max time
         R = s.cpp_variant.getValue(1000)

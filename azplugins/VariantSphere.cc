@@ -43,7 +43,7 @@ double VariantSphere::getValue(unsigned int timestep)
         }
     else
         {
-        return sqrt(m_R0_sq-drsq);
+        return slow::sqrt(m_R0_sq-drsq);
         }
     }
 
