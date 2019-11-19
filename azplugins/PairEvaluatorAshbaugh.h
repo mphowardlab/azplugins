@@ -11,11 +11,7 @@
 #ifndef AZPLUGINS_PAIR_EVALUATOR_ASHBAUGH_H_
 #define AZPLUGINS_PAIR_EVALUATOR_ASHBAUGH_H_
 
-#ifndef NVCC
-#include <string>
-#endif
-
-#include "hoomd/HOOMDMath.h"
+#include "PairEvaluator.h"
 
 #ifdef NVCC
 #define DEVICE __device__
@@ -81,7 +77,7 @@ HOSTDEVICE inline ashbaugh_params make_ashbaugh_params(Scalar lj1,
  * - \a rwcasq is the square of the location of the potential minimum (WCA cutoff), pow(2.0/alpha,1./3.) * sigma * sigma
  * - \a wca_shift is the amount needed to shift the energy of the repulsive part to match the attractive energy.
  */
-class PairEvaluatorAshbaugh
+class PairEvaluatorAshbaugh : public PairEvaluator
     {
     public:
         //! Define the parameter type used by this pair potential evaluator
@@ -96,28 +92,9 @@ class PairEvaluatorAshbaugh
          * The functor initializes its members from \a _params.
          */
         DEVICE PairEvaluatorAshbaugh(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-            : rsq(_rsq), rcutsq(_rcutsq), lj1(_params.lj1), lj2(_params.lj2), lambda(_params.lambda),
+            : PairEvaluator(_rsq, _rcutsq), lj1(_params.lj1), lj2(_params.lj2), lambda(_params.lambda),
               rwcasq(_params.rwcasq), wca_shift(_params.wca_shift)
-            {
-            }
-
-        //! Ashbaugh-Hatch potential does not need diameter
-        DEVICE static bool needsDiameter() { return false; }
-        //! Accept the optional diameter values
-        /*!
-         * \param di Diameter of particle i
-         * \param dj Diameter of particle j
-         */
-        DEVICE void setDiameter(Scalar di, Scalar dj) { }
-
-        //! Ashbaugh-Hatch potential does not need charge
-        DEVICE static bool needsCharge() { return false; }
-        //! Accept the optional charge values
-        /*!
-         * \param qi Charge of particle i
-         * \param qj Charge of particle j
-         */
-        DEVICE void setCharge(Scalar qi, Scalar qj) { }
+            {}
 
         //! Evaluate the force and energy
         /*!
@@ -170,8 +147,6 @@ class PairEvaluatorAshbaugh
         #endif
 
     protected:
-        Scalar rsq;     //!< Stored rsq from the constructor
-        Scalar rcutsq;  //!< Stored rcutsq from the constructor
         Scalar lj1;     //!< lj1 parameter extracted from the params passed to the constructor
         Scalar lj2;     //!< lj2 parameter extracted from the params passed to the constructor
         Scalar lambda;  //!< lambda parameter

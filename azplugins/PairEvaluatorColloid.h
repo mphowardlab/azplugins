@@ -11,11 +11,7 @@
 #ifndef AZPLUGINS_PAIR_EVALUATOR_COLLOID_H_
 #define AZPLUGINS_PAIR_EVALUATOR_COLLOID_H_
 
-#ifndef NVCC
-#include <string>
-#endif
-
-#include "hoomd/HOOMDMath.h"
+#include "PairEvaluator.h"
 
 #ifdef NVCC
 #define DEVICE __device__
@@ -64,7 +60,7 @@ namespace detail
  * - \a sigma_6 - \f$\sigma^6\f$
  * - \a form - the style of the pair interaction as in int that is cast to the interaction_type
  */
-class PairEvaluatorColloid
+class PairEvaluatorColloid : public PairEvaluator
     {
     public:
         //! Define the parameter type used by this pair potential evaluator
@@ -82,7 +78,7 @@ class PairEvaluatorColloid
          * The functor initializes its members from \a _params.
          */
         DEVICE PairEvaluatorColloid(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-            : rsq(_rsq), rcutsq(_rcutsq)
+            : PairEvaluator(_rsq,_rcutsq)
             {
             A = _params.x;
             sigma_3 = _params.y;
@@ -104,15 +100,6 @@ class PairEvaluatorColloid
             ai = Scalar(0.5) * di;
             aj = Scalar(0.5) * dj;
             }
-
-        //! Colloid potential does not need charge
-        DEVICE static bool needsCharge() { return false; }
-        //! Accept the optional charge values
-        /*!
-         * \param qi Charge of particle i
-         * \param qj Charge of particle j
-         */
-        DEVICE void setCharge(Scalar qi, Scalar qj) { }
 
         //! Computes the solvent-solvent interaction
         /*!
@@ -300,9 +287,6 @@ class PairEvaluatorColloid
         #endif
 
     protected:
-        Scalar rsq;     //!< Stored rsq from the constructor
-        Scalar rcutsq;  //!< Stored rcutsq from the constructor
-
         Scalar A;       //!< Hamaker constant
         Scalar sigma_3; //!< Sigma^3
         Scalar sigma_6; //!< Sigma^6

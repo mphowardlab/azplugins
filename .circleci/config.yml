@@ -2,8 +2,11 @@ version: 2.1
 
 executors:
   mphoward:
+    parameters:
+      hoomd-version:
+        type: string
     docker:
-      - image: mphoward/ci:hoomd2.6.0-ubuntu18.04
+      - image: mphoward/ci:hoomd<< parameters.hoomd-version >>-ubuntu18.04
     working_directory: /home/ci/project
 
 commands:
@@ -72,6 +75,9 @@ commands:
 jobs:
   ext_build:
     parameters:
+      hoomd-version:
+        type: string
+        default: "2.6.0"
       python-version:
         type: string
         default: "3"
@@ -79,6 +85,7 @@ jobs:
         type: string
     executor:
       name: mphoward
+      hoomd-version: << parameters.hoomd-version >>
     environment:
       PYTHONPATH: "/home/ci/project/build:/opt/hoomd/python<< parameters.python-version>>/<< parameters.hoomd-config >>"
       PYTHON: "/usr/bin/python<< parameters.python-version >>"
@@ -88,6 +95,9 @@ jobs:
 
   ext_build_and_test:
     parameters:
+      hoomd-version:
+        type: string
+        default: "2.6.0"
       python-version:
         type: string
         default: "3"
@@ -95,6 +105,7 @@ jobs:
         type: string
     executor:
       name: mphoward
+      hoomd-version: << parameters.hoomd-version >>
     environment:
       PYTHONPATH: "/home/ci/project/build:/opt/hoomd/python<< parameters.python-version>>/<< parameters.hoomd-config >>"
       PYTHON: "/usr/bin/python<< parameters.python-version >>"
@@ -105,6 +116,9 @@ jobs:
 
   int_build_and_test:
     parameters:
+      hoomd-version:
+        type: string
+        default: "2.6.0"
       python-version:
         type: string
         default: "3"
@@ -113,6 +127,7 @@ jobs:
         default: on
     executor:
       name: mphoward
+      hoomd-version: << parameters.hoomd-version >>
     environment:
       PYTHONPATH: "/home/ci/project/build"
       PYTHON: "/usr/bin/python<< parameters.python-version >>"
@@ -168,3 +183,47 @@ workflows:
       - int_build_and_test:
           name: py2-internal
           python-version: "2"
+
+      - ext_build_and_test:
+          name: 2.8.0-nocuda-nompi-double
+          hoomd-version: "2.8.0"
+          hoomd-config: "nocuda/nompi/double"
+
+      - ext_build_and_test:
+          name: 2.8.0-nocuda-nompi-single
+          hoomd-version: "2.8.0"
+          hoomd-config: "nocuda/nompi/single"
+
+      - ext_build_and_test:
+          name: 2.8.0-nocuda-mpi-double
+          hoomd-version: "2.8.0"
+          hoomd-config: "nocuda/mpi/double"
+
+      - ext_build_and_test:
+          name: 2.8.0-nocuda-mpi-single
+          hoomd-version: "2.8.0"
+          hoomd-config: "nocuda/mpi/single"
+
+      - ext_build:
+          name: 2.8.0-cuda-nompi-double
+          hoomd-version: "2.8.0"
+          hoomd-config: "cuda/nompi/double"
+
+      - ext_build:
+          name: 2.8.0-cuda-nompi-single
+          hoomd-version: "2.8.0"
+          hoomd-config: "cuda/nompi/single"
+
+      - ext_build:
+          name: 2.8.0-cuda-mpi-double
+          hoomd-version: "2.8.0"
+          hoomd-config: "cuda/mpi/double"
+
+      - ext_build:
+          name: 2.8.0-cuda-mpi-single
+          hoomd-version: "2.8.0"
+          hoomd-config: "cuda/mpi/single"
+
+      - int_build_and_test:
+          name: 2.8.0-internal
+          hoomd-version: "2.8.0"

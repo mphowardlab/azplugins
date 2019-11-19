@@ -16,6 +16,7 @@
 
 #include "hoomd/md/AnisoPotentialPairGPU.cuh"
 #include "AnisoPairPotentials.h"
+#include "HOOMDAPI.h"
 
 namespace azplugins
 {
@@ -28,7 +29,12 @@ namespace gpu
  * \tparam evaluator Evaluator functor
  */
 template<class evaluator>
-cudaError_t compute_aniso_pair_potential(const a_pair_args_t& pair_args, const typename evaluator::param_type *d_params);
+cudaError_t compute_aniso_pair_potential(const a_pair_args_t& pair_args,
+                                         const typename evaluator::param_type *d_params
+                                         #ifdef HOOMD_MD_ANISO_SHAPE_PARAM
+                                         , const typename evaluator::shape_param_type *d_shape_params
+                                         #endif
+                                         );
 
 #ifdef NVCC
 /*!
@@ -36,9 +42,19 @@ cudaError_t compute_aniso_pair_potential(const a_pair_args_t& pair_args, const t
  * must be specifically instantiated per potential in a cu file.
  */
 template<class evaluator>
-cudaError_t compute_aniso_pair_potential(const a_pair_args_t& pair_args, const typename evaluator::param_type *d_params)
+cudaError_t compute_aniso_pair_potential(const a_pair_args_t& pair_args,
+                                         const typename evaluator::param_type *d_params
+                                         #ifdef HOOMD_MD_ANISO_SHAPE_PARAM
+                                         , const typename evaluator::shape_param_type *d_shape_params
+                                         #endif
+                                         )
     {
-    return ::gpu_compute_pair_aniso_forces<evaluator>(pair_args, d_params);
+    return ::gpu_compute_pair_aniso_forces<evaluator>(pair_args,
+                                                      d_params
+                                                      #ifdef HOOMD_MD_ANISO_SHAPE_PARAM
+                                                      , d_shape_params
+                                                      #endif
+                                                      );
     }
 #endif
 } // end namespace gpu

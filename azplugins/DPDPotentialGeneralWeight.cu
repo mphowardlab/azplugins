@@ -1,15 +1,7 @@
 // Copyright (c) 2018-2019, Michael P. Howard
 // This file is part of the azplugins project, released under the Modified BSD License.
 
-// Maintainer: mphoward / Everyone is free to add additional potentials
-
-/*!
- * \file DPDPotentials.cu
- * \brief Defines the driver functions for computing DPD forces on the GPU
- *
- * Each DPD potential evaluator needs to have an explicit instantiation of the
- * compute_dpd_potential.
- */
+// Maintainer: mphoward
 
 #include "DPDPotentials.cuh"
 

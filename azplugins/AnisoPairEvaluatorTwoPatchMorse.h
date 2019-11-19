@@ -4,16 +4,14 @@
 // Maintainer: wes_reinhart
 
 /*!
- * \file PairEvaluatorTwoPatchMorse.h
+ * \file AnisoPairEvaluatorTwoPatchMorse.h
  * \brief Defines the aniostropic pair force evaluator class for Two-patch Morse potential
  */
 
 #ifndef AZPLUGINS_ANISO_PAIR_EVALUATOR_TWO_PATCH_MORSE_H_
 #define AZPLUGINS_ANISO_PAIR_EVALUATOR_TWO_PATCH_MORSE_H_
 
-#ifndef NVCC
-#include <string>
-#endif
+#include "AnisoPairEvaluator.h"
 
 #include "hoomd/VectorMath.h"
 
@@ -34,7 +32,7 @@ namespace detail
 /*!
  * \sa AnisoPairEvaluatorTwoPatchMorse
  */
-struct two_patch_morse_params
+struct two_patch_morse_params : public AnisoPairParams
     {
     Scalar Mdeps;     //<! Controls the well depth
     Scalar Mrinv;     //<! Controls the well steepness
@@ -95,11 +93,12 @@ HOSTDEVICE inline two_patch_morse_params make_two_patch_morse_params(Scalar Mdep
  * - \a alpha
  * - \a repulsion
  */
-class AnisoPairEvaluatorTwoPatchMorse
+class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
     {
     public:
         //! Define the parameter type used by this pair potential evaluator
         typedef two_patch_morse_params param_type;
+        typedef AnisoPairEvaluator::shape_param_type shape_param_type;
 
         //! Constructor
         /*!
@@ -117,37 +116,11 @@ class AnisoPairEvaluatorTwoPatchMorse
                                                Scalar4& _quat_j,
                                                Scalar _rcutsq,
                                                const param_type& _params)
-            : dr(_dr), rcutsq(_rcutsq), quat_i(_quat_i), quat_j(_quat_j),
+            : AnisoPairEvaluator(_dr, _quat_i, _quat_j, _rcutsq),
               Mdeps(_params.Mdeps), Mrinv(_params.Mrinv), req(_params.req),
               omega(_params.omega), alpha(_params.alpha), repulsion(_params.repulsion)
             {
             }
-
-        //! Two-patch Morse potential does not need diameter
-        DEVICE static bool needsDiameter()
-            {
-            return false;
-            }
-
-        //! Accept the optional diameter values
-        /*!
-         * \param di Diameter of particle i
-         * \param dj Diameter of particle j
-         */
-        DEVICE void setDiameter(Scalar di, Scalar dj){}
-
-        //! Two-patch Morse potential does not need charge
-        DEVICE static bool needsCharge()
-            {
-            return false;
-            }
-
-        //! Accept the optional charge values
-        /*!
-         * \param qi Charge of particle i
-         * \param qj Charge of particle j
-         */
-        DEVICE void setCharge(Scalar qi, Scalar qj){}
 
         //! Evaluate the force and energy
         /*! \param force Output parameter to write the computed force.
@@ -259,10 +232,6 @@ class AnisoPairEvaluatorTwoPatchMorse
         #endif
 
     protected:
-        Scalar3 dr;       //!< Stored dr from the constructor
-        Scalar rcutsq;    //!< Stored rcutsq from the constructor
-        Scalar4 quat_i;   //!< Orientation quaternion for particle i
-        Scalar4 quat_j;   //!< Orientation quaternion for particle j
         Scalar Mdeps;     //<! Controls the well depth
         Scalar Mrinv;     //<! Controls the well steepness
         Scalar req;       //<! Controls the well position

@@ -11,6 +11,8 @@
 #ifndef AZPLUGINS_DPD_EVALUATOR_GENERAL_WEIGHT_H_
 #define AZPLUGINS_DPD_EVALUATOR_GENERAL_WEIGHT_H_
 
+#include "PairEvaluator.h"
+
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
@@ -54,7 +56,7 @@ namespace detail
  *
  * where \a s is usually 2 for the "standard" DPD method. Refer to the original paper for more details.
  */
-class DPDEvaluatorGeneralWeight
+class DPDEvaluatorGeneralWeight : public PairEvaluator
     {
     public:
         //! Three parameters are used by this DPD potential evaluator
@@ -67,7 +69,7 @@ class DPDEvaluatorGeneralWeight
          * \param _params Per type pair parameters of this potential
          */
         DEVICE DPDEvaluatorGeneralWeight(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-            : rsq(_rsq), rcutsq(_rcutsq), a(_params.x), gamma(_params.y), s(_params.z)
+            : PairEvaluator(_rsq,_rcutsq), a(_params.x), gamma(_params.y), s(_params.z)
             {
             }
 
@@ -112,24 +114,6 @@ class DPDEvaluatorGeneralWeight
             {
             m_T = Temp;
             }
-
-        //! DPD does not use diameter
-        DEVICE static bool needsDiameter() { return false; }
-        //! Accept the optional diameter values
-        /*!
-         * \param di Diameter of particle i
-         * \param dj Diameter of particle j
-         */
-        DEVICE void setDiameter(Scalar di, Scalar dj) { }
-
-        //! DPD doesn't use charge
-        DEVICE static bool needsCharge() { return false; }
-        //! Accept the optional diameter values
-        /*!
-         * \param qi Charge of particle i
-         * \param qj Charge of particle j
-         */
-        DEVICE void setCharge(Scalar qi, Scalar qj) { }
 
         //! Evaluate the force and energy using the conservative force only
         /*!
@@ -231,9 +215,6 @@ class DPDEvaluatorGeneralWeight
         #endif
 
     protected:
-        Scalar rsq;             //!< Squared distance between particles
-        Scalar rcutsq;          //!< Squared cutoff between particles
-
         Scalar a;               //!< Strength of repulsion
         Scalar gamma;           //!< Drag term
         Scalar s;               //!< Exponent for the dissipative weight function
