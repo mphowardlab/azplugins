@@ -71,6 +71,9 @@ namespace py = pybind11;
 #include "TwoStepLangevinFlowGPU.h"
 #endif // ENABLE_CUDA
 
+/* Variants */
+#include "VariantSphereArea.h"
+
 //! Plugins for soft matter
 namespace azplugins
 {
@@ -246,4 +249,7 @@ PYBIND11_MODULE(_azplugins, m)
     #ifdef ENABLE_CUDA
     azplugins::detail::export_BounceBackNVEGPU<mpcd::detail::SlitGeometry>(m);
     #endif // ENABLE_CUDA
+
+    /* Variants */
+    azplugins::detail::export_VariantSphereArea(m);
     }

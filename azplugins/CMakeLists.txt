@@ -45,6 +45,7 @@ set(_${COMPONENT_NAME}_sources
     RDFAnalyzer.cc
     ReversePerturbationFlow.cc
     TypeUpdater.cc
+    VariantSphereArea.cc
     )
 
 # cuda-enabled c++ source files
@@ -104,6 +105,7 @@ set(py_files
     restrain.py
     special_pair.py
     update.py
+    variant.py
     wall.py
     )
 
