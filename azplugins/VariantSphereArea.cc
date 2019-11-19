@@ -4,35 +4,29 @@
 // Maintainer: mphoward
 
 /*!
- * \file VariantSphere.cc
+ * \file VariantSphereArea.cc
  * \brief Defines a variant for a shrinking / growing sphere radius.
  */
 
-#include "VariantSphere.h"
+#include "VariantSphereArea.h"
 
 namespace azplugins
 {
 /*!
  * \param R0 Initial radius.
- * \param alpha Rate of surface reduction (units are per timestep).
- *
- * The parameters are converted into quantities that are more useful internally.
- * The units of alpha are implicitly per-timestep.
+ * \param alpha Rate of surface reduction (units are area per timestep).
  */
-VariantSphere::VariantSphere(double R0, double alpha)
+VariantSphereArea::VariantSphereArea(double R0, double alpha)
     {
-    // precompute quantities for easy evaluation later
     m_R0_sq = R0*R0;
-
-    const Scalar factor = 0.3848347315591266;   // (6/pi)^(2/3) / 4
-    m_k = factor*alpha;
+    m_k = alpha/(4.*M_PI);
     }
 
 /*!
  * \param timestep Current simulation timestep.
  * \returns Current radius of sphere.
  */
-double VariantSphere::getValue(unsigned int timestep)
+double VariantSphereArea::getValue(unsigned int timestep)
     {
     const double drsq = m_k*timestep;
 
@@ -52,10 +46,10 @@ namespace detail
 /*!
  * \param m Python module to export to.
  */
-void export_VariantSphere(pybind11::module& m)
+void export_VariantSphereArea(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<VariantSphere, std::shared_ptr<VariantSphere>>(m,"VariantSphere",py::base<Variant>())
+    py::class_<VariantSphereArea, std::shared_ptr<VariantSphereArea>>(m,"VariantSphereArea",py::base<Variant>())
     .def(py::init<double,double>());
     }
 

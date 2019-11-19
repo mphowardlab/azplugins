@@ -72,7 +72,7 @@ namespace py = pybind11;
 #endif // ENABLE_CUDA
 
 /* Variants */
-#include "VariantSphere.h"
+#include "VariantSphereArea.h"
 
 //! Plugins for soft matter
 namespace azplugins
@@ -251,5 +251,5 @@ PYBIND11_MODULE(_azplugins, m)
     #endif // ENABLE_CUDA
 
     /* Variants */
-    azplugins::detail::export_VariantSphere(m);
+    azplugins::detail::export_VariantSphereArea(m);
     }

@@ -45,7 +45,7 @@ set(_${COMPONENT_NAME}_sources
     RDFAnalyzer.cc
     ReversePerturbationFlow.cc
     TypeUpdater.cc
-    VariantSphere.cc
+    VariantSphereArea.cc
     )
 
 # cuda-enabled c++ source files
