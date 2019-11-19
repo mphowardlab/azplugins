@@ -2,6 +2,9 @@ version: 2.1
 
 executors:
   mphoward:
+    parameters:
+      hoomd-version:
+        type: string
     docker:
       - image: mphoward/ci:hoomd<< parameters.hoomd-version >>-ubuntu18.04
     working_directory: /home/ci/project
@@ -82,6 +85,7 @@ jobs:
         type: string
     executor:
       name: mphoward
+      hoomd-version: << parameters.hoomd-version >>
     environment:
       PYTHONPATH: "/home/ci/project/build:/opt/hoomd/python<< parameters.python-version>>/<< parameters.hoomd-config >>"
       PYTHON: "/usr/bin/python<< parameters.python-version >>"
@@ -101,6 +105,7 @@ jobs:
         type: string
     executor:
       name: mphoward
+      hoomd-version: << parameters.hoomd-version >>
     environment:
       PYTHONPATH: "/home/ci/project/build:/opt/hoomd/python<< parameters.python-version>>/<< parameters.hoomd-config >>"
       PYTHON: "/usr/bin/python<< parameters.python-version >>"
@@ -122,6 +127,7 @@ jobs:
         default: on
     executor:
       name: mphoward
+      hoomd-version: << parameters.hoomd-version >>
     environment:
       PYTHONPATH: "/home/ci/project/build"
       PYTHON: "/usr/bin/python<< parameters.python-version >>"
