@@ -22,6 +22,7 @@ from . import pair
 from . import restrain
 from . import special_pair
 from . import update
+from . import variant
 from . import wall
 
 __version__ = '0.8.0'
