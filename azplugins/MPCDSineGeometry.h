@@ -140,16 +140,18 @@ class __attribute__((visibility("default"))) SineGeometry
             *  We limit the number of iterations (max_iteration) and the desired presicion (target_presicion) for performance reasons.
             */
 
-            Int max_iteration = 5;
-            Int counter = 0;
+            Scalar max_iteration = 5;
+            Scalar counter = 0;
             Scalar target_presicion = 0.0001;
             Scalar x0 = pos.x - 0.5*dt*vel.x;
             Scalar A = 0.5*(m_H_wide-m_H_narrow);
             Scalar delta = abs(0 - sign*(A*fast::cos(x0*m_pi_period_div_L)+ A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z);
-
+            
+            Scalar n,n2;
+            Scalar s,c;
+            
             while( delta > target_presicion && counter < max_iteration)
                 {
-                Scalar s, c;
                 fast::sincos(x0*m_pi_period_div_L,s,c);
                 n  =  sign*(A*c + A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
                 n2 = -sign*(A*s + A + m_H_narrow) - vel.z/vel.x;                       // df
@@ -180,9 +182,10 @@ class __attribute__((visibility("default"))) SineGeometry
              * The direction of the normal is not important for the reflection.
              * Calculate components by hand to avoid sqrt in normalization of the normal of the surface.
              */
+            
             if (m_bc ==  mpcd::detail::boundary::no_slip)
                 {
-                B = sign*A*m_pi_period_div_L*s;
+                Scalar B = sign*A*m_pi_period_div_L*s;
                 vel.x = vel.x- 2*(B^2*vel.x +B*vel.z)/(B^2+1) + Scalar(sign * 2) * m_V;
                 vel.z = vel.z - 2*(vel.z + B*vel.x)/(B^2+1);
                 }
@@ -224,7 +227,7 @@ class __attribute__((visibility("default"))) SineGeometry
             const Scalar lo = box.getLo().z;
             const Scalar filler_thickness = cell_size +  0.5*(m_H_wide-m_H_narrow)*fast::sin((1+max_shift)*cell_size*m_pi_period_div_L);
 
-            return (hi >= H_wide+filler_thickness && lo <= -H_wide-filler_thickness );
+            return (hi >= m_H_wide+filler_thickness && lo <= -H_wide-filler_thickness );
             }
 
         //! Get channel half width at widest point
