@@ -38,6 +38,33 @@ class QuiescentFluid
             }
     };
 
+//! Position-independent flow along a vector
+class ConstantFlow
+    {
+    public:
+        //! Constructor
+        /*!
+         *\param U_ Flow field
+         */
+        ConstantFlow(Scalar3 U_)
+            : U(U_)
+            {}
+
+        //! Evaluate the flow field
+        /*!
+         * \param r position to evaluate flow
+         *
+         * This is just a constant, independent of \a r.
+         */
+        HOSTDEVICE Scalar3 operator()(const Scalar3& r) const
+            {
+            return U;
+            }
+
+    private:
+        Scalar3 U;  //!< Flow field
+    };
+
 //! Unidirectional parabolic flow field
 /*!
  * 1d flow along the \a x axis. The geometry is a parallel plate channel with
@@ -95,6 +122,18 @@ void export_QuiescentFluid(pybind11::module& m)
     py::class_<QuiescentFluid, std::shared_ptr<QuiescentFluid> >(m, "QuiescentFluid")
         .def(py::init<>())
         .def("__call__", &QuiescentFluid::operator());
+    }
+
+//! Export ConstantFlow to python
+/*!
+ * \param m Python module to export to
+ */
+void export_ConstantFlow(pybind11::module& m)
+    {
+    namespace py = pybind11;
+    py::class_<ConstantFlow, std::shared_ptr<ConstantFlow> >(m, "ConstantFlow")
+        .def(py::init<Scalar3>())
+        .def("__call__", &ConstantFlow::operator());
     }
 
 //! Export ParabolicFlow to python

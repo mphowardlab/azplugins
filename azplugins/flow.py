@@ -9,7 +9,7 @@ from hoomd import _hoomd
 from . import _azplugins
 
 class quiescent(object):
-    """ Quiescent fluid profile
+    r""" Quiescent fluid profile
 
     Example::
 
@@ -30,9 +30,49 @@ class quiescent(object):
 
             >>> u = azplugins.flow.quiescent()
             >>> print u([0.0, 0.1, 0.3])
-            0.0
+            (0,0,0)
             >>> print u((0.5, -0.2, 1.6))
-            0.0
+            (0,0,0)
+
+        """
+        hoomd.util.print_status_line()
+
+        u = self._cpp(_hoomd.make_scalar3(r[0], r[1], r[2]))
+        return (u.x, u.y, u.z)
+
+class constant(object):
+    r""" Constant flow profile
+
+    Args:
+        U (tuple): Flow field.
+
+    This flow corresponds to a constant vector field, e.g., a constant
+    backflow in bulk or a plug flow in a channel. The flow field is
+    independent of the position it is evaluated at.
+
+    Example::
+
+        u = azplugins.flow.constant(U=(1,0,0))
+
+    """
+    def __init__(self, U):
+        hoomd.util.print_status_line()
+        _U = _hoomd.make_scalar3(U[0],U[1],U[2])
+        self._cpp = _azplugins.ConstantFlow(_U)
+
+    def __call__(self, r):
+        """ Computes the velocity profile
+
+        Args:
+            r (list): Position to evaluate profile
+
+        Example::
+
+            >>> u = azplugins.flow.constant(U=(1,2,3))
+            >>> print u([0.0, 0.1, 0.3])
+            (1,2,3)
+            >>> print u((0.5, -0.2, 1.6))
+            (1,2,3)
 
         """
         hoomd.util.print_status_line()
@@ -41,7 +81,7 @@ class quiescent(object):
         return (u.x, u.y, u.z)
 
 class parabolic(object):
-    """ Parabolic flow profile between parallel plates
+    r""" Parabolic flow profile between parallel plates
 
     Args:
          U (float): Mean velocity
@@ -81,9 +121,9 @@ class parabolic(object):
 
             >>> u = azplugins.flow.parabolic(U = 2.0, H = 0.5)
             >>> print u([0.0, 0.1, 0.3])
-            2.0
+            (2,0,0)
             >>> print u((0.5, -0.2, 1.6))
-            0.0
+            (0,0,0)
 
         """
         hoomd.util.print_status_line()
@@ -183,7 +223,12 @@ class brownian(hoomd.md.integrate._integration_method):
 
         # construct the correct flow field
         use_gpu = hoomd.context.exec_conf.isCUDAEnabled()
-        if type(flow) is parabolic:
+        if type(flow) is constant:
+            if not use_gpu:
+                cpp_class = _azplugins.BrownianConstantFlow
+            else:
+                cpp_class = _azplugins.BrownianConstantFlowGPU
+        elif type(flow) is parabolic:
             if not use_gpu:
                 cpp_class = _azplugins.BrownianParabolicFlow
             else:
@@ -374,7 +419,12 @@ class langevin(hoomd.md.integrate._integration_method):
 
         # construct the correct flow field
         use_gpu = hoomd.context.exec_conf.isCUDAEnabled()
-        if type(flow) is parabolic:
+        if type(flow) is constant:
+            if not use_gpu:
+                cpp_class = _azplugins.LangevinConstantFlow
+            else:
+                cpp_class = _azplugins.LangevinConstantFlowGPU
+        elif type(flow) is parabolic:
             if not use_gpu:
                 cpp_class = _azplugins.LangevinParabolicFlow
             else:

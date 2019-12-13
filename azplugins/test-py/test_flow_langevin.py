@@ -73,6 +73,14 @@ class flow_langevin_tests (unittest.TestCase):
     def test_bad_flow(self):
         all = group.all()
 
+        ## test known flow fields first
+        # constant
+        azplugins.flow.langevin(all, kT=1.2, flow=azplugins.flow.constant(U=(1,0,0)), seed=1)
+        # parabolic
+        azplugins.flow.langevin(all, kT=1.2, flow=self.u, seed=1)
+        # quiescent
+        azplugins.flow.langevin(all, kT=1.2, flow=azplugins.flow.quiescent(), seed=1)
+
         # passing some garbage object is an error
         with self.assertRaises(TypeError):
             bd = azplugins.flow.langevin(all, kT=1.2, flow=all, seed=1)

@@ -233,15 +233,20 @@ PYBIND11_MODULE(_azplugins, m)
     #endif // ENABLE_CUDA
 
     /* Integrators */
-    azplugins::detail::export_QuiescentFluid(m);
+    azplugins::detail::export_ConstantFlow(m);
     azplugins::detail::export_ParabolicFlow(m);
+    azplugins::detail::export_QuiescentFluid(m);
+    azplugins::detail::export_TwoStepBrownianFlow<azplugins::ConstantFlow>(m, "BrownianConstantFlow");
     azplugins::detail::export_TwoStepBrownianFlow<azplugins::ParabolicFlow>(m, "BrownianParabolicFlow");
     azplugins::detail::export_TwoStepBrownianFlow<azplugins::QuiescentFluid>(m, "BrownianQuiescentFluid");
+    azplugins::detail::export_TwoStepLangevinFlow<azplugins::ConstantFlow>(m, "LangevinConstantFlow");
     azplugins::detail::export_TwoStepLangevinFlow<azplugins::ParabolicFlow>(m, "LangevinParabolicFlow");
     azplugins::detail::export_TwoStepLangevinFlow<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluid");
     #ifdef ENABLE_CUDA
+    azplugins::detail::export_TwoStepBrownianFlowGPU<azplugins::ConstantFlow>(m, "BrownianConstantFlowGPU");
     azplugins::detail::export_TwoStepBrownianFlowGPU<azplugins::ParabolicFlow>(m, "BrownianParabolicFlowGPU");
     azplugins::detail::export_TwoStepBrownianFlowGPU<azplugins::QuiescentFluid>(m, "BrownianQuiescentFluidGPU");
+    azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::ConstantFlow>(m, "LangevinConstantFlowGPU");
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::ParabolicFlow>(m, "LangevinParabolicFlowGPU");
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluidGPU");
     #endif // ENABLE_CUDA
