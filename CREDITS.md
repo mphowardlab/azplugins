@@ -10,6 +10,7 @@
 - `evaporate.implicit`: Moving harmonic potential to simulate drying in films and droplets.
 - `evaporate.particles`: Particle type changer to simulate explicit drying.
 - `flow.brownian` / `flow.langevin` and imposed flow framework.
+- `flow.constant`, `flow.parabolic`, and `flow.quiescent` flows fields.
 - `integrate.slit` and bounce-back integrator framework.
 - `pair.ashbaugh`: Ashbaugh-Hatch pair potential.
 - `pair.colloid`: Integrated Lennard-Jones pair potential.

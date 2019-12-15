@@ -2,6 +2,25 @@
 
 ---------
 
+## v0.9.0
+
+15 December 2019
+
+*New features*
+
+* `flow.constant` implements a constant flow along a vector.
+* `variant.sphere_area` adds a new variant that is physically motivated by
+  a sphere shrinking with a constant rate of change in area. This may be useful
+  with `evaporate.implicit` in the `droplet` geometry.
+
+*Other changes*
+
+* Support API changes in HOOMD 2.8.0. Backward compatibility is maintained
+  through a new API header.
+* The pair potential evaluators have been updated to support HOOMD 2.8.0.
+  New pair potential evaluators should derive from one of the convenience base classes.
+* CI testing has been added for HOOMD 2.8.0 in addition to 2.6.0.
+
 ## v0.8.0
 
 5 November 2019
