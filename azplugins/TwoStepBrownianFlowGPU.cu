@@ -15,6 +15,26 @@ namespace azplugins
 {
 namespace gpu
 {
+//! Explicit instantiation of ConstantFlow integrator
+template cudaError_t brownian_flow<azplugins::ConstantFlow>(Scalar4 *d_pos,
+                                                            int3 *d_image,
+                                                            const BoxDim& box,
+                                                            const Scalar4 *d_net_force,
+                                                            const unsigned int *d_tag,
+                                                            const unsigned int *d_group,
+                                                            const Scalar *d_diameter,
+                                                            const Scalar lambda,
+                                                            const Scalar *d_gamma,
+                                                            const unsigned int ntypes,
+                                                            const azplugins::ConstantFlow& flow_field,
+                                                            const unsigned int N,
+                                                            const Scalar dt,
+                                                            const Scalar T,
+                                                            const unsigned int timestep,
+                                                            const unsigned int seed,
+                                                            bool noiseless,
+                                                            bool use_lambda,
+                                                            const unsigned int block_size);
 //! Explicit instantiation of ParabolicFlow integrator
 template cudaError_t brownian_flow<azplugins::ParabolicFlow>(Scalar4 *d_pos,
                                                              int3 *d_image,
