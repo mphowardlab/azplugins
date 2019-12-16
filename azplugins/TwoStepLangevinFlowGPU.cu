@@ -90,6 +90,26 @@ cudaError_t langevin_flow_step1(Scalar4 *d_pos,
     return cudaSuccess;
     }
 
+//! Explicit instantiation of ConstantFlow integrator
+template cudaError_t langevin_flow_step2<azplugins::ConstantFlow>(Scalar4 *d_vel,
+                                                                  Scalar3 *d_accel,
+                                                                  const Scalar4 *d_pos,
+                                                                  const Scalar4 *d_net_force,
+                                                                  const unsigned int *d_tag,
+                                                                  const unsigned int *d_group,
+                                                                  const Scalar *d_diameter,
+                                                                  const Scalar lambda,
+                                                                  const Scalar *d_gamma,
+                                                                  const unsigned int ntypes,
+                                                                  const azplugins::ConstantFlow& flow_field,
+                                                                  const unsigned int N,
+                                                                  const Scalar dt,
+                                                                  const Scalar T,
+                                                                  const unsigned int timestep,
+                                                                  const unsigned int seed,
+                                                                  bool noiseless,
+                                                                  bool use_lambda,
+                                                                  const unsigned int block_size);
 //! Explicit instantiation of ParabolicFlow integrator
 template cudaError_t langevin_flow_step2<azplugins::ParabolicFlow>(Scalar4 *d_vel,
                                                                    Scalar3 *d_accel,
