@@ -60,13 +60,12 @@ class plane(force._force):
             _cpp = _azplugins.PlaneRestraintCompute
 
         # process the parameters
-        _p = _hoomd.make_scalar3(point[0],point[1],point[2])
-        _n = _hoomd.make_scalar3(normal[0],normal[1],normal[2])
+        self._p = _hoomd.make_scalar3(point[0],point[1],point[2])
+        self._n = _hoomd.make_scalar3(normal[0],normal[1],normal[2])
 
         self.cpp_force = _cpp(hoomd.context.current.system_definition,
                               group.cpp_group,
-                              _p,
-                              _n,
+                              _azplugins._PlaneWall(self._p, self._n, True),
                               k)
 
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
@@ -91,12 +90,14 @@ class plane(force._force):
         self.check_initialization()
 
         if point is not None:
-            _p = _hoomd.make_scalar3(point[0],point[1],point[2])
-            self.cpp_force.setPoint(_p)
+            self._p = _hoomd.make_scalar3(point[0],point[1],point[2])
 
         if normal is not None:
-            _n = _hoomd.make_scalar3(normal[0], normal[1], normal[2])
-            self.cpp_force.setNormal(_n)
+            self._n = _hoomd.make_scalar3(normal[0],normal[1],normal[2])
+
+        # replace the wall object if something has changed
+        if point is not None or normal is not None:
+            self.cpp_force.setWall(_azplugins._PlaneWall(self._p, self._n, True))
 
         if k is not None:
             self.cpp_force.setForceConstant(k)

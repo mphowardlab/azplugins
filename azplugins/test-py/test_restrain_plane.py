@@ -16,7 +16,7 @@ import unittest
 
 # azplugins.restrain.plane
 class restrain_plane_tests(unittest.TestCase):
-    """Tests md.force.harmonic_plane"""
+    """Tests azplugins.restrain.plane"""
 
     def setUp(self):
         snap = hoomd.data.make_snapshot(N=3, box=hoomd.data.boxdim(L=5.0))
