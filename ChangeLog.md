@@ -2,6 +2,14 @@
 
 ---------
 
+## v0.9.1
+
+18 December 2019
+
+*Bug fixes*
+
+* Fix a compilation error in CUDA-enabled builds.
+
 ## v0.9.0
 
 15 December 2019
