@@ -220,6 +220,8 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_ImplicitPlaneEvaporatorGPU(m);
     azplugins::detail::export_OrientationRestraintComputeGPU(m);
     azplugins::detail::export_WallRestraintComputeGPU<PlaneWall>(m,"PlaneRestraintComputeGPU");
+    azplugins::detail::export_WallRestraintComputeGPU<CylinderWall>(m,"CylinderRestraintComputeGPU");
+    azplugins::detail::export_WallRestraintComputeGPU<SphereWall>(m,"SphereRestraintComputeGPU");
     azplugins::detail::export_PositionRestraintComputeGPU(m);
     #endif // ENABLE_CUDA
 
