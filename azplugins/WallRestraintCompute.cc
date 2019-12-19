@@ -25,7 +25,8 @@ void export_CylinderWall(pybind11::module& m)
     {
     namespace py = pybind11;
     py::class_<CylinderWall, std::shared_ptr<CylinderWall>>(m, "_CylinderWall")
-    .def(py::init<Scalar,Scalar3,Scalar3,bool>());
+    .def(py::init<Scalar,Scalar3,Scalar3,bool>())
+    .def_readwrite("radius", &CylinderWall::r);
     }
 
 void export_SphereWall(pybind11::module& m)

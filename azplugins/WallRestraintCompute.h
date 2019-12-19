@@ -70,6 +70,12 @@ class PYBIND11_EXPORT WallRestraintCompute : public ForceCompute
             m_k = k;
             }
 
+        //! Get the wall object for this class
+        std::shared_ptr<T> getWall() const
+            {
+            return m_wall;
+            }
+
         //! Set the wall object for this class
         void setWall(std::shared_ptr<T> wall)
             {
@@ -149,6 +155,7 @@ void export_WallRestraintCompute(pybind11::module& m, const std::string& name)
     .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<ParticleGroup>,std::shared_ptr<T>,Scalar>())
     .def("getForceConstant", &WallRestraintCompute<T>::getForceConstant)
     .def("setForceConstant", &WallRestraintCompute<T>::setForceConstant)
+    .def("getWall", &WallRestraintCompute<T>::getWall)
     .def("setWall", &WallRestraintCompute<T>::setWall)
     ;
     }
