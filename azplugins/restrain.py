@@ -35,6 +35,11 @@ class cylinder(force._force):
     wrapped position, as the same force is applied to all images. Note that there is still a
     maximum set on *U* by the *radius*.
 
+    .. note::
+        The cylinder must be transformed to point along *axis*. This achieved by a
+        quaternion rotation relative to the *z* axis. Choosing an axis other than `(0,0,1)`
+        may incur small numerical errors if HOOMD is compiled in single-precision.
+
     Examples::
 
         hp = azplugins.restrain.cylinder(group=hoomd.group.all(), radius=10, origin=(0,0,0), axis=(0,0,1), k=10.0)
