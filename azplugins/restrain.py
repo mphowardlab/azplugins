@@ -32,7 +32,8 @@ class cylinder(force._force):
     The reason that the position is unwrapped is to ensure that the harmonic potential is always
     increasing. Wrapping **r** would introduce force discontinuities and set a maximum value
     for *U*. However, the virial contribution is still computed by applying the force at the
-    wrapped position, as the same force is applied to all images.
+    wrapped position, as the same force is applied to all images. Note that there is still a
+    maximum set on *U* by the *radius*.
 
     Examples::
 
@@ -191,6 +192,91 @@ class plane(force._force):
         # replace the wall object if something has changed
         if point is not None or normal is not None:
             self.cpp_force.setWall(_azplugins._PlaneWall(self._p, self._n, True))
+
+        if k is not None:
+            self.cpp_force.setForceConstant(k)
+
+    def update_coeffs(self):
+        pass
+
+class sphere(force._force):
+    r"""Apply a harmonic potential to restrain particles to a sphere.
+
+    Args:
+        group (:py:mod:`hoomd.group`): Group of particles to apply potential to.
+        radius (float): Radius of the sphere.
+        origin (tuple): Center of the cylinder.
+        k (float): Harmonic spring constant.
+
+    The harmonic potential is:
+
+    .. math::
+
+        U(d) = \frac{k}{2} d^2
+
+    where *k* is the spring constant and *d* is the distance of the point from the sphere
+    using the **unwrapped** particle position.
+
+    The reason that the position is unwrapped is to ensure that the harmonic potential is always
+    increasing. Wrapping **r** would introduce force discontinuities and set a maximum value
+    for *U*. However, the virial contribution is still computed by applying the force at the
+    wrapped position, as the same force is applied to all images. Note that there is still a
+    maximum set on *U* by the *radius*.
+
+    Examples::
+
+        hp = azplugins.restrain.sphere(group=hoomd.group.all(), radius=10, origin=(0,0,0), k=10.0)
+
+    """
+    def __init__(self, group, radius, origin, k):
+        hoomd.util.print_status_line()
+
+        # initialize the base class
+        force._force.__init__(self)
+
+        # create the c++ mirror class
+        if hoomd.context.exec_conf.isCUDAEnabled():
+            _cpp = _azplugins.SphereRestraintComputeGPU
+        else:
+            _cpp = _azplugins.SphereRestraintCompute
+
+        # process the parameters
+        self._radius = radius
+        self._origin = _hoomd.make_scalar3(origin[0],origin[1],origin[2])
+
+        self.cpp_force = _cpp(hoomd.context.current.system_definition,
+                              group.cpp_group,
+                              _azplugins._SphereWall(self._radius, self._origin, True),
+                              k)
+
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
+
+    def set_params(self, radius=None, origin=None, k=None):
+        R""" Update the sphere geometry or spring constant.
+
+        Args:
+            radius (float): Radius of the sphere.
+            origin (tuple): Center of the sphere.
+            k (float): Harmonic spring constant.
+
+        Parameters are only updated if they are specified.
+
+        Examples::
+
+            hp.set_params(radius=5.)
+            hp.set_params(radius=8, origin=(0,1,0), k=5.0)
+
+        """
+        hoomd.util.print_status_line()
+        self.check_initialization()
+
+        if radius is not None:
+            self._radius = radius
+            self.cpp_force.getWall().radius = self._radius
+
+        if origin is not None:
+            self._origin = _hoomd.make_scalar3(origin[0],origin[1],origin[2])
+            self.cpp_force.setWall(_azplugins._SphereWall(self._radius, self._origin, True))
 
         if k is not None:
             self.cpp_force.setForceConstant(k)

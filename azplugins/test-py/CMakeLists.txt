@@ -26,6 +26,7 @@ set(TEST_LIST_CPU
     test_restrain_orientation
     test_restrain_plane
     test_restrain_position
+    test_restrain_sphere
     test_flow_reverse_perturbation
     test_special_pair_lj96
     test_update_type
@@ -57,6 +58,7 @@ set(TEST_LIST_GPU
     test_restrain_orientation
     test_restrain_plane
     test_restrain_position
+    test_restrain_sphere
     test_flow_reverse_perturbation
     test_special_pair_lj96
     test_update_type
