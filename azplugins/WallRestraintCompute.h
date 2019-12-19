@@ -147,6 +147,10 @@ class PYBIND11_EXPORT WallRestraintCompute : public ForceCompute
 namespace detail
 {
 //! Exports the WallRestraintCompute to python
+/*!
+ * \param m Python module to export to.
+ * \param name Name for the potential.
+ */
 template<class T>
 void export_WallRestraintCompute(pybind11::module& m, const std::string& name)
     {
@@ -161,12 +165,21 @@ void export_WallRestraintCompute(pybind11::module& m, const std::string& name)
     }
 
 //! Exports the PlaneWall to python
+/*!
+ * \param m Python module to export to.
+ */
 void export_PlaneWall(pybind11::module& m);
 
 //! Exports the CylinderWall to python
+/*!
+ * \param m Python module to export to.
+ */
 void export_CylinderWall(pybind11::module& m);
 
 //! Exports the SphereWall to python
+/*!
+ * \param m Python module to export to.
+ */
 void export_SphereWall(pybind11::module& m);
 
 } // end namespace detail

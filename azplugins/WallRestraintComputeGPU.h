@@ -3,7 +3,7 @@
 
 // Maintainer: mphoward
 
-/*! \file PlaneRestraintComputeGPU.h
+/*! \file WallRestraintComputeGPU.h
  *  \brief Computes harmonic restraint forces relative to a plane, on the GPU
  */
 
@@ -28,6 +28,12 @@ class PYBIND11_EXPORT WallRestraintComputeGPU : public WallRestraintCompute<T>
     {
     public:
         //! Constructs the compute
+        /*!
+         * \param sysdef HOOMD system definition.
+         * \param group Particle group to compute on.
+         * \param wall Restraint wall.
+         * \param k Force constant.
+         */
         WallRestraintComputeGPU(std::shared_ptr<SystemDefinition> sysdef,
                                 std::shared_ptr<ParticleGroup> group,
                                 std::shared_ptr<T> wall,
@@ -39,6 +45,11 @@ class PYBIND11_EXPORT WallRestraintComputeGPU : public WallRestraintCompute<T>
 
     protected:
         //! Actually compute the forces on the GPU
+        /*!
+         * \param timestep Current timestep
+         *
+         * Harmonic forces are computed on all particles in group based on their distance from the surface.
+         */
         virtual void computeForces(unsigned int timestep)
             {
             ArrayHandle<unsigned int> d_group(this->m_group->getIndexArray(), access_location::device, access_mode::read);
@@ -75,6 +86,10 @@ class PYBIND11_EXPORT WallRestraintComputeGPU : public WallRestraintCompute<T>
 namespace detail
 {
 //! Exports the WallRestraintComputeGPU to python
+/*!
+ * \param m Python module to export to.
+ * \param name Name for the potential.
+ */
 template<class T>
 void export_WallRestraintComputeGPU(pybind11::module& m, const std::string& name)
     {
