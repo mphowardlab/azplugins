@@ -22,7 +22,7 @@
 
 namespace azplugins
 {
-//! Applies a harmonic force relative to a WallDAta object for a group of particles on the GPU
+//! Applies a harmonic force relative to a WallData object for a group of particles on the GPU
 template<class T>
 class PYBIND11_EXPORT WallRestraintComputeGPU : public WallRestraintCompute<T>
     {
