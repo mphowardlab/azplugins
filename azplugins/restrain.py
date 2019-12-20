@@ -3,6 +3,22 @@
 
 # Maintainer: wes_reinhart
 
+r""" Restraining forces.
+
+Restraints are harmonic forces that are applied to particle groups with the
+goal of holding them to a region of space. Depending on the type of restraint,
+this may be done to keep the particles near surface like a plane or near an
+initial position as a tether. Restraints can be useful for equilibration,
+biased sampling with tracers in a region, or performing thermodynamic
+integration (free-energy calculations).
+
+Restraints are additive forces, and multiple restraints can be used in
+the same simulation. The user **must** ensure that the groups assigned
+to each restraint and the restraint types are initialized properly and
+are compatible.
+
+"""
+
 import numpy
 import hoomd
 from hoomd import _hoomd
