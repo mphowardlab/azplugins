@@ -1,5 +1,7 @@
 import numpy as np
 import sys
+sys.path.insert(0,'/Users/statt/programs/azplugins-0.7.0')
+sys.path.insert(0,'/Users/statt/programs/hoomd-2.6.0')
 import hoomd
 from hoomd import md
 from hoomd import data
@@ -81,5 +83,5 @@ hoomd.dump.gsd(filename="tutorial_reverse_perturbation_1_LJ_trajectory.gsd",
                overwrite=True, period=1e2, group=all)
 
 nve = hoomd.md.integrate.nve(group = all)
-f = azplugins.flow.reverse_perturbation(group=all,width=0.1,Nswap=1,period=10,target_momentum=0.5)
+f = azplugins.flow.reverse_perturbation(group=all,width=1,Nswap=1,period=10,target_momentum=0.5)
 hoomd.run(5e5)
