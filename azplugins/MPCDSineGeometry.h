@@ -172,7 +172,7 @@ class __attribute__((visibility("default"))) SineGeometry
             Scalar y0 = -(pos.x-dt*vel.x - x0)*vel.y/vel.x + (pos.y-dt*vel.y);
 
             // Remaining integration time dt is amount of time spent traveling distance out of bounds.
-            dt = fast::sqrt(((pos.x - x0)^2 + (pos.z - z0)^2 + (pos.y - y0)^2)/(vel.x^2+vel.z^2+vel.y^2));
+            dt = fast::sqrt(((pos.x-x0)*(pos.x - x0) + (pos.y-y0)*(pos.y -y0) + (pos.z-z0)*(pos.z - z0))/(vel.x*vel.x+vel.z*vel.z+vel.y*vel.y));
 
 
             /* update velocity according to boundary conditions. No-slip requires reflection of the tangential components:
@@ -186,8 +186,8 @@ class __attribute__((visibility("default"))) SineGeometry
             if (m_bc ==  mpcd::detail::boundary::no_slip)
                 {
                 Scalar B = sign*A*m_pi_period_div_L*s;
-                vel.x = vel.x- 2*(B^2*vel.x +B*vel.z)/(B^2+1) + Scalar(sign * 2) * m_V;
-                vel.z = vel.z - 2*(vel.z + B*vel.x)/(B^2+1);
+                vel.x = vel.x- 2*(B*B*vel.x +B*vel.z)/(B*B+1) + Scalar(sign * 2) * m_V;
+                vel.z = vel.z - 2*(vel.z + B*vel.x)/(B*B+1);
                 }
             else // Slip conditions require both normal and tangential components to be reflected:
                 {
@@ -221,13 +221,16 @@ class __attribute__((visibility("default"))) SineGeometry
          * would not interact with each other through the boundary.
          *
          */
-        HOSTDEVICE bool validateBox(const BoxDim& box, Scalar cell_size, Scalar max_shift) const
+        HOSTDEVICE bool validateBox(const BoxDim& box, Scalar cell_size) const
             {
             const Scalar hi = box.getHi().z;
             const Scalar lo = box.getLo().z;
+	    const Scalar max_shift = 0.5; // todo get this from  mpcd , can't use function argument because hoomd/mpcd/ConfinedStreamingMethod.h complains
+	    // if arguments of validateBox () change 
+	    //
             const Scalar filler_thickness = cell_size +  0.5*(m_H_wide-m_H_narrow)*fast::sin((1+max_shift)*cell_size*m_pi_period_div_L);
-
-            return (hi >= m_H_wide+filler_thickness && lo <= -H_wide-filler_thickness );
+	     
+            return (hi >= m_H_wide+filler_thickness && lo <= -m_H_wide-filler_thickness );
             }
 
         //! Get channel half width at widest point
@@ -288,7 +291,7 @@ class __attribute__((visibility("default"))) SineGeometry
         const Scalar m_H_narrow;            //!< Half of the channel narrowest width
         const Scalar m_Repetitions;         //!< Nubmer of repetitions of the wide sections in the channel
         const Scalar m_V;                   //!< Velocity of the wall
-        const  mpcd::detail::boundary m_bc; //!< Boundary condition
+        const mpcd::detail::boundary m_bc; //!< Boundary condition
     };
 
 } // end namespace detail

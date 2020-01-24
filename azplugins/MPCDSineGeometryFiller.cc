@@ -36,10 +36,14 @@ void SineGeometryFiller::computeNumFill()
     const BoxDim& global_box = m_pdata->getGlobalBox();
     const Scalar cell_size = m_cl->getCellSize();
     const Scalar max_shift = m_cl->getMaxGridShift();
-    if (!m_geom->validateBox(global_box, cell_size, max_shift))
+    if (!m_geom->validateBox(global_box, cell_size))
         {
+		
+        
         m_exec_conf->msg->error() << "Invalid sine geometry for global box, cannot fill virtual particles." << std::endl;
-        throw std::runtime_error("Invalid sine geometry for global box");
+        
+	
+	throw std::runtime_error("Invalid sine geometry for global box");
         }
 
     // box and sine geometry

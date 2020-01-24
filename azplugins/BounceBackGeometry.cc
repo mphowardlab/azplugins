@@ -26,7 +26,7 @@ void export_SineGeometry(pybind11::module& m)
     .def(py::init<Scalar, Scalar, Scalar, Scalar,Scalar, mpcd::detail::boundary>())
     .def("getHwide", &SineGeometry::getHwide)
     .def("getHnarrow", &SineGeometry::getHnarrow)
-    .def("getPeriod", &SineGeometry::getPeriod)
+    .def("getRepetitions", &SineGeometry::getRepetitions)
     .def("getVelocity", &SineGeometry::getVelocity)
     .def("getBoundaryCondition", &SineGeometry::getBoundaryCondition);
     }
