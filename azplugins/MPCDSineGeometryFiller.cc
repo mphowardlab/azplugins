@@ -1,7 +1,7 @@
-// Copyright (c) 2009-2019 The Regents of the University of Michigan
-// This file is part of the HOOMD-blue project, released under the BSD 3-Clause License.
+// Copyright (c) 2018-2019, Michael P. Howard
+// This file is part of the azplugins project, released under the Modified BSD License.
 
-// Maintainer: mphoward
+// Maintainer: astatt
 
 /*!
  * \file mpcd/SlitGeometryFiller.cc
@@ -38,12 +38,10 @@ void SineGeometryFiller::computeNumFill()
     const Scalar max_shift = m_cl->getMaxGridShift();
     if (!m_geom->validateBox(global_box, cell_size))
         {
-		
-        
+
         m_exec_conf->msg->error() << "Invalid sine geometry for global box, cannot fill virtual particles." << std::endl;
-        
-	
-	throw std::runtime_error("Invalid sine geometry for global box");
+
+        throw std::runtime_error("Invalid sine geometry for global box");
         }
 
     // box and sine geometry
