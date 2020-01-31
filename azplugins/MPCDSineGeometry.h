@@ -16,7 +16,7 @@
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
 
-
+#include <cstdio>
 #include <iostream>
 
 #ifdef NVCC
@@ -33,11 +33,11 @@ namespace detail
 
 //! Sine channel geometry
 /*!
- * This class defines a channel with sine walls given by the equations +/-(A cos(x*2pi*p/Lx) + A + H_narrow).
- * A = 0.5*(H_wide-H_narrow) is the amplitude and p is the period of the wall sine,
- * where H_wide is the half height of the channel at its widest point, H_narrow is the half height of the channel at its
- * narrowest point. The sine wall period/ number of repetitions has to be an integer larger than 0 to be consumable
- * with the periodic boundary conditions in x.
+ * This class defines a channel with sine walls given by the equations +/-(A cos(x*2*pi*p/Lx) + A + H_narrow).
+ * A = 0.5*(H_wide-H_narrow) is the amplitude and p is the period of the wall sine.
+ * H_wide is the half height of the channel at its widest point, H_narrow is the half height of the channel at its
+ * narrowest point. The sine wall wavelength/frenquency needs to be consumable with the periodic boundary conditions in x,
+ * therefore the period p is specified and the wavelength 2*pi*p/Lx is calculated.
  *
  * Below is an example how a sine channel looks like in a 30x30x30 box with H_wide=10, H_narrow=1, and p=1.
  * The wall sine period p determines how many repetitions of the geometry are in the simulation cell and
@@ -86,7 +86,7 @@ class __attribute__((visibility("default"))) SineGeometry
          * \param L Channel length (Simulation box length in x)
            \param H_wide Channel half-width at widest point
            \param H_narrow Channel half-width at narrowest point
-           \param Period Channel sine period (even integer >0)
+           \param Period Channel sine period (integer >0)
          * \param V Velocity of the wall
          * \param bc Boundary condition at the wall (slip or no-slip)
          */
@@ -119,8 +119,8 @@ class __attribute__((visibility("default"))) SineGeometry
              * can be immediately reflected on the next streaming step, and so the motion is essentially equivalent up to
              * an epsilon of difference in the channel width.
              */
-
-            Scalar a = (m_H_wide-m_H_narrow)*cos(pos.x*m_pi_period_div_L)+m_H_wide;
+            Scalar A = 0.5*(m_H_wide-m_H_narrow);
+            Scalar a = A*fast::cos(pos.x*m_pi_period_div_L) + A + m_H_narrow;
             const signed char sign = (pos.z > a) - (pos.z < -a);
 
             // exit immediately if no collision is found
@@ -130,22 +130,26 @@ class __attribute__((visibility("default"))) SineGeometry
                 return false;
                 }
 
-
             /* Calculate position (x0,y0,z0) of collision with wall:
-            *  Because there is no analythical solution for cos(x)-x = 0, we use Newtons's method to nummerically estimate the
+            *  Because there is no analythical solution for f(x) = cos(x)-x = 0, we use Newtons's method to nummerically estimate the
             *  x positon of the intersection first. It is convinient to use the halfway point between the last particle
             *  position outside the wall (at time t-dt) and the current position inside the wall (at time t) as initial
             *  guess for the intersection.
             *
             *  We limit the number of iterations (max_iteration) and the desired presicion (target_presicion) for performance reasons.
             */
+          //  printf("---------------\n");
+          //  printf("pos before %f %f %f \n",pos.x,pos.y,pos.z);
+            //printf("wall z %f %d \n",a,sign);
+          //  printf("vel before %f %f %f \n",vel.x,vel.y,vel.z);
 
             Scalar max_iteration = 5;
             Scalar counter = 0;
-            Scalar target_presicion = 0.0001;
+            Scalar target_presicion = 0.00001;
             Scalar x0 = pos.x - 0.5*dt*vel.x;
-            Scalar A = 0.5*(m_H_wide-m_H_narrow);
-            Scalar delta = abs(0 - sign*(A*fast::cos(x0*m_pi_period_div_L)+ A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z);
+
+            // delta =  abs(0-f(x))
+            Scalar delta = abs(0 - (sign*(A*fast::cos(x0*m_pi_period_div_L)+ A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
 
             Scalar n,n2;
             Scalar s,c;
@@ -154,17 +158,20 @@ class __attribute__((visibility("default"))) SineGeometry
                 {
                 fast::sincos(x0*m_pi_period_div_L,s,c);
                 n  =  sign*(A*c + A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
-                n2 = -sign*(A*s + A + m_H_narrow) - vel.z/vel.x;                       // df
-                x0 = x0 - n/n2;                                                        // x = x - f/df
-                delta = abs(0 - sign*(A*fast::cos(x0*m_pi_period_div_L)+ A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z);
+                n2 = -sign*m_pi_period_div_L*A*s - vel.z/vel.x;                       // df
+                x0 = x0 - n/n2;                                                                      // x = x - f/df
+                delta = abs(0-(sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
                 counter +=1;
+                //printf("counter %f delta %f x0 %f\n",counter,delta,x0);
                 }
+            //if (x0>2*M_PI*m_Repetitions/m_pi_period_div_L)
+            //  {
 
+            //  }
             /* The new z position is calculated from the wall equation to guarantee that the new particle positon is exactly at the wall
              * and not accidentally slightly inside of the wall because of nummerical presicion.
              */
-            fast::sincos(x0*m_pi_period_div_L,s,c);
-            Scalar z0 = sign*(A*c+A+m_H_narrow);
+            Scalar z0 = sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow);
 
             /* The new y position can be calculated from the fact that the last position outside of the wall, the current position inside
              * of the  wall, and the new position exactly at the wall are on a straight line.
@@ -172,30 +179,42 @@ class __attribute__((visibility("default"))) SineGeometry
             Scalar y0 = -(pos.x-dt*vel.x - x0)*vel.y/vel.x + (pos.y-dt*vel.y);
 
             // Remaining integration time dt is amount of time spent traveling distance out of bounds.
-            dt = fast::sqrt(((pos.x-x0)*(pos.x - x0) + (pos.y-y0)*(pos.y -y0) + (pos.z-z0)*(pos.z - z0))/(vel.x*vel.x+vel.z*vel.z+vel.y*vel.y));
+            dt = fast::sqrt(((pos.x-x0)*(pos.x - x0) + (pos.y-y0)*(pos.y -y0) + (pos.z-z0)*(pos.z - z0))/(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z));
 
+            // update positions
+            pos.x = x0;
+            pos.y = y0;
+            pos.z = z0;
 
-            /* update velocity according to boundary conditions. No-slip requires reflection of the tangential components:
-             * velocity_new = velocity -2*dot(velocity,normal)*normal
-             * A upwards normal of the surface is given by (-df/dx,-df/dy,1) with f = sign*((H-h)*cos(x*pi*p/L)+H), so
-             * normal  = (sign*(H-h)*pi*p/L*sin(x*pi*p/L),0,1)/|normal|
+            /* update velocity according to boundary conditions.
+             *
+             * A upwards normal of the surface is given by (-df/dx,-df/dy,1) with f = sign*(A*cos(x*2*pi*p/L)+A+h), so
+             * normal  = (sign*A*2*pi*p/L*sin(x*2*pi*p/L),0,1)/|length|
              * The direction of the normal is not important for the reflection.
              * Calculate components by hand to avoid sqrt in normalization of the normal of the surface.
+             *
+             * TO DO: do moving boundaries (velocity m_V) in opposite directions even make sense for the curved sine geometry?
              */
-
-            if (m_bc ==  mpcd::detail::boundary::no_slip)
+            Scalar3 vel_new;
+            if (m_bc ==  mpcd::detail::boundary::no_slip) // No-slip requires reflection of both tangential and normal components:
                 {
-                Scalar B = sign*A*m_pi_period_div_L*s;
-                vel.x = vel.x- 2*(B*B*vel.x +B*vel.z)/(B*B+1) + Scalar(sign * 2) * m_V;
-                vel.z = vel.z - 2*(vel.z + B*vel.x)/(B*B+1);
+
+                vel_new.x = -vel.x + Scalar(sign * 2) * m_V;
+                vel_new.y = -vel.y;
+                vel_new.z = -vel.z;
+
                 }
-            else // Slip conditions require both normal and tangential components to be reflected:
+            else // Slip conditions require only tangential components to be reflected:
                 {
-                vel.x = -vel.x + Scalar(sign * 2) * m_V;
-                vel.y = -vel.y;
-                vel.z = -vel.z;
+                Scalar B = sign*A*m_pi_period_div_L*fast::sin(x0*m_pi_period_div_L);
+
+                vel_new.x = vel.x - 2*B*(B*vel.x + vel.z)/(B*B+1);
+                vel_new.y = vel.y;
+                vel_new.z = vel.z -   2*(B*vel.x + vel.z)/(B*B+1);
+                printf("%f %f %f %f %f %f\n",vel.x,vel.y,vel.z,vel_new.x,vel_new.y,vel_new.z );
                 }
 
+            vel = vel_new;
             return true;
             }
 
@@ -225,12 +244,11 @@ class __attribute__((visibility("default"))) SineGeometry
             {
             const Scalar hi = box.getHi().z;
             const Scalar lo = box.getLo().z;
-            const Scalar max_shift = 0.5;
-            // todo get this from  mpcd , can't use function argument because hoomd/mpcd/ConfinedStreamingMethod.h complains
-            // if arguments of validateBox () change
-            //
-            const Scalar filler_thickness = cell_size +  0.5*(m_H_wide-m_H_narrow)*fast::sin((1+max_shift)*cell_size*m_pi_period_div_L);
+            // TO DO: get max_shift from  mpcd , can't use function argument because hoomd/mpcd/ConfinedStreamingMethod.h complains
+            // if arguments of validateBox() change
+            const Scalar max_shift = 0.5*cell_size;
 
+            const Scalar filler_thickness = cell_size +  0.5*(m_H_wide-m_H_narrow)*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
             return (hi >= m_H_wide+filler_thickness && lo <= -m_H_wide-filler_thickness );
             }
 
@@ -290,7 +308,7 @@ class __attribute__((visibility("default"))) SineGeometry
         const Scalar m_pi_period_div_L;     //!< Argument of the wall sine (pi*period/Lx = 2*pi*repetitions/Lx)
         const Scalar m_H_wide;              //!< Half of the channel widest width
         const Scalar m_H_narrow;            //!< Half of the channel narrowest width
-        const Scalar m_Repetitions;         //!< Nubmer of repetitions of the wide sections in the channel
+        const Scalar m_Repetitions;         //!< Number of repetitions of the wide sections in the channel =  period
         const Scalar m_V;                   //!< Velocity of the wall
         const mpcd::detail::boundary m_bc; //!< Boundary condition
     };

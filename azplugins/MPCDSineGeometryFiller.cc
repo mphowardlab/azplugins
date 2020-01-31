@@ -38,49 +38,31 @@ void SineGeometryFiller::computeNumFill()
     const Scalar max_shift = m_cl->getMaxGridShift();
     if (!m_geom->validateBox(global_box, cell_size))
         {
-
         m_exec_conf->msg->error() << "Invalid sine geometry for global box, cannot fill virtual particles." << std::endl;
-
+        m_exec_conf->msg->error() << "Filler thickness is given by cell_size +  0.5*(H-h)*sin((cell_size+max_shift)*2*pi*p/L); " << std::endl;
         throw std::runtime_error("Invalid sine geometry for global box");
         }
 
     // box and sine geometry
     const BoxDim& box = m_pdata->getBox();
     const Scalar3 L = box.getL();
-    const Scalar A = L.x * L.y;
+    const Scalar Area = L.x * L.y;
     const Scalar H = m_geom->getHwide();
     const Scalar h = m_geom->getHnarrow();
     const Scalar r = m_geom->getRepetitions();
     const Scalar pi_period_div_L = 2*M_PI*r/L.x;
 
     // default is not to fill anything
-    m_z_min = -H; m_z_max = H;
+    m_thickness = 0;
     m_N_hi = m_N_lo = 0;
 
     // This geometry needs a larger filler thickness than just a single cell_size because of its curved bounds.
-    const Scalar filler_thickness = cell_size +  0.5*(H-h)*fast::sin((1+max_shift)*cell_size*pi_period_div_L);
-
-    /*
-     * Determine the lowest / highest extent of a cell containing a particle within the channel.
-     * This is done by round the walls onto the cell grid away from zero, and then including the
-     * max shift of this cell edge.
-     */
-
-    const Scalar global_lo = global_box.getLo().z;
-    if (box.getHi().z >= H)
-        {
-        m_z_max = cell_size * std::ceil((H-global_lo)/cell_size) + global_lo + max_shift;
-        m_N_hi = std::round((m_z_max - H) * A * m_density);
-        }
-
-    if (box.getLo().z <= -H)
-        {
-        m_z_min = cell_size * std::floor((-H-global_lo)/cell_size) + global_lo - max_shift;
-        m_N_lo = std::round((-H-m_z_min) * A * m_density);
-        }
-
+    const Scalar filler_thickness = cell_size +  0.5*(H-h)*fast::sin((cell_size+max_shift)*pi_period_div_L);
+    m_thickness = filler_thickness;
     // total number of fill particles
-    m_N_fill = m_N_hi + m_N_lo;
+    m_N_fill = m_density*Area*filler_thickness*2;
+    m_N_lo = 0.5*m_N_fill;
+    m_N_hi = 0.5*m_N_fill;
     }
 
 /*!
@@ -100,24 +82,31 @@ void SineGeometryFiller::drawParticles(unsigned int timestep)
 
     // index to start filling from
     const unsigned int first_idx = m_mpcd_pdata->getN() + m_mpcd_pdata->getNVirtual() - m_N_fill;
+
     for (unsigned int i=0; i < m_N_fill; ++i)
         {
         const unsigned int tag = m_first_tag + i;
         hoomd::RandomGenerator rng(RNGIdentifier::SineGeometryFiller, m_seed, tag, timestep);
-        signed char sign = (i >= m_N_lo) - (i < m_N_lo);
-        if (sign == -1) // bottom
-            {
-            lo.z = m_z_min; hi.z = -m_geom->getHwide();
-            }
-        else // top
-            {
-            lo.z = m_geom->getHwide(); hi.z = m_z_max;
-            }
+        signed char sign = (i >= m_N_lo) - (i < m_N_lo); // bottom -1 or top +1
+
+        Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
+        Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
+        Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
+        
+        // TO DO save some of this in variables.
+        const BoxDim& box = m_pdata->getBox();
+        const Scalar3 L = box.getL();
+        const Scalar H = m_geom->getHwide();
+        const Scalar h = m_geom->getHnarrow();
+        const Scalar r = m_geom->getRepetitions();
+        const Scalar pi_period_div_L = 2*M_PI*r/L.x;
+
+        z = sign*(0.5*(H-h)*fast::cos(x*pi_period_div_L)+0.5*(H-h) + h ) + z;
 
         const unsigned int pidx = first_idx + i;
-        h_pos.data[pidx] = make_scalar4(hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng),
-                                        hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng),
-                                        hoomd::UniformDistribution<Scalar>(lo.z, hi.z)(rng),
+        h_pos.data[pidx] = make_scalar4(x,
+                                        y,
+                                        z,
                                         __int_as_scalar(m_type));
 
         hoomd::NormalDistribution<Scalar> gen(vel_factor, 0.0);

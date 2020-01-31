@@ -4,8 +4,8 @@
 // Maintainer: astatt
 
 /*!
- * \file mpcd/SlitGeometryFiller.h
- * \brief Definition of virtual particle filler for mpcd::detail::SlitGeometry.
+ * \file mpcd/SineGeometryFiller.h
+ * \brief Definition of virtual particle filler for mpcd::detail::SineGeometry.
  */
 
 #ifndef AZPLUGINS_MPCD_SINE_GEOMETRY_FILLER_H_
@@ -23,7 +23,7 @@
 namespace azplugins
 {
 
-//! Adds virtual particles to the MPCD particle data for SlitGeometry
+//! Adds virtual particles to the MPCD particle data for SineGeometry
 /*!
  * Particles are added to the volume that is overlapped by any of the cells that are also "inside" the channel,
  * subject to the grid shift.
@@ -47,8 +47,7 @@ class PYBIND11_EXPORT SineGeometryFiller : public mpcd::VirtualParticleFiller
 
     protected:
         std::shared_ptr<const detail::SineGeometry> m_geom;
-        Scalar m_z_min; //!< Min z coordinate for filling
-        Scalar m_z_max; //!< Max z coordinate for filling
+        Scalar m_thickness; //!< thickness of virtual particle buffer zone
         unsigned int m_N_lo;    //!< Number of particles to fill below channel
         unsigned int m_N_hi;    //!< number of particles to fill above channel
 

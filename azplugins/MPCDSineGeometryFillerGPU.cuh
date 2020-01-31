@@ -8,8 +8,8 @@
 #define AZPLUGINS_MPCD_SINE_GEOMETRY_FILLER_GPU_CUH_
 
 /*!
- * \file mpcd/SlitGeometryFillerGPU.cuh
- * \brief Declaration of CUDA kernels for mpcd::SlitGeometryFillerGPU
+ * \file mpcd/SineGeometryFillerGPU.cuh
+ * \brief Declaration of CUDA kernels for mpcd::SineGeometryFillerGPU
  */
 
 #include <cuda_runtime.h>
@@ -24,7 +24,7 @@ namespace azplugins
 namespace gpu
 {
 
-//! Draw virtual particles in the SlitGeometry
+//! Draw virtual particles in the SineGeometry
 cudaError_t sine_draw_particles(Scalar4 *d_pos,
                                 Scalar4 *d_vel,
                                 unsigned int *d_tag,
