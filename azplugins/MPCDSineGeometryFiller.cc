@@ -62,7 +62,7 @@ void SineGeometryFiller::computeNumFill()
     m_H_narrow = h;
 
     // This geometry needs a larger filler thickness than just a single cell_size because of its curved bounds.
-    const Scalar filler_thickness = cell_size +  m_amplitude*fast::sin((cell_size+max_shift)*pi_period_div_L);
+    const Scalar filler_thickness = cell_size +  m_amplitude*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
     m_thickness = filler_thickness;
     // total number of fill particles
     m_N_fill = m_density*Area*filler_thickness*2;
