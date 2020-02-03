@@ -50,8 +50,10 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
                                     Scalar4 *d_vel,
                                     unsigned int *d_tag,
                                     const azplugins::detail::SineGeometry geom,
-                                    const Scalar z_min,
-                                    const Scalar z_max,
+                                    const Scalar m_pi_period_div_L,
+                                    const Scalar m_amplitude,
+                                    const Scalar m_H_narrow,
+                                    const Scalar m_thickness,
                                     const BoxDim box,
                                     const unsigned int type,
                                     const unsigned int N_lo,
@@ -71,14 +73,6 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
     signed char sign = (idx >= N_lo) - (idx < N_lo);
     Scalar3 lo = box.getLo();
     Scalar3 hi = box.getHi();
-    if (sign == -1) // bottom
-        {
-        lo.z = z_min; hi.z = -geom.getHwide();
-        }
-    else // top
-        {
-        lo.z = geom.getHwide(); hi.z = z_max;
-        }
 
     // particle tag and index
     const unsigned int tag = first_tag + idx;
@@ -87,9 +81,13 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
 
     // initialize random number generator for positions and velocity
     hoomd::RandomGenerator rng(RNGIdentifier::SineGeometryFiller, seed, tag, timestep);
+
+    Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
+    z = sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+m_amplitude + m_H_narrow ) + z;
+
     d_pos[pidx] = make_scalar4(hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng),
                                hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng),
-                               hoomd::UniformDistribution<Scalar>(lo.z, hi.z)(rng),
+                               z,
                                __int_as_scalar(type));
 
     hoomd::NormalDistribution<Scalar> gen(vel_factor, 0.0);

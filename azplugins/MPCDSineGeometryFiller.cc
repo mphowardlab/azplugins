@@ -43,6 +43,12 @@ void SineGeometryFiller::computeNumFill()
         throw std::runtime_error("Invalid sine geometry for global box");
         }
 
+    // default is not to fill anything
+    m_thickness = 0;
+    m_N_hi = m_N_lo = 0;
+    m_pi_period_div_L = 0;
+    m_amplitude = 0;
+
     // box and sine geometry
     const BoxDim& box = m_pdata->getBox();
     const Scalar3 L = box.getL();
@@ -50,14 +56,13 @@ void SineGeometryFiller::computeNumFill()
     const Scalar H = m_geom->getHwide();
     const Scalar h = m_geom->getHnarrow();
     const Scalar r = m_geom->getRepetitions();
-    const Scalar pi_period_div_L = 2*M_PI*r/L.x;
 
-    // default is not to fill anything
-    m_thickness = 0;
-    m_N_hi = m_N_lo = 0;
+    m_amplitude = 0.5*(H-h);
+    m_pi_period_div_L = 2*M_PI*r/L.x;
+    m_H_narrow = h;
 
     // This geometry needs a larger filler thickness than just a single cell_size because of its curved bounds.
-    const Scalar filler_thickness = cell_size +  0.5*(H-h)*fast::sin((cell_size+max_shift)*pi_period_div_L);
+    const Scalar filler_thickness = cell_size +  m_amplitude*fast::sin((cell_size+max_shift)*pi_period_div_L);
     m_thickness = filler_thickness;
     // total number of fill particles
     m_N_fill = m_density*Area*filler_thickness*2;
@@ -92,16 +97,8 @@ void SineGeometryFiller::drawParticles(unsigned int timestep)
         Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
         Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
         Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
-        
-        // TO DO save some of this in variables.
-        const BoxDim& box = m_pdata->getBox();
-        const Scalar3 L = box.getL();
-        const Scalar H = m_geom->getHwide();
-        const Scalar h = m_geom->getHnarrow();
-        const Scalar r = m_geom->getRepetitions();
-        const Scalar pi_period_div_L = 2*M_PI*r/L.x;
 
-        z = sign*(0.5*(H-h)*fast::cos(x*pi_period_div_L)+0.5*(H-h) + h ) + z;
+        z = sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+m_amplitude + m_H_narrow ) + z;
 
         const unsigned int pidx = first_idx + i;
         h_pos.data[pidx] = make_scalar4(x,

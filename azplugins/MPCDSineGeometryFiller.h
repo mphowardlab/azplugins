@@ -47,9 +47,12 @@ class PYBIND11_EXPORT SineGeometryFiller : public mpcd::VirtualParticleFiller
 
     protected:
         std::shared_ptr<const detail::SineGeometry> m_geom;
-        Scalar m_thickness; //!< thickness of virtual particle buffer zone
-        unsigned int m_N_lo;    //!< Number of particles to fill below channel
-        unsigned int m_N_hi;    //!< number of particles to fill above channel
+        Scalar m_thickness;       //!< thickness of virtual particle buffer zone
+        unsigned int m_N_lo;      //!< Number of particles to fill below channel
+        unsigned int m_N_hi;      //!< number of particles to fill above channel
+        Scalar m_amplitude;       //!< amplitude of  channel wall cosine: 0.5(H_wide - H_narrow)
+        Scalar m_pi_period_div_L; //!< period of channel wall cosine: 2*pi*period/Lx
+        Scalar m_H_narrow;        //!< half width of the narrowest height of the channel
 
         //! Compute the total number of particles to fill
         virtual void computeNumFill();
