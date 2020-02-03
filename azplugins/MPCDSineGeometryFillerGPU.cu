@@ -82,11 +82,15 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
     // initialize random number generator for positions and velocity
     hoomd::RandomGenerator rng(RNGIdentifier::SineGeometryFiller, seed, tag, timestep);
 
+    Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
+    Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
     Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
+
     z = sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+m_amplitude + m_H_narrow ) + z;
 
-    d_pos[pidx] = make_scalar4(hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng),
-                               hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng),
+
+    d_pos[pidx] = make_scalar4(x,
+                               y,
                                z,
                                __int_as_scalar(type));
 
@@ -127,8 +131,10 @@ cudaError_t sine_draw_particles(Scalar4 *d_pos,
                                 Scalar4 *d_vel,
                                 unsigned int *d_tag,
                                 const azplugins::detail::SineGeometry& geom,
-                                const Scalar z_min,
-                                const Scalar z_max,
+                                const Scalar m_pi_period_div_L,
+                                const Scalar m_amplitude,
+                                const Scalar m_H_narrow,
+                                const Scalar m_thickness,
                                 const BoxDim& box,
                                 const Scalar mass,
                                 const unsigned int type,
@@ -161,8 +167,10 @@ cudaError_t sine_draw_particles(Scalar4 *d_pos,
                                                           d_vel,
                                                           d_tag,
                                                           geom,
-                                                          z_min,
-                                                          z_max,
+                                                          m_pi_period_div_L,
+                                                          m_amplitude,
+                                                          m_H_narrow,
+                                                          m_thickness,
                                                           box,
                                                           type,
                                                           N_lo,
