@@ -90,7 +90,7 @@ class __attribute__((visibility("default"))) SineGeometry
          * \param V Velocity of the wall
          * \param bc Boundary condition at the wall (slip or no-slip)
          */
-        HOSTDEVICE SineGeometry(Scalar L, Scalar H_wide,Scalar H_narrow, Scalar Repetitions, Scalar V, mpcd::detail::boundary bc)
+        HOSTDEVICE SineGeometry(Scalar L, Scalar H_wide,Scalar H_narrow, unsigned int Repetitions, Scalar V, mpcd::detail::boundary bc)
             : m_pi_period_div_L(2*M_PI*Repetitions/L), m_H_wide(H_wide), m_H_narrow(H_narrow), m_Repetitions(Repetitions), m_V(V), m_bc(bc)
             {
             }
@@ -304,7 +304,7 @@ class __attribute__((visibility("default"))) SineGeometry
         const Scalar m_pi_period_div_L;     //!< Argument of the wall sine (pi*period/Lx = 2*pi*repetitions/Lx)
         const Scalar m_H_wide;              //!< Half of the channel widest width
         const Scalar m_H_narrow;            //!< Half of the channel narrowest width
-        const Scalar m_Repetitions;         //!< Number of repetitions of the wide sections in the channel =  period
+        const unsigned int m_Repetitions;         //!< Number of repetitions of the wide sections in the channel =  period
         const Scalar m_V;                   //!< Velocity of the wall
         const mpcd::detail::boundary m_bc; //!< Boundary condition
     };

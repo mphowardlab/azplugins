@@ -154,7 +154,9 @@ class sine(hoomd.mpcd.stream._streaming_method):
     r""" Parallel plate (slit) streaming geometry.
 
     Args:
-        H (float): channel half-width
+        H (float): channel half-width at its widest point
+        h (float): channel half-width at its narrowest point
+        p (int):   channel periodicity
         V (float): wall speed (default: 0)
         boundary (str): boundary condition at wall ("slip" or "no_slip"")
         period (int): Number of integration steps between collisions

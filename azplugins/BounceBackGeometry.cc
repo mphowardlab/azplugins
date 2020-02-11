@@ -23,7 +23,7 @@ void export_SineGeometry(pybind11::module& m)
     {
     namespace py = pybind11;
     py::class_<SineGeometry, std::shared_ptr<SineGeometry> >(m, "SineGeometry")
-    .def(py::init<Scalar, Scalar, Scalar, Scalar,Scalar, mpcd::detail::boundary>())
+    .def(py::init<Scalar, Scalar, Scalar, unsigned int,Scalar, mpcd::detail::boundary>())
     .def("getHwide", &SineGeometry::getHwide)
     .def("getHnarrow", &SineGeometry::getHnarrow)
     .def("getRepetitions", &SineGeometry::getRepetitions)
