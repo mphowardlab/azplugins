@@ -162,12 +162,8 @@ class __attribute__((visibility("default"))) SineGeometry
                 x0 = x0 - n/n2;                                                                      // x = x - f/df
                 delta = abs(0-(sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
                 counter +=1;
-                //printf("counter %f delta %f x0 %f\n",counter,delta,x0);
                 }
-            //if (x0>2*M_PI*m_Repetitions/m_pi_period_div_L)
-            //  {
 
-            //  }
             /* The new z position is calculated from the wall equation to guarantee that the new particle positon is exactly at the wall
              * and not accidentally slightly inside of the wall because of nummerical presicion.
              */
@@ -211,7 +207,7 @@ class __attribute__((visibility("default"))) SineGeometry
                 vel_new.x = vel.x - 2*B*(B*vel.x + vel.z)/(B*B+1);
                 vel_new.y = vel.y;
                 vel_new.z = vel.z -   2*(B*vel.x + vel.z)/(B*B+1);
-                printf("%f %f %f %f %f %f\n",vel.x,vel.y,vel.z,vel_new.x,vel_new.y,vel_new.z );
+              //  printf("%f %f %f %f %f %f\n",vel.x,vel.y,vel.z,vel_new.x,vel_new.y,vel_new.z );
                 }
 
             vel = vel_new;

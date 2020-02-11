@@ -27,8 +27,8 @@ namespace kernel
  * \param d_vel Particle velocities
  * \param d_tag Particle tags
  * \param geom Sine geometry to fill
- * \param z_min Lower bound to lower fill region
- * \param z_max Upper bound to upper fill region
+ * \param m_pi_period_div_L
+ * \param m_amplitude
  * \param box Local simulation box
  * \param type Type of fill particles
  * \param N_lo Number of particles to fill in lower region
@@ -56,7 +56,6 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
                                     const Scalar m_thickness,
                                     const BoxDim box,
                                     const unsigned int type,
-                                    const unsigned int N_lo,
                                     const unsigned int N_tot,
                                     const unsigned int first_tag,
                                     const unsigned int first_idx,
@@ -66,13 +65,12 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
     {
     // one thread per particle
     const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= N_tot)
+    if (idx >= N_fill)
         return;
-
-    // determine the fill region based on current index
-    signed char sign = (idx >= N_lo) - (idx < N_lo);
     Scalar3 lo = box.getLo();
     Scalar3 hi = box.getHi();
+    const unsigned int N_half = 0.5*m_N_fill;
+
 
     // particle tag and index
     const unsigned int tag = first_tag + idx;
@@ -81,10 +79,13 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
 
     // initialize random number generator for positions and velocity
     hoomd::RandomGenerator rng(RNGIdentifier::SineGeometryFiller, seed, tag, timestep);
-
+    signed char sign = (idx >= N_half) - (idx < N_half); // bottom -1 or top +1
+    
     Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
     Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
     Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
+
+    signed char sign = (z >= 0) - (z < 0);  // bottom -1 or top +1
 
     z = sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+m_amplitude + m_H_narrow ) + z;
 
@@ -138,8 +139,7 @@ cudaError_t sine_draw_particles(Scalar4 *d_pos,
                                 const BoxDim& box,
                                 const Scalar mass,
                                 const unsigned int type,
-                                const unsigned int N_lo,
-                                const unsigned int N_hi,
+                                const unsigned int N_fill,
                                 const unsigned int first_tag,
                                 const unsigned int first_idx,
                                 const Scalar kT,
@@ -147,7 +147,6 @@ cudaError_t sine_draw_particles(Scalar4 *d_pos,
                                 const unsigned int seed,
                                 const unsigned int block_size)
     {
-    const unsigned int N_tot = N_lo + N_hi;
     if (N_tot == 0) return cudaSuccess;
 
     static unsigned int max_block_size = UINT_MAX;
@@ -173,8 +172,7 @@ cudaError_t sine_draw_particles(Scalar4 *d_pos,
                                                           m_thickness,
                                                           box,
                                                           type,
-                                                          N_lo,
-                                                          N_tot,
+                                                          N_fill,
                                                           first_tag,
                                                           first_idx,
                                                           vel_factor,

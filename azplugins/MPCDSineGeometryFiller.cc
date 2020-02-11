@@ -45,7 +45,7 @@ void SineGeometryFiller::computeNumFill()
 
     // default is not to fill anything
     m_thickness = 0;
-    m_N_hi = m_N_lo = 0;
+    m_N_fill = 0;
     m_pi_period_div_L = 0;
     m_amplitude = 0;
 
@@ -66,8 +66,6 @@ void SineGeometryFiller::computeNumFill()
     m_thickness = filler_thickness;
     // total number of fill particles
     m_N_fill = m_density*Area*filler_thickness*2;
-    m_N_lo = 0.5*m_N_fill;
-    m_N_hi = 0.5*m_N_fill;
     }
 
 /*!
@@ -82,7 +80,7 @@ void SineGeometryFiller::drawParticles(unsigned int timestep)
     const BoxDim& box = m_pdata->getBox();
     Scalar3 lo = box.getLo();
     Scalar3 hi = box.getHi();
-
+    const unsigned int N_half = 0.5*m_N_fill;
     const Scalar vel_factor = fast::sqrt(m_T->getValue(timestep) / m_mpcd_pdata->getMass());
 
     // index to start filling from
@@ -92,7 +90,7 @@ void SineGeometryFiller::drawParticles(unsigned int timestep)
         {
         const unsigned int tag = m_first_tag + i;
         hoomd::RandomGenerator rng(RNGIdentifier::SineGeometryFiller, m_seed, tag, timestep);
-        signed char sign = (i >= m_N_lo) - (i < m_N_lo); // bottom -1 or top +1
+        signed char sign = (i >= N_half) - (i < N_half); // bottom -1 or top +1
 
         Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
         Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
@@ -105,6 +103,8 @@ void SineGeometryFiller::drawParticles(unsigned int timestep)
                                         y,
                                         z,
                                         __int_as_scalar(m_type));
+
+        //m_exec_conf->msg->notice(5) << x << " "<< y << " "<< z << std::endl;
 
         hoomd::NormalDistribution<Scalar> gen(vel_factor, 0.0);
         Scalar3 vel;
