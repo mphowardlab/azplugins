@@ -21,6 +21,10 @@ namespace gpu
 template cudaError_t nve_bounce_step_one<mpcd::detail::SlitGeometry>
     (const bounce_args_t& args, const mpcd::detail::SlitGeometry& geom);
 
+    //! Template instantiation of slit geometry streaming
+    template cudaError_t nve_bounce_step_one<mpcd::detail::SineGeometry>
+        (const bounce_args_t& args, const mpcd::detail::SineGeometry& geom);
+
 namespace kernel
 {
 //! Kernel for applying second step of velocity Verlet algorithm with bounce back
