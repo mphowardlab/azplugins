@@ -85,7 +85,6 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
     Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
     Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
 
-    signed char sign = (z >= 0) - (z < 0);  // bottom -1 or top +1
 
     z = sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+m_amplitude + m_H_narrow ) + z;
 
@@ -147,7 +146,7 @@ cudaError_t sine_draw_particles(Scalar4 *d_pos,
                                 const unsigned int seed,
                                 const unsigned int block_size)
     {
-    if (N_tot == 0) return cudaSuccess;
+    if (N_fill == 0) return cudaSuccess;
 
     static unsigned int max_block_size = UINT_MAX;
     if (max_block_size == UINT_MAX)
@@ -161,7 +160,7 @@ cudaError_t sine_draw_particles(Scalar4 *d_pos,
     const Scalar vel_factor = fast::sqrt(kT / mass);
 
     unsigned int run_block_size = min(block_size, max_block_size);
-    dim3 grid(N_tot / run_block_size + 1);
+    dim3 grid(N_fill / run_block_size + 1);
     kernel::sine_draw_particles<<<grid, run_block_size>>>(d_pos,
                                                           d_vel,
                                                           d_tag,
