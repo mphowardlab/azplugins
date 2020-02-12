@@ -56,7 +56,7 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
                                     const Scalar m_thickness,
                                     const BoxDim box,
                                     const unsigned int type,
-                                    const unsigned int N_tot,
+                                    const unsigned int N_fill,
                                     const unsigned int first_tag,
                                     const unsigned int first_idx,
                                     const Scalar vel_factor,
@@ -69,7 +69,7 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
         return;
     Scalar3 lo = box.getLo();
     Scalar3 hi = box.getHi();
-    const unsigned int N_half = 0.5*m_N_fill;
+    const unsigned int N_half = 0.5*N_fill;
 
 
     // particle tag and index
@@ -80,7 +80,7 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
     // initialize random number generator for positions and velocity
     hoomd::RandomGenerator rng(RNGIdentifier::SineGeometryFiller, seed, tag, timestep);
     signed char sign = (idx >= N_half) - (idx < N_half); // bottom -1 or top +1
-    
+
     Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
     Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
     Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
