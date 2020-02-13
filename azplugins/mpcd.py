@@ -151,7 +151,7 @@ class reverse_perturbation(hoomd.update._updater):
 
 
 class sine(hoomd.mpcd.stream._streaming_method):
-    r""" Parallel plate (slit) streaming geometry.
+    r""" Sine channel streaming geometry.
 
     Args:
         H (float): channel half-width at its widest point
