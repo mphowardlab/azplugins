@@ -138,11 +138,6 @@ class __attribute__((visibility("default"))) SineGeometry
             *
             *  We limit the number of iterations (max_iteration) and the desired presicion (target_presicion) for performance reasons.
             */
-          //  printf("---------------\n");
-            printf("pos before %f %f %f \n",pos.x,pos.y,pos.z);
-            printf("wall z %f %d \n",a,sign);
-            printf("vel before %f %f %f \n",vel.x,vel.y,vel.z);
-
             Scalar max_iteration = 5;
             Scalar counter = 0;
             Scalar target_presicion = 0.00001;
@@ -153,7 +148,6 @@ class __attribute__((visibility("default"))) SineGeometry
 
             Scalar n,n2;
             Scalar s,c;
-            printf("delta %f x0 %f delta>target %d\n",delta,x0,delta>target_presicion);
             while( delta > target_presicion && counter < max_iteration)
                 {
                 fast::sincos(x0*m_pi_period_div_L,s,c);
@@ -184,7 +178,6 @@ class __attribute__((visibility("default"))) SineGeometry
 
             // Remaining integration time dt is amount of time spent traveling distance out of bounds.
             dt = fast::sqrt(((pos.x - x0)*(pos.x - x0) + (pos.y - y0)*(pos.y -y0) + (pos.z - z0)*(pos.z - z0))/(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z));
-            printf("x0 %f y0 %f z0 %f dt %f\n",x0,y0,z0,dt);
 
             //  positions are updated
             pos.x = x0;
@@ -212,7 +205,7 @@ class __attribute__((visibility("default"))) SineGeometry
             else // Slip conditions require only tangential components to be reflected:
                 {
                 Scalar B = sign*A*m_pi_period_div_L*fast::sin(x0*m_pi_period_div_L);
-                printf("B %f \n",B);
+
                 vel_new.x = vel.x - 2*B*(B*vel.x + vel.z)/(B*B+1);
                 vel_new.y = vel.y;
                 vel_new.z = vel.z -   2*(B*vel.x + vel.z)/(B*B+1);
@@ -220,7 +213,6 @@ class __attribute__((visibility("default"))) SineGeometry
                 }
 
             vel = vel_new;
-            printf("pos after %f %f %f \n",pos.x,pos.y,pos.z);
             return true;
             }
 
