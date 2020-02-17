@@ -3,7 +3,7 @@
 
 // Maintainer: astatt
 
-#include "ExternalField.h"
+#include "hoomd/mpcd/ExternalField.h"
 #include "hoomd/GPUPolymorph.cuh"
 
 template mpcd::BlockForce* hoomd::gpu::device_new(Scalar,Scalar,Scalar);
@@ -12,7 +12,6 @@ template mpcd::SineForce* hoomd::gpu::device_new(Scalar,Scalar);
 template void hoomd::gpu::device_delete(mpcd::ExternalField*);
 
 #include "hoomd/mpcd/ConfinedStreamingMethodGPU.cuh"
-#include "hoomd/GPUPolymorph.cuh"
 #include "MPCDSineGeometry.h"
 
 
