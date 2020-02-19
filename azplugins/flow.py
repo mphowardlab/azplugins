@@ -3,10 +3,12 @@
 
 # Maintainer: astatt / mphoward
 
+import numpy as np
 import hoomd
 from hoomd import _hoomd
 
 from . import _azplugins
+
 
 class quiescent(object):
     r""" Quiescent fluid profile
@@ -683,13 +685,13 @@ class measure_velocity_1D():
         f = azplugins.flow.measure_velocity_1D(system=mpcd_system,box=box, binsize=1,vel=1,dir=0,filename='vel',density=True,time_av='both',write_period=100)
         analyze =  hoomd.analyze.callback(f, period=10)
     """
-    def __init__(self,system,filename,binsize,vel,dir,write_period=1,time_av='average',density=False,box=None):
-        self.set_params(system,filename,binsize,vel,dir,write_period,time_av,density,box)
+    def __init__(self,system,filename,binsize,vel,dir,write_period=1,time_av='average',density=False):
+        self.set_params(system,filename,binsize,vel,dir,write_period,time_av,density)
         self.H_velocity = np.zeros(self.num_bins)
         self.H_dens   = np.zeros(self.num_bins)
         self.counter  = 0
 
-    def set_params(self,system, filename,binsize,vel,dir,write_period,time_av,density,box):
+    def set_params(self,system, filename,binsize,vel,dir,write_period,time_av,density):
 
         if filename is not None:
             self.filename = filename
@@ -710,22 +712,13 @@ class measure_velocity_1D():
 
         # make particle data first
         sysdef = hoomd.context.current.system_definition
-        box = sysdef.getParticleData().getBox()
-        print(box)
-        if box==None:
-            try:
-                snap = self.system.take_snapshot()
-                box = snap.box
-            except:
-                hoomd.context.msg.error('flow.measure_velocity_1D: Box size could not be inferred from snapshot and is not given explicitly.\n')
-                raise ValueError('flow.measure_velocity_1D: Box size not set.')
-
+        box = sysdef.getParticleData().getBox().getL()
         if self.dir==0:
-            self.L = box.Lx
+            self.L = box.x
         elif self.dir==1:
-            self.L = box.Ly
+            self.L = box.y
         else:
-            self.L = box.Lz
+            self.L = box.z
 
         self.num_bins = np.round(self.L/self.binsize).astype(int)
         self.range = [-self.L,+self.L]
