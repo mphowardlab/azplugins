@@ -653,3 +653,131 @@ class reverse_perturbation(hoomd.update._updater):
                 raise ValueError('reverse_perturbation.flow: target_momentum negative')
             self.target_momentum = target_momentum
             self.cpp_updater.target_momentum =target_momentum
+
+class measure_velocity_1D():
+    R""" Class for measuing velocity component profiles along a specified spatial
+        dimension.
+    Args:
+        system (:py:mod:`hoomd.system`): hoomd md or mpcd system, created by for
+            example hoomd.md.init.read_snapshot or hoomd.mpcd.init.read_snapshot
+        filename (string): filename prefix for saving of the histogram(s)
+        binsize (float): size of the bins for the histogram(s)
+        vel (int): velocity compontent v_i to bin into a histogram
+            with i=0,1, or 2.
+        dir (int): spatial direction x_j for binning. Creates v_i(x_j) histogram
+            with j=0,1, or 2
+        write_period (int): if specified, the histogram(s) are only written out
+            every write_period. Default=1
+        time_average (string): Specifies if a time averaged, and/or time
+            resolved histograms are written out. Can be 'average','time', or
+            'both'. Default='average'.
+        density (bool): Indicates if the density histogram rho(x_i) is written
+            out. Default density=False.
+        box (:py:mod:`hoomd.data.boxdim`): If the system is a mpcd system, box
+            is used to obtain box sizes.
+
+    Examples::
+        f = azplugins.flow.measure_velocity_1D(system=system, binsize=1,vel=0,dir=2,filename='./out/velocity')
+        analyze =  hoomd.analyze.callback(f, period=1e3)
+
+        f = azplugins.flow.measure_velocity_1D(system=mpcd_system,box=box, binsize=1,vel=1,dir=0,filename='vel',density=True,time_av='both',write_period=100)
+        analyze =  hoomd.analyze.callback(f, period=10)
+    """
+    def __init__(self,system,filename,binsize,vel,dir,write_period=1,time_av='average',density=False,box=None):
+        self.set_params(system,filename,binsize,vel,dir,write_period,time_av,density,box)
+        self.H_velocity = np.zeros(self.num_bins)
+        self.H_dens   = np.zeros(self.num_bins)
+        self.counter  = 0
+
+    def set_params(self,system, filename,binsize,vel,dir,write_period,time_av,density,box):
+
+        if filename is not None:
+            self.filename = filename
+        if system is not None:
+            self.system   = system
+        if binsize is not None:
+            self.binsize  = binsize
+
+        if dir is not None and dir not in [0,1,2]:
+            hoomd.context.msg.error('flow.measure_velocity_1D: direction: ' + str(dir) + ' needs to be 0,1, or 2.\n')
+            raise ValueError('flow.measure_velocity_1D: direction not recognized.')
+        if vel is not None and vel not in [0,1,2]:
+            hoomd.context.msg.error('flow.measure_velocity_1D: velocity component: ' + str(vel) + ' needs to be 0,1, or 2.\n')
+            raise ValueError('flow.measure_velocity_1D: velocity component not recognized.')
+
+        self.vel = vel
+        self.dir = dir
+
+        # make particle data first
+        sysdef = hoomd.context.current.system_definition
+        box = sysdef.getParticleData().getBox()
+        print(box)
+        if box==None:
+            try:
+                snap = self.system.take_snapshot()
+                box = snap.box
+            except:
+                hoomd.context.msg.error('flow.measure_velocity_1D: Box size could not be inferred from snapshot and is not given explicitly.\n')
+                raise ValueError('flow.measure_velocity_1D: Box size not set.')
+
+        if self.dir==0:
+            self.L = box.Lx
+        elif self.dir==1:
+            self.L = box.Ly
+        else:
+            self.L = box.Lz
+
+        self.num_bins = np.round(self.L/self.binsize).astype(int)
+        self.range = [-self.L,+self.L]
+        if write_period is not None:
+            self.write_period = write_period
+
+        if time_av is not None:
+            if time_av=='both':
+                self.time_av=0
+            elif time_av=='time':
+                self.time_av=1
+            elif time_av=='average':
+                self.time_av=2
+            else:
+                hoomd.context.msg.error('flow.measure_velocity_1D: time_av: ' + str(vel) + ' needs to be \'time\', \'average\' or \'both\'.\n')
+                raise ValueError('flow.measure_velocity_1D: time_av not recognized.')
+
+        if density is not None:
+            self.density= density
+
+
+    def __call__(self, timestep):
+        hoomd.util.quiet_status()
+        snap = self.system.take_snapshot()
+        hoomd.util.unquiet_status()
+        positions = snap.particles.position
+        velocities = snap.particles.velocity
+
+        # pick the correct spatial direction
+        positions = positions[:,self.dir]
+        # now bin the velocity along that direction
+        H_dens, edges = np.histogram(positions,bins = self.num_bins,range=self.range)
+        H_velocity, edges   = np.histogram(positions,weights=velocities[:,self.vel], bins = self.num_bins,range=self.range)
+
+        self.H_dens  += H_dens
+        self.H_velocity   += H_velocity
+
+        # if write_period condition is met, write histograms to disk
+        if (self.counter%self.write_period==0 and self.counter>0):
+            step = hoomd.context.current.system.getCurrentTimeStep()
+            print("save",self.counter,step)
+            if self.time_av==0 or self.time_av==2:
+                to_save_Hdens = np.divide(self.H_dens, self.counter, out=np.zeros_like(self.H_dens), where=self.H_dens!=0)
+                to_save_Hvelocity = np.divide(self.H_velocity, self.H_dens, out=np.zeros_like(self.H_velocity), where=self.H_dens!=0)
+                center = (edges[:-1] + edges[1:]) / 2
+                np.savetxt('%s_av_vel.hist'%(self.filename),np.c_[center,to_save_Hvelocity],header='bin center, <v_%d(x_%d)> '%(self.vel,self.dir))
+                if self.density:
+                    np.savetxt('%s_av_dens.hist'%(self.filename),np.c_[center,to_save_Hdens],header='bin center, <rho(x_%d)> '%(self.dir))
+            if self.time_av==0 or self.time_av==1:
+                to_save_Hvelocity = np.divide(H_velocity, H_dens, out=np.zeros_like(self.H_velocity), where=self.H_dens!=0)
+                np.savetxt('%s_%05d_vel.hist'%(self.filename,step),np.c_[center,to_save_Hvelocity],header='bin center, v_%d(x_%d)'%(self.vel,self.dir))
+                if self.density:
+                    np.savetxt('%s_%05d_dens.hist'%(self.filename,step),np.c_[center,H_dens],header='bin center, rho(x_%d)'%(self.dir))
+
+        self.counter += 1
