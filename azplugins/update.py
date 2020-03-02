@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019, Michael P. Howard
+# Copyright (c) 2018-2020, Michael P. Howard
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 # Maintainer: mphoward / Everyone is free to add additional updaters

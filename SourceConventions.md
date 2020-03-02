@@ -55,7 +55,7 @@ All new features or fixes should give credit to the author in `CREDITS.md`.
 
 This makes it easier to update the copyright year over year.
 ```c++
-// Copyright (c) 2018-2019, Michael P. Howard
+// Copyright (c) 2018-2020, Michael P. Howard
 // This file is part of the azplugins project, released under the Modified BSD License.
 
 // Maintainer: your-bitbucket-username
