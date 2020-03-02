@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2018-2019, Michael P. Howard
+# Copyright (c) 2018-2020, Michael P. Howard
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 # Maintainer: mphoward
@@ -58,7 +58,7 @@ do
     skip_file=$(contains "$skip" "$filename")
     if [ "$skip_file" -eq "0" ]
     then
-        N=$(grep -c "Copyright (c) 2018-2019, Michael P. Howard" $f)
+        N=$(grep -c "Copyright (c) 2018-2020, Michael P. Howard" $f)
         if [ "$N" -ne "1" ]
         then
             echo "Copyright notice incorrect in $f"
