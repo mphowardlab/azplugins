@@ -1,4 +1,4 @@
-Copyright (c) 2018-2019, Michael P. Howard
+Copyright (c) 2018-2020, Michael P. Howard
 
 All rights reserved.
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019, Michael P. Howard
+# Copyright (c) 2018-2020, Michael P. Howard
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 set(TEST_LIST_CPU
@@ -22,9 +22,11 @@ set(TEST_LIST_CPU
     test_pair_slj
     test_pair_spline
     test_pair_two_patch_morse
+    test_restrain_cylinder
     test_restrain_orientation
     test_restrain_plane
     test_restrain_position
+    test_restrain_sphere
     test_flow_reverse_perturbation
     test_special_pair_lj96
     test_update_type
@@ -52,9 +54,11 @@ set(TEST_LIST_GPU
     test_pair_slj
     test_pair_spline
     test_pair_two_patch_morse
+    test_restrain_cylinder
     test_restrain_orientation
     test_restrain_plane
     test_restrain_position
+    test_restrain_sphere
     test_flow_reverse_perturbation
     test_special_pair_lj96
     test_update_type
