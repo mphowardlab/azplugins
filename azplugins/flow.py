@@ -665,7 +665,7 @@ class FlowProfiler:
         bin_axis (int): direction for binning (0=*x*, 1=*y*, 2=*z*).
         flow_axis (int): flow component to measure (0=*x*, 1=*y*, 2=*z*).
         bins (int): Number of bins to use along `bin_axis`.
-        range (tuple): Lower and upper spatial bounds to use along `bin_axis`.
+        range (tuple): Lower and upper spatial bounds to use along `bin_axis` like `(lo,hi)`.
         area (float): Cross-sectional area of bins to normalize density (default: 1.0).
 
     Examples::
@@ -678,21 +678,19 @@ class FlowProfiler:
     """
     def __init__(self, system, bin_axis, flow_axis, bins, range, area=1.):
         self.system = system
-        self.range = range
-        self.bins = bins
         self.bin_axis = bin_axis
         self.flow_axis = flow_axis
 
-        # edges span the range
+        # setup bins with edges that span the range
         edges = np.linspace(range[0], range[1], bins+1)
         self.centers = 0.5*(edges[:-1]+edges[1:])
         self._dx = edges[1:]-edges[:-1]
         self.area = area
+        self.range = range
+        self.bins = bins
 
         # profiles are initially empty
-        self._velocity = np.zeros(self.bins)
-        self._counts = np.zeros(self.bins)
-        self.samples = 0
+        self.reset()
 
         if self.bin_axis not in (0,1,2) or self.flow_axis not in (0,1,2):
             hoomd.context.msg.error('flow.FlowProfiler: axis needs to be 0, 1, or 2.\n')
@@ -715,19 +713,25 @@ class FlowProfiler:
         x = snap.particles.position[:,self.bin_axis]
         v = snap.particles.velocity[:,self.flow_axis]
 
-        _counts,_ = np.histogram(x, bins=self.num_bins, range=self.range)
+        _counts,_ = np.histogram(x, bins=self.bins, range=self.range)
         self._counts += _counts
 
-        _velocity,_ = np.histogram(x, bins=self.num_bins, range=self.range, weights=v)
+        _velocity,_ = np.histogram(x, bins=self.bins, range=self.range, weights=v)
         self._velocity += _velocity
 
         self.samples += 1
+
+    def reset(self):
+        r"""Reset the internal averaging counters."""
+        self.samples = 0
+        self._counts = np.zeros(self.bins)
+        self._velocity = np.zeros(self.bins)
 
     @property
     def density(self):
         r"""The current average density profile."""
         if self.samples > 0:
-            return np.divide(self._counts, self._dx*self.area)/self.samples
+            return self._counts/(self._dx*self.area*self.samples)
         else:
             return np.zeros(self.bins)
 
@@ -735,6 +739,6 @@ class FlowProfiler:
     def velocity(self):
         r"""The current average velocity profile."""
         if self.samples > 0:
-            return np.divide(self._velocity, self._counts, where=self._counts > 0)/self.samples
+            return np.divide(self._velocity, self._counts, out=np.zeros(self.bins), where=self._counts > 0)/self.samples
         else:
             return np.zeros(self.bins)
