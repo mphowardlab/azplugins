@@ -1,3 +1,8 @@
+# Copyright (c) 2019-2020, Antonia Statt
+# This file is part of the azplugins project, released under the Modified BSD License.
+
+# Maintainer: astatt / Everyone is free to add additional tutorials
+
 import numpy as np
 import sys
 sys.path.insert(0,'/Users/statt/programs/azplugins-0.7.0')

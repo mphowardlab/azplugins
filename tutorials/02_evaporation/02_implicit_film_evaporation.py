@@ -1,3 +1,8 @@
+# Copyright (c) 2019-2020, Antonia Statt
+# This file is part of the azplugins project, released under the Modified BSD License.
+
+# Maintainer: astatt / Everyone is free to add additional tutorials
+
 import numpy as np
 import sys
 sys.path.insert(0,'/Users/statt/programs/hoomd-2.6.0')
@@ -6,57 +11,6 @@ from hoomd import md
 from hoomd import data
 from hoomd import azplugins
 from scipy.spatial.distance import cdist
-
-
-class measure_evaporation:
-    def __init__(self, system, binsize):
-        self.system   = system
-        self.binsize  = binsize
-        self.num_bins = np.round(self.system.box.Lz/self.binsize).astype(int)
-        self.types    = np.asarray(self.system.particles.types)
-        self.H_dens   = np.zeros((len(self.types),self.num_bins))
-        self.counter  = 0
-        self.range    = [-self.system.box.Lz/2.,self.system.box.Lz/2.]
-        self.bin_vol  = float(self.system.box.Lz)/float(self.num_bins)*self.system.box.Lx*self.system.box.Ly
-        self.outfile = open('tutorial_evaporation_explicit.txt', 'w+')
-        self.outfile.write("# timestep N_sol\n")
-
-    def __call__(self, timestep):
-        hoomd.util.quiet_status()
-        snap = self.system.take_snapshot()
-        hoomd.util.unquiet_status()
-        pos = snap.particles.position
-        # pick z coordinates
-        pos_z = pos[:,2]
-        for t in self.types:
-            i = np.argwhere(self.types==t)[0][0]
-            H_dens, edges = np.histogram(pos_z[np.where(snap.particles.typeid==i)],bins = self.num_bins,range=self.range)
-            self.H_dens[i]  = H_dens
-        centers  =  (edges[:-1] + edges[1:])/2
-        temp = np.zeros(len(centers))
-        # temperature histogram
-        for i,c in enumerate(centers):
-            slab_vel = snap.particles.velocity[np.abs(pos[:,2]-c)<self.binsize]
-            l = len(slab_vel)
-            if l>0:
-                v_squared = slab_vel[:,0]**2 + slab_vel[:,1]**2 + slab_vel[:,2]**2
-                T = 1/(3*l)*np.sum(v_squared)
-            else:
-                T=0
-            temp[i]=T
-
-                # normalize density
-        to_save_H = self.H_dens/self.bin_vol
-
-        res = np.vstack((np.asarray(centers),to_save_H,temp)).T
-        np.savetxt('tutorial_evaporation_implicit_dens_%05d.hist'%hoomd.get_step(),res, header="z, density %s temp"%self.types)
-
-        # count solvent particles S+T
-        N_sol = len(pos[np.where(np.logical_or(snap.particles.typeid==1,snap.particles.typeid==2))])
-        self.outfile.write("%d %f \n"%(hoomd.get_step(),N_sol))
-        self.outfile.flush()
-
-        self.counter += 1
 
 def init_mixture(system,snapshot,rho_B,rho_A,height,s_B,s_A,kT):
     Lx = system.box.Lx
@@ -97,7 +51,7 @@ def init_mixture(system,snapshot,rho_B,rho_A,height,s_B,s_A,kT):
     return snapshot
 
 L = 25
-Lz = 52
+Lz = 55.0
 height = 50
 kT = 1.0
 
@@ -109,7 +63,7 @@ s_B  = 1.0
 hoomd.context.initialize()
 hoomd.context.SimulationContext()
 
-snapshot = hoomd.data.make_snapshot(N=0,box=data.boxdim(Lx=L,Ly=L,Lz=Lz),particle_types=['A','B'])
+snapshot = hoomd.data.make_snapshot(N=0,box=data.boxdim(Lx=L,Ly=L,Lz=Lz+1e-3),particle_types=['A','B'])
 system = hoomd.init.read_snapshot(snapshot)
 
 snapshot_init = init_mixture(system,snapshot,rho_B,rho_A,height,s_B,s_A,kT)
@@ -134,28 +88,70 @@ lj_wall_up.force_coeff.set(['A','B'], epsilon=2.5, sigma=s_AB, r_cut=(2/5.)**(1/
 
 all = hoomd.group.all()
 
-hoomd.md.integrate.mode_standard(dt = 0.005)
-langevin = hoomd.md.integrate.langevin(group=all, kT=kT, seed=457)
-
-hoomd.run(1e4)
-interf = hoomd.variant.linear_interp([[0,+Lz/2],[5e5,-Lz/2+5]],zero=0)
-evap = azplugins.evaporate.implicit(interface=interf)
-evap.force_coeff.set('B', k=50.0, offset=0.0, g=50.0*0.5, cutoff=0.5)
-# A bigger, everything needs to be scaled:
-evap.force_coeff.set('A', k=50.0*(s_A)**2, offset=0.0, g=50.0*(s_A)**3/2., cutoff=1.0)
-# diffusion coefficient is D = kT/gamma
-# scaling friction coefficient like diameters gamma_A/gamma_B = s_A/s_B
-langevin.set_gamma('A', gamma=2.5*s_A/s_B)
-langevin.set_gamma('B', gamma=2.5)
-
 hoomd.dump.gsd(filename="tutorial_01_implicit_evaporation_trajectory.gsd",
                overwrite=True, period=5e3, group=all)
 
-hoomd.analyze.log('out.log',period=1,quantities=['pair_lj_energy_n'],overwrite=True)
+class measure_evaporation:
+    def __init__(self, system, binsize):
+        self.system   = system
+        self.binsize  = binsize
+        self.num_bins = np.round(self.system.box.Lz/self.binsize).astype(int)
+        self.types    = np.asarray(self.system.particles.types)
+        self.H_dens   = np.zeros((len(self.types),self.num_bins))
+        self.counter  = 0
+        self.range    = [-self.system.box.Lz/2.,self.system.box.Lz/2.]
+        self.bin_vol  = float(self.system.box.Lz)/float(self.num_bins)*self.system.box.Lx*self.system.box.Ly
+
+    def __call__(self, timestep):
+        hoomd.util.quiet_status()
+        snap = self.system.take_snapshot()
+        hoomd.util.unquiet_status()
+        pos = snap.particles.position
+        # pick z coordinates
+        pos_z = pos[:,2]
+        for t in self.types:
+            i = np.argwhere(self.types==t)[0][0]
+            H_dens, edges = np.histogram(pos_z[np.where(snap.particles.typeid==i)],bins = self.num_bins,range=self.range)
+            self.H_dens[i]  = H_dens
+        centers  =  (edges[:-1] + edges[1:])/2
+        temp = np.zeros(len(centers))
+        # temperature histogram
+        for i,c in enumerate(centers):
+            slab_vel = snap.particles.velocity[np.abs(pos[:,2]-c)<self.binsize]
+            l = len(slab_vel)
+            if l>0:
+                v_squared = slab_vel[:,0]**2 + slab_vel[:,1]**2 + slab_vel[:,2]**2
+                T = 1/(3*l)*np.sum(v_squared)
+            else:
+                T=0
+            temp[i]=T
+
+        # normalize density
+        to_save_H = self.H_dens/self.bin_vol
+
+        res = np.vstack((np.asarray(centers),to_save_H,temp)).T
+        np.savetxt('tutorial_evaporation_implicit_dens_%05d.hist'%hoomd.get_step(),res, header="z, density %s temp"%self.types)
+
+        # count solvent particles S+T
+        N_sol = len(pos[np.where(np.logical_or(snap.particles.typeid==1,snap.particles.typeid==2))])
+        self.outfile.write("%d %f \n"%(hoomd.get_step(),N_sol))
+        self.outfile.flush()
+
+        self.counter += 1
+
 o = measure_evaporation(system, binsize=1.0)
 analyze =  hoomd.analyze.callback(o, period=5e3)
 
-# peclet initial height *speed/diffusion
-# p small 75*75/(5e5*0.05)/(1/2.5) = 0;09
-# p small 75*75/(5e5*0.05)/(1/2.5*s_A/sB) = 0.09
-hoomd.run(5e5)
+hoomd.md.integrate.mode_standard(dt = 0.005)
+langevin = hoomd.md.integrate.langevin(group=all, kT=kT, seed=457)
+
+interf = hoomd.variant.linear_interp([[0,Lz/2.],[1e4,Lz/2.],[6e5,-Lz/2.+5]],zero=0)
+evap = azplugins.evaporate.implicit(interface=interf)
+k = 50.0
+evap.force_coeff.set('B', k=k*(s_B/2.)**2, offset=0.0, g=k*(s_B/2.)**3, cutoff=s_B/2.)
+evap.force_coeff.set('A', k=k*(s_A/2.)**2, offset=0.0, g=k*(s_A/2.)**3, cutoff=s_A/2.)
+
+langevin.set_gamma('A', gamma=2.5*s_A/s_B)
+langevin.set_gamma('B', gamma=2.5)
+
+hoomd.run(6e5)

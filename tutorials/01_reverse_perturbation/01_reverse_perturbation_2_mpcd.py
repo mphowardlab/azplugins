@@ -1,3 +1,8 @@
+# Copyright (c) 2019-2020, Antonia Statt
+# This file is part of the azplugins project, released under the Modified BSD License.
+
+# Maintainer: astatt / Everyone is free to add additional tutorials
+
 import numpy as np
 import sys
 #sys.path.insert(0,'/Users/statt/programs/azplugins-0.9.1')
@@ -52,7 +57,7 @@ class measure_fluid_properties:
 
         self.H_dens  += H_dens
         self.H_vx    += H_vx
-        
+
         if self.counter==100:
             to_save_Hvx = np.divide(self.H_vx, self.H_dens, out=np.zeros_like(self.H_vx), where=self.H_dens!=0)
             centers  =  (edges[:-1] + edges[1:])/2
