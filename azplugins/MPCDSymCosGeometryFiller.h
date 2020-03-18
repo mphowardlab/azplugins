@@ -23,7 +23,7 @@
 namespace azplugins
 {
 
-//! Adds virtual particles to the MPCD particle data for SineGeometry
+//! Adds virtual particles to the MPCD particle data for SymCosGeometry
 /*!
  * Particles are added to the volume that is overlapped by any of the cells that are also "inside" the channel,
  * subject to the grid shift.

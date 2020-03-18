@@ -28,7 +28,7 @@ namespace azplugins
 namespace detail
 {
 
-//! Export SineGeometry to python
+//! Export SymCosGeometry to python
 void export_SymCosGeometry(pybind11::module& m);
 
 } // end namespace detail

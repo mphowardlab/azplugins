@@ -26,7 +26,7 @@ namespace kernel
  * \param d_pos Particle positions
  * \param d_vel Particle velocities
  * \param d_tag Particle tags
- * \param geom Sine geometry to fill
+ * \param geom geometry to fill
  * \param m_pi_period_div_L
  * \param m_amplitude
  * \param box Local simulation box
@@ -78,7 +78,7 @@ __global__ void sym_cos_draw_particles(Scalar4 *d_pos,
     d_tag[pidx] = tag;
 
     // initialize random number generator for positions and velocity
-    hoomd::RandomGenerator rng(RNGIdentifier::SineGeometryFiller, seed, tag, timestep);
+    hoomd::RandomGenerator rng(RNGIdentifier::SymCosGeometryFiller, seed, tag, timestep);
     signed char sign = (idx >= N_half) - (idx < N_half); // bottom -1 or top +1
 
     Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);

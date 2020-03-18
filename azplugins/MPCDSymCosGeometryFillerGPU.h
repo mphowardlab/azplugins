@@ -24,7 +24,7 @@
 namespace azplugins
 {
 
-//! Adds virtual particles to the MPCD particle data for SineGeometry using the GPU
+//! Adds virtual particles to the MPCD particle data for SymCosGeometry using the GPU
 class PYBIND11_EXPORT SymCosGeometryFillerGPU : public SymCosGeometryFiller
     {
     public:

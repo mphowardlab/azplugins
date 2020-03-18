@@ -161,8 +161,8 @@ class slit(_bounce_back):
         self.cpp_method.geometry = _mpcd.SlitGeometry(self.H,self.V,bc)
 
 
-class sine(_bounce_back):
-    """ NVE integration with bounce-back rules in a sine channel.
+class sym_cos(_bounce_back):
+    """ NVE integration with bounce-back rules in a symetric cosine channel.
 
     Args:
         group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
@@ -172,7 +172,7 @@ class sine(_bounce_back):
         V (float): wall speed (default: 0)
         boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
-    This integration method applies to particles in *group* in the sine channel geometry.
+    This integration method applies to particles in *group* in the symmetric cosine channel geometry.
 
     The boundary condition at the wall can be specified with *boundary* to either `'slip'` or `'no_slip'`. A no-slip
     condition is more common for solid boundaries. If the no-slip condition is combined with a body-force on the
@@ -193,7 +193,7 @@ class sine(_bounce_back):
         achieved for simple pair potentials by padding the box size by the largest cutoff radius. Failure to do so
         may result in unphysical interactions.
 
-    :py:class:`sine` is an integration method. It must be used with :py:class:`hoomd.md.mode_standard`.
+    :py:class:`sym_cos` is an integration method. It must be used with :py:class:`hoomd.md.mode_standard`.
 
     Warning:
         Bounce-back methods do not support anisotropic integration. If an anisotropic pair potential is specified,
@@ -205,7 +205,7 @@ class sine(_bounce_back):
     Examples::
 
         all = group.all()
-        integrate.sine(group=all, H=5.0, h=2.0, p=1, V=0.0)
+        integrate.sym_cos(group=all, H=5.0, h=2.0, p=1, V=0.0)
 
     """
     def __init__(self, group, H, h, p, V=0.0, boundary="no_slip"):
@@ -217,9 +217,9 @@ class sine(_bounce_back):
 
         # initialize the c++ class
         if not hoomd.context.exec_conf.isCUDAEnabled():
-            cpp_class = _azplugins.BounceBackNVESine
+            cpp_class = _azplugins.BounceBackNVESymCos
         else:
-            cpp_class = _azplugins.BounceBackNVESineGPU
+            cpp_class = _azplugins.BounceBackNVESymCosGPU
 
         self.H = H
         self.h = h
@@ -232,7 +232,7 @@ class sine(_bounce_back):
         Lx = system.sysdef.getParticleData().getGlobalBox().getL().x
         self.L = Lx
 
-        geom = _azplugins.SineGeometry(self.L, H, h, p, V, bc)
+        geom = _azplugins.SymCosGeometry(self.L, H, h, p, V, bc)
 
         self.cpp_method = cpp_class(hoomd.context.current.system_definition, group.cpp_group, geom)
         self.cpp_method.validateGroup()
@@ -249,10 +249,10 @@ class sine(_bounce_back):
 
         Examples::
 
-            sine.set_params(H=8., h=2.0)
-            sine.set_params(V=2.0)
-            sine.set_params(boundary='slip')
-            sine.set_params(H=5, V=0., boundary='no_slip')
+            sym_cos.set_params(H=8., h=2.0)
+            sym_cos.set_params(V=2.0)
+            sym_cos.set_params(boundary='slip')
+            sym_cos.set_params(H=5, V=0., boundary='no_slip')
 
         """
         hoomd.util.print_status_line()
@@ -273,4 +273,4 @@ class sine(_bounce_back):
             self.boundary = boundary
 
         bc = self._process_boundary(self.boundary)
-        self.cpp_method.geometry = _azplugins.SineGeometry(self.L,self.H,self.h,self.p,self.V,bc)
+        self.cpp_method.geometry = _azplugins.SymCosGeometry(self.L,self.H,self.h,self.p,self.V,bc)

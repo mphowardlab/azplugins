@@ -285,8 +285,8 @@ class sym_cos(hoomd.mpcd.stream._streaming_method):
 
         Examples::
 
-            sym_sine.set_params(H=15.0)
-            sym_sine.set_params(V=0.2, boundary="no_slip")
+            sym_cos.set_params(H=15.0)
+            sym_cos.set_params(V=0.2, boundary="no_slip")
 
         """
         hoomd.util.print_status_line()

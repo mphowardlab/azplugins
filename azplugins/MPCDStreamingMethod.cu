@@ -8,13 +8,13 @@
 
 template mpcd::BlockForce* hoomd::gpu::device_new(Scalar,Scalar,Scalar);
 template mpcd::ConstantForce* hoomd::gpu::device_new(Scalar3);
-template mpcd::SineForce* hoomd::gpu::device_new(Scalar,Scalar);
+template mpcd::SymCosForce* hoomd::gpu::device_new(Scalar,Scalar);
 template void hoomd::gpu::device_delete(mpcd::ExternalField*);
 
 #include "hoomd/mpcd/ConfinedStreamingMethodGPU.cuh"
-#include "MPCDSineGeometry.h"
+#include "MPCDSymCosGeometry.h"
 
 
-//! Template instantiation of sine geometry streaming
-template cudaError_t mpcd::gpu::confined_stream<azplugins::detail::SineGeometry>
-    (const mpcd::gpu::stream_args_t& args, const azplugins::detail::SineGeometry& geom);
+//! Template instantiation of symmetric cosine geometry streaming
+template cudaError_t mpcd::gpu::confined_stream<azplugins::detail::SymCosGeometry>
+    (const mpcd::gpu::stream_args_t& args, const azplugins::detail::SymCosGeometry& geom);

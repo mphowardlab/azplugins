@@ -38,7 +38,7 @@ void SymCosGeometryFiller::computeNumFill()
     const Scalar max_shift = m_cl->getMaxGridShift();
     if (!m_geom->validateBox(global_box, cell_size))
         {
-        m_exec_conf->msg->error() << "Invalid sine geometry for global box, cannot fill virtual particles." << std::endl;
+        m_exec_conf->msg->error() << "Invalid cosine geometry for global box, cannot fill virtual particles." << std::endl;
         m_exec_conf->msg->error() << "Filler thickness is given by cell_size +  0.5*(H-h)*sin((cell_size+max_shift)*2*pi*p/L); " << std::endl;
         throw std::runtime_error("Invalid SymCos geometry for global box");
         }
@@ -89,7 +89,7 @@ void SymCosGeometryFiller::drawParticles(unsigned int timestep)
     for (unsigned int i=0; i < m_N_fill; ++i)
         {
         const unsigned int tag = m_first_tag + i;
-        hoomd::RandomGenerator rng(RNGIdentifier::SineGeometryFiller, m_seed, tag, timestep);
+        hoomd::RandomGenerator rng(RNGIdentifier::SymCosGeometryFiller, m_seed, tag, timestep);
         signed char sign = (i >= N_half) - (i < N_half); // bottom -1 or top +1
 
         Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);

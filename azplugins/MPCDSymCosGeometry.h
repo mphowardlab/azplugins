@@ -33,14 +33,14 @@ namespace detail
 
 //! Symmetric Cosine channel geometry
 /*!
- * This class defines a channel with sine walls given by the equations +/-(A cos(x*2*pi*p/Lx) + A + H_narrow).
- * A = 0.5*(H_wide-H_narrow) is the amplitude and p is the period of the wall sine.
+ * This class defines a channel with symmetric cosine walls given by the equations +/-(A cos(x*2*pi*p/Lx) + A + H_narrow).
+ * A = 0.5*(H_wide-H_narrow) is the amplitude and p is the period of the wall cosine.
  * H_wide is the half height of the channel at its widest point, H_narrow is the half height of the channel at its
- * narrowest point. The sine wall wavelength/frenquency needs to be consumable with the periodic boundary conditions in x,
+ * narrowest point. The cosine wall wavelength/frenquency needs to be consumable with the periodic boundary conditions in x,
  * therefore the period p is specified and the wavelength 2*pi*p/Lx is calculated.
  *
- * Below is an example how a sine channel looks like in a 30x30x30 box with H_wide=10, H_narrow=1, and p=1.
- * The wall sine period p determines how many repetitions of the geometry are in the simulation cell and
+ * Below is an example how a cosine channel looks like in a 30x30x30 box with H_wide=10, H_narrow=1, and p=1.
+ * The wall cosine period p determines how many repetitions of the geometry are in the simulation cell and
  * there will be p wide sections, centered at the origin of the simulation box.
  *
  *
@@ -86,7 +86,7 @@ class __attribute__((visibility("default"))) SymCosGeometry
          * \param L Channel length (Simulation box length in x)
            \param H_wide Channel half-width at widest point
            \param H_narrow Channel half-width at narrowest point
-           \param Period Channel sine period (integer >0)
+           \param Period Channel cosine period (integer >0)
          * \param V Velocity of the wall
          * \param bc Boundary condition at the wall (slip or no-slip)
          */
@@ -233,8 +233,8 @@ class __attribute__((visibility("default"))) SymCosGeometry
          * \param box Global simulation box
          * \param cell_size Size of MPCD cell
          *
-         * The box is large enough for the sine if it is padded along the z direction so that
-         * the cells just outside the highest point of the sine + the filler thinckness
+         * The box is large enough for the cosine if it is padded along the z direction so that
+         * the cells just outside the highest point of the cosine + the filler thinckness
          * would not interact with each other through the boundary.
          *
          */
@@ -267,9 +267,9 @@ class __attribute__((visibility("default"))) SymCosGeometry
             return m_H_narrow;
             }
 
-        //! Get channel sine wall repetitions
+        //! Get channel cosine wall repetitions
         /*!
-         * \returns Channel sine wall repetitions
+         * \returns Channel cosine wall repetitions
          */
         HOSTDEVICE Scalar getRepetitions() const
             {
@@ -303,7 +303,7 @@ class __attribute__((visibility("default"))) SymCosGeometry
         #endif // NVCC
 
     private:
-        const Scalar m_pi_period_div_L;     //!< Argument of the wall sine (pi*period/Lx = 2*pi*repetitions/Lx)
+        const Scalar m_pi_period_div_L;     //!< Argument of the wall cosine (pi*period/Lx = 2*pi*repetitions/Lx)
         const Scalar m_H_wide;              //!< Half of the channel widest width
         const Scalar m_H_narrow;            //!< Half of the channel narrowest width
         const unsigned int m_Repetitions;         //!< Number of repetitions of the wide sections in the channel =  period
