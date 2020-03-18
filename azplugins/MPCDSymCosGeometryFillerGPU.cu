@@ -152,7 +152,7 @@ cudaError_t sym_cos_draw_particles(Scalar4 *d_pos,
     if (max_block_size == UINT_MAX)
         {
         cudaFuncAttributes attr;
-        cudaFuncGetAttributes(&attr, (const void*)kernel::sine_draw_particles);
+        cudaFuncGetAttributes(&attr, (const void*)kernel::sym_cos_draw_particles);
         max_block_size = attr.maxThreadsPerBlock;
         }
 
