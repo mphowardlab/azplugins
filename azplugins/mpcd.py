@@ -150,33 +150,38 @@ class reverse_perturbation(hoomd.update._updater):
             self.cpp_updater.target_momentum = target_momentum
 
 
-class sine(hoomd.mpcd.stream._streaming_method):
-    r""" Sine channel streaming geometry.
+class sym_cos(hoomd.mpcd.stream._streaming_method):
+    r""" Symmetric Cosine channel streaming geometry.
 
     Args:
         H (float): channel half-width at its widest point
         h (float): channel half-width at its narrowest point
         p (int):   channel periodicity
         V (float): wall speed (default: 0)
-        boundary (str): boundary condition at wall ("slip" or "no_slip"")
+        boundary (str): boundary condition at wall ("slip" or "no_slip"", defaul "no_slip")
         period (int): Number of integration steps between collisions
 
-    The slit geometry represents a fluid confined between two infinite parallel
-    plates. The slit is centered around the origin, and the walls are placed
-    at :math:`z=-H` and :math:`z=+H`, so the total channel width is *2H*.
+    The symmetric cosine geometry represents a fluid confined between two walls
+    described by a sinusoidal profile with equations
+     :math: `+/-(A cos(2*pi*p*x/Lx) + A + h)`,
+    where A = 0.5*(H-h) is the amplitude, :math:`Lx` is the BoxDim in *x*
+    direction, and :math: `p` is the
+    period of the wall cosine. The channel is axis-symmetric around the origin in
+    *z* direction. The two symmetric cosine walls create a periodic series of
+    :math: `p` constrictions and expansions.
     The walls may be put into motion, moving with speeds :math:`-V` and
     :math:`+V` in the *x* direction, respectively. If combined with a
     no-slip boundary condition, this motion can be used to generate simple
     shear flow.
 
-    The "inside" of the :py:class:`slit` is the space where :math:`|z| < H`.
+    The "inside" of the :py:class:`sim_cos` is the space where
+    :math:`|z| < (A cos(2pi*p*x/Lx) + A + h)`.
 
     Examples::
 
-        stream.slit(period=10, H=30.)
-        stream.slit(period=1, H=25., V=0.1)
+        stream.sim_cos(H=30.,h=1.5, p=1)
+        stream.sim_cos(H=25.,h=2,p=2,boundary="no_slip",V=0.1, period=10)
 
-    .. versionadded:: 2.6
 
     """
     def __init__(self, H,h,p, V=0.0, boundary="no_slip", period=1):
@@ -197,17 +202,17 @@ class sine(hoomd.mpcd.stream._streaming_method):
         self.L = Lx
         # create the base streaming class
         if not hoomd.context.exec_conf.isCUDAEnabled():
-            stream_class = _azplugins.ConfinedStreamingMethodSine
+            stream_class = _azplugins.ConfinedStreamingMethodSymCos
         else:
-            stream_class = _azplugins.ConfinedStreamingMethodGPUSine
+            stream_class = _azplugins.ConfinedStreamingMethodGPUSymCos
         self._cpp = stream_class(hoomd.context.current.mpcd.data,
                                  hoomd.context.current.system.getCurrentTimeStep(),
                                  self.period,
                                  0,
-                                 _azplugins.SineGeometry(Lx,H,h,p,V,bc))
+                                 _azplugins.SymCosGeometry(Lx,H,h,p,V,bc))
 
     def set_filler(self, density, kT, seed, type='A'):
-        r""" Add virtual particles to slit channel.
+        r""" Add virtual particles to symmetric cosine channel.
 
         Args:
             density (float): Density of virtual particles.
@@ -217,7 +222,7 @@ class sine(hoomd.mpcd.stream._streaming_method):
 
         The virtual particle filler draws particles within the volume *outside* the
         slit walls that could be overlapped by any cell that is partially *inside*
-        the slit channel (between the parallel plates). The particles are drawn from
+        the slit channel. The particles are drawn from
         the velocity distribution consistent with *kT* and with the given *density*.
         The mean of the distribution is zero in *y* and *z*, but is equal to the wall
         speed in *x*. Typically, the virtual particle density and temperature are set
@@ -228,9 +233,7 @@ class sine(hoomd.mpcd.stream._streaming_method):
 
         Example::
 
-            slit.set_filler(density=5.0, kT=1.0, seed=42)
-
-        .. versionadded:: 2.6
+            sym_cos.set_filler(density=5.0, kT=1.0, seed=42)
 
         """
         hoomd.util.print_status_line()
@@ -240,9 +243,9 @@ class sine(hoomd.mpcd.stream._streaming_method):
 
         if self._filler is None:
             if not hoomd.context.exec_conf.isCUDAEnabled():
-                fill_class = _azplugins.SineGeometryFiller
+                fill_class = _azplugins.SymCosGeometryFiller
             else:
-                fill_class = _azplugins.SineGeometryFillerGPU
+                fill_class = _azplugins.SymCosGeometryFillerGPU
             self._filler = fill_class(hoomd.context.current.mpcd.data,
                                       density,
                                       type_id,
@@ -260,9 +263,7 @@ class sine(hoomd.mpcd.stream._streaming_method):
 
         Example::
 
-            slit.remove_filler()
-
-        .. versionadded:: 2.6
+            sym_cos.remove_filler()
 
         """
         hoomd.util.print_status_line()
@@ -270,22 +271,22 @@ class sine(hoomd.mpcd.stream._streaming_method):
         self._filler = None
 
     def set_params(self, H=None, h=None, p=None, V=None, boundary=None):
-        """ Set parameters for the slit geometry.
+        """ Set parameters for the symmetric cosine geometry.
 
         Args:
-            H (float): channel half-width
+            H (float): channel half-width at its widest point
+            h (float): channel half-width at its narrowest point
+            p (int):   channel periodicity
             V (float): wall speed (default: 0)
-            boundary (str): boundary condition at wall ("slip" or "no_slip"")
+            boundary (str): boundary condition at wall ("slip" or "no_slip"", defaul "no_slip")
 
         Changing any of these parameters will require the geometry to be
         constructed and validated, so do not change these too often.
 
         Examples::
 
-            slit.set_params(H=15.0)
-            slit.set_params(V=0.2, boundary="no_slip")
-
-        .. versionadded:: 2.6
+            sym_sine.set_params(H=15.0)
+            sym_sine.set_params(V=0.2, boundary="no_slip")
 
         """
         hoomd.util.print_status_line()
@@ -306,6 +307,6 @@ class sine(hoomd.mpcd.stream._streaming_method):
             self.boundary = boundary
 
         bc = self._process_boundary(self.boundary)
-        self._cpp.geometry = _azplugins.SineGeometry(self.L,self.H,self.h,self.p,self.V,bc)
+        self._cpp.geometry = _azplugins.SymCosGeometry(self.L,self.H,self.h,self.p,self.V,bc)
         if self._filler is not None:
             self._filler.setGeometry(self._cpp.geometry)

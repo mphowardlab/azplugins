@@ -5,12 +5,12 @@
 
 
 /*!
- * \file MPCDSineGeometry.h
- * \brief Definition of the MPCD sine channel geometry
+ * \file MPCDSymCosGeometry.h
+ * \brief Definition of the MPCD symmetric cosine channel geometry
  */
 
-#ifndef AZPLUGINS_MPCD_SINE_GEOMETRY_H_
-#define AZPLUGINS_MPCD_SINE_GEOMETRY_H_
+#ifndef AZPLUGINS_MPCD_SYM_COS_GEOMETRY_H_
+#define AZPLUGINS_MPCD_SYM_COS_GEOMETRY_H_
 
 #include "hoomd/mpcd/BoundaryCondition.h"
 #include "hoomd/HOOMDMath.h"
@@ -31,7 +31,7 @@ namespace azplugins
 namespace detail
 {
 
-//! Sine channel geometry
+//! Symmetric Cosine channel geometry
 /*!
  * This class defines a channel with sine walls given by the equations +/-(A cos(x*2*pi*p/Lx) + A + H_narrow).
  * A = 0.5*(H_wide-H_narrow) is the amplitude and p is the period of the wall sine.
@@ -78,7 +78,7 @@ namespace detail
  *
  * The wall boundary conditions can optionally be changed to slip conditions.
  */
-class __attribute__((visibility("default"))) SineGeometry
+class __attribute__((visibility("default"))) SymCosGeometry
     {
     public:
         //! Constructor
@@ -90,7 +90,7 @@ class __attribute__((visibility("default"))) SineGeometry
          * \param V Velocity of the wall
          * \param bc Boundary condition at the wall (slip or no-slip)
          */
-        HOSTDEVICE SineGeometry(Scalar L, Scalar H_wide,Scalar H_narrow, unsigned int Repetitions, Scalar V, mpcd::detail::boundary bc)
+        HOSTDEVICE SymCosGeometry(Scalar L, Scalar H_wide,Scalar H_narrow, unsigned int Repetitions, Scalar V, mpcd::detail::boundary bc)
             : m_pi_period_div_L(2*M_PI*Repetitions/L), m_H_wide(H_wide), m_H_narrow(H_narrow), m_Repetitions(Repetitions), m_V(V), m_bc(bc)
             {
             }
@@ -298,7 +298,7 @@ class __attribute__((visibility("default"))) SineGeometry
         //! Get the unique name of this geometry
         static std::string getName()
             {
-            return std::string("Sine");
+            return std::string("SymCos");
             }
         #endif // NVCC
 
@@ -315,4 +315,4 @@ class __attribute__((visibility("default"))) SineGeometry
 } // end namespace azplugins
 #undef HOSTDEVICE
 
-#endif // AZPLUGINS_MPCD_SINE_GEOMETRY_H_
+#endif // AZPLUGINS_MPCD_SYM_COS_GEOMETRY_H_

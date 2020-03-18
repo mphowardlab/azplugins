@@ -33,12 +33,12 @@ namespace py = pybind11;
 #ifdef ENABLE_MPCD
 #include "MPCDReversePerturbationFlow.h"
 #include "hoomd/mpcd/ConfinedStreamingMethod.h"
-#include "MPCDSineGeometry.h"
-#include "MPCDSineGeometryFiller.h"
+#include "MPCDSymCosGeometry.h"
+#include "MPCDSymCosGeometryFiller.h"
 #ifdef ENABLE_CUDA
 #include "MPCDReversePerturbationFlowGPU.h"
 #include "hoomd/mpcd/ConfinedStreamingMethodGPU.h"
-#include "MPCDSineGeometryFillerGPU.h"
+#include "MPCDSymCosGeometryFillerGPU.h"
 #endif // ENABLE_CUDA
 #endif // ENABLE_MPCD
 
@@ -226,14 +226,14 @@ PYBIND11_MODULE(_azplugins, m)
 
     /* MPCD components */
     #ifdef ENABLE_MPCD
-    azplugins::detail::export_SineGeometry(m);
-    mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::SineGeometry>(m);
+    azplugins::detail::export_SymCosGeometry(m);
+    mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::SymCosGeometry>(m);
     azplugins::detail::export_MPCDReversePerturbationFlow(m);
-    azplugins::detail::export_SineGeometryFiller(m);
+    azplugins::detail::export_SymCosGeometryFiller(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_MPCDReversePerturbationFlowGPU(m);
-    azplugins::detail::export_SineGeometryFillerGPU(m);
-    mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SineGeometry>(m);
+    azplugins::detail::export_SymCosGeometryFillerGPU(m);
+    mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SymCosGeometry>(m);
     #endif // ENABLE_CUDA
     #endif // ENABLE_MPCD
 
@@ -262,10 +262,10 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluidGPU");
     #endif // ENABLE_CUDA
     azplugins::detail::export_BounceBackNVE<mpcd::detail::SlitGeometry>(m);
-    azplugins::detail::export_BounceBackNVE<azplugins::detail::SineGeometry>(m);
+    azplugins::detail::export_BounceBackNVE<azplugins::detail::SymCosGeometry>(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_BounceBackNVEGPU<mpcd::detail::SlitGeometry>(m);
-    azplugins::detail::export_BounceBackNVEGPU<azplugins::detail::SineGeometry>(m);
+    azplugins::detail::export_BounceBackNVEGPU<azplugins::detail::SymCosGeometry>(m);
     #endif // ENABLE_CUDA
 
     /* Variants */

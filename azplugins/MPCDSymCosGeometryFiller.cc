@@ -4,33 +4,33 @@
 // Maintainer: astatt
 
 /*!
- * \file mpcd/SlitGeometryFiller.cc
- * \brief Definition of mpcd::SlitGeometryFiller
+ * \file SymCosGeometryFiller.cc
+ * \brief Definition of SymCosGeometryFiller
  */
 
-#include "MPCDSineGeometryFiller.h"
+#include "MPCDSymCosGeometryFiller.h"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
 
 namespace azplugins
 {
-SineGeometryFiller::SineGeometryFiller(std::shared_ptr<mpcd::SystemData> sysdata,
+SymCosGeometryFiller::SymCosGeometryFiller(std::shared_ptr<mpcd::SystemData> sysdata,
                                              Scalar density,
                                              unsigned int type,
                                              std::shared_ptr<::Variant> T,
                                              unsigned int seed,
-                                             std::shared_ptr<const detail::SineGeometry> geom)
+                                             std::shared_ptr<const detail::SymCosGeometry> geom)
     : mpcd::VirtualParticleFiller(sysdata, density, type, T, seed), m_geom(geom)
     {
-    m_exec_conf->msg->notice(5) << "Constructing MPCD SineGeometryFiller" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing MPCD SymCosGeometryFiller" << std::endl;
     }
 
-SineGeometryFiller::~SineGeometryFiller()
+SymCosGeometryFiller::~SymCosGeometryFiller()
     {
-    m_exec_conf->msg->notice(5) << "Destroying MPCD SineGeometryFiller" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying MPCD SymCosGeometryFiller" << std::endl;
     }
 
-void SineGeometryFiller::computeNumFill()
+void SymCosGeometryFiller::computeNumFill()
     {
     // as a precaution, validate the global box with the current cell list
     const BoxDim& global_box = m_pdata->getGlobalBox();
@@ -40,7 +40,7 @@ void SineGeometryFiller::computeNumFill()
         {
         m_exec_conf->msg->error() << "Invalid sine geometry for global box, cannot fill virtual particles." << std::endl;
         m_exec_conf->msg->error() << "Filler thickness is given by cell_size +  0.5*(H-h)*sin((cell_size+max_shift)*2*pi*p/L); " << std::endl;
-        throw std::runtime_error("Invalid sine geometry for global box");
+        throw std::runtime_error("Invalid SymCos geometry for global box");
         }
 
     // default is not to fill anything
@@ -71,7 +71,7 @@ void SineGeometryFiller::computeNumFill()
 /*!
  * \param timestep Current timestep to draw particles
  */
-void SineGeometryFiller::drawParticles(unsigned int timestep)
+void SymCosGeometryFiller::drawParticles(unsigned int timestep)
     {
     ArrayHandle<Scalar4> h_pos(m_mpcd_pdata->getPositions(), access_location::host, access_mode::readwrite);
     ArrayHandle<Scalar4> h_vel(m_mpcd_pdata->getVelocities(), access_location::host, access_mode::readwrite);
@@ -124,18 +124,18 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_SineGeometryFiller(pybind11::module& m)
+void export_SymCosGeometryFiller(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<SineGeometryFiller, std::shared_ptr<SineGeometryFiller>>
-        (m, "SineGeometryFiller", py::base<mpcd::VirtualParticleFiller>())
+    py::class_<SymCosGeometryFiller, std::shared_ptr<SymCosGeometryFiller>>
+        (m, "SymCosGeometryFiller", py::base<mpcd::VirtualParticleFiller>())
         .def(py::init<std::shared_ptr<mpcd::SystemData>,
                       Scalar,
                       unsigned int,
                       std::shared_ptr<::Variant>,
                       unsigned int,
-                      std::shared_ptr<const SineGeometry>>())
-        .def("setGeometry", &SineGeometryFiller::setGeometry)
+                      std::shared_ptr<const SymCosGeometry>>())
+        .def("setGeometry", &SymCosGeometryFiller::setGeometry)
         ;
     }
 

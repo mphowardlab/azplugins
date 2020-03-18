@@ -17,8 +17,8 @@ except ImportError:
     import azplugins.mpcd
 import unittest
 
-# unit tests for mpcd sine channel  geometry
-class mpcd_sine_test(unittest.TestCase):
+# unit tests for mpcd symmetric cosine channel  geometry
+class mpcd_sym_cos_test(unittest.TestCase):
     def setUp(self):
 
         hoomd.context.initialize()
@@ -41,49 +41,49 @@ class mpcd_sine_test(unittest.TestCase):
 
     # test creation can happen (with all parameters set)
     def test_create(self):
-        azplugins.mpcd.sine(H=4., h=2. ,p=1, V=0.1, boundary="no_slip")
+        azplugins.mpcd.sym_cos(H=4., h=2. ,p=1, V=0.1, boundary="no_slip")
 
     # test for setting parameters
     def test_set_params(self):
-        sine = azplugins.mpcd.sine(H=4.,h=2. ,p=1)
-        self.assertAlmostEqual(sine.H, 4.)
-        self.assertAlmostEqual(sine.V, 0.)
-        self.assertEqual(sine.boundary, "no_slip")
-        self.assertAlmostEqual(sine._cpp.geometry.getHwide(), 4.)
-        self.assertAlmostEqual(sine._cpp.geometry.getVelocity(), 0.)
-        self.assertEqual(sine._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.no_slip)
+        sym_cos = azplugins.mpcd.sym_cos(H=4.,h=2. ,p=1)
+        self.assertAlmostEqual(sym_cos.H, 4.)
+        self.assertAlmostEqual(sym_cos.V, 0.)
+        self.assertEqual(sym_cos.boundary, "no_slip")
+        self.assertAlmostEqual(sym_cos._cpp.geometry.getHwide(), 4.)
+        self.assertAlmostEqual(sym_cos._cpp.geometry.getVelocity(), 0.)
+        self.assertEqual(sym_cos._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.no_slip)
 
         # change H and also ensure other parameters stay the same
-        sine.set_params(H=2.)
-        self.assertAlmostEqual(sine.H, 2.)
-        self.assertAlmostEqual(sine.V, 0.)
-        self.assertEqual(sine.boundary, "no_slip")
-        self.assertAlmostEqual(sine._cpp.geometry.getHwide(), 2.)
-        self.assertAlmostEqual(sine._cpp.geometry.getVelocity(), 0.)
-        self.assertEqual(sine._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.no_slip)
+        sym_cos.set_params(H=2.)
+        self.assertAlmostEqual(sym_cos.H, 2.)
+        self.assertAlmostEqual(sym_cos.V, 0.)
+        self.assertEqual(sym_cos.boundary, "no_slip")
+        self.assertAlmostEqual(sym_cos._cpp.geometry.getHwide(), 2.)
+        self.assertAlmostEqual(sym_cos._cpp.geometry.getVelocity(), 0.)
+        self.assertEqual(sym_cos._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.no_slip)
 
         # change V
-        sine.set_params(V=0.1)
-        self.assertAlmostEqual(sine.V, 0.1)
-        self.assertAlmostEqual(sine._cpp.geometry.getVelocity(), 0.1)
+        sym_cos.set_params(V=0.1)
+        self.assertAlmostEqual(sym_cos.V, 0.1)
+        self.assertAlmostEqual(sym_cos._cpp.geometry.getVelocity(), 0.1)
 
         # change BCs
-        sine.set_params(boundary="slip")
-        self.assertEqual(sine.boundary, "slip")
-        self.assertEqual(sine._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.slip)
+        sym_cos.set_params(boundary="slip")
+        self.assertEqual(sym_cos.boundary, "slip")
+        self.assertEqual(sym_cos._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.slip)
 
     # test for invalid boundary conditions being set
     def test_bad_boundary(self):
-        sine = azplugins.mpcd.sine(H=4.,h=2. ,p=1)
-        sine.set_params(boundary="no_slip")
-        sine.set_params(boundary="slip")
+        sym_cos = azplugins.mpcd.sym_cos(H=4.,h=2. ,p=1)
+        sym_cos.set_params(boundary="no_slip")
+        sym_cos.set_params(boundary="slip")
 
         with self.assertRaises(ValueError):
-            sine.set_params(boundary="invalid")
+            sym_cos.set_params(boundary="invalid")
 
     # test basic stepping behavior with no slip boundary conditions
     def test_step_noslip(self):
-        azplugins.mpcd.sine(H=4.,h=2. ,p=1, boundary='no_slip')
+        azplugins.mpcd.sym_cos(H=4.,h=2. ,p=1, boundary='no_slip')
 
         # take one step, no particle hits the wall
         hoomd.run(1)
@@ -147,7 +147,7 @@ class mpcd_sine_test(unittest.TestCase):
 
     #same as test above except for slip -> velcities differ
     def test_step_slip(self):
-        azplugins.mpcd.sine(H=4.,h=2. ,p=1, boundary="slip")
+        azplugins.mpcd.sym_cos(H=4.,h=2. ,p=1, boundary="slip")
 
         # take one step, no particle hits the wall
         hoomd.run(1)
@@ -204,62 +204,62 @@ class mpcd_sine_test(unittest.TestCase):
             np.testing.assert_array_almost_equal(snap.particles.position[2], [-4.640625,4.600002,-2.547881])
             np.testing.assert_array_almost_equal(snap.particles.velocity[2], [-0.05819760480217273,-1.,1.4130155833518931])
 
-    # test that setting the sine size too large raises an error
+    # test that setting the cosine size too large raises an error
     def test_validate_box(self):
         # initial configuration is invalid
-        sine = azplugins.mpcd.sine(H=10.,h=2. ,p=1)
+        sym_cos = azplugins.mpcd.sym_cos(H=10.,h=2. ,p=1)
         with self.assertRaises(RuntimeError):
             hoomd.run(1)
 
         # now it should be valid
-        sine.set_params(H=4.,h=2. ,p=1)
+        sym_cos.set_params(H=4.,h=2. ,p=1)
         hoomd.run(2)
 
         # make sure we can invalidate it again
-        sine.set_params(H=10.,h=2. ,p=1)
+        sym_cos.set_params(H=10.,h=2. ,p=1)
         with self.assertRaises(RuntimeError):
             hoomd.run(1)
 
     # test that particles out of bounds can be caught
     def test_out_of_bounds(self):
-        sine = azplugins.mpcd.sine(H=2., h=1. ,p=1)
+        sym_cos = azplugins.mpcd.sym_cos(H=2., h=1. ,p=1)
         with self.assertRaises(RuntimeError):
             hoomd.run(1)
 
-        sine.set_params(H=5.,h=2. ,p=1)
+        sym_cos.set_params(H=5.,h=2. ,p=1)
         hoomd.run(1)
 
 
     # test that virtual particle filler can be attached, removed, and updated
     def test_filler(self):
         # initialization of a filler
-        sine = azplugins.mpcd.sine(H=5.,h=2. ,p=1)
-        sine.set_filler(density=5., kT=1.0, seed=42, type='A')
-        self.assertTrue(sine._filler is not None)
+        sym_cos = azplugins.mpcd.sym_cos(H=5.,h=2. ,p=1)
+        sym_cos.set_filler(density=5., kT=1.0, seed=42, type='A')
+        self.assertTrue(sym_cos._filler is not None)
 
         # run should be able to setup the filler, although this all happens silently
         hoomd.run(1)
 
         # changing the geometry should still be OK with a run
-        sine.set_params(V=1.0)
+        sym_cos.set_params(V=1.0)
         hoomd.run(1)
 
         # changing filler should be allowed
-        sine.set_filler(density=10., kT=1.5, seed=7)
-        self.assertTrue(sine._filler is not None)
+        sym_cos.set_filler(density=10., kT=1.5, seed=7)
+        self.assertTrue(sym_cos._filler is not None)
         hoomd.run(1)
 
         # assert an error is raised if we set a bad particle type
         with self.assertRaises(RuntimeError):
-            sine.set_filler(density=5., kT=1.0, seed=42, type='B')
+            sym_cos.set_filler(density=5., kT=1.0, seed=42, type='B')
 
         # assert an error is raised if we set a bad density
         with self.assertRaises(RuntimeError):
-            sine.set_filler(density=-1.0, kT=1.0, seed=42)
+            sym_cos.set_filler(density=-1.0, kT=1.0, seed=42)
 
         # removing the filler should still allow a run
-        sine.remove_filler()
-        self.assertTrue(sine._filler is None)
+        sym_cos.remove_filler()
+        self.assertTrue(sym_cos._filler is None)
         hoomd.run(1)
 
 

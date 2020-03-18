@@ -5,18 +5,18 @@
 
 
 /*!
- * \file MPCDSineGeometryFillerGPU.h
- * \brief Definition of virtual particle filler for azplugins::detail::SineGeometry on the GPU.
+ * \file MPCDSymCosGeometryFillerGPU.h
+ * \brief Definition of virtual particle filler for azplugins::detail::SymCosGeometry on the GPU.
  */
 
-#ifndef AZPLUGINS_MPCD_SINE_GEOMETRY_FILLER_GPU_H_
-#define AZPLUGINS_MPCD_SINE_GEOMETRY_FILLER_GPU_H_
+#ifndef AZPLUGINS_MPCD_SYM_COS_GEOMETRY_FILLER_GPU_H_
+#define AZPLUGINS_MPCD_SYM_COS_GEOMETRY_FILLER_GPU_H_
 
 #ifdef NVCC
 #error This header cannot be compiled by nvcc
 #endif
 
-#include "MPCDSineGeometryFiller.h"
+#include "MPCDSymCosGeometryFiller.h"
 #include "hoomd/Autotuner.h"
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 
@@ -25,16 +25,16 @@ namespace azplugins
 {
 
 //! Adds virtual particles to the MPCD particle data for SineGeometry using the GPU
-class PYBIND11_EXPORT SineGeometryFillerGPU : public SineGeometryFiller
+class PYBIND11_EXPORT SymCosGeometryFillerGPU : public SymCosGeometryFiller
     {
     public:
         //! Constructor
-        SineGeometryFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
+        SymCosGeometryFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
                               Scalar density,
                               unsigned int type,
                               std::shared_ptr<::Variant> T,
                               unsigned int seed,
-                              std::shared_ptr<const detail::SineGeometry> geom);
+                              std::shared_ptr<const detail::SymCosGeometry> geom);
 
         //! Set autotuner parameters
         /*!
@@ -43,7 +43,7 @@ class PYBIND11_EXPORT SineGeometryFillerGPU : public SineGeometryFiller
          */
         virtual void setAutotunerParams(bool enable, unsigned int period)
             {
-            SineGeometryFiller::setAutotunerParams(enable, period);
+            SymCosGeometryFiller::setAutotunerParams(enable, period);
 
             m_tuner->setEnabled(enable); m_tuner->setPeriod(period);
             }
@@ -58,8 +58,8 @@ class PYBIND11_EXPORT SineGeometryFillerGPU : public SineGeometryFiller
 
 namespace detail
 {
-//! Export SineGeometryFillerGPU to python
-void export_SineGeometryFillerGPU(pybind11::module& m);
+//! Export SymCosGeometryFillerGPU to python
+void export_SymCosGeometryFillerGPU(pybind11::module& m);
 } // end namespace detail
 } // end namespace azplugins
-#endif // AZPLUGINS_MPCD_SINE_GEOMETRY_FILLER_GPU_H_
+#endif // AZPLUGINS_MPCD_SYM_COS_GEOMETRY_FILLER_GPU_H_

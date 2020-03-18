@@ -5,23 +5,23 @@
 
 
 /*!
- * \file mpcd/SlitGeometryFillerGPU.cc
- * \brief Definition of mpcd::SlitGeometryFillerGPU
+ * \file SymCosGeometryFillerGPU.cc
+ * \brief Definition of SymCosGeometryFillerGPU
  */
 
-#include "MPCDSineGeometryFillerGPU.h"
-#include "MPCDSineGeometryFillerGPU.cuh"
+#include "MPCDSymCosGeometryFillerGPU.h"
+#include "MPCDSymCosGeometryFillerGPU.cuh"
 
 namespace azplugins
 {
 
-SineGeometryFillerGPU::SineGeometryFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
+SymCosGeometryFillerGPU::SymCosGeometryFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
                                                    Scalar density,
                                                    unsigned int type,
                                                    std::shared_ptr<::Variant> T,
                                                    unsigned int seed,
-                                                   std::shared_ptr<const detail::SineGeometry> geom)
-    : SineGeometryFiller(sysdata, density, type, T, seed, geom)
+                                                   std::shared_ptr<const detail::SymCosGeometry> geom)
+    : SymCosGeometryFiller(sysdata, density, type, T, seed, geom)
     {
     m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "mpcd_sine_filler", m_exec_conf));
     }
@@ -29,7 +29,7 @@ SineGeometryFillerGPU::SineGeometryFillerGPU(std::shared_ptr<mpcd::SystemData> s
 /*!
  * \param timestep Current timestep
  */
-void SineGeometryFillerGPU::drawParticles(unsigned int timestep)
+void SymCosGeometryFillerGPU::drawParticles(unsigned int timestep)
     {
     ArrayHandle<Scalar4> d_pos(m_mpcd_pdata->getPositions(), access_location::device, access_mode::readwrite);
     ArrayHandle<Scalar4> d_vel(m_mpcd_pdata->getVelocities(), access_location::device, access_mode::readwrite);
@@ -38,7 +38,7 @@ void SineGeometryFillerGPU::drawParticles(unsigned int timestep)
     const unsigned int first_idx = m_mpcd_pdata->getN() + m_mpcd_pdata->getNVirtual() - m_N_fill;
 
     m_tuner->begin();
-    gpu::sine_draw_particles(d_pos.data,
+    gpu::sym_cos_draw_particles(d_pos.data,
                                    d_vel.data,
                                    d_tag.data,
                                    *m_geom,
@@ -65,17 +65,17 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_SineGeometryFillerGPU(pybind11::module& m)
+void export_SymCosGeometryFillerGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<SineGeometryFillerGPU, std::shared_ptr<SineGeometryFillerGPU>>
-        (m, "SineGeometryFillerGPU", py::base<SineGeometryFiller>())
+    py::class_<SymCosGeometryFillerGPU, std::shared_ptr<SymCosGeometryFillerGPU>>
+        (m, "SymCosGeometryFillerGPU", py::base<SymCosGeometryFiller>())
         .def(py::init<std::shared_ptr<mpcd::SystemData>,
                       Scalar,
                       unsigned int,
                       std::shared_ptr<::Variant>,
                       unsigned int,
-                      std::shared_ptr<const SineGeometry>>())
+                      std::shared_ptr<const SymCosGeometry>>())
         ;
     }
 } // end namespace detail

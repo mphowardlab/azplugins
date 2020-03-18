@@ -4,11 +4,11 @@
 // Maintainer: astatt
 
 /*!
- * \file MPCDSineGeometryFillerGPU.cu
- * \brief Defines GPU functions and kernels used by azplugins::gpu::SineGeometryFillerGPU
+ * \file MPCDSymCosGeometryFillerGPU.cu
+ * \brief Defines GPU functions and kernels used by azplugins::gpu::SymCosGeometryFillerGPU
  */
 
-#include "MPCDSineGeometryFillerGPU.cuh"
+#include "MPCDSymCosGeometryFillerGPU.cuh"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
 #include "hoomd/mpcd/ParticleDataUtilities.h"
@@ -46,10 +46,10 @@ namespace kernel
  * a particle tag and local particle index. A random position is drawn within the cuboid. A random velocity
  * is drawn consistent with the speed of the moving wall.
  */
-__global__ void sine_draw_particles(Scalar4 *d_pos,
+__global__ void sym_cos_draw_particles(Scalar4 *d_pos,
                                     Scalar4 *d_vel,
                                     unsigned int *d_tag,
-                                    const azplugins::detail::SineGeometry geom,
+                                    const azplugins::detail::SymCosGeometry geom,
                                     const Scalar m_pi_period_div_L,
                                     const Scalar m_amplitude,
                                     const Scalar m_H_narrow,
@@ -127,10 +127,10 @@ __global__ void sine_draw_particles(Scalar4 *d_pos,
  *
  * \sa kernel::slit_draw_particles
  */
-cudaError_t sine_draw_particles(Scalar4 *d_pos,
+cudaError_t sym_cos_draw_particles(Scalar4 *d_pos,
                                 Scalar4 *d_vel,
                                 unsigned int *d_tag,
-                                const azplugins::detail::SineGeometry& geom,
+                                const azplugins::detail::SymCosGeometry& geom,
                                 const Scalar m_pi_period_div_L,
                                 const Scalar m_amplitude,
                                 const Scalar m_H_narrow,
@@ -161,7 +161,7 @@ cudaError_t sine_draw_particles(Scalar4 *d_pos,
 
     unsigned int run_block_size = min(block_size, max_block_size);
     dim3 grid(N_fill / run_block_size + 1);
-    kernel::sine_draw_particles<<<grid, run_block_size>>>(d_pos,
+    kernel::sym_cos_draw_particles<<<grid, run_block_size>>>(d_pos,
                                                           d_vel,
                                                           d_tag,
                                                           geom,
