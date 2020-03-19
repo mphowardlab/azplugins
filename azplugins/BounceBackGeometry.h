@@ -27,6 +27,7 @@ namespace azplugins
 {
 namespace detail
 {
+  
 //! Export AntiSymCosGeometry to python
 void export_AntiSymCosGeometry(pybind11::module& m);
 

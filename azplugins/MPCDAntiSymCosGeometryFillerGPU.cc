@@ -23,7 +23,7 @@ AntiSymCosGeometryFillerGPU::AntiSymCosGeometryFillerGPU(std::shared_ptr<mpcd::S
                                                    std::shared_ptr<const detail::AntiSymCosGeometry> geom)
     : AntiSymCosGeometryFiller(sysdata, density, type, T, seed, geom)
     {
-    m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "mpcd_sym_cos_filler", m_exec_conf));
+    m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "mpcd_anti_sym_cos_filler", m_exec_conf));
     }
 
 /*!

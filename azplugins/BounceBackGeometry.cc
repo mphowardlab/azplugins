@@ -23,8 +23,8 @@ void export_AntiSymCosGeometry(pybind11::module& m)
     {
     namespace py = pybind11;
     py::class_<AntiSymCosGeometry, std::shared_ptr<AntiSymCosGeometry> >(m, "AntiSymCosGeometry")
-    .def(py::init<Scalar, Scalar, Scalar, unsigned int,Scalar, mpcd::detail::boundary>())
-    .def("getHwide", &AntiSymCosGeometry::getHwide)
+    .def(py::init<Scalar, Scalar, Scalar, unsigned int, Scalar, mpcd::detail::boundary>())
+    .def("getAmplitude", &AntiSymCosGeometry::getAmplitude)
     .def("getHnarrow", &AntiSymCosGeometry::getHnarrow)
     .def("getRepetitions", &AntiSymCosGeometry::getRepetitions)
     .def("getVelocity", &AntiSymCosGeometry::getVelocity)
@@ -35,7 +35,7 @@ void export_SymCosGeometry(pybind11::module& m)
     {
     namespace py = pybind11;
     py::class_<SymCosGeometry, std::shared_ptr<SymCosGeometry> >(m, "SymCosGeometry")
-    .def(py::init<Scalar, Scalar, Scalar, unsigned int,Scalar, mpcd::detail::boundary>())
+    .def(py::init<Scalar, Scalar, Scalar, unsigned int, Scalar, mpcd::detail::boundary>())
     .def("getHwide", &SymCosGeometry::getHwide)
     .def("getHnarrow", &SymCosGeometry::getHnarrow)
     .def("getRepetitions", &SymCosGeometry::getRepetitions)

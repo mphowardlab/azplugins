@@ -47,22 +47,22 @@ void AntiSymCosGeometryFiller::computeNumFill()
     m_thickness = 0;
     m_N_fill = 0;
     m_pi_period_div_L = 0;
-    m_amplitude = 0;
+    m_Amplitude = 0;
+    m_H_narrow = 0;
 
     // box and sine geometry
     const BoxDim& box = m_pdata->getBox();
     const Scalar3 L = box.getL();
     const Scalar Area = L.x * L.y;
-    const Scalar H = m_geom->getHwide();
+    const Scalar A = m_geom->getAmplitude();
     const Scalar h = m_geom->getHnarrow();
     const Scalar r = m_geom->getRepetitions();
-
-    m_amplitude = 0.5*(H-h);
+    m_Amplitude=A;
     m_pi_period_div_L = 2*M_PI*r/L.x;
     m_H_narrow = h;
 
     // This geometry needs a larger filler thickness than just a single cell_size because of its curved bounds.
-    const Scalar filler_thickness = cell_size +  m_amplitude*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
+    const Scalar filler_thickness = cell_size +  m_Amplitude*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
     m_thickness = filler_thickness;
     // total number of fill particles
     m_N_fill = m_density*Area*filler_thickness*2;
@@ -96,7 +96,7 @@ void AntiSymCosGeometryFiller::drawParticles(unsigned int timestep)
         Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
         Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
 
-        z = sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+m_amplitude + m_H_narrow ) + z;
+        z = sign*(m_Amplitude*fast::cos(x*m_pi_period_div_L)+2*m_H_narrow ) + z;
 
         const unsigned int pidx = first_idx + i;
         h_pos.data[pidx] = make_scalar4(x,

@@ -154,43 +154,40 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
     r""" Anti-symmetric Cosine channel streaming geometry.
 
     Args:
-        H (float): channel half-width at its widest point
-        h (float): channel half-width at its narrowest point
+        A (float): Amplitude of Cosine wall
+        h (float): channel half-width
         p (int):   channel periodicity
         V (float): wall speed (default: 0)
         boundary (str): boundary condition at wall ("slip" or "no_slip"", defaul "no_slip")
         period (int): Number of integration steps between collisions
 
     The symmetric cosine geometry represents a fluid confined between two walls
-    described by a sinusoidal profile with equations
-     :math: `+/-(A cos(2*pi*p*x/Lx) + A + h)`,
-    where A = 0.5*(H-h) is the amplitude, :math:`Lx` is the BoxDim in *x*
-    direction, and :math: `p` is the
-    period of the wall cosine. The channel is axis-symmetric around the origin in
-    *z* direction. The two symmetric cosine walls create a periodic series of
-    :math: `p` constrictions and expansions.
+    described by a sinusoidal profile with equations :math: `(A*cos(2*pi*p*x/Lx) +/- 2h)`,
+    where A is the amplitude, :math:`Lx` is the BoxDim in *x* direction, and
+    :math: `p` is the period of the wall cosine. The channel is anti-symmetric
+    around the origin in *z* direction.
+    The cosine walls are running parallel and create a wavy cannel
+    with :math: `p` repetitions.
     The walls may be put into motion, moving with speeds :math:`-V` and
-    :math:`+V` in the *x* direction, respectively. If combined with a
-    no-slip boundary condition, this motion can be used to generate simple
-    shear flow.
+    :math:`+V` in the *x* direction, respectively.
 
     The "inside" of the :py:class:`anti_sim_cos` is the space where
-    :math:`|z| < (A cos(2pi*p*x/Lx) + A + h)`.
+    :math:`|z- cos(2pi*p*x/Lx)| < 2h`.
 
     Examples::
 
-        stream.anti_sim_cos(H=30.,h=1.5, p=1)
-        stream.anti_sim_cos(H=25.,h=2,p=2,boundary="no_slip",V=0.1, period=10)
+        stream.anti_sim_cos(A=30.,h=1.5, p=1)
+        stream.anti_sim_cos(A=25.,h=2,p=2,boundary="no_slip",V=0.1, period=10)
 
 
     """
-    def __init__(self, H,h,p, V=0.0, boundary="no_slip", period=1):
+    def __init__(self, A,h,p, V=0.0, boundary="no_slip", period=1):
         hoomd.util.print_status_line()
 
         hoomd.mpcd.stream._streaming_method.__init__(self, period)
 
-        self.metadata_fields += ['L','H','h','p','V','boundary']
-        self.H = H
+        self.metadata_fields += ['L','A','h','p','V','boundary']
+        self.A = A
         self.h = h
         self.p = p
         self.V = V
@@ -209,7 +206,7 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
                                  hoomd.context.current.system.getCurrentTimeStep(),
                                  self.period,
                                  0,
-                                 _azplugins.AntiSymCosGeometry(Lx,H,h,p,V,bc))
+                                 _azplugins.AntiSymCosGeometry(Lx,A,h,p,V,bc))
 
     def set_filler(self, density, kT, seed, type='A'):
         r""" Add virtual particles to symmetric cosine channel.
@@ -270,12 +267,12 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
 
         self._filler = None
 
-    def set_params(self, H=None, h=None, p=None, V=None, boundary=None):
+    def set_params(self, A=None, h=None, p=None, V=None, boundary=None):
         """ Set parameters for the symmetric cosine geometry.
 
         Args:
-            H (float): channel half-width at its widest point
-            h (float): channel half-width at its narrowest point
+            A (float): channel Amplitude
+            h (float): channel half-width
             p (int):   channel periodicity
             V (float): wall speed (default: 0)
             boundary (str): boundary condition at wall ("slip" or "no_slip"", defaul "no_slip")
@@ -285,14 +282,14 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
 
         Examples::
 
-            anti_sym_cos.set_params(H=15.0)
+            anti_sym_cos.set_params(A=15.0)
             anti_sym_cos.set_params(V=0.2, boundary="no_slip")
 
         """
         hoomd.util.print_status_line()
 
-        if H is not None:
-            self.H = H
+        if A is not None:
+            self.A = A
 
         if h is not None:
             self.h = h
@@ -307,7 +304,7 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
             self.boundary = boundary
 
         bc = self._process_boundary(self.boundary)
-        self._cpp.geometry = _azplugins.AntiSymCosGeometry(self.L,self.H,self.h,self.p,self.V,bc)
+        self._cpp.geometry = _azplugins.AntiSymCosGeometry(self.L,self.A,self.h,self.p,self.V,bc)
         if self._filler is not None:
             self._filler.setGeometry(self._cpp.geometry)
 
@@ -331,9 +328,7 @@ class sym_cos(hoomd.mpcd.stream._streaming_method):
     *z* direction. The two symmetric cosine walls create a periodic series of
     :math: `p` constrictions and expansions.
     The walls may be put into motion, moving with speeds :math:`-V` and
-    :math:`+V` in the *x* direction, respectively. If combined with a
-    no-slip boundary condition, this motion can be used to generate simple
-    shear flow.
+    :math:`+V` in the *x* direction, respectively.
 
     The "inside" of the :py:class:`sim_cos` is the space where
     :math:`|z| < (A cos(2pi*p*x/Lx) + A + h)`.

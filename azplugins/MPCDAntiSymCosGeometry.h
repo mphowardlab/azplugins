@@ -34,7 +34,7 @@ namespace detail
 //! Antisymmetric Cosine channel geometry
 /*!
  * This class defines a channel with anti-symmetric cosine walls given by the equations
- * (A cos(x*2*pi*p/Lx) +/- H_narrow).
+ * (A cos(x*2*pi*p/Lx) +/- 2*H_narrow).
  * A is the amplitude and p is the period of the wall cosine.
  * H_narrow is the half height of the channel at x=0
  * The cosine wall wavelength/frenquency needs to be consumable with the
@@ -53,14 +53,14 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
         //! Constructor
         /*!
          * \param L Channel length (Simulation box length in x)
-           \param H_wide Channel half-width at widest point
-           \param H_narrow Channel half-width at narrowest point
+           \param Amplitude Channel Cosine Amplitude
+           \param H_narrow Channel half-width
            \param Period Channel cosine period (integer >0)
          * \param V Velocity of the wall
          * \param bc Boundary condition at the wall (slip or no-slip)
          */
-        HOSTDEVICE AntiSymCosGeometry(Scalar L, Scalar H_wide,Scalar H_narrow, unsigned int Repetitions, Scalar V, mpcd::detail::boundary bc)
-            : m_pi_period_div_L(2*M_PI*Repetitions/L), m_H_wide(H_wide), m_H_narrow(H_narrow), m_Repetitions(Repetitions), m_V(V), m_bc(bc)
+        HOSTDEVICE AntiSymCosGeometry(Scalar L, Scalar Amplitude, Scalar h, unsigned int Repetitions, Scalar V, mpcd::detail::boundary bc)
+            : m_pi_period_div_L(2*M_PI*Repetitions/L), m_Amplitude(Amplitude), m_h(h), m_Repetitions(Repetitions), m_V(V), m_bc(bc)
             {
             }
 
@@ -88,9 +88,9 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
              * can be immediately reflected on the next streaming step, and so the motion is essentially equivalent up to
              * an epsilon of difference in the channel width.
              */
-            Scalar A = 0.5*(m_H_wide-m_H_narrow);
-            Scalar a = A*fast::cos(pos.x*m_pi_period_div_L) + A + m_H_narrow;
-            const signed char sign = (pos.z > a) - (pos.z < -a);
+
+            Scalar a = pos.z - m_Amplitude*fast::cos(pos.x*m_pi_period_div_L);
+            const signed char sign = (2*m_h < a) - (-2*m_h > a);
 
             // exit immediately if no collision is found
             if (sign == 0)
@@ -98,7 +98,7 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
                 dt = Scalar(0);
                 return false;
                 }
-
+            printf("Sign %f %f %f %f\n",pos.x,pos.x,m_Amplitude*fast::cos(pos.x*m_pi_period_div_L),m_h);
             /* Calculate position (x0,y0,z0) of collision with wall:
             *  Because there is no analythical solution for f(x) = cos(x)-x = 0, we use Newtons's method to nummerically estimate the
             *  x positon of the intersection first. It is convinient to use the halfway point between the last particle
@@ -113,24 +113,24 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
             Scalar x0 = pos.x - 0.5*dt*vel.x;
 
             // delta =  abs(0-f(x))
-            Scalar delta = abs(0 - (sign*(A*fast::cos(x0*m_pi_period_div_L)+ A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
+            Scalar delta = abs(0 - ((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+ 2*sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
 
             Scalar n,n2;
             Scalar s,c;
             while( delta > target_presicion && counter < max_iteration)
                 {
                 fast::sincos(x0*m_pi_period_div_L,s,c);
-                n  =  sign*(A*c + A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
-                n2 = -sign*m_pi_period_div_L*A*s - vel.z/vel.x;                       // df
+                n  =  (m_Amplitude*c + 2*sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
+                n2 = -sign*m_pi_period_div_L*m_Amplitude*s - vel.z/vel.x;                       // df
                 x0 = x0 - n/n2;                                                                      // x = x - f/df
-                delta = abs(0-(sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
+                delta = abs(0-((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+2*sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
                 counter +=1;
                 }
 
             /* The new z position is calculated from the wall equation to guarantee that the new particle positon is exactly at the wall
              * and not accidentally slightly inside of the wall because of nummerical presicion.
              */
-            Scalar z0 = sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow);
+            Scalar z0 = (m_Amplitude*fast::cos(x0*m_pi_period_div_L)+2*sign*m_h);
 
             /* The new y position can be calculated from the fact that the last position outside of the wall, the current position inside
              * of the  wall, and the new position exactly at the wall are on a straight line.
@@ -173,7 +173,7 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
                 }
             else // Slip conditions require only tangential components to be reflected:
                 {
-                Scalar B = sign*A*m_pi_period_div_L*fast::sin(x0*m_pi_period_div_L);
+                Scalar B = m_Amplitude*m_pi_period_div_L*fast::sin(x0*m_pi_period_div_L);
 
                 vel_new.x = vel.x - 2*B*(B*vel.x + vel.z)/(B*B+1);
                 vel_new.y = vel.y;
@@ -192,9 +192,9 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
          */
         HOSTDEVICE bool isOutside(const Scalar3& pos) const
             {
-            Scalar a = 0.5*(m_H_wide-m_H_narrow)*fast::cos(pos.x*m_pi_period_div_L)+0.5*(m_H_wide-m_H_narrow)+m_H_narrow;
+            Scalar a = pos.z - m_Amplitude*fast::cos(pos.x*m_pi_period_div_L);
 
-            return (pos.z > a || pos.z < -a);
+            return (a > 2*m_h || a < -2*m_h);
             }
 
         //! Validate that the simulation box is large enough for the geometry
@@ -215,17 +215,17 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
             // if arguments of validateBox() change
             const Scalar max_shift = 0.5*cell_size;
 
-            const Scalar filler_thickness = cell_size +  0.5*(m_H_wide-m_H_narrow)*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
-            return (hi >= m_H_wide+filler_thickness && lo <= -m_H_wide-filler_thickness );
+            const Scalar filler_thickness = cell_size +  m_Amplitude*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
+            return (hi >= m_Amplitude+m_h+filler_thickness && lo <= -m_Amplitude-m_h-filler_thickness );
             }
 
         //! Get channel half width at widest point
         /*!
          * \returns Channel half width at widest point
          */
-        HOSTDEVICE Scalar getHwide() const
+        HOSTDEVICE Scalar getAmplitude() const
             {
-            return m_H_wide;
+            return m_Amplitude;
             }
         //! Get channel half width at narrowest point
         /*!
@@ -233,7 +233,7 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
          */
         HOSTDEVICE Scalar getHnarrow() const
             {
-            return m_H_narrow;
+            return m_h;
             }
 
         //! Get channel cosine wall repetitions
@@ -273,11 +273,11 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
 
     private:
         const Scalar m_pi_period_div_L;     //!< Argument of the wall cosine (pi*period/Lx = 2*pi*repetitions/Lx)
-        const Scalar m_H_wide;              //!< Half of the channel widest width
-        const Scalar m_H_narrow;            //!< Half of the channel narrowest width
-        const unsigned int m_Repetitions;         //!< Number of repetitions of the wide sections in the channel =  period
+        const Scalar m_Amplitude;           //!< Amplitude of the channel
+        const Scalar m_h;                   //!< Half of the channel width
+        const unsigned int m_Repetitions;   //!< Number of repetitions of the wide sections in the channel =  period
         const Scalar m_V;                   //!< Velocity of the wall
-        const mpcd::detail::boundary m_bc; //!< Boundary condition
+        const mpcd::detail::boundary m_bc;  //!< Boundary condition
     };
 
 } // end namespace detail

@@ -52,7 +52,7 @@ __global__ void anti_sym_cos_draw_particles(Scalar4 *d_pos,
                                     const azplugins::detail::AntiSymCosGeometry geom,
                                     const Scalar m_pi_period_div_L,
                                     const Scalar m_amplitude,
-                                    const Scalar m_H_narrow,
+                                    const Scalar m_h,
                                     const Scalar m_thickness,
                                     const BoxDim box,
                                     const unsigned int type,
@@ -86,7 +86,7 @@ __global__ void anti_sym_cos_draw_particles(Scalar4 *d_pos,
     Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
 
 
-    z = sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+m_amplitude + m_H_narrow ) + z;
+    z = sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+ sign*m_h ) + z;
 
 
     d_pos[pidx] = make_scalar4(x,
@@ -125,7 +125,7 @@ __global__ void anti_sym_cos_draw_particles(Scalar4 *d_pos,
  * \param seed User seed to PRNG for drawing velocities
  * \param block_size Number of threads per block
  *
- * \sa kernel::slit_draw_particles
+ * \sa kernel::anti_sim_cos_draw_particles
  */
 cudaError_t anti_sym_cos_draw_particles(Scalar4 *d_pos,
                                 Scalar4 *d_vel,
@@ -133,7 +133,7 @@ cudaError_t anti_sym_cos_draw_particles(Scalar4 *d_pos,
                                 const azplugins::detail::AntiSymCosGeometry& geom,
                                 const Scalar m_pi_period_div_L,
                                 const Scalar m_amplitude,
-                                const Scalar m_H_narrow,
+                                const Scalar m_h,
                                 const Scalar m_thickness,
                                 const BoxDim& box,
                                 const Scalar mass,
@@ -167,7 +167,7 @@ cudaError_t anti_sym_cos_draw_particles(Scalar4 *d_pos,
                                                           geom,
                                                           m_pi_period_div_L,
                                                           m_amplitude,
-                                                          m_H_narrow,
+                                                          m_h,
                                                           m_thickness,
                                                           box,
                                                           type,

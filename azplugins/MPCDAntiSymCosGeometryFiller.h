@@ -23,7 +23,7 @@
 namespace azplugins
 {
 
-//! Adds virtual particles to the MPCD particle data for SymCosGeometry
+//! Adds virtual particles to the MPCD particle data for AntiSymCosGeometry
 /*!
  * Particles are added to the volume that is overlapped by any of the cells that are also "inside" the channel,
  * subject to the grid shift.
@@ -48,7 +48,7 @@ class PYBIND11_EXPORT AntiSymCosGeometryFiller : public mpcd::VirtualParticleFil
     protected:
         std::shared_ptr<const detail::AntiSymCosGeometry> m_geom;
         Scalar m_thickness;       //!< thickness of virtual particle buffer zone
-        Scalar m_amplitude;       //!< amplitude of  channel wall cosine: 0.5(H_wide - H_narrow)
+        Scalar m_Amplitude;       //!< amplitude of  channel wall cosine: 0.5(H_wide - H_narrow)
         Scalar m_pi_period_div_L; //!< period of channel wall cosine: 2*pi*period/Lx
         Scalar m_H_narrow;        //!< half width of the narrowest height of the channel
 

@@ -161,8 +161,122 @@ class slit(_bounce_back):
         self.cpp_method.geometry = _mpcd.SlitGeometry(self.H,self.V,bc)
 
 
+class anti_sym_cos(_bounce_back):
+    """ NVE integration with bounce-back rules in a anti-symmetric cosine channel.
+
+    Args:
+        group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
+        A (float): channel cosine amplitude
+        h (float): channel half-width
+        p (int):   channel periodicity
+        V (float): wall speed (default: 0)
+        boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
+
+    This integration method applies to particles in *group* in the symmetric cosine channel geometry.
+
+    The boundary condition at the wall can be specified with *boundary* to either `'slip'` or `'no_slip'`. A no-slip
+    condition is more common for solid boundaries. If the no-slip condition is combined with a body-force on the
+    particles, a parabolic flow field with be generated.
+
+    Note:
+        It may be necessary to add additional 'ghost' particles near the boundaries in order to correctly enforce the
+        boundary conditions and to reduce density fluctuations near the wall.
+
+    HOOMD uses a periodic simulation box, but the geometry imposes inherent non-periodic boundary conditions. You
+    **must** ensure that the box is sufficiently large to enclose the geometry (i.e., :math:`L_z > 2H`). An error will
+    be raised if the simulation box is not large enough to contain the geometry. Additionally, all particles must lie
+    initially **inside** the geometry (i.e., all particles are between the plates). The particle configuration will be
+    validated on the first call to :py:meth:`hoomd.run()`, and an error will be raised if this condition is not met.
+
+    Warning:
+        You must also ensure that particles do not self-interact through the periodic boundaries. This is usually
+        achieved for simple pair potentials by padding the box size by the largest cutoff radius. Failure to do so
+        may result in unphysical interactions.
+
+    :py:class:`sym_cos` is an integration method. It must be used with :py:class:`hoomd.md.mode_standard`.
+
+    Warning:
+        Bounce-back methods do not support anisotropic integration. If an anisotropic pair potential is specified,
+        the torques will be ignored during the integration, and the particle orientations will not be updated. Do
+        **not** use a bounce-back integrator with anisotropic particles or rigid bodies.
+
+    A :py:class:`hoomd.compute.thermo` is automatically specified and associated with *group*.
+
+    Examples::
+
+        all = group.all()
+        integrate.anti_sym_cos(group=all, A=5.0, h=2.0, p=1, V=0.0)
+
+    """
+    def __init__(self, group, A, h, p, V=0.0, boundary="no_slip"):
+        hoomd.util.print_status_line()
+
+        # initialize base class
+        _bounce_back.__init__(self,group)
+        self.metadata_fields += ['L','A','h','p','V']
+
+        # initialize the c++ class
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            cpp_class = _azplugins.BounceBackNVEAntiSymCos
+        else:
+            cpp_class = _azplugins.BounceBackNVEAntiSymCosGPU
+
+        self.A = A
+        self.h = h
+        self.p = p
+        self.V = V
+        self.boundary = boundary
+
+        bc = self._process_boundary(boundary)
+        system = hoomd.data.system_data(hoomd.context.current.system_definition)
+        Lx = system.sysdef.getParticleData().getGlobalBox().getL().x
+        self.L = Lx
+
+        geom = _azplugins.SymCosGeometry(self.L, A, h, p, V, bc)
+
+        self.cpp_method = cpp_class(hoomd.context.current.system_definition, group.cpp_group, geom)
+        self.cpp_method.validateGroup()
+
+    def set_params(self, A=None, h=None, p=None, V=None, boundary=None):
+        """ Set parameters for the slit geometry.
+
+        Args:
+            A (float): channel cosine amplitude
+            h (float): channel half-width
+            p (int):   channel periodicity
+            V (float): wall speed (default: 0)
+            boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
+
+        Examples::
+
+            sym_cos.set_params(A=8., h=2.0)
+            sym_cos.set_params(V=2.0)
+            sym_cos.set_params(boundary='slip')
+            sym_cos.set_params(A=5, V=0., boundary='no_slip')
+
+        """
+        hoomd.util.print_status_line()
+
+        if A is not None:
+            self.A = A
+
+        if h is not None:
+            self.h = h
+
+        if p is not None:
+            self.p = p
+
+        if V is not None:
+            self.V = V
+
+        if boundary is not None:
+            self.boundary = boundary
+
+        bc = self._process_boundary(self.boundary)
+        self.cpp_method.geometry = _azplugins.AntiSymCosGeometry(self.L,self.A,self.h,self.p,self.V,bc)
+
 class sym_cos(_bounce_back):
-    """ NVE integration with bounce-back rules in a symetric cosine channel.
+    """ NVE integration with bounce-back rules in a symmetric cosine channel.
 
     Args:
         group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
