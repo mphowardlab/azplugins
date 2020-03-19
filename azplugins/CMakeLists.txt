@@ -120,6 +120,7 @@ list(APPEND py_files
 # mpcd c++ files
 list(APPEND _${COMPONENT_NAME}_sources
     MPCDReversePerturbationFlow.cc
+    MPCDAntiSymCosGeometryFiller.cc
     MPCDSymCosGeometryFiller.cc
     )
 # mpcd c++/cu cuda files

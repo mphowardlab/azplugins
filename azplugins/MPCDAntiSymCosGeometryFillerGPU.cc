@@ -5,8 +5,8 @@
 
 
 /*!
- * \file SymCosGeometryFillerGPU.cc
- * \brief Definition of SymCosGeometryFillerGPU
+ * \file AntiSymCosGeometryFillerGPU.cc
+ * \brief Definition of AntiSymCosGeometryFillerGPU
  */
 
 #include "MPCDAntiSymCosGeometryFillerGPU.h"

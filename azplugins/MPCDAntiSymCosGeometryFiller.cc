@@ -8,7 +8,7 @@
  * \brief Definition of AntiSymCosGeometryFiller
  */
 
-#include "MPCDSymCosGeometryFiller.h"
+#include "MPCDAntiSymCosGeometryFiller.h"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
 
