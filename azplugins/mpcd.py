@@ -150,6 +150,167 @@ class reverse_perturbation(hoomd.update._updater):
             self.cpp_updater.target_momentum = target_momentum
 
 
+class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
+    r""" Anti-symmetric Cosine channel streaming geometry.
+
+    Args:
+        H (float): channel half-width at its widest point
+        h (float): channel half-width at its narrowest point
+        p (int):   channel periodicity
+        V (float): wall speed (default: 0)
+        boundary (str): boundary condition at wall ("slip" or "no_slip"", defaul "no_slip")
+        period (int): Number of integration steps between collisions
+
+    The symmetric cosine geometry represents a fluid confined between two walls
+    described by a sinusoidal profile with equations
+     :math: `+/-(A cos(2*pi*p*x/Lx) + A + h)`,
+    where A = 0.5*(H-h) is the amplitude, :math:`Lx` is the BoxDim in *x*
+    direction, and :math: `p` is the
+    period of the wall cosine. The channel is axis-symmetric around the origin in
+    *z* direction. The two symmetric cosine walls create a periodic series of
+    :math: `p` constrictions and expansions.
+    The walls may be put into motion, moving with speeds :math:`-V` and
+    :math:`+V` in the *x* direction, respectively. If combined with a
+    no-slip boundary condition, this motion can be used to generate simple
+    shear flow.
+
+    The "inside" of the :py:class:`anti_sim_cos` is the space where
+    :math:`|z| < (A cos(2pi*p*x/Lx) + A + h)`.
+
+    Examples::
+
+        stream.anti_sim_cos(H=30.,h=1.5, p=1)
+        stream.anti_sim_cos(H=25.,h=2,p=2,boundary="no_slip",V=0.1, period=10)
+
+
+    """
+    def __init__(self, H,h,p, V=0.0, boundary="no_slip", period=1):
+        hoomd.util.print_status_line()
+
+        hoomd.mpcd.stream._streaming_method.__init__(self, period)
+
+        self.metadata_fields += ['L','H','h','p','V','boundary']
+        self.H = H
+        self.h = h
+        self.p = p
+        self.V = V
+        self.boundary = boundary
+
+        bc = self._process_boundary(boundary)
+        system = hoomd.data.system_data(hoomd.context.current.system_definition)
+        Lx = system.sysdef.getParticleData().getGlobalBox().getL().x
+        self.L = Lx
+        # create the base streaming class
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            stream_class = _azplugins.ConfinedStreamingMethodAntiSymCos
+        else:
+            stream_class = _azplugins.ConfinedStreamingMethodGPUAntiSymCos
+        self._cpp = stream_class(hoomd.context.current.mpcd.data,
+                                 hoomd.context.current.system.getCurrentTimeStep(),
+                                 self.period,
+                                 0,
+                                 _azplugins.AntiSymCosGeometry(Lx,H,h,p,V,bc))
+
+    def set_filler(self, density, kT, seed, type='A'):
+        r""" Add virtual particles to symmetric cosine channel.
+
+        Args:
+            density (float): Density of virtual particles.
+            kT (float): Temperature of virtual particles.
+            seed (int): Seed to pseudo-random number generator for virtual particles.
+            type (str): Type of the MPCD particles to fill with.
+
+        The virtual particle filler draws particles within the volume *outside* the
+        slit walls that could be overlapped by any cell that is partially *inside*
+        the slit channel. The particles are drawn from
+        the velocity distribution consistent with *kT* and with the given *density*.
+        The mean of the distribution is zero in *y* and *z*, but is equal to the wall
+        speed in *x*. Typically, the virtual particle density and temperature are set
+        to the same conditions as the solvent.
+
+        The virtual particles will act as a weak thermostat on the fluid, and so energy
+        is no longer conserved. Momentum will also be sunk into the walls.
+
+        Example::
+
+            anti_sym_cos.set_filler(density=5.0, kT=1.0, seed=42)
+
+        """
+        hoomd.util.print_status_line()
+
+        type_id = hoomd.context.current.mpcd.particles.getTypeByName(type)
+        T = hoomd.variant._setup_variant_input(kT)
+
+        if self._filler is None:
+            if not hoomd.context.exec_conf.isCUDAEnabled():
+                fill_class = _azplugins.AntiSymCosGeometryFiller
+            else:
+                fill_class = _azplugins.AntiSymCosGeometryFillerGPU
+            self._filler = fill_class(hoomd.context.current.mpcd.data,
+                                      density,
+                                      type_id,
+                                      T.cpp_variant,
+                                      seed,
+                                      self._cpp.geometry)
+        else:
+            self._filler.setDensity(density)
+            self._filler.setType(type_id)
+            self._filler.setTemperature(T.cpp_variant)
+            self._filler.setSeed(seed)
+
+    def remove_filler(self):
+        """ Remove the virtual particle filler.
+
+        Example::
+
+            anti_sym_cos.remove_filler()
+
+        """
+        hoomd.util.print_status_line()
+
+        self._filler = None
+
+    def set_params(self, H=None, h=None, p=None, V=None, boundary=None):
+        """ Set parameters for the symmetric cosine geometry.
+
+        Args:
+            H (float): channel half-width at its widest point
+            h (float): channel half-width at its narrowest point
+            p (int):   channel periodicity
+            V (float): wall speed (default: 0)
+            boundary (str): boundary condition at wall ("slip" or "no_slip"", defaul "no_slip")
+
+        Changing any of these parameters will require the geometry to be
+        constructed and validated, so do not change these too often.
+
+        Examples::
+
+            anti_sym_cos.set_params(H=15.0)
+            anti_sym_cos.set_params(V=0.2, boundary="no_slip")
+
+        """
+        hoomd.util.print_status_line()
+
+        if H is not None:
+            self.H = H
+
+        if h is not None:
+            self.h = h
+
+        if p is not None:
+            self.p = p
+
+        if V is not None:
+            self.V = V
+
+        if boundary is not None:
+            self.boundary = boundary
+
+        bc = self._process_boundary(self.boundary)
+        self._cpp.geometry = _azplugins.AntiSymCosGeometry(self.L,self.H,self.h,self.p,self.V,bc)
+        if self._filler is not None:
+            self._filler.setGeometry(self._cpp.geometry)
+
 class sym_cos(hoomd.mpcd.stream._streaming_method):
     r""" Symmetric Cosine channel streaming geometry.
 

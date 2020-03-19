@@ -19,6 +19,18 @@ namespace azplugins
 namespace detail
 {
 
+void export_AntiSymCosGeometry(pybind11::module& m)
+    {
+    namespace py = pybind11;
+    py::class_<AntiSymCosGeometry, std::shared_ptr<AntiSymCosGeometry> >(m, "AntiSymCosGeometry")
+    .def(py::init<Scalar, Scalar, Scalar, unsigned int,Scalar, mpcd::detail::boundary>())
+    .def("getHwide", &AntiSymCosGeometry::getHwide)
+    .def("getHnarrow", &AntiSymCosGeometry::getHnarrow)
+    .def("getRepetitions", &AntiSymCosGeometry::getRepetitions)
+    .def("getVelocity", &AntiSymCosGeometry::getVelocity)
+    .def("getBoundaryCondition", &AntiSymCosGeometry::getBoundaryCondition);
+    }
+
 void export_SymCosGeometry(pybind11::module& m)
     {
     namespace py = pybind11;

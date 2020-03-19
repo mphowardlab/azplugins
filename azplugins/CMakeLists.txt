@@ -126,11 +126,13 @@ list(APPEND _${COMPONENT_NAME}_sources
 if(ENABLE_CUDA)
 list(APPEND _${COMPONENT_NAME}_sources
     MPCDReversePerturbationFlowGPU.cc
+    MPCDAntiSymCosGeometryFillerGPU.cc
     MPCDSymCosGeometryFillerGPU.cc
     )
 list(APPEND _${COMPONENT_NAME}_cu_sources
     MPCDStreamingMethod.cu
     MPCDReversePerturbationFlowGPU.cu
+    MPCDAntiSymCosGeometryFillerGPU.cu
     MPCDSymCosGeometryFillerGPU.cu
     )
 endif(ENABLE_CUDA)
