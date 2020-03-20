@@ -205,7 +205,6 @@ class mpcd_anti_sym_cos_test(unittest.TestCase):
       self.assertTrue(anti_sym_cos._filler is None)
       hoomd.run(1)
 
-
     def tearDown(self):
         del self.s
 
