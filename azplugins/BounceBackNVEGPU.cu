@@ -21,9 +21,13 @@ namespace gpu
 template cudaError_t nve_bounce_step_one<mpcd::detail::SlitGeometry>
     (const bounce_args_t& args, const mpcd::detail::SlitGeometry& geom);
 
-//! Template instantiation of slit geometry streaming
+//! Template instantiation of SymCos geometry streaming
 template cudaError_t nve_bounce_step_one<azplugins::detail::SymCosGeometry>
     (const bounce_args_t& args, const azplugins::detail::SymCosGeometry& geom);
+
+//! Template instantiation of AntiSymCos geometry streaming
+template cudaError_t nve_bounce_step_one<azplugins::detail::AntiSymCosGeometry>
+        (const bounce_args_t& args, const azplugins::detail::AntiSymCosGeometry& geom);
 
 namespace kernel
 {

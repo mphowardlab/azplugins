@@ -86,7 +86,7 @@ __global__ void anti_sym_cos_draw_particles(Scalar4 *d_pos,
     Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
 
 
-    z = sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+ sign*m_h ) + z;
+    z = m_amplitude*fast::cos(x*m_pi_period_div_L)+ sign*m_h + z;
 
 
     d_pos[pidx] = make_scalar4(x,

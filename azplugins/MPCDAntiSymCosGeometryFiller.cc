@@ -39,7 +39,7 @@ void AntiSymCosGeometryFiller::computeNumFill()
     if (!m_geom->validateBox(global_box, cell_size))
         {
         m_exec_conf->msg->error() << "Invalid cosine geometry for global box, cannot fill virtual particles." << std::endl;
-        m_exec_conf->msg->error() << "Filler thickness is given by cell_size +  0.5*(H-h)*sin((cell_size+max_shift)*2*pi*p/L); " << std::endl;
+        m_exec_conf->msg->error() << "Filler thickness is given by cell_size +  0.5*A*sin((cell_size+max_shift)*2*pi*p/L); " << std::endl;
         throw std::runtime_error("Invalid AntiSymCos geometry for global box");
         }
 
@@ -96,7 +96,7 @@ void AntiSymCosGeometryFiller::drawParticles(unsigned int timestep)
         Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
         Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
 
-        z = sign*(m_Amplitude*fast::cos(x*m_pi_period_div_L)+2*m_H_narrow ) + z;
+        z = m_Amplitude*fast::cos(x*m_pi_period_div_L)+sign*m_H_narrow + z;
 
         const unsigned int pidx = first_idx + i;
         h_pos.data[pidx] = make_scalar4(x,
@@ -104,7 +104,7 @@ void AntiSymCosGeometryFiller::drawParticles(unsigned int timestep)
                                         z,
                                         __int_as_scalar(m_type));
 
-        //m_exec_conf->msg->notice(5) << x << " "<< y << " "<< z << std::endl;
+        //m_exec_conf->msg->notice(0)<< "filler " << x << " "<< y << " "<< z << std::endl;
 
         hoomd::NormalDistribution<Scalar> gen(vel_factor, 0.0);
         Scalar3 vel;

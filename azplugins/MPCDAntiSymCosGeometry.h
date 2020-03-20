@@ -90,15 +90,15 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
              */
 
             Scalar a = pos.z - m_Amplitude*fast::cos(pos.x*m_pi_period_div_L);
-            const signed char sign = (2*m_h < a) - (-2*m_h > a);
-
+            const signed char sign = (a > m_h) - (a < -m_h);
+            //printf("in detectCollision\n");
             // exit immediately if no collision is found
             if (sign == 0)
                 {
                 dt = Scalar(0);
                 return false;
                 }
-            printf("Sign %f %f %f %f\n",pos.x,pos.x,m_Amplitude*fast::cos(pos.x*m_pi_period_div_L),m_h);
+
             /* Calculate position (x0,y0,z0) of collision with wall:
             *  Because there is no analythical solution for f(x) = cos(x)-x = 0, we use Newtons's method to nummerically estimate the
             *  x positon of the intersection first. It is convinient to use the halfway point between the last particle
@@ -113,24 +113,25 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
             Scalar x0 = pos.x - 0.5*dt*vel.x;
 
             // delta =  abs(0-f(x))
-            Scalar delta = abs(0 - ((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+ 2*sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
+            Scalar delta = abs(0 - ((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+ sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
 
             Scalar n,n2;
             Scalar s,c;
+
             while( delta > target_presicion && counter < max_iteration)
                 {
                 fast::sincos(x0*m_pi_period_div_L,s,c);
-                n  =  (m_Amplitude*c + 2*sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
-                n2 = -sign*m_pi_period_div_L*m_Amplitude*s - vel.z/vel.x;                       // df
+                n  =  (m_Amplitude*c + sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
+                n2 = -m_pi_period_div_L*m_Amplitude*s - vel.z/vel.x;                       // df
                 x0 = x0 - n/n2;                                                                      // x = x - f/df
-                delta = abs(0-((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+2*sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
+                delta = abs(0-((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
                 counter +=1;
                 }
 
             /* The new z position is calculated from the wall equation to guarantee that the new particle positon is exactly at the wall
              * and not accidentally slightly inside of the wall because of nummerical presicion.
              */
-            Scalar z0 = (m_Amplitude*fast::cos(x0*m_pi_period_div_L)+2*sign*m_h);
+            Scalar z0 = (m_Amplitude*fast::cos(x0*m_pi_period_div_L)+sign*m_h);
 
             /* The new y position can be calculated from the fact that the last position outside of the wall, the current position inside
              * of the  wall, and the new position exactly at the wall are on a straight line.
@@ -140,7 +141,7 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
             /* chatch the case where a particle collides exactly vertically (v_x=0 -> old x pos = new x pos)
              * In this case, y0 = -(0)*0/0 + (y-dt*v_y) == nan, should be y0 =(y-dt*v_y)
              */
-            if (vel.x==0. && pos.x==x0)
+            if (vel.x==0.)
                 {
                 y0 = (pos.y-dt*vel.y);
                 }
@@ -155,8 +156,8 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
 
             /* update velocity according to boundary conditions.
              *
-             * A upwards normal of the surface is given by (-df/dx,-df/dy,1) with f = sign*(A*cos(x*2*pi*p/L)+A+h), so
-             * normal  = (sign*A*2*pi*p/L*sin(x*2*pi*p/L),0,1)/|length|
+             * A upwards normal of the surface is given by (-df/dx,-df/dy,1) with f = (A*cos(x*2*pi*p/L)+2*sign*h), so
+             * normal  = (A*2*pi*p/L*sin(x*2*pi*p/L),0,1)/|length|
              * The direction of the normal is not important for the reflection.
              * Calculate components by hand to avoid sqrt in normalization of the normal of the surface.
              *
@@ -177,8 +178,7 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
 
                 vel_new.x = vel.x - 2*B*(B*vel.x + vel.z)/(B*B+1);
                 vel_new.y = vel.y;
-                vel_new.z = vel.z -   2*(B*vel.x + vel.z)/(B*B+1);
-              //  printf("%f %f %f %f %f %f\n",vel.x,vel.y,vel.z,vel_new.x,vel_new.y,vel_new.z );
+                vel_new.z = vel.z - 2*(B*vel.x + vel.z)/(B*B+1);
                 }
 
             vel = vel_new;
@@ -193,8 +193,7 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
         HOSTDEVICE bool isOutside(const Scalar3& pos) const
             {
             Scalar a = pos.z - m_Amplitude*fast::cos(pos.x*m_pi_period_div_L);
-
-            return (a > 2*m_h || a < -2*m_h);
+            return (a > m_h || a < -m_h);
             }
 
         //! Validate that the simulation box is large enough for the geometry

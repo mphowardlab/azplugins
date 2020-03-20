@@ -171,7 +171,7 @@ class __attribute__((visibility("default"))) SymCosGeometry
             /* chatch the case where a particle collides exactly vertically (v_x=0 -> old x pos = new x pos)
              * In this case, y0 = -(0)*0/0 + (y-dt*v_y) == nan, should be y0 =(y-dt*v_y)
              */
-            if (vel.x==0. && pos.x==x0)
+            if (vel.x==0.)
                 {
                 y0 = (pos.y-dt*vel.y);
                 }

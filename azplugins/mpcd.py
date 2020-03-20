@@ -161,7 +161,7 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
         boundary (str): boundary condition at wall ("slip" or "no_slip"", defaul "no_slip")
         period (int): Number of integration steps between collisions
 
-    The symmetric cosine geometry represents a fluid confined between two walls
+    The anti symmetric cosine geometry represents a fluid confined between two walls
     described by a sinusoidal profile with equations :math: `(A*cos(2*pi*p*x/Lx) +/- 2h)`,
     where A is the amplitude, :math:`Lx` is the BoxDim in *x* direction, and
     :math: `p` is the period of the wall cosine. The channel is anti-symmetric

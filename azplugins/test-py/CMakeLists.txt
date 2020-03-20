@@ -65,6 +65,7 @@ set(TEST_LIST_GPU
 
 set(MPCD_ONLY
     test_mpcd_reverse_perturbation
+    test_mpcd_anti_sym_cos
     test_mpcd_sym_cos
     )
 
