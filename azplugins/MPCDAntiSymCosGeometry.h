@@ -33,17 +33,48 @@ namespace detail
 
 //! Antisymmetric Cosine channel geometry
 /*!
- * This class defines a channel with anti-symmetric cosine walls given by the equations
- * (A cos(x*2*pi*p/Lx) +/- 2*H_narrow).
+ * This class defines a channel with anti-symmetric cosine walls given by the
+ * equations (A cos(x*2*pi*p/Lx) +/- H_narrow).
  * A is the amplitude and p is the period of the wall cosine.
- * H_narrow is the half height of the channel at x=0
+ * H_narrow is the half height of the channel. This creates a wavy channel.
  * The cosine wall wavelength/frenquency needs to be consumable with the
- * periodic boundary conditions in x,
- * therefore the period p is specified and the wavelength 2*pi*p/Lx is calculated.
+ * periodic boundary conditions in x, therefore the period p is specified and
+ * the wavelength 2*pi*p/Lx is calculated.
+ *
+ * Below is what the channel looks like with A=5, h=2, p=1 in a box of 10x10x18:
+ *
+ *    8 +------------------------------------------------+
+ *      |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|
+ *      |XXXXXXXXXXXXXXXXXXXX========XXXXXXXXXXXXXXXXXXXX|
+ *    6 |XXXXXXXXXXXXXXXXXX==        ==XXXXXXXXXXXXXXXXXX|
+ *      |XXXXXXXXXXXXXXXXX==          ==XXXXXXXXXXXXXXXXX|
+ *      |XXXXXXXXXXXXXXX==              ==XXXXXXXXXXXXXXX|
+ *    4 |XXXXXXXXXXXXXX==                ==XXXXXXXXXXXXXX|
+ *      |XXXXXXXXXXXXX==                  ==XXXXXXXXXXXXX|
+ *      |XXXXXXXXXXXX==      ========      ==XXXXXXXXXXXX|
+ *    2 |XXXXXXXXXXX==     ===XXXXXX===     ==XXXXXXXXXXX|
+ *      |XXXXXXXXXX==     ==XXXXXXXXXX==     ==XXXXXXXXXX|
+ *      |XXXXXXXXX==     ==XXXXXXXXXXXX==     ==XXXXXXXXX|
+ *    0 |XXXXXXXX==     =XXXXXXXXXXXXXXXX=     ==XXXXXXXX|
+ * z    |XXXXXXX==     =XXXXXXXXXXXXXXXXXX=     ==XXXXXXX|
+ *      |XXXXXX=      =XXXXXXXXXXXXXXXXXXXX=      =XXXXXX|
+ *      |XXXX==     ==XXXXXXXXXXXXXXXXXXXXXX==     ==XXXX|
+ *   -2 |XX===     ==XXXXXXXXXXXXXXXXXXXXXXXX==     ===XX|
+ *      |===      ==XXXXXXXXXXXXXXXXXXXXXXXXXX==      ===|
+ *      |        ==XXXXXXXXXXXXXXXXXXXXXXXXXXXX==        |
+ *   -4 |       ==XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX==       |
+ *      |      ==XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX==      |
+ *      |     ==XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX==     |
+ *   -6 |   ==XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX==   |
+ *      |===XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX===|
+ *      |XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX|
+ *   -8 +------------------------------------------------+
+ *          -4        -2         0        2         4
+ *                               x
  *
  * The geometry enforces boundary conditions \b only on the MPCD solvent particles.
- * Additional interactions
- * are required with any embedded particles using appropriate wall potentials.
+ * Additional interactions are required with any embedded particles using
+ * appropriate wall potentials.
  *
  * The wall boundary conditions can optionally be changed to slip conditions.
  */
@@ -122,8 +153,8 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
                 {
                 fast::sincos(x0*m_pi_period_div_L,s,c);
                 n  =  (m_Amplitude*c + sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
-                n2 = -m_pi_period_div_L*m_Amplitude*s - vel.z/vel.x;                       // df
-                x0 = x0 - n/n2;                                                                      // x = x - f/df
+                n2 = -m_pi_period_div_L*m_Amplitude*s - vel.z/vel.x;                  // df
+                x0 = x0 - n/n2;                                                       // x = x - f/df
                 delta = abs(0-((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
                 counter +=1;
                 }
@@ -156,7 +187,7 @@ class __attribute__((visibility("default"))) AntiSymCosGeometry
 
             /* update velocity according to boundary conditions.
              *
-             * A upwards normal of the surface is given by (-df/dx,-df/dy,1) with f = (A*cos(x*2*pi*p/L)+2*sign*h), so
+             * A upwards normal of the surface is given by (-df/dx,-df/dy,1) with f = (A*cos(x*2*pi*p/L) +/- sign*h), so
              * normal  = (A*2*pi*p/L*sin(x*2*pi*p/L),0,1)/|length|
              * The direction of the normal is not important for the reflection.
              * Calculate components by hand to avoid sqrt in normalization of the normal of the surface.

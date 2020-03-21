@@ -172,35 +172,46 @@ class anti_sym_cos(_bounce_back):
         V (float): wall speed (default: 0)
         boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
-    This integration method applies to particles in *group* in the symmetric cosine channel geometry.
+    This integration method applies to particles in *group* in the symmetric
+    cosine channel geometry.
 
-    The boundary condition at the wall can be specified with *boundary* to either `'slip'` or `'no_slip'`. A no-slip
-    condition is more common for solid boundaries. If the no-slip condition is combined with a body-force on the
-    particles, a parabolic flow field with be generated.
+    The boundary condition at the wall can be specified with *boundary* to either
+    `'slip'` or `'no_slip'`. A no-slip condition is more common for solid boundaries.
+    If the no-slip condition is combined with a body-force on the particles, a
+    flow field with be generated with a velocity close to zero at the walls.
 
     Note:
-        It may be necessary to add additional 'ghost' particles near the boundaries in order to correctly enforce the
-        boundary conditions and to reduce density fluctuations near the wall.
+        It may be necessary to add additional 'ghost' particles near the boundaries
+        in order to correctly enforce the boundary conditions and to reduce
+        density fluctuations near the wall.
 
-    HOOMD uses a periodic simulation box, but the geometry imposes inherent non-periodic boundary conditions. You
-    **must** ensure that the box is sufficiently large to enclose the geometry (i.e., :math:`L_z > 2H`). An error will
-    be raised if the simulation box is not large enough to contain the geometry. Additionally, all particles must lie
-    initially **inside** the geometry (i.e., all particles are between the plates). The particle configuration will be
-    validated on the first call to :py:meth:`hoomd.run()`, and an error will be raised if this condition is not met.
+    HOOMD uses a periodic simulation box, but the geometry imposes inherent
+    non-periodic boundary conditions. You **must** ensure that the box is
+    sufficiently large to enclose the geometry (i.e., :math:`L_z > 2H`). An
+    error will be raised if the simulation box is not large enough to contain
+    the geometry. Additionally, all particles must lie initially **inside** the
+    geometry (i.e., all particles are between the cosines). The particle
+    configuration will be validated on the first call to :py:meth:`hoomd.run()`,
+    and an error will be raised if this condition is not met.
 
     Warning:
-        You must also ensure that particles do not self-interact through the periodic boundaries. This is usually
-        achieved for simple pair potentials by padding the box size by the largest cutoff radius. Failure to do so
+        You must also ensure that particles do not self-interact through the
+        periodic boundaries. This is usually achieved for simple pair potentials
+        by padding the box size by the largest cutoff radius. Failure to do so
         may result in unphysical interactions.
 
-    :py:class:`sym_cos` is an integration method. It must be used with :py:class:`hoomd.md.mode_standard`.
+    :py:class:`sym_cos` is an integration method. It must be used with
+    :py:class:`hoomd.md.mode_standard`.
 
     Warning:
-        Bounce-back methods do not support anisotropic integration. If an anisotropic pair potential is specified,
-        the torques will be ignored during the integration, and the particle orientations will not be updated. Do
-        **not** use a bounce-back integrator with anisotropic particles or rigid bodies.
+        Bounce-back methods do not support anisotropic integration. If an
+        anisotropic pair potential is specified, the torques will be ignored
+        during the integration, and the particle orientations will not be updated.
+        Do **not** use a bounce-back integrator with anisotropic particles or
+        rigid bodies.
 
-    A :py:class:`hoomd.compute.thermo` is automatically specified and associated with *group*.
+    A :py:class:`hoomd.compute.thermo` is automatically specified and associated
+    with *group*.
 
     Examples::
 
@@ -286,35 +297,46 @@ class sym_cos(_bounce_back):
         V (float): wall speed (default: 0)
         boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
-    This integration method applies to particles in *group* in the symmetric cosine channel geometry.
+    This integration method applies to particles in *group* in the symmetric
+    cosine channel geometry.
 
-    The boundary condition at the wall can be specified with *boundary* to either `'slip'` or `'no_slip'`. A no-slip
-    condition is more common for solid boundaries. If the no-slip condition is combined with a body-force on the
+    The boundary condition at the wall can be specified with *boundary* to either
+    `'slip'` or `'no_slip'`. A no-slip condition is more common for solid boundaries.
+    If the no-slip condition is combined with a body-force on the
     particles, a parabolic flow field with be generated.
 
     Note:
-        It may be necessary to add additional 'ghost' particles near the boundaries in order to correctly enforce the
-        boundary conditions and to reduce density fluctuations near the wall.
+        It may be necessary to add additional 'ghost' particles near the boundaries
+        in order to correctly enforce the boundary conditions and to reduce density
+        fluctuations near the wall.
 
-    HOOMD uses a periodic simulation box, but the geometry imposes inherent non-periodic boundary conditions. You
-    **must** ensure that the box is sufficiently large to enclose the geometry (i.e., :math:`L_z > 2H`). An error will
-    be raised if the simulation box is not large enough to contain the geometry. Additionally, all particles must lie
-    initially **inside** the geometry (i.e., all particles are between the plates). The particle configuration will be
-    validated on the first call to :py:meth:`hoomd.run()`, and an error will be raised if this condition is not met.
+    HOOMD uses a periodic simulation box, but the geometry imposes inherent
+    non-periodic boundary conditions. You **must** ensure that the box is
+    sufficiently large to enclose the geometry (i.e., :math:`L_z > 2H`). An error
+    will be raised if the simulation box is not large enough to contain the geometry.
+    Additionally, all particles must lie initially **inside** the geometry (i.e.,
+    all particles are between the cosines). The particle configuration will be
+    validated on the first call to :py:meth:`hoomd.run()`, and an error will be
+    raised if this condition is not met.
 
     Warning:
-        You must also ensure that particles do not self-interact through the periodic boundaries. This is usually
-        achieved for simple pair potentials by padding the box size by the largest cutoff radius. Failure to do so
+        You must also ensure that particles do not self-interact through the
+        periodic boundaries. This is usually achieved for simple pair potentials
+        by padding the box size by the largest cutoff radius. Failure to do so
         may result in unphysical interactions.
 
-    :py:class:`sym_cos` is an integration method. It must be used with :py:class:`hoomd.md.mode_standard`.
+    :py:class:`sym_cos` is an integration method. It must be used with
+    :py:class:`hoomd.md.mode_standard`.
 
     Warning:
-        Bounce-back methods do not support anisotropic integration. If an anisotropic pair potential is specified,
-        the torques will be ignored during the integration, and the particle orientations will not be updated. Do
-        **not** use a bounce-back integrator with anisotropic particles or rigid bodies.
+        Bounce-back methods do not support anisotropic integration. If an
+        anisotropic pair potential is specified, the torques will be ignored
+        during the integration, and the particle orientations will not be updated.
+        Do **not** use a bounce-back integrator with anisotropic particles or
+        rigid bodies.
 
-    A :py:class:`hoomd.compute.thermo` is automatically specified and associated with *group*.
+    A :py:class:`hoomd.compute.thermo` is automatically specified and associated
+    with *group*.
 
     Examples::
 

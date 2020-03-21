@@ -158,26 +158,26 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
         h (float): channel half-width
         p (int):   channel periodicity
         V (float): wall speed (default: 0)
-        boundary (str): boundary condition at wall ("slip" or "no_slip"", defaul "no_slip")
+        boundary (str): boundary condition at wall ("slip" or "no_slip"", default "no_slip")
         period (int): Number of integration steps between collisions
 
-    The anti symmetric cosine geometry represents a fluid confined between two walls
-    described by a sinusoidal profile with equations :math: `(A*cos(2*pi*p*x/Lx) +/- 2h)`,
-    where A is the amplitude, :math:`Lx` is the BoxDim in *x* direction, and
-    :math: `p` is the period of the wall cosine. The channel is anti-symmetric
-    around the origin in *z* direction.
-    The cosine walls are running parallel and create a wavy cannel
-    with :math: `p` repetitions.
-    The walls may be put into motion, moving with speeds :math:`-V` and
-    :math:`+V` in the *x* direction, respectively.
+    The anti-symmetric cosine geometry represents a fluid confined between two
+    walls described by a sinusoidal profile with equations
+    :math: `(A*cos(2*pi*p*x/Lx) +/- 2h)`, where A is the amplitude, :math: `h` is
+    the channel half-width, :math:`Lx` is the BoxDim in *x* direction,
+    and :math: `p` is the period of the wall cosine. The channel is
+    anti-symmetric around the origin in *z* direction. The cosines of top and
+    bottom are running in parallel and create a "wavy" cannel with :math: `p`
+    repetitions. The walls may be put into motion, moving with speeds
+    :math:`-V` and :math:`+V` in the *x* direction, respectively.
 
     The "inside" of the :py:class:`anti_sim_cos` is the space where
-    :math:`|z- cos(2pi*p*x/Lx)| < 2h`.
+    :math:`|z- cos(2*pi*p*x/Lx)| < h`.
 
     Examples::
 
         stream.anti_sim_cos(A=30.,h=1.5, p=1)
-        stream.anti_sim_cos(A=25.,h=2,p=2,boundary="no_slip",V=0.1, period=10)
+        stream.anti_sim_cos(A=25.,h=2,p=2, boundary="no_slip", V=0.1, period=10)
 
 
     """
@@ -218,9 +218,9 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
             type (str): Type of the MPCD particles to fill with.
 
         The virtual particle filler draws particles within the volume *outside* the
-        slit walls that could be overlapped by any cell that is partially *inside*
-        the slit channel. The particles are drawn from
-        the velocity distribution consistent with *kT* and with the given *density*.
+        wavy walls that could be overlapped by any cell that is partially *inside*
+        the channel. The particles are drawn from the velocity distribution
+        consistent with *kT* and with the given *density*.
         The mean of the distribution is zero in *y* and *z*, but is equal to the wall
         speed in *x*. Typically, the virtual particle density and temperature are set
         to the same conditions as the solvent.
@@ -275,7 +275,7 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
             h (float): channel half-width
             p (int):   channel periodicity
             V (float): wall speed (default: 0)
-            boundary (str): boundary condition at wall ("slip" or "no_slip"", defaul "no_slip")
+            boundary (str): boundary condition at wall ("slip" or "no_slip"", default "no_slip")
 
         Changing any of these parameters will require the geometry to be
         constructed and validated, so do not change these too often.
@@ -316,7 +316,7 @@ class sym_cos(hoomd.mpcd.stream._streaming_method):
         h (float): channel half-width at its narrowest point
         p (int):   channel periodicity
         V (float): wall speed (default: 0)
-        boundary (str): boundary condition at wall ("slip" or "no_slip"", defaul "no_slip")
+        boundary (str): boundary condition at wall ("slip" or "no_slip"", default "no_slip")
         period (int): Number of integration steps between collisions
 
     The symmetric cosine geometry represents a fluid confined between two walls
@@ -326,9 +326,10 @@ class sym_cos(hoomd.mpcd.stream._streaming_method):
     direction, and :math: `p` is the
     period of the wall cosine. The channel is axis-symmetric around the origin in
     *z* direction. The two symmetric cosine walls create a periodic series of
-    :math: `p` constrictions and expansions.
-    The walls may be put into motion, moving with speeds :math:`-V` and
-    :math:`+V` in the *x* direction, respectively.
+    :math: `p` constrictions and expansions. The parameter :math: `H` gives the
+    channel half-width at its widest and :math: `h` is the channel half-width at
+    its narrowest point. The walls may be put into motion, moving with speeds
+    :math:`-V` and :math:`+V` in the *x* direction, respectively.
 
     The "inside" of the :py:class:`sim_cos` is the space where
     :math:`|z| < (A cos(2pi*p*x/Lx) + A + h)`.
@@ -336,7 +337,7 @@ class sym_cos(hoomd.mpcd.stream._streaming_method):
     Examples::
 
         stream.sim_cos(H=30.,h=1.5, p=1)
-        stream.sim_cos(H=25.,h=2,p=2,boundary="no_slip",V=0.1, period=10)
+        stream.sim_cos(H=25.,h=2,p=2, boundary="no_slip", V=0.1, period=10)
 
 
     """
@@ -377,8 +378,8 @@ class sym_cos(hoomd.mpcd.stream._streaming_method):
             type (str): Type of the MPCD particles to fill with.
 
         The virtual particle filler draws particles within the volume *outside* the
-        slit walls that could be overlapped by any cell that is partially *inside*
-        the slit channel. The particles are drawn from
+        cosine walls that could be overlapped by any cell that is partially *inside*
+        the channel. The particles are drawn from
         the velocity distribution consistent with *kT* and with the given *density*.
         The mean of the distribution is zero in *y* and *z*, but is equal to the wall
         speed in *x*. Typically, the virtual particle density and temperature are set
