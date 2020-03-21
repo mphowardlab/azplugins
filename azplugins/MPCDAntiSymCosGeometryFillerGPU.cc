@@ -43,7 +43,7 @@ void AntiSymCosGeometryFillerGPU::drawParticles(unsigned int timestep)
                                    d_tag.data,
                                    *m_geom,
                                    m_pi_period_div_L,
-                                   m_amplitude,
+                                   m_Amplitude,
                                    m_H_narrow,
                                    m_thickness,
                                    m_pdata->getBox(),
