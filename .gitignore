@@ -2,3 +2,5 @@ build*
 *.pyc
 __pycache__
 .DS_Store
+doc/build
+doc/source/reference/api

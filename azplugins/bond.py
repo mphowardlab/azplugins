@@ -16,14 +16,15 @@ class fene(hoomd.md.bond._bond):
     Args:
         name (str): Name of the bond instance.
 
-    :py:class:`fene` specifies a FENE potential energy between the two particles in each defined bond.
+    :py:class:`fene` specifies a FENE potential energy between the two particles
+    in each defined bond.
 
     .. math::
 
-        V(r) = - \frac{1}{2} k r_0^2 \ln \left( 1 - \left( \frac{r}{r_0} \right)^2 \right) + V_{\mathrm{WCA}}(r)
+        V(r) = - \frac{1}{2} k r_0^2 \ln \left( 1 - \left( \frac{r}{r_0} \right)^2 \right) + V_{\rm WCA}(r)
 
     where :math:`\vec{r}` is the vector pointing from one particle to the other in the bond.
-    The potential :math:`V_{\mathrm{WCA}}(r)` is given by:
+    The potential :math:`V_{\rm WCA}(r)` is given by:
 
     .. math::
         :nowrap:
@@ -112,6 +113,7 @@ class fene24(hoomd.md.bond._bond):
     parameter :math:`\lambda` setting the strength of the attractive tail.
     When :math:`\lambda` is 0, the potential is purely repulsive.
     When :math:`\lambda` is 1, the potential a generalized Lennard-Jones potential:
+
     .. math::
         :nowrap:
 
@@ -123,6 +125,7 @@ class fene24(hoomd.md.bond._bond):
 
     Here, :math:`V_{\mathrm{LJ,48-24}}(r,\varepsilon,\sigma)` is a Lennard-Jones potential with
     parameters :math:`\varepsilon`, and :math:`\sigma`:
+
     .. math::
         :nowrap:
 

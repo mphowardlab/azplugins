@@ -109,6 +109,7 @@ class colloid(hoomd.md.pair.pair):
     The pair potential has three different coupling styles between particle types:
 
     - ``slv-slv`` gives the Lennard-Jones potential for coupling between pointlike particles
+
     .. math::
         :nowrap:
 
@@ -142,7 +143,7 @@ class colloid(hoomd.md.pair.pair):
 
     - :math:`\varepsilon` - *epsilon* (in energy units) - Hamaker constant
     - :math:`\sigma` - *sigma* (in distance units) - Size of colloid constituent particles
-        - *optional*: defaults to 1.0
+      - *optional*: defaults to 1.0
     - ``style`` - ``slv-slv``, ``coll-slv``, or ``coll-coll`` - Style of pair interaction
     - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
       - *optional*: defaults to the global r_cut specified in the pair command
@@ -208,6 +209,7 @@ class lj124(hoomd.md.pair.pair):
         name (str): Name of the force instance.
 
     :py:class:`lj124` is a Lennard-Jones potential
+
     .. math::
         :nowrap:
 
@@ -280,6 +282,7 @@ class ashbaugh24(hoomd.md.pair.pair):
     parameter :math:`\lambda` setting the strength of the attractive tail.
     When :math:`\lambda` is 0, the potential is purely repulsive.
     When :math:`\lambda` is 1, the potential a generalized Lennard-Jones potential:
+
     .. math::
         :nowrap:
 
@@ -291,6 +294,7 @@ class ashbaugh24(hoomd.md.pair.pair):
 
     Here, :math:`V_{\mathrm{LJ,48-24}}(r,\varepsilon,\sigma)` is a Lennard-Jones potential with
     parameters :math:`\varepsilon`, and :math:`\sigma`:
+
     .. math::
         :nowrap:
 
@@ -359,6 +363,7 @@ class lj96(hoomd.md.pair.pair):
         name (str): Name of the force instance.
 
     :py:class:`lj96` is a Lennard-Jones potential
+
     .. math::
         :nowrap:
 
