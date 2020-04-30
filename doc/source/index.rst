@@ -8,6 +8,7 @@ azplugins
     tutorial/index
     example/index
     reference/index
+    develop/index
 
 Indices and tables
 ==================
