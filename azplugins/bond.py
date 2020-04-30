@@ -127,13 +127,10 @@ class fene24(hoomd.md.bond._bond):
     parameters :math:`\varepsilon`, and :math:`\sigma`:
 
     .. math::
-        :nowrap:
 
-        \begin{eqnarray*}
-        V_{\mathrm{LJ,48-24}}  = 4 \varepsilon \left(\left(\frac{\sigma}{r}\right)^{48} - \left(\frac{\sigma}{r}\right)^{24}\right)
-        \end{eqnarray*}
+        V_{\mathrm{LJ,48-24}} = 4 \varepsilon \left(\left(\frac{\sigma}{r}\right)^{48} - \left(\frac{\sigma}{r}\right)^{24}\right)
 
-     The following coefficients must be set per unqiue bond type:
+    The following coefficients must be set per unqiue bond type:
 
     - :math:`k` - attractive force strength ``k`` (in units of energy/distance^2)
     - :math:`r_0` - maximal bond stretching ``r0`` (in distance units)

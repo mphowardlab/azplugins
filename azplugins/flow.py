@@ -532,13 +532,13 @@ class langevin(hoomd.md.integrate._integration_method):
                 self.cpp_method.setGamma(i,gamma)
 
 class reverse_perturbation(hoomd.update._updater):
-    R""" Updater class for a shear flow according to the algorithm
-    published by Mueller-Plathe.:
+    R"""Reverse nonequilibrium shear flow in MD simulations.
 
-    "Florian Mueller-Plathe. Reversing the perturbation innonequilibrium
+    Implements an algorithm to generate shear flow, originally published by Mueller-Plathe:
+
+    Florian Mueller-Plathe. "Reversing the perturbation in nonequilibrium
     molecular dynamics:  An easy way to calculate the shear viscosity of
-    fluids. Phys. Rev. E, 59:4894-4898, May 1999."
-    <http://dx.doi.org/10.1103/PhysRevE.59.4894>_
+    fluids." `Phys. Rev. E, 59:4894-4898, May 1999 <https://doi.org/10.1103/PhysRevE.59.4894>`_.
 
     The method swaps up to `Nswap` particle velocities every `period`
     timesteps to introduce a momentum flow.  While the swapping is

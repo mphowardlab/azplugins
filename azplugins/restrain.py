@@ -144,7 +144,7 @@ class plane(force._force):
 
     .. math::
 
-        d = (\mathbf{r)-\mathbf{p}) \cdot \mathbf{n}
+        d = (\mathbf{r}-\mathbf{p}) \cdot \mathbf{n}
 
     where **r** is the **unwrapped** particle position, **p** is a point in the plane,
     and **n** is the unit normal of the plane.
