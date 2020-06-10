@@ -16,35 +16,26 @@ class double_well(hoomd.md.bond._bond):
     Args:
         name (str): Name of the bond instance.
 
-    :py:class:`fene` specifies a FENE potential energy between the two particles in each defined bond.
-
-    .. math::
-
-        V(r) = - \frac{1}{2} k r_0^2 \ln \left( 1 - \left( \frac{r}{r_0} \right)^2 \right) + V_{\mathrm{WCA}}(r)
-
-    where :math:`\vec{r}` is the vector pointing from one particle to the other in the bond.
-    The potential :math:`V_{\mathrm{WCA}}(r)` is given by:
+    :py:class:`double_well` specifies a double well potential between the two particles in each defined bond.
+    The potential is given by:
 
     .. math::
         :nowrap:
 
         \begin{eqnarray*}
-        V_{\mathrm{WCA}}(r)  = & 4 \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r} \right)^{6} \right]  + \varepsilon & r < 2^{\frac{1}{6}}\sigma\\
-                   = & 0          & r\ge 2^{\frac{1}{6}}\sigma
+        V_{\mathrm{DW}}(r)  =  \frac{V_{max}}{b^4} \left[ \left( r - a/2 \right)^2 - b^2 \right]^2
         \end{eqnarray*}
 
     Coefficients:
 
-    - :math:`k` - attractive force strength ``k`` (in units of energy/distance^2)
-    - :math:`r_0` - size parameter ``r0`` (in distance units)
-    - :math:`\varepsilon` - repulsive force strength ``epsilon`` (in energy units)
-    - :math:`\sigma` - repulsive force interaction distance ``sigma`` (in distance units)
+    - :math:`V_max` - Potential maximum height between the two minima at 1/2``a`` (in energy units)
+    - :math:`a` - twice the location of the potential maximum, maximum is at 1/2``a`` ( in distance units)
+    - :math:`b` - tunes the disance between the potential minima at ``1/2(a +/- 2b)`` (in distance units)
 
     Examples::
 
-        fene = azplugins.bond.fene()
-        fene.bond_coeff.set('polymer', k=30.0, r0=1.5, sigma=1.0, epsilon=2.0)
-        fene.bond_coeff.set('backbone', k=100.0, r0=1.0, sigma=1.0, epsilon= 2.0)
+        fene = azplugins.bond.double_well()
+        fene.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.5)
 
     """
     def __init__(self, name=None):
@@ -52,7 +43,7 @@ class double_well(hoomd.md.bond._bond):
 
         # check that some bonds are defined
         if hoomd.context.current.system_definition.getBondData().getNGlobal() == 0:
-            hoomd.context.msg.error("azplugins.bond.fene(): No bonds are defined.\n")
+            hoomd.context.msg.error("azplugins.bond.double_well(): No bonds are defined.\n")
             raise RuntimeError("Error creating bond forces")
 
         # initialize the base class

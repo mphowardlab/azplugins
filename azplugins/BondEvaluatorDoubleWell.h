@@ -28,7 +28,18 @@ namespace detail
 {
 
 //! Class for evaluating the double well bond potential
-/*! The parameters are:
+/*!
+This bond potential follows the functional form
+\f{eqnarray*}
+V_{\mathrm{DW}}(r)  =   \frac{V_{min}}{b^4} \left[ \left( r - a/2 \right)^2 -b^2 \right]^2 
+\f}
+and has two minima at r = 1/2(a +/- 2b), seperated by a maximum at 1/2a of height V_max.
+The parameter a tunes the location of the maximal value and the parameter b tunes the distance of the
+two maxima from each other.  This potential is useful to model bonds which can be either mechanically or
+thermally "activated" into a effectively longer state. The value of V_max can be used to tune the height of the
+energy barrier in between the two states.
+
+The parameters are:
     - \a V_max (params.x) maximum potential value between the two minima
     - \a a (params.y) shift for the location of the V_max, maximun is at 1/2 a
     - \a b (params.z) scaling for the distance of the two minima at 1/2(a +/- 2b)
@@ -81,10 +92,12 @@ class BondEvaluatorDoubleWell
             // check for invalid parameters
             if (V_max == Scalar(0.0) || a == Scalar(0.0) || b == Scalar(0.0) ) return false;
 
-            Scalar r2inv = Scalar(1.0)/rsq;
+            Scalar r = sqrt(rsq);
+            Scalar r_min_half_a = r-0.5*a;
+            Scalar b_sq = b*b;
 
-            //force_divr += -K / (Scalar(1.0) - rsq/(r_0*r_0));
-            //bond_eng += -Scalar(0.5)*K*(r_0*r_0)*log(Scalar(1.0) - rsq/(r_0*r_0));
+            bond_eng = V_max/(b_sq*b_sq)*(r_min_half_a*r_min_half_a - b_sq)*(r_min_half_a*r_min_half_a - b_sq);
+            force_divr = - V_max/(b_sq*b_sq)*(r_min_half_a*r_min_half_a - b_sq)*r_min_half_a/r;
 
             return true;
             }
