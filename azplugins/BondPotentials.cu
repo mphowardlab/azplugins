@@ -18,6 +18,12 @@ namespace azplugins
 namespace gpu
 {
 
+//! Kernel driver for double well bond potential
+template cudaError_t compute_bond_potential<azplugins::detail::BondEvaluatorDoubleWell>
+    (const bond_args_t& bond_args,
+     const typename azplugins::detail::BondEvaluatorDoubleWell::param_type *d_params,
+     unsigned int *d_flags);
+
 //! Kernel driver for fene  bond potential
 template cudaError_t compute_bond_potential<azplugins::detail::BondEvaluatorFENE>
     (const bond_args_t& bond_args,
