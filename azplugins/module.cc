@@ -20,6 +20,7 @@ namespace py = pybind11;
 #include "WallPotentials.h"
 
 /* Updaters */
+#include "DynamicBondUpdater.h"
 #include "ReversePerturbationFlow.h"
 #include "TypeUpdater.h"
 #include "ParticleEvaporator.h"
@@ -189,6 +190,7 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_special_pair_potential<azplugins::detail::PairEvaluatorLJ96>(m,"SpecialPairPotentialLJ96");
 
     /* Updaters */
+    azplugins::detail::export_DynamicBondUpdater(m);
     azplugins::detail::export_ReversePerturbationFlow(m);
     azplugins::detail::export_TypeUpdater(m);
     azplugins::detail::export_ParticleEvaporator(m); // this must follow TypeUpdater because TypeUpdater is the python base class
