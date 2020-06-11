@@ -133,7 +133,7 @@ class potential_bond_double_well_tests(unittest.TestCase):
         nve = md.integrate.nve(group = group.all())
         run(1)
         U = 0.5625
-        F = -0.375
+        F = -1.5
         f0 = double_well.forces[0].force
         f1 = double_well.forces[1].force
         e0 = double_well.forces[0].energy
