@@ -17,6 +17,7 @@ set(TEST_LIST_CPU
     test_pair_ashbaugh
     test_pair_ashbaugh24
     test_pair_lj124
+    test_pair_hertz
     test_pair_lj96
     test_pair_colloid
     test_pair_slj
@@ -47,6 +48,7 @@ set(TEST_LIST_GPU
     test_pair_ashbaugh
     test_pair_ashbaugh24
     test_pair_lj124
+    test_pair_hertz
     test_pair_lj96
     test_pair_colloid
     test_pair_slj
