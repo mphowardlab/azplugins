@@ -76,6 +76,7 @@ set(_${COMPONENT_NAME}_cu_sources
     PairPotentialAshbaugh.cu
     PairPotentialAshbaugh24.cu
     PairPotentialColloid.cu
+    PairPotentialHertz.cu
     PairPotentialLJ96.cu
     PairPotentialLJ124.cu
     PairPotentialShiftedLJ.cu
