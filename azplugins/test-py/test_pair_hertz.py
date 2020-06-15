@@ -111,15 +111,15 @@ class potential_hertz_tests(unittest.TestCase):
 
     # test the calculation of force and potential
     def test_potential(self):
-        hertz = azplugins.pair.hertz(r_cut=3.0, nlist = self.nl)
+        hertz = azplugins.pair.hertz(r_cut=1.5, nlist = self.nl)
         hertz.pair_coeff.set('A','A', epsilon=2.0, sigma=1.5)
         hertz.set_params(mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
         nve = md.integrate.nve(group = group.all())
         run(1)
-        U = 0.09859006035092989
-        F = 0.521640530957301
+        U = 0.09859
+        F = 0.54772
         f0 = hertz.forces[0].force
         f1 = hertz.forces[1].force
         e0 = hertz.forces[0].energy
@@ -128,23 +128,23 @@ class potential_hertz_tests(unittest.TestCase):
         self.assertAlmostEqual(e0,0.5*U,3)
         self.assertAlmostEqual(e1,0.5*U,3)
 
-        self.assertAlmostEqual(f0[0],F,3)
+        self.assertAlmostEqual(f0[0],-F,3)
         self.assertAlmostEqual(f0[1],0)
         self.assertAlmostEqual(f0[2],0)
 
-        self.assertAlmostEqual(f1[0],-F,3)
+        self.assertAlmostEqual(f1[0],F,3)
         self.assertAlmostEqual(f1[1],0)
         self.assertAlmostEqual(f1[2],0)
 
         hertz.pair_coeff.set('A','A', sigma=2.05)
         hertz.set_params(mode='shift')
         run(1)
-        U = 0.33238800512531974
-        F = 0.7914000122031425
+        U = 0.332388
+        F = 0.83097
         self.assertAlmostEqual(hertz.forces[0].energy, 0.5*U, 3)
         self.assertAlmostEqual(hertz.forces[1].energy, 0.5*U, 3)
-        self.assertAlmostEqual(hertz.forces[0].force[0], F, 3)
-        self.assertAlmostEqual(hertz.forces[1].force[0], -F, 3)
+        self.assertAlmostEqual(hertz.forces[0].force[0], -F, 3)
+        self.assertAlmostEqual(hertz.forces[1].force[0], F, 3)
 
     # test the cases where the potential should be zero
     def test_noninteract(self):
