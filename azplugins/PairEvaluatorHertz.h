@@ -36,7 +36,7 @@ namespace detail
  * This potential is implemented as given in
  * <a href="https://doi.org/10.1063/1.3186742">Pàmies, J. C., Cacciuto, A., & Frenkel, D., Journal of Chemical Physics, 131(4) (2009)</a>.
  *
- * The Hertz potential does not need diameter or charge. Two parameters are specified and stored in a
+ * The Hertz potential does not need diameter or charge. One parameter is specified and stored in a
  * Scalar2.
  */
 class PairEvaluatorHertz : public PairEvaluator
@@ -54,7 +54,7 @@ class PairEvaluatorHertz : public PairEvaluator
          * The functor initializes its members from \a _params.
          */
         DEVICE PairEvaluatorHertz(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-          : PairEvaluator(_rsq,_rcutsq), epsilon(_params.x), sigma(_params.y)
+          : PairEvaluator(_rsq,_rcutsq), epsilon(_params.x)
           {}
 
         //! Evaluate the force and energy
@@ -73,8 +73,9 @@ class PairEvaluatorHertz : public PairEvaluator
             if (rsq < rcutsq && epsilon != 0)
                 {
                 Scalar r = sqrt(rsq);
-                Scalar x = (Scalar(1.0) - (r / sigma));
-                force_divr = (Scalar(1.0) / r) * ((Scalar(5.0) * epsilon) / (Scalar(2.0) * sigma)) * pow(x, Scalar(1.5));
+                Scalar rcut = sqrt(rcutsq);
+                Scalar x = (Scalar(1.0) - (r / rcut));
+                force_divr = (Scalar(1.0) / r) * ((Scalar(5.0) * epsilon) / (Scalar(2.0) * rcut)) * pow(x, Scalar(1.5));
                 pair_eng = epsilon * pow(x, Scalar(2.5));
                 return true;
                 }
@@ -92,7 +93,6 @@ class PairEvaluatorHertz : public PairEvaluator
 
     protected:
         Scalar epsilon;     //!< epsilon parameter extracted from the params passed to the constructor
-        Scalar sigma;     //!< sigma parameter extracted from the params passed to the constructor
     };
 
 } // end namespace detail

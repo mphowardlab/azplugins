@@ -289,7 +289,6 @@ class hertz(hoomd.md.pair.pair):
     The following coefficients must be set per unique pair of particle types:
 
     - :math:`\varepsilon` - *epsilon* (in energy units)
-    - :math:`\sigma` - *sigma* (in distance units)
     - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
       - *optional*: defaults to the global r_cut specified in the pair command
 
@@ -297,8 +296,8 @@ class hertz(hoomd.md.pair.pair):
 
         nl = hoomd.md.nlist.cell()
         hertz = azplugins.pair.hertz(r_cut=3.0, nlist=nl)
-        hertz.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0)
-        hertz.pair_coeff.set(['A','B'], 'B', epsilon=2.0, sigma=1.0)
+        hertz.pair_coeff.set('A', 'A', epsilon=1.0)
+        hertz.pair_coeff.set(['A','B'], 'B', epsilon=2.0)
 
     """
     def __init__(self, r_cut, nlist, name=None):
@@ -318,13 +317,11 @@ class hertz(hoomd.md.pair.pair):
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
 
         # setup the coefficent options
-        self.required_coeffs = ['epsilon', 'sigma']
+        self.required_coeffs = ['epsilon']
 
     def process_coeff(self, coeff):
         epsilon = coeff['epsilon']
-        sigma = coeff['sigma']
-
-        return _hoomd.make_scalar2(epsilon, sigma)
+        return _hoomd.make_scalar2(epsilon, 1.0)
 
 class ashbaugh24(hoomd.md.pair.pair):
     R""" generalized Ashbaugh-Hatch 48-24 potential

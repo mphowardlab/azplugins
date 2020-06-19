@@ -24,19 +24,13 @@ class pair_hertz_tests(unittest.TestCase):
     # basic test of creation
     def test(self):
         hertz = azplugins.pair.hertz(r_cut=3.0, nlist = self.nl)
-        hertz.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0, r_cut=2.5, r_on=2.0)
+        hertz.pair_coeff.set('A', 'A', epsilon=1.0, r_cut=2.5, r_on=2.0)
         hertz.update_coeffs()
 
     # test missing coefficients
     def test_set_missing_epsilon(self):
         hertz = azplugins.pair.hertz(r_cut=3.0, nlist = self.nl)
-        hertz.pair_coeff.set('A', 'A', sigma=1.0)
-        self.assertRaises(RuntimeError, hertz.update_coeffs)
-
-    # test missing coefficients
-    def test_set_missing_sigma(self):
-        hertz = azplugins.pair.hertz(r_cut=3.0, nlist = self.nl)
-        hertz.pair_coeff.set('A', 'A', epsilon=1.0)
+        hertz.pair_coeff.set('A', 'A')
         self.assertRaises(RuntimeError, hertz.update_coeffs)
 
     # test missing coefficients
@@ -56,13 +50,13 @@ class pair_hertz_tests(unittest.TestCase):
     def test_default_coeff(self):
         hertz = azplugins.pair.hertz(r_cut=3.0, nlist = self.nl)
         # (r_cut, and r_on are default)
-        hertz.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0)
+        hertz.pair_coeff.set('A', 'A', epsilon=1.0)
         hertz.update_coeffs()
 
     # test max rcut
     def test_max_rcut(self):
         hertz = azplugins.pair.hertz(r_cut=2.5, nlist = self.nl)
-        hertz.pair_coeff.set('A', 'A', sigma=1.0, epsilon=1.0)
+        hertz.pair_coeff.set('A', 'A', epsilon=1.0)
         self.assertAlmostEqual(2.5, hertz.get_max_rcut())
         hertz.pair_coeff.set('A', 'A', r_cut = 2.0)
         self.assertAlmostEqual(2.0, hertz.get_max_rcut())
@@ -71,7 +65,7 @@ class pair_hertz_tests(unittest.TestCase):
     def test_nlist_subscribe(self):
         hertz = azplugins.pair.hertz(r_cut=2.5, nlist = self.nl)
 
-        hertz.pair_coeff.set('A', 'A', sigma = 1.0, epsilon=1.0)
+        hertz.pair_coeff.set('A', 'A', epsilon=1.0)
         self.nl.update_rcut()
         self.assertAlmostEqual(2.5, self.nl.r_cut.get_pair('A','A'))
 
@@ -82,17 +76,17 @@ class pair_hertz_tests(unittest.TestCase):
     # test coeff list
     def test_coeff_list(self):
         hertz = azplugins.pair.hertz(r_cut=3.0, nlist = self.nl)
-        hertz.pair_coeff.set(['A', 'B'], ['A', 'C'], epsilon=1.0, sigma=1.0, r_cut=2.5, r_on=2.0)
+        hertz.pair_coeff.set(['A', 'B'], ['A', 'C'], epsilon=1.0, r_cut=2.5, r_on=2.0)
         hertz.update_coeffs()
 
     # test adding types
     def test_type_add(self):
         hertz = azplugins.pair.hertz(r_cut=3.0, nlist = self.nl)
-        hertz.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0)
+        hertz.pair_coeff.set('A', 'A', epsilon=1.0)
         self.s.particles.types.add('B')
         self.assertRaises(RuntimeError, hertz.update_coeffs)
-        hertz.pair_coeff.set('A', 'B', epsilon=1.0, sigma=1.0)
-        hertz.pair_coeff.set('B', 'B', epsilon=1.0, sigma=1.0)
+        hertz.pair_coeff.set('A', 'B', epsilon=1.0)
+        hertz.pair_coeff.set('B', 'B', epsilon=1.0)
         hertz.update_coeffs()
 
     def tearDown(self):
@@ -111,15 +105,15 @@ class potential_hertz_tests(unittest.TestCase):
 
     # test the calculation of force and potential
     def test_potential(self):
-        hertz = azplugins.pair.hertz(r_cut=3.0, nlist = self.nl)
-        hertz.pair_coeff.set('A','A', epsilon=2.0, sigma=1.5)
+        hertz = azplugins.pair.hertz(r_cut=1.5, nlist = self.nl)
+        hertz.pair_coeff.set('A','A', epsilon=2.0)
         hertz.set_params(mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
         nve = md.integrate.nve(group = group.all())
         run(1)
-        U = 0.09859006035092989
-        F = 0.521640530957301
+        U = 0.09859
+        F = 0.54772 
         f0 = hertz.forces[0].force
         f1 = hertz.forces[1].force
         e0 = hertz.forces[0].energy
@@ -128,30 +122,31 @@ class potential_hertz_tests(unittest.TestCase):
         self.assertAlmostEqual(e0,0.5*U,3)
         self.assertAlmostEqual(e1,0.5*U,3)
 
-        self.assertAlmostEqual(f0[0],F,3)
+        self.assertAlmostEqual(f0[0],-F,3)
         self.assertAlmostEqual(f0[1],0)
         self.assertAlmostEqual(f0[2],0)
 
-        self.assertAlmostEqual(f1[0],-F,3)
+        self.assertAlmostEqual(f1[0],F,3)
         self.assertAlmostEqual(f1[1],0)
         self.assertAlmostEqual(f1[2],0)
 
-        hertz.pair_coeff.set('A','A', sigma=2.05)
+        hertz = azplugins.pair.hertz(r_cut=2.05, nlist = self.nl)
+        hertz.pair_coeff.set('A','A', epsilon=2.0)
         hertz.set_params(mode='shift')
         run(1)
-        U = 0.33238800512531974
-        F = 0.7914000122031425
+        U = 0.332388
+        F = 0.83097
         self.assertAlmostEqual(hertz.forces[0].energy, 0.5*U, 3)
         self.assertAlmostEqual(hertz.forces[1].energy, 0.5*U, 3)
-        self.assertAlmostEqual(hertz.forces[0].force[0], F, 3)
-        self.assertAlmostEqual(hertz.forces[1].force[0], -F, 3)
+        self.assertAlmostEqual(hertz.forces[0].force[0], -F, 3)
+        self.assertAlmostEqual(hertz.forces[1].force[0], F, 3)
 
     # test the cases where the potential should be zero
     def test_noninteract(self):
         hertz = azplugins.pair.hertz(r_cut=1.0, nlist = self.nl)
 
         # outside cutoff
-        hertz.pair_coeff.set('A','A', epsilon=1.0, sigma=1.0)
+        hertz.pair_coeff.set('A','A', epsilon=1.0)
         hertz.set_params(mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
@@ -163,7 +158,7 @@ class potential_hertz_tests(unittest.TestCase):
         self.assertAlmostEqual(hertz.forces[1].force[0], 0)
 
         # inside cutoff but epsilon = 0
-        hertz.pair_coeff.set('A','A', epsilon=0.0, sigma=1.0, r_cut=3.0)
+        hertz.pair_coeff.set('A','A', epsilon=0.0, r_cut=3.0)
         run(1)
         self.assertAlmostEqual(hertz.forces[0].energy, 0)
         self.assertAlmostEqual(hertz.forces[1].energy, 0)
