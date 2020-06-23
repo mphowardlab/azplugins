@@ -113,7 +113,7 @@ class potential_hertz_tests(unittest.TestCase):
         nve = md.integrate.nve(group = group.all())
         run(1)
         U = 0.09859
-        F = 0.54772 
+        F = 0.54772
         f0 = hertz.forces[0].force
         f1 = hertz.forces[1].force
         e0 = hertz.forces[0].energy
