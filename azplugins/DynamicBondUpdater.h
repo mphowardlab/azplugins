@@ -15,6 +15,7 @@
 #error This header cannot be compiled by nvcc
 #endif
 
+#include "hoomd/AABBTree.h"
 #include "hoomd/md/NeighborList.h"
 #include "hoomd/Updater.h"
 #include "hoomd/ParticleGroup.h"
@@ -73,10 +74,18 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
         GPUArray<unsigned int> m_curr_num_bonds; //!< current number of bonds for each particle
         std::map<std::pair<int, int>, int> m_all_existing_bonds;     //!< map of all current existing bonds of bond_type
-        GPUArray<Scalar2> m_possible_bonds;   //!< list of possible bonds, size:  size(group_1)*max_bonds_1
+
+        unsigned int m_max_bonds; //!< maximum number of bonds which can be formed by the first group
+        GPUArray<Scalar3> m_all_possible_bonds;   //!< list of possible bonds, size:  size(group_1)*max_bonds_1
 
         unsigned int m_curr_bonds_to_form; //!< number of bonds to form in the current timestep
         unsigned int m_reservoir_size;
+
+        hpmc::detail::AABBTree   m_aabb_tree;     //!<  AABB tree for group 1
+        GPUVector<hpmc::detail::AABB>            m_aabbs;          //!< Flat array of AABBs of all types
+
+        std::vector< vec3<Scalar> > m_image_list;    //!< List of translation vectors
+        unsigned int m_n_images;                //!< The number of image vectors to check
 
         //! Changes the particle types according to an update rule
         virtual void findPotentialBondPairs(unsigned int timestep);
@@ -85,6 +94,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
     private:
         void calculateCurrentBonds();
+        void updateImageVectors();
         void checkSystemSetup();
     };
 

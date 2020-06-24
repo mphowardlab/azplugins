@@ -10,6 +10,7 @@
 
 #include "DynamicBondUpdater.h"
 
+
 namespace azplugins
 {
 
@@ -42,13 +43,19 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
     GPUArray<unsigned int> counts((int)m_pdata->getN(), m_exec_conf);
     m_curr_num_bonds.swap(counts);
 
+    m_max_bonds=20;
     // allocate a max size for all possible pairs - is there a better way to do this?
-    const unsigned int size = m_group_1->getNumMembers()*m_max_bonds_group_1;
-    GPUArray<Scalar2> possible_bonds(size, m_exec_conf);
-    m_possible_bonds.swap(possible_bonds);
+    // could model the neighbor list m_conditions
+    const unsigned int size = m_group_2->getNumMembers()*m_max_bonds;
+    GPUArray<Scalar3> all_possible_bonds(size, m_exec_conf);
+    m_all_possible_bonds.swap(all_possible_bonds);
 
-    calculateCurrentBonds();
+    m_aabbs.resize(m_group_1->getNumMembers());
+
     checkSystemSetup();
+    updateImageVectors();
+    calculateCurrentBonds();
+
     }
 
 DynamicBondUpdater::~DynamicBondUpdater()
@@ -57,42 +64,221 @@ DynamicBondUpdater::~DynamicBondUpdater()
 
     }
 
+bool SortBonds(Scalar3 i, Scalar3 j)
+  {
+      const Scalar r_sq_1 = i.z;
+      const Scalar r_sq_2 = j.z;
+      return r_sq_1 < r_sq_2;
+  }
+
+  // Function for binary_predicate
+  bool CompareBonds(Scalar3 i, Scalar3 j)
+  {
+
+      const unsigned int tag_11 = __scalar_as_int(i.x);
+      const unsigned int tag_12 = __scalar_as_int(i.y);
+      const unsigned int tag_21 = __scalar_as_int(j.x);
+      const unsigned int tag_22 = __scalar_as_int(j.y);
+
+      if (tag_11==tag_21 && tag_12==tag_22)
+      {
+        return true;
+      }else{
+        return false;
+      }
+  }
+
+
+
 void DynamicBondUpdater::calculateCurrentBonds()
 {
 
-    ArrayHandle<unsigned int> h_curr_num_bonds(m_curr_num_bonds, access_location::host, access_mode::readwrite);
+  // std::cout<< " in DynamicBondUpdater::calculateCurrentBonds() "<<std::endl;
+    //make tree for group 1
+    ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
+    ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
+    ArrayHandle<hpmc::detail::AABB> h_aabbs(m_aabbs, access_location::host, access_mode::readwrite);
 
-    m_reservoir_size=0;
+    const BoxDim& box = m_pdata->getBox();
 
-    // this should make the simulation also restartable, already existing bonds of m_bond_type will be registered
-    const unsigned int size = (unsigned int)m_bond_data->getN();
-    for (unsigned int i = 0; i < size; i++)
+    unsigned int group_size_1 = m_group_1->getNumMembers();
+    for (unsigned int group_idx = 0; group_idx < group_size_1; group_idx++)
         {
-        //lookup current bond type
-        unsigned int type = m_bond_data->getTypeByIndex(i);
+        unsigned int i = m_group_1->getMemberIndex(group_idx);
 
-        if(type==m_bond_reservoir_type)
+        // make a point particle AABB
+        vec3<Scalar> my_pos(h_postype.data[i]);
+      //  std::cout<< "particle "<< i << " in group 1 "<< group_idx<<std::endl;
+        h_aabbs.data[group_idx] = hpmc::detail::AABB(my_pos,i);
+        }
+    //    std::cout<< " in DynamicBondUpdater::calculateCurrentBonds() after group loop "<<std::endl;
+    // call the tree build routine
+    m_aabb_tree.buildTree(&(h_aabbs.data[0]) , group_size_1);
+  //  std::cout<< " in DynamicBondUpdater::calculateCurrentBonds() after buildtree"<<std::endl;
+
+     //traverse tree
+
+     // acquire particle data
+
+     ArrayHandle<unsigned int> h_body(m_pdata->getBodies(), access_location::host, access_mode::read);
+     //ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);
+
+     //ArrayHandle<Scalar> h_r_cut(m_r_cut, access_location::host, access_mode::read);
+
+     // reset possible bond list
+     ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::overwrite);
+     const unsigned int size = m_group_2->getNumMembers()*m_max_bonds;
+     memset((void*)h_all_possible_bonds.data, 0, sizeof(Scalar3)*size);
+
+     Scalar r_cut = 3.0;
+     Scalar m_r_buff = 0.4;
+     bool m_filter_body = false;
+     // neighborlist data
+    // ArrayHandle<unsigned int> h_head_list(m_head_list, access_location::host, access_mode::read);
+    // ArrayHandle<unsigned int> h_Nmax(m_Nmax, access_location::host, access_mode::read);
+    // ArrayHandle<unsigned int> h_conditions(m_conditions, access_location::host, access_mode::readwrite);
+  //   ArrayHandle<unsigned int> h_nlist(m_nlist, access_location::host, access_mode::overwrite);
+  //   ArrayHandle<unsigned int> h_n_neigh(m_n_neigh, access_location::host, access_mode::overwrite);
+
+     // Loop over all particles in group 2
+     //std::cout<< " inDynamicBondUpdater::calculateCurrentBonds() before particle loop"<<std::endl;
+     unsigned int group_size_2 = m_group_2->getNumMembers();
+     for (unsigned int group_idx = 0; group_idx < group_size_2; group_idx++)
+         {
+         unsigned int i = m_group_2->getMemberIndex(group_idx);
+         const unsigned int tag_i = h_tag.data[i];
+
+         const Scalar4 postype_i = h_postype.data[i];
+         const vec3<Scalar> pos_i = vec3<Scalar>(postype_i);
+         const unsigned int type_i = __scalar_as_int(postype_i.w);
+         const unsigned int body_i = h_body.data[i];
+
+         unsigned int n_curr_bond = 0;
+
+        for (unsigned int cur_image = 0; cur_image < m_n_images; ++cur_image) // for each image vector
+           {
+             // make an AABB for the image of this particle
+             vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
+             hpmc::detail::AABB aabb = hpmc::detail::AABB(pos_i_image, r_cut);
+             hpmc::detail::AABBTree *cur_aabb_tree = &m_aabb_tree;
+             // stackless traversal of the tree
+             for (unsigned int cur_node_idx = 0; cur_node_idx < cur_aabb_tree->getNumNodes(); ++cur_node_idx)
+                 {
+                 if (overlap(cur_aabb_tree->getNodeAABB(cur_node_idx), aabb))
+                     {
+                     if (cur_aabb_tree->isNodeLeaf(cur_node_idx))
+                         {
+                         for (unsigned int cur_p = 0; cur_p < cur_aabb_tree->getNodeNumParticles(cur_node_idx); ++cur_p)
+                             {
+                             // neighbor j
+                             unsigned int j = cur_aabb_tree->getNodeParticleTag(cur_node_idx, cur_p);
+
+                             // skip self-interaction always
+                             bool excluded = (i == j);
+
+                             if (!excluded)
+                                 {
+                                 // compute distance
+                                 Scalar4 postype_j = h_postype.data[j];
+                                 Scalar3 drij = make_scalar3(postype_j.x,postype_j.y,postype_j.z)
+                                                - vec_to_scalar3(pos_i_image);
+                                 Scalar dr_sq = dot(drij,drij);
+                                 Scalar r_cutsq = r_cut*r_cut;
+                                 if (dr_sq <= r_cutsq)
+                                     {
+                                     if (n_curr_bond < m_max_bonds)
+                                          {
+                                          const unsigned int tag_j = h_tag.data[j];
+                                          Scalar3 d ;
+                                          if( tag_i < tag_j )
+                                          {
+                                            d = make_scalar3(__int_as_scalar(tag_i),__int_as_scalar(tag_j),dr_sq);
+                                          }else{
+                                            d = make_scalar3(__int_as_scalar(tag_j),__int_as_scalar(tag_i),dr_sq);
+                                          }
+                                          h_all_possible_bonds.data[group_idx + n_curr_bond] = d;
+                                          ++n_curr_bond;
+                                          }
+
+                                     }
+                                 }
+                             }
+                         }
+                     }
+                 else
+                     {
+                     // skip ahead
+                     cur_node_idx += cur_aabb_tree->getNodeSkip(cur_node_idx);
+                     }
+                 } // end stackless search
+             } // end loop over images
+         //} // end loop over pair types
+         } // end loop over group 2
+//thrust::copy_if(input.begin(), input.end(), output.begin(), is_non_zero<int>());
+//Now we call the sort function
+
+//std::copy_if(h_all_possible_bonds.data,is_set<Scalar3>())
+}
+
+
+/*!
+ * (Re-)computes the translation vectors for traversing the BVH tree. At most, there are 27 translation vectors
+ * when the simulation box is 3D periodic. In 2D, there are at most 9 translation vectors. In MPI runs, a ghost layer
+ * of particles is added from adjacent ranks, so there is no need to perform any translations in this direction.
+ * The translation vectors are determined by linear combination of the lattice vectors, and must be recomputed any
+ * time that the box resizes.
+ */
+void DynamicBondUpdater::updateImageVectors()
+    {
+    const BoxDim& box = m_pdata->getBox();
+    uchar3 periodic = box.getPeriodic();
+    unsigned char sys3d = (this->m_sysdef->getNDimensions() == 3);
+
+    // now compute the image vectors
+    // each dimension increases by one power of 3
+    unsigned int n_dim_periodic = (unsigned int)(periodic.x + periodic.y + sys3d*periodic.z);
+    m_n_images = 1;
+    for (unsigned int dim = 0; dim < n_dim_periodic; ++dim)
+        {
+        m_n_images *= 3;
+        }
+
+    // reallocate memory if necessary
+    if (m_n_images > m_image_list.size())
+        {
+        m_image_list.resize(m_n_images);
+        }
+
+    vec3<Scalar> latt_a = vec3<Scalar>(box.getLatticeVector(0));
+    vec3<Scalar> latt_b = vec3<Scalar>(box.getLatticeVector(1));
+    vec3<Scalar> latt_c = vec3<Scalar>(box.getLatticeVector(2));
+
+    // there is always at least 1 image, which we put as our first thing to look at
+    m_image_list[0] = vec3<Scalar>(0.0, 0.0, 0.0);
+
+    // iterate over all other combinations of images, skipping those that are
+    unsigned int n_images = 1;
+    for (int i=-1; i <= 1 && n_images < m_n_images; ++i)
+        {
+        for (int j=-1; j <= 1 && n_images < m_n_images; ++j)
             {
-            ++m_reservoir_size;
-            }
-        if (type==m_bond_type)
-            {
-            // lookup the tag of each of the particles participating in the bond
-            const BondData::members_t bond = m_bond_data->getMembersByIndex(i);
+            for (int k=-1; k <= 1 && n_images < m_n_images; ++k)
+                {
+                if (!(i == 0 && j == 0 && k == 0))
+                    {
+                    // skip any periodic images if we don't have periodicity
+                    if (i != 0 && !periodic.x) continue;
+                    if (j != 0 && !periodic.y) continue;
+                    if (k != 0 && (!sys3d || !periodic.z)) continue;
 
-            unsigned int tag_i = bond.tag[0];
-            unsigned int tag_j = bond.tag[1];
-
-            // add this bond to the book keeping arrays and the map of all exisitng bonds
-            ++h_curr_num_bonds.data[tag_i];
-            ++h_curr_num_bonds.data[tag_j];
-            // saving exisitng bonds in both directions. This should make the bond finding algorithm safe regardless of
-            // the storage mode of the neighbour list. 
-            m_all_existing_bonds[{tag_i,tag_j}] = 1;
-            m_all_existing_bonds[{tag_i,tag_j}] = 1;
+                    m_image_list[n_images] = Scalar(i) * latt_a + Scalar(j) * latt_b + Scalar(k) * latt_c;
+                    ++n_images;
+                    }
+                }
             }
         }
-}
+    }
+
 
 void DynamicBondUpdater::checkSystemSetup()
 {
@@ -128,10 +314,10 @@ void DynamicBondUpdater::checkSystemSetup()
 void DynamicBondUpdater::update(unsigned int timestep)
     {
 
-    //calculateCurrentBonds();
+    calculateCurrentBonds();
     findPotentialBondPairs(timestep);
 
-    formBondPairs(timestep);
+  //  formBondPairs(timestep);
 
     }
 
@@ -141,6 +327,22 @@ void DynamicBondUpdater::update(unsigned int timestep)
 void DynamicBondUpdater::findPotentialBondPairs(unsigned int timestep)
     {
 
+    ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::readwrite);
+    const unsigned int size = m_group_2->getNumMembers()*m_max_bonds;
+
+    std::sort(h_all_possible_bonds.data, h_all_possible_bonds.data + size,SortBonds);
+    Scalar3 *last = std::unique(h_all_possible_bonds.data, h_all_possible_bonds.data + size,CompareBonds);
+    std::cout<<" last "<< last->x<<" "<< last->y << " "<<last->z <<std::endl;
+    for (unsigned int i = 0; i < size; i++)
+        {
+          Scalar3 d = h_all_possible_bonds.data[i];
+          unsigned int tag_i = __scalar_as_int(d.x);
+          unsigned int tag_j = __scalar_as_int(d.y);
+          Scalar r_sq = d.z;
+          std::cout<< "possible bond "<< i << " tag_i "<< tag_i << " tag_j "<< tag_j<<" dist_sq "<< r_sq<< std::endl;
+
+        }
+    /*
     // start by updating the neighborlist
     //m_nlist->addExclusionsFromBonds();
     m_nlist->compute(timestep);
@@ -216,7 +418,7 @@ void DynamicBondUpdater::findPotentialBondPairs(unsigned int timestep)
         }
 
     // reset possible bond list
-    ArrayHandle<Scalar2> h_possible_bonds(m_possible_bonds, access_location::host, access_mode::overwrite);
+    ArrayHandle<Scalar3> h_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::overwrite);
     const unsigned int size = m_group_1->getNumMembers()*m_max_bonds_group_1;
     memset((void*)h_possible_bonds.data,-1.0,sizeof(Scalar2)*size);
 
@@ -237,13 +439,13 @@ void DynamicBondUpdater::findPotentialBondPairs(unsigned int timestep)
         const unsigned int current_bonds_on_j = h_curr_num_bonds.data[tag_j];
         if(count_group_2_possible_bonds[tag_j] + current_bonds_on_j < m_max_bonds_group_2)
             {
-            h_possible_bonds.data[current]=make_scalar2(i->x,i->y);
+          //  h_possible_bonds.data[current]=make_scalar2(i->x,i->y);
             ++current;
             }
         }
 
      m_curr_bonds_to_form = current;
-
+     */
     }
 
 
@@ -251,7 +453,7 @@ void DynamicBondUpdater::formBondPairs(unsigned int timestep)
     {
 
 
-    ArrayHandle<Scalar2> h_possible_bonds(m_possible_bonds, access_location::host, access_mode::read);
+    ArrayHandle<Scalar3> h_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_curr_num_bonds(m_curr_num_bonds, access_location::host, access_mode::readwrite);
 
     ArrayHandle<typename BondData::members_t> h_bonds(m_bond_data->getMembersArray(), access_location::host, access_mode::readwrite);
