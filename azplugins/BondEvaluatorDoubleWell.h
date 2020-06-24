@@ -90,7 +90,7 @@ class BondEvaluatorDoubleWell
         DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& bond_eng)
             {
             // check for invalid parameters
-            if (V_max == Scalar(0.0) || a == Scalar(0.0) || b == Scalar(0.0) ) return false;
+            if (b == Scalar(0.0)) return false;
 
             Scalar r = sqrt(rsq);
             Scalar r_min_half_a = r-0.5*a;

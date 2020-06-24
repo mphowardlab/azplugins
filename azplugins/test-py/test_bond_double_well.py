@@ -47,6 +47,11 @@ class bond_double_well_tests(unittest.TestCase):
         double_well.bond_coeff.set('bond',  V_max=1.0, a=1.5)
         self.assertRaises(RuntimeError, double_well.update_coeffs)
 
+    def test_set_zero_b(self):
+        double_well = azplugins.bond.double_well()
+        double_well.bond_coeff.set('bond',  V_max=1.0, a=1.5,b=0)
+        self.assertRaises(ValueError, double_well.update_coeffs)
+
     def tearDown(self):
         del self.s
         context.initialize()

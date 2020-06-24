@@ -64,6 +64,9 @@ class double_well(hoomd.md.bond._bond):
         V_max = coeff['V_max']
         a = coeff['a']
         b = coeff['b']
+        if b==0:
+            hoomd.context.msg.error("azplugins.bond.double_well(): coefficient b must be non-zero.\n")
+            raise ValueError('Coefficient b must be non-zero')
 
         return _hoomd.make_scalar3(V_max, a, b)
 
