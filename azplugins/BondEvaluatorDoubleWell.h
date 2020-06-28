@@ -97,7 +97,7 @@ class BondEvaluatorDoubleWell
             Scalar r = fast::sqrt(rsq);
             Scalar r_min_half_a = r-Scalar(0.5)*a;
             Scalar b_sq = b*b;
-            Scalar c = r_min_half_a*rmin_half_a - b_sq;
+            Scalar c = r_min_half_a*r_min_half_a - b_sq;
 
             bond_eng = (V_max/(b_sq*b_sq))*c*c;
             force_divr = - 4*V_max/(b_sq*b_sq)*c*r_min_half_a/r;
