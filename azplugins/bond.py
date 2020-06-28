@@ -11,7 +11,7 @@ from hoomd import _hoomd
 from . import _azplugins
 
 class double_well(hoomd.md.bond._bond):
-    R""" double well bond potential.
+    R""" Double well bond potential.
 
     Args:
         name (str): Name of the bond instance.
@@ -20,22 +20,19 @@ class double_well(hoomd.md.bond._bond):
     The potential is given by:
 
     .. math::
-        :nowrap:
 
-        \begin{eqnarray*}
-        V_{\mathrm{DW}}(r)  =  \frac{V_{max}}{b^4} \left[ \left( r - a/2 \right)^2 - b^2 \right]^2
-        \end{eqnarray*}
+        V_{\rm{DW}}(r)  =  \frac{V_{max}}{b^4} \left[ \left( r - a/2 \right)^2 - b^2 \right]^2
 
     Coefficients:
 
-    - :math:`V_max` - Potential maximum height between the two minima at 1/2``a`` (in energy units)
-    - :math:`a` - twice the location of the potential maximum, maximum is at 1/2``a`` ( in distance units)
+    - :math:`V_max` - Potential maximum height between the two minima at ``a/2`` (in energy units)
+    - :math:`a` - twice the location of the potential maximum, maximum is at ``a/2`` ( in distance units)
     - :math:`b` - tunes the disance between the potential minima at ``1/2(a +/- 2b)`` (in distance units)
 
     Examples::
 
-        fene = azplugins.bond.double_well()
-        fene.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.5)
+        dw = azplugins.bond.double_well()
+        dw.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.5)
 
     """
     def __init__(self, name=None):

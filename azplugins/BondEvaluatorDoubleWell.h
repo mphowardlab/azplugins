@@ -31,9 +31,9 @@ namespace detail
 /*!
 This bond potential follows the functional form
 \f{eqnarray*}
-V_{\mathrm{DW}}(r)  =   \frac{V_{min}}{b^4} \left[ \left( r - a/2 \right)^2 -b^2 \right]^2
+V_{\rm{DW}}(r)  =   \frac{V_{min}}{b^4} \left[ \left( r - a/2 \right)^2 -b^2 \right]^2
 \f}
-and has two minima at r = 1/2(a +/- 2b), seperated by a maximum at 1/2a of height V_max.
+and has two minima at r = 1/2(a +/- 2b), seperated by a maximum at a/2 of height V_max.
 The parameter a tunes the location of the maximal value and the parameter b tunes the distance of the
 two maxima from each other.  This potential is useful to model bonds which can be either mechanically or
 thermally "activated" into a effectively longer state. The value of V_max can be used to tune the height of the
@@ -41,7 +41,7 @@ energy barrier in between the two states.
 
 The parameters are:
     - \a V_max (params.x) maximum potential value between the two minima
-    - \a a (params.y) shift for the location of the V_max, maximun is at 1/2 a
+    - \a a (params.y) shift for the location of the V_max, maximun is at a/2
     - \a b (params.z) scaling for the distance of the two minima at 1/2(a +/- 2b)
 */
 class BondEvaluatorDoubleWell
@@ -57,8 +57,7 @@ class BondEvaluatorDoubleWell
          */
         DEVICE BondEvaluatorDoubleWell(Scalar _rsq, const param_type& _params)
             : rsq(_rsq), V_max(_params.x), a(_params.y), b(_params.z)
-            {
-            }
+            { }
 
         //! This evaluator doesn't use diameter information
         DEVICE static bool needsDiameter() { return false; }
@@ -70,7 +69,7 @@ class BondEvaluatorDoubleWell
          */
         DEVICE void setDiameter(Scalar da, Scalar db) {  }
 
-        //! FENE doesn't use charge
+        //! This evaluator doesn't use charge
         DEVICE static bool needsCharge() { return false; }
 
         //! Accept the optional charge values
@@ -89,22 +88,20 @@ class BondEvaluatorDoubleWell
          */
         DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& bond_eng)
             {
+            bond_eng = 0;
+            force_divr = 0;
+
             // check for invalid parameters
             if (b == Scalar(0.0)) return false;
 
-            Scalar r = sqrt(rsq);
-            Scalar r_min_half_a = r-0.5*a;
+            Scalar r = fast::sqrt(rsq);
+            Scalar r_min_half_a = r-Scalar(0.5)*a;
             Scalar b_sq = b*b;
+            Scalar c = r_min_half_a*rmin_half_a - b_sq;
 
-            bond_eng = V_max/(b_sq*b_sq)*(r_min_half_a*r_min_half_a - b_sq)*(r_min_half_a*r_min_half_a - b_sq);
-            force_divr = - 4*V_max/(b_sq*b_sq)*(r_min_half_a*r_min_half_a - b_sq)*r_min_half_a/r;
+            bond_eng = (V_max/(b_sq*b_sq))*c*c;
+            force_divr = - 4*V_max/(b_sq*b_sq)*c*r_min_half_a/r;
 
-            // check for invalid parameters
-            if (V_max == Scalar(0.0) || a == Scalar(0.0) || b == Scalar(0.0) )
-                {
-                    bond_eng = 0;
-                    force_divr = 0;
-                }
             return true;
             }
 

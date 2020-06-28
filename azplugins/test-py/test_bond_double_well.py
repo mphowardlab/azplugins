@@ -73,7 +73,6 @@ class potential_bond_double_well_tests(unittest.TestCase):
 
     # test the calculation of force and potential
     def test_potential_minimum(self):
-
         double_well = azplugins.bond.double_well()
         # this should put the second particle in the first minimum of the potential
         double_well.bond_coeff.set('bond', a=3.0, b=0.5, V_max=1.0)
@@ -87,21 +86,18 @@ class potential_bond_double_well_tests(unittest.TestCase):
         f1 = double_well.forces[1].force
         e0 = double_well.forces[0].energy
         e1 = double_well.forces[1].energy
-        print(e1,e0)
+
         self.assertAlmostEqual(e0,0.5*U,3)
         self.assertAlmostEqual(e1,0.5*U,3)
-
         self.assertAlmostEqual(f0[0],F,3)
         self.assertAlmostEqual(f0[1],0)
         self.assertAlmostEqual(f0[2],0)
-
         self.assertAlmostEqual(f1[0],-F,3)
         self.assertAlmostEqual(f1[1],0)
         self.assertAlmostEqual(f1[2],0)
 
     # test the calculation of force and potential
     def test_potential_maximum(self):
-
         double_well = azplugins.bond.double_well()
         # this should put the second particle at the maxium of the potential
         double_well.bond_coeff.set('bond', a=2.0, b=2.0, V_max=5.0)
@@ -118,20 +114,16 @@ class potential_bond_double_well_tests(unittest.TestCase):
 
         self.assertAlmostEqual(e0,0.5*U,3)
         self.assertAlmostEqual(e1,0.5*U,3)
-
         self.assertAlmostEqual(f0[0],F,3)
         self.assertAlmostEqual(f0[1],0)
         self.assertAlmostEqual(f0[2],0)
-
         self.assertAlmostEqual(f1[0],-F,3)
         self.assertAlmostEqual(f1[1],0)
         self.assertAlmostEqual(f1[2],0)
 
     # test the calculation of force and potential
     def test_potential_in_between(self):
-
         double_well = azplugins.bond.double_well()
-
         double_well.bond_coeff.set('bond', a=1.0, b=1.0, V_max=1.0)
 
         md.integrate.mode_standard(dt=0)
@@ -146,11 +138,9 @@ class potential_bond_double_well_tests(unittest.TestCase):
 
         self.assertAlmostEqual(e0,0.5*U,3)
         self.assertAlmostEqual(e1,0.5*U,3)
-
         self.assertAlmostEqual(f0[0],F,3)
         self.assertAlmostEqual(f0[1],0)
         self.assertAlmostEqual(f0[2],0)
-
         self.assertAlmostEqual(f1[0],-F,3)
         self.assertAlmostEqual(f1[1],0)
         self.assertAlmostEqual(f1[2],0)
@@ -158,8 +148,6 @@ class potential_bond_double_well_tests(unittest.TestCase):
     def tearDown(self):
         del self.s
         context.initialize()
-
-
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])
