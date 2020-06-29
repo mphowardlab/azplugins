@@ -27,7 +27,7 @@ class double_well(hoomd.md.bond._bond):
 
     - :math:`V_max` - Potential maximum height between the two minima at ``a/2`` (in energy units)
     - :math:`a` - twice the location of the potential maximum, maximum is at ``a/2`` ( in distance units)
-    - :math:`b` - tunes the disance between the potential minima at ``1/2(a +/- 2b)`` (in distance units)
+    - :math:`b` - tunes the disance between the potential minima at ``(a/2 +/- b)`` (in distance units)
 
     Examples::
 

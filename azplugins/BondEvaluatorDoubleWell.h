@@ -33,7 +33,7 @@ This bond potential follows the functional form
 \f{eqnarray*}
 V_{\rm{DW}}(r)  =   \frac{V_{min}}{b^4} \left[ \left( r - a/2 \right)^2 -b^2 \right]^2
 \f}
-and has two minima at r = 1/2(a +/- 2b), seperated by a maximum at a/2 of height V_max.
+and has two minima at r = (a/2 +/- b), seperated by a maximum at a/2 of height V_max.
 The parameter a tunes the location of the maximal value and the parameter b tunes the distance of the
 two maxima from each other.  This potential is useful to model bonds which can be either mechanically or
 thermally "activated" into a effectively longer state. The value of V_max can be used to tune the height of the
@@ -42,7 +42,7 @@ energy barrier in between the two states.
 The parameters are:
     - \a V_max (params.x) maximum potential value between the two minima
     - \a a (params.y) shift for the location of the V_max, maximun is at a/2
-    - \a b (params.z) scaling for the distance of the two minima at 1/2(a +/- 2b)
+    - \a b (params.z) scaling for the distance of the two minima at (a/2 +/- b)
 */
 class BondEvaluatorDoubleWell
     {
@@ -100,7 +100,7 @@ class BondEvaluatorDoubleWell
             Scalar c = r_min_half_a*r_min_half_a - b_sq;
 
             bond_eng = (V_max/(b_sq*b_sq))*c*c;
-            force_divr = - 4*V_max/(b_sq*b_sq)*c*r_min_half_a/r;
+            force_divr = - (4*V_max/(b_sq*b_sq))*c*r_min_half_a/r;
 
             return true;
             }
