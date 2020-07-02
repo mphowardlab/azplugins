@@ -41,12 +41,10 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
         //! Constructor with parameters
         DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
-                    std::shared_ptr<NeighborList> nlist,
                     std::shared_ptr<ParticleGroup> group_1,
                     std::shared_ptr<ParticleGroup> group_2,
-                    const Scalar r_cutsq,
+                    const Scalar r_cut,
                     unsigned int bond_type,
-                    unsigned int bond_reservoir_type,
                     unsigned int max_bonds_group_1,
                     unsigned int max_bonds_group_2);
 
@@ -64,38 +62,58 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         std::shared_ptr<ParticleGroup> m_group_1;   //!< First particle group to form bonds with
         std::shared_ptr<ParticleGroup> m_group_2;   //!< Second particle group to form bonds with
 
-        const Scalar m_r_cutsq; //!< cutoff squared for the bond forming criterion
+        const Scalar m_r_cut; //!< cutoff for the bond forming criterion
 
         unsigned int m_bond_type;              //!< Type id of the bond to form
-        unsigned int m_bond_reservoir_type;    //!< Type id of the bond reservoir
 
         unsigned int m_max_bonds_group_1; //!< maximum number of bonds which can be formed by the first group
         unsigned int m_max_bonds_group_2; //!< maximum number of bonds which can be formed by the second group
 
-        GPUArray<unsigned int> m_curr_num_bonds; //!< current number of bonds for each particle
-        std::map<std::pair<int, int>, int> m_all_existing_bonds;     //!< map of all current existing bonds of bond_type
+        unsigned int m_max_bonds; //!< maximum number of possible bonds found
+        unsigned int m_max_bonds_overflow; //!< maximum number of possible bonds found if there is an overflow
 
-        unsigned int m_max_bonds; //!< maximum number of bonds which can be formed by the first group
-        GPUArray<Scalar3> m_all_possible_bonds;   //!< list of possible bonds, size:  size(group_1)*max_bonds_1
+
+        GPUArray<Scalar3> m_all_possible_bonds;   //!< list of possible bonds, size:  size(group_1)*n_max_bonds(=20)
+        unsigned int m_all_possible_bonds_end;
 
         unsigned int m_curr_bonds_to_form; //!< number of bonds to form in the current timestep
         unsigned int m_reservoir_size;
 
-        hpmc::detail::AABBTree   m_aabb_tree;     //!<  AABB tree for group 1
-        GPUVector<hpmc::detail::AABB>            m_aabbs;          //!< Flat array of AABBs of all types
+        hpmc::detail::AABBTree        m_aabb_tree;     //!<  AABB tree for group 1
+        GPUVector<hpmc::detail::AABB> m_aabbs;          //!< Flat array of AABBs of all types
 
         std::vector< vec3<Scalar> > m_image_list;    //!< List of translation vectors
         unsigned int m_n_images;                //!< The number of image vectors to check
 
-        //! Changes the particle types according to an update rule
-        virtual void findPotentialBondPairs(unsigned int timestep);
 
-        virtual void formBondPairs(unsigned int timestep);
+        GPUArray<unsigned int> m_existing_bonds_list;  //!< List of existing bonded particles referenced by tag
+        GPUArray<unsigned int> m_n_existing_bonds;    //!< Number of existing bonds for a given particle tag
+        unsigned int m_max_existing_bonds_list; //!< maximum number of  bonds in list of existing bonded particles
+        Index2D m_existing_bonds_list_indexer;         //!< Indexer for accessing the by-tag bonded particle list
 
     private:
-        void calculateCurrentBonds();
+        //bool SortBonds(Scalar3 i, Scalar3 j); //todo: should go into helper class. or not be member of this class anyway
+        //bool CompareBonds(Scalar3 i, Scalar3 j); //todo: should go into helper class. or not be member of this class anyway
+        bool CheckisExistingLegalBond(Scalar3 i); //this acesses  info in m_existing_bonds_list_tag todo: rename to something sensible
+        void calculateExistingBonds();
+        void calculatePossibleBonds();
+        void filterPossibleBonds();
+        void makeBonds();
+        void AddtoExistingBonds(unsigned int tag1,unsigned int tag2);
+        bool isExistingBond(unsigned int tag1,unsigned int tag2); //this acesses  info in m_existing_bonds_list_tag
         void updateImageVectors();
         void checkSystemSetup();
+        void resizePossibleBondlists();
+        void resizeExistingBondList();
+
+        //! Notification of a box size change
+        void slotBoxChanged()
+            {
+            m_box_changed = true;
+            }
+
+        bool m_box_changed;         //!< Flag if box changed
+
     };
 
 namespace detail

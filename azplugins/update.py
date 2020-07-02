@@ -136,26 +136,24 @@ class types(hoomd.update._updater):
 
 
 class dynamic_bond(hoomd.update._updater):
-    def __init__(self, nlist, r_cut,bond_type, bond_reservoir_type,group_1, group_2, max_bonds_1,max_bonds_2,period=1, phase=0):
+    def __init__(self,r_cut,bond_type,group_1, group_2, max_bonds_1,max_bonds_2,period=1, phase=0):
 
         hoomd.util.print_status_line()
 
         hoomd.update._updater.__init__(self)
-        self.nlist = nlist
+
 
         if not hoomd.context.exec_conf.isCUDAEnabled():
             cpp_class = _azplugins.DynamicBondUpdater
-            self.nlist.cpp_nlist.setStorageMode(_md.NeighborList.storageMode.half)
         else:
             hoomd.context.msg.error('update.dynamic_bond not implemented on the GPU \n')
             raise ValueError('update.dynamic_bond not implemented on the GPU ')
             #cpp_class = _azplugins.TypeUpdaterGPU
 
-        # look up the bond ids based on the given names - this will throw an error if the bond types do not exist
+        # look up the bond id based on the given name - this will throw an error if the bond types do not exist
         bond_type_id = hoomd.context.current.system_definition.getBondData().getTypeByName(bond_type)
-        bond_reservoir_type_id  = hoomd.context.current.system_definition.getBondData().getTypeByName(bond_reservoir_type)
 
-        self.rcutsq = r_cut**2.0
+        self.r_cut = r_cut
 
         # we need to check that the groups have no overlap if the max_bonds_1 and max_bonds_2 are different
         new_cpp_group = _hoomd.ParticleGroup.groupIntersection(group_1.cpp_group, group_2.cpp_group)
@@ -168,7 +166,8 @@ class dynamic_bond(hoomd.update._updater):
         #it doesn't really make sense to allow partially overlapping groups?
 
         self.cpp_updater = cpp_class(hoomd.context.current.system_definition,
-        self.nlist.cpp_nlist,group_1.cpp_group,group_2.cpp_group,self.rcutsq,bond_type_id,bond_reservoir_type_id,max_bonds_1,max_bonds_2)
+                            group_1.cpp_group,group_2.cpp_group,self.r_cut,
+                            bond_type_id,max_bonds_1,max_bonds_2)
         self.setupUpdater(period, phase)
 
         # how to do handling of exclusions in the neighborlist correctly?
