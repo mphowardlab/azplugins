@@ -23,40 +23,28 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                          unsigned int max_bonds_group_2)
         : Updater(sysdef),  m_group_1(group_1), m_group_2(group_2), m_r_cut(r_cut),
          m_bond_type(bond_type),m_max_bonds_group_1(max_bonds_group_1),m_max_bonds_group_2(max_bonds_group_2),
-         m_box_changed(true)
+         m_box_changed(true), m_max_N_changed(true)
     {
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdater" << std::endl;
 
 
     m_pdata->getBoxChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotBoxChanged>(this);
+    m_pdata->getGlobalParticleNumberChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotNumParticlesChanged>(this);
+  //  m_pdata->getNumTypesChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotNumParticlesChanged>(this);
+
     m_bond_data = m_sysdef->getBondData();
 
-    // allocate initial Memory - is 4 a good number?
-    m_max_bonds = 4;
+    // allocate initial Memory - grows if necessary
+    m_max_bonds = (max_bonds_group_1 < max_bonds_group_2) ? max_bonds_group_2 : max_bonds_group_1;
     m_max_bonds_overflow = 0;
     GPUArray<Scalar3> all_possible_bonds(m_group_2->getNumMembers()*m_max_bonds, m_exec_conf);
     m_all_possible_bonds.swap(all_possible_bonds);
 
-    //todo: reset all aabb componentes if group sizes change
+    //todo: reset all aabb componentes if group sizes changes?
+    // if groups change this updater might just not work properly - groups don't have a change signal
     m_aabbs.resize(m_group_1->getNumMembers());
 
-    //todo: need to register total particle number change and reallocate this
-    GPUArray<unsigned int> n_existing_bonds(m_pdata->getRTags().size(), m_exec_conf);
-    m_n_existing_bonds.swap(n_existing_bonds);
-
-
-    GPUArray<unsigned int> existing_bonds_list(m_pdata->getRTags().size(),1, m_exec_conf);
-    m_existing_bonds_list.swap(existing_bonds_list);
-    m_existing_bonds_list_indexer = Index2D(m_existing_bonds_list.getPitch(), m_existing_bonds_list.getHeight());
-
-    ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::overwrite);
-    ArrayHandle<unsigned int> h_existing_bonds_list(m_existing_bonds_list, access_location::host, access_mode::overwrite);
-
-    memset(h_n_existing_bonds.data, 0, sizeof(unsigned int)*m_n_existing_bonds.getNumElements());
-    memset(h_existing_bonds_list.data, 0, sizeof(unsigned int)*m_existing_bonds_list.getNumElements());
-
     checkSystemSetup();
-    calculateExistingBonds();
 
     }
 
@@ -79,6 +67,13 @@ void DynamicBondUpdater::update(unsigned int timestep)
         m_box_changed = false;
         }
 
+    // update properties that depend on the number of particles
+    if (m_max_N_changed)
+        {
+        allocateParticleArrays();
+        m_max_N_changed = false;
+        }
+
     // rebuild the list of possible bonds until there is no overflow
     bool overflowed = false;
     do
@@ -93,6 +88,7 @@ void DynamicBondUpdater::update(unsigned int timestep)
         } while (overflowed);
 
     filterPossibleBonds();
+    // this function is not easily implemented on the GPU, uses addBondedGroup()
     makeBonds();
 
 
@@ -106,7 +102,7 @@ bool SortBonds(Scalar3 i, Scalar3 j)
       return r_sq_1 < r_sq_2;
   }
 
-//todo: should go into helper class?
+//todo: should go into helper class? - also, faster way without branching?
   bool CompareBonds(Scalar3 i, Scalar3 j)
   {
 
@@ -115,14 +111,13 @@ bool SortBonds(Scalar3 i, Scalar3 j)
       const unsigned int tag_21 = __scalar_as_int(j.x);
       const unsigned int tag_22 = __scalar_as_int(j.y);
 
-      if (tag_11==tag_21 && tag_12==tag_22) // (i,j)==(i,j)
-      {
-        return true;
-      }else if (tag_11==tag_22 && tag_12==tag_21) // (i,j)==(j,i)
+      if ((tag_11==tag_21 && tag_12==tag_22) ||   // (i,j)==(i,j)
+          (tag_11==tag_22 && tag_12==tag_21))     // (i,j)==(j,i)
       {
         return true;
       }
-      else{
+      else
+      {
         return false;
       }
   }
@@ -151,7 +146,7 @@ void DynamicBondUpdater::calculateExistingBonds()
   memset((void*)h_existing_bonds_list.data,0,sizeof(unsigned int)*m_pdata->getRTags().size()*m_existing_bonds_list_indexer.getH());
 
   ArrayHandle<typename BondData::members_t> h_bonds(m_bond_data->getMembersArray(), access_location::host, access_mode::read);
-  ArrayHandle<typeval_t> h_typeval(m_bond_data->getTypeValArray(), access_location::host, access_mode::read);
+//  ArrayHandle<typeval_t> h_typeval(m_bond_data->getTypeValArray(), access_location::host, access_mode::read);
 
   // for each of the bonds
   const unsigned int size = (unsigned int)m_bond_data->getN();
@@ -161,9 +156,9 @@ void DynamicBondUpdater::calculateExistingBonds()
       const typename BondData::members_t& bond = h_bonds.data[i];
       unsigned int tag1 = bond.tag[0];
       unsigned int tag2 = bond.tag[1];
-      unsigned int type = h_typeval.data[i].type;
+    //  unsigned int type = h_typeval.data[i].type;
 
-      //only keep track of the bonds we are forming - does this make sense?
+      //only keep track of the bond type we are forming - does this make sense?
     //  if (type == m_bond_type)
     //  {
         AddtoExistingBonds(tag1,tag2);
@@ -186,7 +181,6 @@ bool DynamicBondUpdater::isExistingBond(unsigned int tag1, unsigned int tag2)
         if (h_existing_bonds_list.data[m_existing_bonds_list_indexer(tag1,i)] == tag2)
             return true;
         }
-
     return false;
     }
 
@@ -199,10 +193,8 @@ void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag1,unsigned int tag2)
   // don't add a bond twice - should not happen anyway
   if (isExistingBond(tag1, tag2)) return;
 
-
   bool overflowed = false;
 
-      // access arrays
   ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::readwrite);
 
   // resize the list if necessary
@@ -215,8 +207,6 @@ void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag1,unsigned int tag2)
 
   if (overflowed) resizeExistingBondList();
 
-  // access arrays
-  ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::readwrite);
   ArrayHandle<unsigned int> h_existing_bonds_list(m_existing_bonds_list, access_location::host, access_mode::readwrite);
 
   // add tag2 to tag1's exclusion list
@@ -233,6 +223,7 @@ void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag1,unsigned int tag2)
 
 }
 
+//todo: should the list be grown more than 1 at a time for efficiency?
 void DynamicBondUpdater::resizeExistingBondList()
     {
     unsigned int new_height = m_existing_bonds_list_indexer.getH() + 1;
@@ -243,10 +234,41 @@ void DynamicBondUpdater::resizeExistingBondList()
     m_exec_conf->msg->notice(6) << "DynamicBondUpdater: (Re-)size existing bond list, new size " << new_height << " bonds per particle " << std::endl;
     }
 
+//todo: should the list be grown more than 1 at a time for efficiency?
+void DynamicBondUpdater::resizePossibleBondlists()
+    {
+      m_max_bonds=m_max_bonds_overflow;
+      m_max_bonds_overflow=0;
+      unsigned int size = m_group_2->getNumMembers()*m_max_bonds;
+      m_all_possible_bonds.resize(size);
+
+      m_exec_conf->msg->notice(6) << "DynamicBondUpdater: (Re-)size possible bond list, new size " << m_max_bonds << " bonds per particle " << std::endl;
+    }
+
+
+void DynamicBondUpdater::allocateParticleArrays()
+  {
+
+    GPUArray<unsigned int> n_existing_bonds(m_pdata->getRTags().size(), m_exec_conf);
+    m_n_existing_bonds.swap(n_existing_bonds);
+
+    GPUArray<unsigned int> existing_bonds_list(m_pdata->getRTags().size(),1, m_exec_conf);
+    m_existing_bonds_list.swap(existing_bonds_list);
+    m_existing_bonds_list_indexer = Index2D(m_existing_bonds_list.getPitch(), m_existing_bonds_list.getHeight());
+
+    ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::overwrite);
+    ArrayHandle<unsigned int> h_existing_bonds_list(m_existing_bonds_list, access_location::host, access_mode::overwrite);
+
+    memset(h_n_existing_bonds.data, 0, sizeof(unsigned int)*m_n_existing_bonds.getNumElements());
+    memset(h_existing_bonds_list.data, 0, sizeof(unsigned int)*m_existing_bonds_list.getNumElements());
+
+    calculateExistingBonds();
+  }
+
 void DynamicBondUpdater::calculatePossibleBonds()
   {
-    //todo: is it worth it to seperate the tree building out and check if update is necessary?
-    //make tree for group 1
+    //todo: is it worth it to seperate the tree building out and check if update is necessary similar to neighbor list?
+    // make tree for group 1
     ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
     ArrayHandle<hpmc::detail::AABB> h_aabbs(m_aabbs, access_location::host, access_mode::readwrite);
@@ -267,7 +289,7 @@ void DynamicBondUpdater::calculatePossibleBonds()
      const unsigned int size = m_group_2->getNumMembers()*m_max_bonds;
      memset((void*)h_all_possible_bonds.data, 0, sizeof(Scalar3)*size);
 
-     //traverse the tree
+     // traverse the tree
      // Loop over all particles in group 2
      unsigned int group_size_2 = m_group_2->getNumMembers();
      for (unsigned int group_idx = 0; group_idx < group_size_2; group_idx++)
@@ -350,17 +372,17 @@ std::sort(h_all_possible_bonds.data, h_all_possible_bonds.data + size, SortBonds
 
 // now make sure each possible bond is in the array only once by comparing tags
 auto last = std::unique(h_all_possible_bonds.data, h_all_possible_bonds.data + size, CompareBonds);
-m_all_possible_bonds_end = std::distance(h_all_possible_bonds.data,last);
+m_num_all_possible_bonds = std::distance(h_all_possible_bonds.data,last);
 
 // then remove a possible bond if it already exists. It also removes zeros, e.g.
 // (0,0,0), which fill the unused spots in the array.
 auto last2 = std::remove_if(h_all_possible_bonds.data,
-                            h_all_possible_bonds.data + m_all_possible_bonds_end,
+                            h_all_possible_bonds.data + m_num_all_possible_bonds,
                            [this](Scalar3 i) {return CheckisExistingLegalBond(i); });
 
-m_all_possible_bonds_end = std::distance(h_all_possible_bonds.data,last2);
+m_num_all_possible_bonds = std::distance(h_all_possible_bonds.data,last2);
 
-// at this point, the sub-array: h_all_possible_bonds[0,m_all_possible_bonds_end]
+// at this point, the sub-array: h_all_possible_bonds[0,m_num_all_possible_bonds]
 // should contain only unique entries of possible bonds which are not yet formed.
 }
 
@@ -436,21 +458,6 @@ if (m_bond_type >= m_bond_data -> getNTypes())
 
 }
 
-
-//todo: should the list be grown more than 1 at a time for efficiency?
-void DynamicBondUpdater::resizePossibleBondlists()
-{
-  m_max_bonds=m_max_bonds_overflow;
-  m_max_bonds_overflow=0;
-  unsigned int size = m_group_2->getNumMembers()*m_max_bonds;
-  m_all_possible_bonds.resize(size);
-
-  m_exec_conf->msg->notice(6) << "DynamicBondUpdater: (Re-)size possible bond list, new size " << m_max_bonds << " bonds per particle " << std::endl;
-}
-
-/*!
- * \param timestep Timestep update is called
- */
 void DynamicBondUpdater::makeBonds()
 {
 
@@ -460,46 +467,48 @@ void DynamicBondUpdater::makeBonds()
   ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::read);
   ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
 
-  GPUArray<unsigned int> total_counts_tag(m_pdata->getRTags().size(), m_exec_conf);
-  ArrayHandle<unsigned int> h_total_counts_tag(total_counts_tag, access_location::host, access_mode::readwrite);
-  memset((void*)h_total_counts_tag.data,0,sizeof(unsigned int)*m_pdata->getRTags().size());
+  GPUArray<unsigned int> total_counts(m_pdata->getRTags().size(), m_exec_conf);
+  ArrayHandle<unsigned int> h_total_counts(total_counts, access_location::host, access_mode::readwrite);
+  memset((void*)h_total_counts.data,0,sizeof(unsigned int)*m_pdata->getRTags().size());
 
   // Loop over all possible bonds and count how many times a tag is in h_all_possible_bonds array
-  for (unsigned int i = 0; i < m_all_possible_bonds_end; i++)
+  // save how many bonds to form (max bonds - existing bonds) in h_total_counts
+  for (unsigned int i = 0; i < m_num_all_possible_bonds; i++)
       {
         Scalar3 d = h_all_possible_bonds.data[i];
         const  int tag_i = __scalar_as_int(d.x);
         const  int tag_j = __scalar_as_int(d.y);
-        h_total_counts_tag.data[tag_i]=m_max_bonds_group_1 - h_n_existing_bonds.data[tag_i];
-        h_total_counts_tag.data[tag_j]=m_max_bonds_group_2 - h_n_existing_bonds.data[tag_j];
+        h_total_counts.data[tag_i]=m_max_bonds_group_1 - h_n_existing_bonds.data[tag_i];
+        h_total_counts.data[tag_j]=m_max_bonds_group_2 - h_n_existing_bonds.data[tag_j];
       }
 
-  GPUArray<unsigned int> current_counts_tag(m_pdata->getRTags().size(), m_exec_conf);
-  ArrayHandle<unsigned int> h_current_counts_tag(current_counts_tag, access_location::host, access_mode::readwrite);
-  memset((void*)h_current_counts_tag.data,0,sizeof(unsigned int)*m_pdata->getRTags().size());
+  GPUArray<unsigned int> current_counts(m_pdata->getRTags().size(), m_exec_conf);
+  ArrayHandle<unsigned int> h_current_counts(current_counts, access_location::host, access_mode::readwrite);
+  memset((void*)h_current_counts.data,0,sizeof(unsigned int)*m_pdata->getRTags().size());
 
   //todo: can this for loop be simplified/paralleized?
   bool added_bonds = false;
-  for (unsigned int i = 0; i < m_all_possible_bonds_end; i++)
+  for (unsigned int i = 0; i < m_num_all_possible_bonds; i++)
       {
         Scalar3 d = h_all_possible_bonds.data[i];
         unsigned int tag_i = __scalar_as_int(d.x);
         unsigned int tag_j = __scalar_as_int(d.y);
 
         //todo: put in other external criteria here, e.g. probability of bond formation etc
-        if (h_current_counts_tag.data[tag_i]<h_total_counts_tag.data[tag_i] &&
-        h_current_counts_tag.data[tag_j]< h_total_counts_tag.data[tag_j] )
+        if (h_current_counts.data[tag_i]<h_total_counts.data[tag_i] &&
+        h_current_counts.data[tag_j]< h_total_counts.data[tag_j] )
         {
           m_bond_data->addBondedGroup(Bond(m_bond_type,tag_i,tag_j));
           AddtoExistingBonds(tag_i,tag_j);
-          h_current_counts_tag.data[tag_i]++;
-          h_current_counts_tag.data[tag_j]++;
+          h_current_counts.data[tag_i]++;
+          h_current_counts.data[tag_j]++;
           added_bonds = true;
         }
       }
 
  if (added_bonds) m_pdata->notifyParticleSort();
- //todo: how to add this? m_nlist as parameter?
+
+ //todo: how to add this? m_nlist as parameter? also needs to know if exclusions are set in nlist
  //notify neighbor lists
 //  if (m_exclude_from_nlist)
 //    m_nlist->addExclusion(p_from_idx,p_to_idx);

@@ -139,7 +139,6 @@ class dynamic_bond(hoomd.update._updater):
     def __init__(self,r_cut,bond_type,group_1, group_2, max_bonds_1,max_bonds_2,period=1, phase=0):
 
         hoomd.util.print_status_line()
-
         hoomd.update._updater.__init__(self)
 
 
@@ -155,7 +154,9 @@ class dynamic_bond(hoomd.update._updater):
 
         self.r_cut = r_cut
 
-        # we need to check that the groups have no overlap if the max_bonds_1 and max_bonds_2 are different
+        # it doesn't really make sense to allow partially overlapping groups?
+        # Maybe it should be excluded.
+        # We need to check that the groups have no overlap if the max_bonds_1 and max_bonds_2 are different:
         new_cpp_group = _hoomd.ParticleGroup.groupIntersection(group_1.cpp_group, group_2.cpp_group)
         if new_cpp_group.getNumMembersGlobal()>0 and max_bonds_1 != max_bonds_2:
             hoomd.context.msg.error('update.dynamic_bond: groups are overlapping with ' + str(new_cpp_group.getNumMembersGlobal())
@@ -163,16 +164,20 @@ class dynamic_bond(hoomd.update._updater):
                                     + ' != '+  str(max_bonds_2)+ '.\n')
             raise ValueError('update.dynamic_bond: groups are overlapping with different number of maximum bonds')
 
-        #it doesn't really make sense to allow partially overlapping groups?
+        # preliminary testing indicates that it is faster on the CPU to have group_1 to be the bigger one
+        # swap such that group 1 is the bigger of the two
+        if group_2.cpp_group.getNumMembersGlobal()> group_1.cpp_group.getNumMembersGlobal():
+            temp_group = group_1
+            group_1 = group_2
+            group_2 = temp_group
 
         self.cpp_updater = cpp_class(hoomd.context.current.system_definition,
                             group_1.cpp_group,group_2.cpp_group,self.r_cut,
                             bond_type_id,max_bonds_1,max_bonds_2)
         self.setupUpdater(period, phase)
 
-        # how to do handling of exclusions in the neighborlist correctly?
-        # neighbor list is ordered by particle id, does this create artifacts? (CPU)
-        # what happens if bond reservoir is empty? should we throw a warning?
+        # how to do handling of exclusions in the neighbor list correctly?
+
 
     def set_params(self, bond_type=None, max_bonds_1=None, max_bonds_2=None,group_1=None, group_2=None):
         # todo - cpp class right now doesn't have any set/get functions
