@@ -12,7 +12,6 @@
 #define AZPLUGINS_PAIR_EVALUATOR_HERTZ_H_
 
 #include "PairEvaluator.h"
-#include <math.h>
 
 #ifdef NVCC
 #define DEVICE __device__
@@ -43,7 +42,7 @@ class PairEvaluatorHertz : public PairEvaluator
     {
     public:
         //! Define the parameter type used by this pair potential evaluator
-        typedef Scalar2 param_type;
+        typedef Scalar param_type;
 
         //! Constructor
         /*!
@@ -54,7 +53,7 @@ class PairEvaluatorHertz : public PairEvaluator
          * The functor initializes its members from \a _params.
          */
         DEVICE PairEvaluatorHertz(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-          : PairEvaluator(_rsq,_rcutsq), epsilon(_params.x)
+          : PairEvaluator(_rsq,_rcutsq), epsilon(_params)
           {}
 
         //! Evaluate the force and energy
@@ -70,17 +69,21 @@ class PairEvaluatorHertz : public PairEvaluator
          */
         DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
             {
-            if (rsq < rcutsq && epsilon != 0)
+            if (rsq < rcutsq && epsilon != Scalar(0))
                 {
-                Scalar r = sqrt(rsq);
-                Scalar rcut = sqrt(rcutsq);
-                Scalar x = (Scalar(1.0) - (r / rcut));
-                force_divr = (Scalar(1.0) / r) * ((Scalar(5.0) * epsilon) / (Scalar(2.0) * rcut)) * pow(x, Scalar(1.5));
-                pair_eng = epsilon * pow(x, Scalar(2.5));
+                const Scalar r = fast::sqrt(rsq);
+                const Scalar rcut = fast::sqrt(rcutsq);
+                const Scalar x = Scalar(1.0) - (r/rcut);
+                const Scalar xsqrt = fast::sqrt(x);
+                const Scalar ex3p2 = epsilon*x*xsqrt;
+                force_divr = Scalar(2.5)*ex3p2/(r*rcut);
+                pair_eng = ex3p2*x;
                 return true;
                 }
             else
+                {
                 return false;
+                }
             }
 
         #ifndef NVCC
@@ -92,7 +95,7 @@ class PairEvaluatorHertz : public PairEvaluator
         #endif
 
     protected:
-        Scalar epsilon;     //!< epsilon parameter extracted from the params passed to the constructor
+        Scalar epsilon;     //!< epsilon parameter (energy scale of interaction)
     };
 
 } // end namespace detail
