@@ -25,6 +25,7 @@ namespace py = pybind11;
 #include "TypeUpdater.h"
 #include "ParticleEvaporator.h"
 #ifdef ENABLE_CUDA
+#include "DynamicBondUpdaterGPU.h"
 #include "ReversePerturbationFlowGPU.h"
 #include "TypeUpdaterGPU.h"
 #include "ParticleEvaporatorGPU.h"
@@ -195,6 +196,7 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_TypeUpdater(m);
     azplugins::detail::export_ParticleEvaporator(m); // this must follow TypeUpdater because TypeUpdater is the python base class
     #ifdef ENABLE_CUDA
+    azplugins::detail::export_DynamicBondUpdaterGPU(m);
     azplugins::detail::export_ReversePerturbationFlowGPU(m);
     azplugins::detail::export_TypeUpdaterGPU(m);
     azplugins::detail::export_ParticleEvaporatorGPU(m);

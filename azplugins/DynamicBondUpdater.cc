@@ -52,6 +52,8 @@ DynamicBondUpdater::~DynamicBondUpdater()
     {
     m_exec_conf->msg->notice(5) << "Destroying DynamicBondUpdater" << std::endl;
 
+    m_pdata->getBoxChangeSignal().disconnect<DynamicBondUpdater, &DynamicBondUpdater::slotBoxChanged>(this);
+    m_pdata->getGlobalParticleNumberChangeSignal().disconnect<DynamicBondUpdater, &DynamicBondUpdater::slotNumParticlesChanged>(this);
     }
 
 

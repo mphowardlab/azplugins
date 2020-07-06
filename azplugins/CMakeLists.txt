@@ -52,6 +52,7 @@ set(_${COMPONENT_NAME}_sources
 # cuda-enabled c++ source files
 if(ENABLE_CUDA)
 list(APPEND _${COMPONENT_NAME}_sources
+    DynamicBondUpdaterGPU.cc
     ImplicitEvaporatorGPU.cc
     ImplicitDropletEvaporatorGPU.cc
     ImplicitPlaneEvaporatorGPU.cc
@@ -71,6 +72,7 @@ set(_${COMPONENT_NAME}_cu_sources
     BondPotentials.cu
     BounceBackNVEGPU.cu
     DPDPotentialGeneralWeight.cu
+    DynamicBondUpdaterGPU.cu
     ImplicitDropletEvaporatorGPU.cu
     ImplicitPlaneEvaporatorGPU.cu
     OrientationRestraintComputeGPU.cu

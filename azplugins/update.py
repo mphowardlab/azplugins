@@ -145,9 +145,10 @@ class dynamic_bond(hoomd.update._updater):
         if not hoomd.context.exec_conf.isCUDAEnabled():
             cpp_class = _azplugins.DynamicBondUpdater
         else:
-            hoomd.context.msg.error('update.dynamic_bond not implemented on the GPU \n')
-            raise ValueError('update.dynamic_bond not implemented on the GPU ')
-            #cpp_class = _azplugins.TypeUpdaterGPU
+            cpp_class = _azplugins.DynamicBondUpdaterGPU
+            # hoomd.context.msg.error('update.dynamic_bond not implemented on the GPU \n')
+            # raise ValueError('update.dynamic_bond not implemented on the GPU ')
+
 
         # look up the bond id based on the given name - this will throw an error if the bond types do not exist
         bond_type_id = hoomd.context.current.system_definition.getBondData().getTypeByName(bond_type)
