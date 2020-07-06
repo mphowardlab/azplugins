@@ -29,6 +29,7 @@
 #define AZPLUGINS_BOND_POTENTIALS_H_
 
 // All bonded potential evaluators must be included here
+#include "BondEvaluatorDoubleWell.h"
 #include "BondEvaluatorFENE.h"
 #include "BondEvaluatorFENEAsh24.h"
 

@@ -41,12 +41,12 @@ set(_${COMPONENT_NAME}_sources
     ImplicitPlaneEvaporator.cc
     OrientationRestraintCompute.cc
     ParticleEvaporator.cc
-    PlaneRestraintCompute.cc
     PositionRestraintCompute.cc
     RDFAnalyzer.cc
     ReversePerturbationFlow.cc
     TypeUpdater.cc
     VariantSphereArea.cc
+    WallRestraintCompute.cc
     )
 
 # cuda-enabled c++ source files
@@ -58,11 +58,11 @@ list(APPEND _${COMPONENT_NAME}_sources
     ImplicitPlaneEvaporatorGPU.cc
     OrientationRestraintComputeGPU.cc
     ParticleEvaporatorGPU.cc
-    PlaneRestraintComputeGPU.cc
     PositionRestraintComputeGPU.cc
     RDFAnalyzerGPU.cc
     ReversePerturbationFlowGPU.cc
     TypeUpdaterGPU.cc
+    WallRestraintComputeGPU.cc
     )
 endif(ENABLE_CUDA)
 
@@ -84,7 +84,6 @@ set(_${COMPONENT_NAME}_cu_sources
     PairPotentialShiftedLJ.cu
     PairPotentialSpline.cu
     ParticleEvaporatorGPU.cu
-    PlaneRestraintComputeGPU.cu
     PositionRestraintComputeGPU.cu
     RDFAnalyzerGPU.cu
     ReversePerturbationFlowGPU.cu
@@ -93,6 +92,7 @@ set(_${COMPONENT_NAME}_cu_sources
     TwoStepLangevinFlowGPU.cu
     TypeUpdaterGPU.cu
     WallPotentials.cu
+    WallRestraintComputeGPU.cu
     )
 
 # python files

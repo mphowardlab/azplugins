@@ -44,15 +44,15 @@ namespace py = pybind11;
 #include "ImplicitDropletEvaporator.h"
 #include "ImplicitPlaneEvaporator.h"
 #include "OrientationRestraintCompute.h"
-#include "PlaneRestraintCompute.h"
 #include "PositionRestraintCompute.h"
+#include "WallRestraintCompute.h"
 #ifdef ENABLE_CUDA
 #include "ImplicitEvaporatorGPU.h"
 #include "ImplicitDropletEvaporatorGPU.h"
 #include "ImplicitPlaneEvaporatorGPU.h"
 #include "OrientationRestraintComputeGPU.h"
-#include "PlaneRestraintComputeGPU.h"
 #include "PositionRestraintComputeGPU.h"
+#include "WallRestraintComputeGPU.h"
 #endif // ENABLE_CUDA
 
 /* Analyzers */
@@ -183,6 +183,7 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_dpd_potential<azplugins::detail::DPDEvaluatorGeneralWeight>(m, "DPDPotentialGeneralWeight");
 
     /* Bond potentials */
+    azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorDoubleWell>(m, "BondPotentialDoubleWell");
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENE>(m, "BondPotentialFENE");
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENEAsh24>(m, "BondPotentialFENEAsh24");
     azplugins::detail::export_ashbaugh_bond_params(m);
@@ -205,20 +206,27 @@ PYBIND11_MODULE(_azplugins, m)
     /* Wall potentials */
     azplugins::detail::export_wall_potential<azplugins::detail::WallEvaluatorColloid>(m, "WallPotentialColloid");
     azplugins::detail::export_wall_potential<azplugins::detail::WallEvaluatorLJ93>(m, "WallPotentialLJ93");
+    azplugins::detail::export_PlaneWall(m);
+    azplugins::detail::export_CylinderWall(m);
+    azplugins::detail::export_SphereWall(m);
 
     /* Force computes */
     azplugins::detail::export_ImplicitEvaporator(m);
     azplugins::detail::export_ImplicitDropletEvaporator(m);
     azplugins::detail::export_ImplicitPlaneEvaporator(m);
     azplugins::detail::export_OrientationRestraintCompute(m);
-    azplugins::detail::export_PlaneRestraintCompute(m);
+    azplugins::detail::export_WallRestraintCompute<PlaneWall>(m,"PlaneRestraintCompute");
+    azplugins::detail::export_WallRestraintCompute<CylinderWall>(m,"CylinderRestraintCompute");
+    azplugins::detail::export_WallRestraintCompute<SphereWall>(m,"SphereRestraintCompute");
     azplugins::detail::export_PositionRestraintCompute(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_ImplicitEvaporatorGPU(m);
     azplugins::detail::export_ImplicitDropletEvaporatorGPU(m);
     azplugins::detail::export_ImplicitPlaneEvaporatorGPU(m);
     azplugins::detail::export_OrientationRestraintComputeGPU(m);
-    azplugins::detail::export_PlaneRestraintComputeGPU(m);
+    azplugins::detail::export_WallRestraintComputeGPU<PlaneWall>(m,"PlaneRestraintComputeGPU");
+    azplugins::detail::export_WallRestraintComputeGPU<CylinderWall>(m,"CylinderRestraintComputeGPU");
+    azplugins::detail::export_WallRestraintComputeGPU<SphereWall>(m,"SphereRestraintComputeGPU");
     azplugins::detail::export_PositionRestraintComputeGPU(m);
     #endif // ENABLE_CUDA
 
