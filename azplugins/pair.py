@@ -199,6 +199,66 @@ class colloid(hoomd.md.pair.pair):
 
         return _hoomd.make_scalar4(epsilon, sigma**3, sigma**6, _hoomd.int_as_scalar(style))
 
+class hertz(hoomd.md.pair.pair):
+    R""" Hertz potential
+
+    Args:
+        r_cut (float): Default cutoff radius (in distance units).
+        nlist (:py:mod:`hoomd.md.nlist`): Neighbor list
+        name (str): Name of the force instance.
+
+    :py:class:`hertz` is the Hertz potential
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray*}{
+        V(r)  = & \varepsilon (1-\frac{r}{r_{\mathrm{cut}}})^{5/2} & r < r_{\mathrm{cut}} \\
+              = & 0 r \ge r_{\mathrm{cut}}
+        \f}
+        \end{eqnarray*}
+
+    parameters :math:`\varepsilon`, the energy scale of the pair interaction.
+    See :py:class:`hoomd.md.pair.pair`for details on how forces are calculated
+    and the available energy shifting and smoothing modes. Use
+    :py:meth:`pair_coeff.set <coeff.set>` to set potential coefficients.
+
+    The following coefficients must be set per unique pair of particle types:
+
+    - :math:`\varepsilon` - *epsilon* (in energy units)
+    - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
+      - *optional*: defaults to the global r_cut specified in the pair command
+
+    Example::
+
+        nl = hoomd.md.nlist.cell()
+        hertz = azplugins.pair.hertz(r_cut=3.0, nlist=nl)
+        hertz.pair_coeff.set('A', 'A', epsilon=1.0)
+        hertz.pair_coeff.set(['A','B'], 'B', epsilon=2.0)
+
+    """
+    def __init__(self, r_cut, nlist, name=None):
+        hoomd.util.print_status_line()
+
+        # initialize the base class
+        hoomd.md.pair.pair.__init__(self, r_cut, nlist, name)
+
+        # create the c++ mirror class
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            self.cpp_class = _azplugins.PairPotentialHertz
+        else:
+            self.cpp_class = _azplugins.PairPotentialHertzGPU
+            self.nlist.cpp_nlist.setStorageMode(_md.NeighborList.storageMode.full)
+        self.cpp_force = self.cpp_class(hoomd.context.current.system_definition, self.nlist.cpp_nlist, self.name)
+
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
+
+        # setup the coefficent options
+        self.required_coeffs = ['epsilon']
+
+    def process_coeff(self, coeff):
+        epsilon = coeff['epsilon']
+        return epsilon
+
 class lj124(hoomd.md.pair.pair):
     R""" LJ 12-4 potential
 
@@ -265,63 +325,6 @@ class lj124(hoomd.md.pair.pair):
         lj2 = alpha * 1.5 * math.sqrt(3.0) * epsilon * math.pow(sigma, 4.0)
 
         return _hoomd.make_scalar2(lj1, lj2)
-
-class hertz(hoomd.md.pair.pair):
-    R""" Hertz potential
-
-    Args:
-        r_cut (float): Default cutoff radius (in distance units).
-        nlist (:py:mod:`hoomd.md.nlist`): Neighbor list
-        name (str): Name of the force instance.
-
-    :py:class:`hertz` is the Hertz potential
-    .. math::
-         \f{eqnarray*}{
-         V(r)  = & \varepsilon (1-\frac{r}{r_{\mathrm{cut}}})^\frac{5}{2} & r < r_{\mathrm{cut}} \\
-               = & 0 r \ge r_{\mathrm{cut}}
-         \f}
-         \end{eqnarray*}
-
-    parameters :math:`\varepsilon`, :math:`\sigma`. See :py:class:`hoomd.md.pair.pair`
-    for details on how forces are calculated and the available energy shifting and smoothing modes.
-    Use :py:meth:`pair_coeff.set <coeff.set>` to set potential coefficients.
-
-    The following coefficients must be set per unique pair of particle types:
-
-    - :math:`\varepsilon` - *epsilon* (in energy units)
-    - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
-      - *optional*: defaults to the global r_cut specified in the pair command
-
-    Example::
-
-        nl = hoomd.md.nlist.cell()
-        hertz = azplugins.pair.hertz(r_cut=3.0, nlist=nl)
-        hertz.pair_coeff.set('A', 'A', epsilon=1.0)
-        hertz.pair_coeff.set(['A','B'], 'B', epsilon=2.0)
-
-    """
-    def __init__(self, r_cut, nlist, name=None):
-        hoomd.util.print_status_line()
-
-        # initialize the base class
-        hoomd.md.pair.pair.__init__(self, r_cut, nlist, name)
-
-        # create the c++ mirror class
-        if not hoomd.context.exec_conf.isCUDAEnabled():
-            self.cpp_class = _azplugins.PairPotentialHertz
-        else:
-            self.cpp_class = _azplugins.PairPotentialHertzGPU
-            self.nlist.cpp_nlist.setStorageMode(_md.NeighborList.storageMode.full)
-        self.cpp_force = self.cpp_class(hoomd.context.current.system_definition, self.nlist.cpp_nlist, self.name)
-
-        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
-
-        # setup the coefficent options
-        self.required_coeffs = ['epsilon']
-
-    def process_coeff(self, coeff):
-        epsilon = coeff['epsilon']
-        return _hoomd.make_scalar2(epsilon, 1.0)
 
 class ashbaugh24(hoomd.md.pair.pair):
     R""" generalized Ashbaugh-Hatch 48-24 potential

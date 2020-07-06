@@ -34,11 +34,11 @@
 #include "PairEvaluatorAshbaugh.h"
 #include "PairEvaluatorAshbaugh24.h"
 #include "PairEvaluatorColloid.h"
+#include "PairEvaluatorHertz.h"
 #include "PairEvaluatorLJ124.h"
 #include "PairEvaluatorLJ96.h"
 #include "PairEvaluatorShiftedLJ.h"
 #include "PairEvaluatorSpline.h"
-#include "PairEvaluatorHertz.h"
 
 /*
  * The code below handles python exports using a templated function, and so
