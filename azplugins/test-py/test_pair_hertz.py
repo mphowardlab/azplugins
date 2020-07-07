@@ -3,9 +3,10 @@
 
 # Maintainer: arjunsg2
 
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+from hoomd import data
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -16,10 +17,10 @@ import unittest
 class pair_hertz_tests(unittest.TestCase):
     def setUp(self):
         # raw snapshot is fine, just needs to have the types
-        snap = data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
-        self.s = init.read_snapshot(snap)
+        snap = hoomd.data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
+        self.s = hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
-        context.current.sorter.set_params(grid=8)
+        hoomd.context.current.sorter.set_params(grid=8)
 
     # basic test of creation
     def test(self):
@@ -91,16 +92,16 @@ class pair_hertz_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s, self.nl
-        context.initialize()
+        hoomd.context.initialize()
 
 # test the validity of the pair potential
 class potential_hertz_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2, box=data.boxdim(L=20),particle_types=['A'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=2, box=data.boxdim(L=20),particle_types=['A'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[0] = (0,0,0)
             snap.particles.position[1] = (1.05,0,0)
-        init.read_snapshot(snap)
+        hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
 
     # test the calculation of force and potential
@@ -110,8 +111,8 @@ class potential_hertz_tests(unittest.TestCase):
         hertz.set_params(mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         U = 0.09859
         F = 0.54772
         f0 = hertz.forces[0].force
@@ -133,7 +134,7 @@ class potential_hertz_tests(unittest.TestCase):
         hertz = azplugins.pair.hertz(r_cut=2.05, nlist = self.nl)
         hertz.pair_coeff.set('A','A', epsilon=3.0)
         hertz.set_params(mode='shift')
-        run(1)
+        hoomd.run(1)
         U = 0.498582
         F = 1.246455
         self.assertAlmostEqual(hertz.forces[0].energy, 0.5*U, 3)
@@ -150,8 +151,8 @@ class potential_hertz_tests(unittest.TestCase):
         hertz.set_params(mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         self.assertAlmostEqual(hertz.forces[0].energy, 0)
         self.assertAlmostEqual(hertz.forces[1].energy, 0)
         self.assertAlmostEqual(hertz.forces[0].force[0], 0)
@@ -159,7 +160,7 @@ class potential_hertz_tests(unittest.TestCase):
 
         # inside cutoff but epsilon = 0
         hertz.pair_coeff.set('A','A', epsilon=0.0, r_cut=3.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(hertz.forces[0].energy, 0)
         self.assertAlmostEqual(hertz.forces[1].energy, 0)
         self.assertAlmostEqual(hertz.forces[0].force[0], 0)
@@ -167,7 +168,7 @@ class potential_hertz_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.nl
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])
