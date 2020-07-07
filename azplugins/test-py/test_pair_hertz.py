@@ -3,9 +3,9 @@
 
 # Maintainer: arjunsg2
 
-import hoomd
+from hoomd import *
 from hoomd import md
-hoomd.context.initialize()
+context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -16,10 +16,10 @@ import unittest
 class pair_hertz_tests(unittest.TestCase):
     def setUp(self):
         # raw snapshot is fine, just needs to have the types
-        snap = hoomd.data.make_snapshot(N=100, box=hoomd.data.boxdim(L=20), particle_types=['A'])
-        self.s = hoomd.init.read_snapshot(snap)
+        snap = data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
+        self.s = init.read_snapshot(snap)
         self.nl = md.nlist.cell()
-        hoomd.context.current.sorter.set_params(grid=8)
+        context.current.sorter.set_params(grid=8)
 
     # basic test of creation
     def test(self):
@@ -91,16 +91,16 @@ class pair_hertz_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s, self.nl
-        hoomd.context.initialize()
+        context.initialize()
 
 # test the validity of the pair potential
 class potential_hertz_tests(unittest.TestCase):
     def setUp(self):
-        snap = hoomd.data.make_snapshot(N=2, box=hoomd.data.boxdim(L=20),particle_types=['A'])
+        snap = data.make_snapshot(N=2, box=data.boxdim(L=20),particle_types=['A'])
         if comm.get_rank() == 0:
             snap.particles.position[0] = (0,0,0)
             snap.particles.position[1] = (1.05,0,0)
-        hoomd.init.read_snapshot(snap)
+        init.read_snapshot(snap)
         self.nl = md.nlist.cell()
 
     # test the calculation of force and potential
@@ -167,7 +167,7 @@ class potential_hertz_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.nl
-        hoomd.context.initialize()
+        context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])
