@@ -41,7 +41,7 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
     m_all_possible_bonds.swap(all_possible_bonds);
 
     //todo: reset all aabb componentes if group sizes changes?
-    // if groups change this updater might just not work properly - groups don't have a change signal
+    // if groups change during the simulation this updater might just not work properly - groups don't have a change signal?
     m_aabbs.resize(m_group_1->getNumMembers());
 
     checkSystemSetup();
@@ -62,6 +62,12 @@ DynamicBondUpdater::~DynamicBondUpdater()
  */
 void DynamicBondUpdater::update(unsigned int timestep)
 {
+    // don't do anything if either one of the groups is  empty
+    const unsigned int group_size_1 = m_group_1->getNumMembers();
+    const unsigned int group_size_2 = m_group_2->getNumMembers();
+    if(group_size_1 == 0 || group_size_2 == 0)
+        return;
+
     // update properties that depend on the box
     if (m_box_changed)
         {
@@ -80,7 +86,7 @@ void DynamicBondUpdater::update(unsigned int timestep)
     bool overflowed = false;
     do
         {
-        calculatePossibleBonds();
+        findAllPossibleBonds();
         overflowed = m_max_bonds < m_max_bonds_overflow;
         // if we overflowed, need to reallocate memory and re-calculate
         if (overflowed)
@@ -96,7 +102,7 @@ void DynamicBondUpdater::update(unsigned int timestep)
 
 }
 
-//todo: should go into helper class?
+//todo: should go into helper class/separate file
 bool SortBonds(Scalar3 i, Scalar3 j)
   {
       const Scalar r_sq_1 = i.z;
@@ -104,7 +110,7 @@ bool SortBonds(Scalar3 i, Scalar3 j)
       return r_sq_1 < r_sq_2;
   }
 
-//todo: should go into helper class? - also, faster way without branching?
+//todo: migrate to separate file/class. faster way without branching?
   bool CompareBonds(Scalar3 i, Scalar3 j)
   {
 
@@ -192,7 +198,7 @@ void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag1,unsigned int tag2)
   assert(tag1 <= m_pdata->getMaximumTag());
   assert(tag2 <= m_pdata->getMaximumTag());
 
-  // don't add a bond twice - should not happen anyway
+  // don't add a bond twice - should not happen anyway - todo: might be able to avoid this check
   if (isExistingBond(tag1, tag2)) return;
 
   bool overflowed = false;
@@ -211,13 +217,13 @@ void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag1,unsigned int tag2)
 
   ArrayHandle<unsigned int> h_existing_bonds_list(m_existing_bonds_list, access_location::host, access_mode::readwrite);
 
-  // add tag2 to tag1's exclusion list
+  // add tag2 to tag1's existing bonds list
   unsigned int pos1 = h_n_existing_bonds.data[tag1];
   assert(pos1 < m_existing_bonds_list_indexer.getH());
   h_existing_bonds_list.data[m_existing_bonds_list_indexer(tag1,pos1)] = tag2;
   h_n_existing_bonds.data[tag1]++;
 
-  // add tag1 to tag2's exclusion list
+  // add tag1 to tag2's existing bonds list
   unsigned int pos2 = h_n_existing_bonds.data[tag2];
   assert(pos2 < m_existing_bonds_list_indexer.getH());
   h_existing_bonds_list.data[m_existing_bonds_list_indexer(tag2,pos2)] = tag1;
@@ -267,8 +273,9 @@ void DynamicBondUpdater::allocateParticleArrays()
     calculateExistingBonds();
   }
 
-void DynamicBondUpdater::calculatePossibleBonds()
+void DynamicBondUpdater::findAllPossibleBonds()
   {
+    //std::cout<<" in DynamicBondUpdater::findAllPossibleBonds"<<std::endl;
     //todo: is it worth it to seperate the tree building out and check if update is necessary similar to neighbor list?
     // make tree for group 1
     ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
@@ -458,11 +465,20 @@ if (m_bond_type >= m_bond_data -> getNTypes())
   throw std::runtime_error("Invalid bond type for DynamicBondUpdater");
   }
 
+  if(m_group_1->getNumMembers()<=0)
+  {
+  m_exec_conf->msg->warning() << "DynamicBondUpdater: group 1 appears to be empty. Bonds cannot be formed. " << std::endl;
+  }
+
+  if(m_group_2->getNumMembers()<=0)
+  {
+  m_exec_conf->msg->warning() << "DynamicBondUpdater: group 2 appears to be empty. Bonds cannot be formed. " << std::endl;
+  }
+
 }
 
 void DynamicBondUpdater::makeBonds()
 {
-
   // we need to count how many bonds are in the h_all_possible_bonds array for a given tag
   // so that we don't end up forming too many bonds in one step
   ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::read);
@@ -488,7 +504,7 @@ void DynamicBondUpdater::makeBonds()
   ArrayHandle<unsigned int> h_current_counts(current_counts, access_location::host, access_mode::readwrite);
   memset((void*)h_current_counts.data,0,sizeof(unsigned int)*m_pdata->getRTags().size());
 
-  //todo: can this for loop be simplified/paralleized?
+  //todo: can this for loop be simplified/parallelized?
   bool added_bonds = false;
   for (unsigned int i = 0; i < m_num_all_possible_bonds; i++)
       {
@@ -496,7 +512,8 @@ void DynamicBondUpdater::makeBonds()
         unsigned int tag_i = __scalar_as_int(d.x);
         unsigned int tag_j = __scalar_as_int(d.y);
 
-        //todo: put in other external criteria here, e.g. probability of bond formation etc
+        //todo: put in other external criteria here, e.g. probability of bond formation etc.
+        //todo: randomize which bonds are formed or keep them ordered by their distances?
         if (h_current_counts.data[tag_i]<h_total_counts.data[tag_i] &&
         h_current_counts.data[tag_j]< h_total_counts.data[tag_j] )
         {
@@ -510,7 +527,7 @@ void DynamicBondUpdater::makeBonds()
 
  if (added_bonds) m_pdata->notifyParticleSort();
 
- //todo: how to add this? m_nlist as parameter? also needs to know if exclusions are set in nlist
+ //todo: how to add this? m_nlist as parameter? also needs to know if exclusions are set in nlist.
  //notify neighbor lists
 //  if (m_exclude_from_nlist)
 //    m_nlist->addExclusion(p_from_idx,p_to_idx);
@@ -532,6 +549,7 @@ void export_DynamicBondUpdater(pybind11::module& m)
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<ParticleGroup>,
              std::shared_ptr<ParticleGroup>, const Scalar, unsigned int, unsigned int, unsigned int>());
 
+        //todo: implement needed getter/setter functions
         //.def_property("inside", &DynamicBondUpdater::getInsideType, &DynamicBondUpdater::setInsideType)
         //.def_property("outside", &DynamicBondUpdater::getOutsideType, &DynamicBondUpdater::setOutsideType)
         //.def_property("lo", &DynamicBondUpdater::getRegionLo, &DynamicBondUpdater::setRegionLo)

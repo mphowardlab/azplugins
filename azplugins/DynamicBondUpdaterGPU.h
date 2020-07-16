@@ -45,9 +45,12 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
     //  virtual void update(unsigned int timestep);
 
     protected:
-
+  
+          virtual void filterPossibleBonds();
     private:
-        std::unique_ptr<Autotuner> m_tuner; //!< Tuner
+        std::unique_ptr<Autotuner> m_tuner_filter_bonds; //!< Tuner for existing bond filter
+        GPUFlags<int> m_num_nonzero_bonds;//!< GPU flags for the number of marked particles
+
     };
 
 namespace detail

@@ -19,7 +19,6 @@
 #include "hoomd/md/NeighborList.h"
 #include "hoomd/Updater.h"
 #include "hoomd/ParticleGroup.h"
-
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 
 namespace azplugins
@@ -41,7 +40,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         //! Destructor
         virtual ~DynamicBondUpdater();
 
-        //! find and make new bonds
+        //! update - find and make new bonds
         virtual void update(unsigned int timestep);
 
 
@@ -63,7 +62,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         GPUArray<Scalar3> m_all_possible_bonds;   //!< list of possible bonds, size:  size(group_1)*n_max_bonds
         unsigned int m_num_all_possible_bonds;    //!< number of valid possible bonds at the beginning of m_all_possible_bonds
 
-        hpmc::detail::AABBTree        m_aabb_tree;  //!<  AABB tree for group_1
+        hpmc::detail::AABBTree        m_aabb_tree;  //!< AABB tree for group_1
         GPUVector<hpmc::detail::AABB> m_aabbs;      //!< Flat array of AABBs of all types
         std::vector< vec3<Scalar> > m_image_list;   //!< List of translation vectors for tree traversal
         unsigned int m_n_images;                    //!< The number of image vectors to check
@@ -72,12 +71,11 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         GPUArray<unsigned int> m_n_existing_bonds;     //!< Number of existing bonds for a given particle tag
         unsigned int m_max_existing_bonds_list;        //!< maximum number of  bonds in list of existing bonded particles
         Index2D m_existing_bonds_list_indexer;         //!< Indexer for accessing the by-tag bonded particle list
-
-    private:
+        virtual void filterPossibleBonds();
+      
         bool CheckisExistingLegalBond(Scalar3 i); //this acesses info in m_existing_bonds_list_tag. todo: rename to something sensible
         void calculateExistingBonds();
-        void calculatePossibleBonds();
-        void filterPossibleBonds();
+        void findAllPossibleBonds();
         void makeBonds();
         void AddtoExistingBonds(unsigned int tag1,unsigned int tag2);
         bool isExistingBond(unsigned int tag1,unsigned int tag2); //this acesses info in m_existing_bonds_list_tag
@@ -99,7 +97,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
             m_max_N_changed = true;
             }
 
-        bool m_box_changed;         //!< Flag if box dimensions changed
+        bool m_box_changed;          //!< Flag if box dimensions changed
         bool m_max_N_changed;        //!< Flag if total number of particles changed
 
     };
