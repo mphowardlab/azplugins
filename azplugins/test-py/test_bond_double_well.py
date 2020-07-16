@@ -28,28 +28,28 @@ class bond_double_well_tests(unittest.TestCase):
     # basic test of creation
     def test(self):
         double_well = azplugins.bond.double_well()
-        double_well.bond_coeff.set('bond', V_max=1.0, a=1.0, b=0.7)
+        double_well.bond_coeff.set('bond', V_max=1.0, a=1.0, b=0.7, c=0)
         double_well.update_coeffs()
 
     # test missing coefficients
     def test_set_missing_V_max(self):
         double_well = azplugins.bond.double_well()
-        double_well.bond_coeff.set('bond',  a=3, b=1.5)
+        double_well.bond_coeff.set('bond',  a=3, b=1.5, c=0)
         self.assertRaises(RuntimeError, double_well.update_coeffs)
 
     def test_set_missing_a(self):
         double_well = azplugins.bond.double_well()
-        double_well.bond_coeff.set('bond', V_max=1.0, b=1.5)
+        double_well.bond_coeff.set('bond', V_max=1.0, b=1.5, c=0)
         self.assertRaises(RuntimeError, double_well.update_coeffs)
 
     def test_set_missing_b(self):
         double_well = azplugins.bond.double_well()
-        double_well.bond_coeff.set('bond',  V_max=1.0, a=1.5)
+        double_well.bond_coeff.set('bond',  V_max=1.0, a=1.5, c=0)
         self.assertRaises(RuntimeError, double_well.update_coeffs)
 
     def test_set_zero_b(self):
         double_well = azplugins.bond.double_well()
-        double_well.bond_coeff.set('bond',  V_max=1.0, a=1.5,b=0)
+        double_well.bond_coeff.set('bond',  V_max=1.0, a=1.5,b=0, c=0)
         self.assertRaises(ValueError, double_well.update_coeffs)
 
     def tearDown(self):
@@ -75,7 +75,7 @@ class potential_bond_double_well_tests(unittest.TestCase):
     def test_potential_minimum(self):
         double_well = azplugins.bond.double_well()
         # this should put the second particle in the first minimum of the potential
-        double_well.bond_coeff.set('bond', a=3.0, b=0.5, V_max=1.0)
+        double_well.bond_coeff.set('bond', a=3.0, b=0.5, V_max=1.0, c=0)
 
         md.integrate.mode_standard(dt=0)
         nve = md.integrate.nve(group = group.all())
@@ -100,7 +100,7 @@ class potential_bond_double_well_tests(unittest.TestCase):
     def test_potential_maximum(self):
         double_well = azplugins.bond.double_well()
         # this should put the second particle at the maxium of the potential
-        double_well.bond_coeff.set('bond', a=2.0, b=2.0, V_max=5.0)
+        double_well.bond_coeff.set('bond', a=2.0, b=2.0, V_max=5.0, c=0)
 
         md.integrate.mode_standard(dt=0)
         nve = md.integrate.nve(group = group.all())
@@ -124,7 +124,7 @@ class potential_bond_double_well_tests(unittest.TestCase):
     # test the calculation of force and potential
     def test_potential_in_between(self):
         double_well = azplugins.bond.double_well()
-        double_well.bond_coeff.set('bond', a=1.0, b=1.0, V_max=1.0)
+        double_well.bond_coeff.set('bond', a=1.0, b=1.0, V_max=1.0, c=0)
 
         md.integrate.mode_standard(dt=0)
         nve = md.integrate.nve(group = group.all())
