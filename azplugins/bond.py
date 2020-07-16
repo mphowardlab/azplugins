@@ -55,17 +55,18 @@ class double_well(hoomd.md.bond._bond):
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
 
         # setup the coefficient options
-        self.required_coeffs = ['V_max','a','b']
+        self.required_coeffs = ['V_max','a','b','c']
 
     def process_coeff(self, coeff):
         V_max = coeff['V_max']
         a = coeff['a']
         b = coeff['b']
+        c = coeff['c']
         if b==0:
             hoomd.context.msg.error("azplugins.bond.double_well(): coefficient b must be non-zero.\n")
             raise ValueError('Coefficient b must be non-zero')
 
-        return _hoomd.make_scalar3(V_max, a, b)
+        return _hoomd.make_scalar4(V_max, a, b, c)
 
 
 class fene(hoomd.md.bond._bond):
