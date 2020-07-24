@@ -3,9 +3,9 @@
 
 # Maintainer: mphoward
 
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -15,12 +15,12 @@ import numpy as np
 
 class update_type_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=3, box=data.boxdim(L=20), particle_types=['A','B','C'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=3, box=hoomd.data.boxdim(L=20), particle_types=['A','B','C'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[:,2] = (-7.5,0.,7.5)
             snap.particles.typeid[:] = [0,1,0]
 
-        self.s = init.read_snapshot(snap)
+        self.s = hoomd.init.read_snapshot(snap)
         self.u = azplugins.update.types(inside='A', outside='B', lo=-5.0, hi=5.0)
 
     # test for basic initialization and call of cpp updater
@@ -119,50 +119,50 @@ class update_type_tests(unittest.TestCase):
     def test_change_types(self):
         # require initial types are set correctly
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             np.testing.assert_array_equal(snap.particles.typeid[:], [0,1,0])
 
         # first run should flip all of the types
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             np.testing.assert_array_equal(snap.particles.typeid, [1,0,1])
 
         # migrate position, which should trigger a type change
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[:,2] = [7.5, -7.5, 0]
         self.s.restore_snapshot(snap)
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             np.testing.assert_array_equal(snap.particles.typeid, [1,1,0])
 
         # reset types, but now make one particle be a type that is not included
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.particles.typeid[:] = (0,1,2)
         self.s.restore_snapshot(snap)
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             np.testing.assert_array_equal(snap.particles.typeid, [1,1,2])
 
     # test box change signal
     def test_box_change(self):
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[:,2] = [-2., 0., 2.]
         self.s.restore_snapshot(snap)
-        run(1)
+        hoomd.run(1)
 
         # shrink box smaller than region, which should trigger signal to check
         # box and cause a runtime error
-        update.box_resize(L=5.0, period=None)
+        hoomd.update.box_resize(L=5.0, period=None)
         with self.assertRaises(RuntimeError):
-            run(1)
+            hoomd.run(1)
 
     def tearDown(self):
         del self.s, self.u
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])
