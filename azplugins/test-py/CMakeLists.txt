@@ -32,6 +32,7 @@ set(TEST_LIST_CPU
     test_special_pair_lj96
     test_update_type
     test_variant_sphere_area
+    test_velocity_profile
     test_wall_colloid
     test_wall_lj93
     )
@@ -65,6 +66,7 @@ set(TEST_LIST_GPU
     test_special_pair_lj96
     test_update_type
     test_variant_sphere_area
+    test_velocity_profile
     test_wall_colloid
     test_wall_lj93
     )
