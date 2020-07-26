@@ -11,6 +11,7 @@ set(TEST_LIST_CPU
     test_evaporate_particles
     test_flow_brownian
     test_flow_constant
+    test_flow_flow_profiler
     test_flow_langevin
     test_flow_parabolic
     test_flow_quiescent
@@ -46,6 +47,7 @@ set(TEST_LIST_GPU
     test_evaporate_particles
     test_flow_brownian
     test_flow_constant
+    test_flow_flow_profiler
     test_flow_langevin
     test_integrate_slit
     test_pair_ashbaugh

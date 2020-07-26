@@ -3,6 +3,7 @@
 
 # Maintainer: astatt / mphoward
 
+import numpy as np
 import hoomd
 from hoomd import _hoomd
 
@@ -653,3 +654,100 @@ class reverse_perturbation(hoomd.update._updater):
                 raise ValueError('reverse_perturbation.flow: target_momentum negative')
             self.target_momentum = target_momentum
             self.cpp_updater.target_momentum =target_momentum
+
+class FlowProfiler:
+    R"""Measure average profiles along a spatial dimension.
+
+    The average density and velocity profile is computed along a given spatial dimension.
+
+    Args:
+        system: `hoomd` or `hoomd.mpcd` system (e.g., returned by `hoomd.md.init.read_gsd`).
+        bin_axis (int): direction for binning (0=*x*, 1=*y*, 2=*z*).
+        flow_axis (int): flow component to measure (0=*x*, 1=*y*, 2=*z*).
+        bins (int): Number of bins to use along `bin_axis`.
+        range (tuple): Lower and upper spatial bounds to use along `bin_axis` like `(lo,hi)`.
+        area (float): Cross-sectional area of bins to normalize density (default: 1.0).
+
+    Examples::
+
+        f = azplugins.flow.FlowProfiler(system=system, bin_axis=2, flow_axis=0, bins=20, range=(-10,10), area=20**2)
+        hoomd.analyze.callback(f, period=1e3)
+        hoomd.run(1e4)
+        np.savetxt('profiles.dat', np.column_stack((f.centers, f.density, f.velocity)))
+
+    """
+    def __init__(self, system, bin_axis, flow_axis, bins, range, area=1.):
+        self.system = system
+        self.bin_axis = bin_axis
+        self.flow_axis = flow_axis
+
+        # setup bins with edges that span the range
+        edges = np.linspace(range[0], range[1], bins+1)
+        self.centers = 0.5*(edges[:-1]+edges[1:])
+        self._dx = edges[1:]-edges[:-1]
+        self.area = area
+        self.range = range
+        self.bins = bins
+
+        # profiles are initially empty
+        self.reset()
+
+        if self.bin_axis not in (0,1,2) or self.flow_axis not in (0,1,2):
+            hoomd.context.msg.error('flow.FlowProfiler: axis needs to be 0, 1, or 2.\n')
+            raise ValueError('Axis not recognized.')
+
+    def __call__(self, timestep):
+        r"""Evaluate the profiles at the current step.
+
+        The profiles are computed for the current system. This call signature is
+        intended for compatibility with `hoomd.analyze.callback`.
+
+        Args:
+            timestep (int): Current timestep.
+
+        """
+        hoomd.util.quiet_status()
+        snap = self.system.take_snapshot()
+        hoomd.util.unquiet_status()
+
+        if hoomd.comm.get_rank() == 0:
+            x = snap.particles.position[:,self.bin_axis]
+            v = snap.particles.velocity[:,self.flow_axis]
+
+            _counts,_ = np.histogram(x, bins=self.bins, range=self.range)
+            self._counts += _counts
+
+            _velocity,_ = np.histogram(x, bins=self.bins, range=self.range, weights=v)
+            self._velocity += _velocity
+
+            self.samples += 1
+
+    def reset(self):
+        r"""Reset the internal averaging counters."""
+        self.samples = 0
+        self._counts = np.zeros(self.bins)
+        self._velocity = np.zeros(self.bins)
+
+    @property
+    def density(self):
+        r"""The current average density profile."""
+        if hoomd.comm.get_rank() != 0:
+            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
+            raise RuntimeError('Flow profile only defined on root rank')
+
+        if self.samples > 0:
+            return self._counts/(self._dx*self.area*self.samples)
+        else:
+            return np.zeros(self.bins)
+
+    @property
+    def velocity(self):
+        r"""The current average velocity profile."""
+        if hoomd.comm.get_rank() != 0:
+            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
+            raise RuntimeError('Flow profile only defined on root rank')
+
+        if self.samples > 0:
+            return np.divide(self._velocity, self._counts, out=np.zeros(self.bins), where=self._counts > 0)/self.samples
+        else:
+            return np.zeros(self.bins)
