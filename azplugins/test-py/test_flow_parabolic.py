@@ -3,8 +3,8 @@
 
 # Maintainer: mphoward
 
-from hoomd import *
-context.initialize()
+import hoomd
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:

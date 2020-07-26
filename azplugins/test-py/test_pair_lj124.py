@@ -3,9 +3,9 @@
 
 # Maintainer: sjiao
 
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -16,10 +16,10 @@ import unittest
 class pair_lj124_tests(unittest.TestCase):
     def setUp(self):
         # raw snapshot is fine, just needs to have the types
-        snap = data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
-        self.s = init.read_snapshot(snap)
+        snap = hoomd.data.make_snapshot(N=100, box=hoomd.data.boxdim(L=20), particle_types=['A'])
+        self.s = hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
-        context.current.sorter.set_params(grid=8)
+        hoomd.context.current.sorter.set_params(grid=8)
 
     # basic test of creation
     def test(self):
@@ -97,16 +97,16 @@ class pair_lj124_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s, self.nl
-        context.initialize()
+        hoomd.context.initialize()
 
 # test the validity of the pair potential
 class potential_lj124_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2, box=data.boxdim(L=20),particle_types=['A'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=2, box=hoomd.data.boxdim(L=20),particle_types=['A'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[0] = (0,0,0)
             snap.particles.position[1] = (1.05,0,0)
-        init.read_snapshot(snap)
+        hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
 
     # test the calculation of force and potential
@@ -116,8 +116,8 @@ class potential_lj124_tests(unittest.TestCase):
         lj124.set_params(mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         U = 0.0
         F = -39.5897
         f0 = lj124.forces[0].force
@@ -138,7 +138,7 @@ class potential_lj124_tests(unittest.TestCase):
 
         lj124.pair_coeff.set('A','A', sigma=1.05)
         lj124.set_params(mode='shift')
-        run(1)
+        hoomd.run(1)
         U = 0.0780
         F = -39.5897
         self.assertAlmostEqual(lj124.forces[0].energy, 0.5*U, 3)
@@ -148,7 +148,7 @@ class potential_lj124_tests(unittest.TestCase):
 
         lj124.pair_coeff.set('A','A', sigma=0.85)
         lj124.set_params(mode='shift')
-        run(1)
+        hoomd.run(1)
         U = -1.7865
         F = 3.7974
         self.assertAlmostEqual(lj124.forces[0].energy, 0.5*U, 3)
@@ -164,15 +164,15 @@ class potential_lj124_tests(unittest.TestCase):
         lj124.set_params(mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
 
         U = 2.5981
         self.assertAlmostEqual(lj124.forces[0].energy,0.5*U,3)
         self.assertAlmostEqual(lj124.forces[1].energy,0.5*U,3)
 
         lj124.pair_coeff.set('A','A', sigma=0.5)
-        run(1)
+        hoomd.run(1)
         U = -0.1329
         self.assertAlmostEqual(lj124.forces[0].energy,0.5*U,3)
         self.assertAlmostEqual(lj124.forces[1].energy,0.5*U,3)
@@ -186,8 +186,8 @@ class potential_lj124_tests(unittest.TestCase):
         lj124.set_params(mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         self.assertAlmostEqual(lj124.forces[0].energy, 0)
         self.assertAlmostEqual(lj124.forces[1].energy, 0)
         self.assertAlmostEqual(lj124.forces[0].force[0], 0)
@@ -195,7 +195,7 @@ class potential_lj124_tests(unittest.TestCase):
 
         # inside cutoff but epsilon = 0
         lj124.pair_coeff.set('A','A', epsilon=0.0, sigma=1.0, r_cut=3.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(lj124.forces[0].energy, 0)
         self.assertAlmostEqual(lj124.forces[1].energy, 0)
         self.assertAlmostEqual(lj124.forces[0].force[0], 0)
@@ -203,7 +203,7 @@ class potential_lj124_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.nl
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])
