@@ -13,7 +13,7 @@ except ImportError:
 import unittest
 import numpy as np
 
-class velocity_profile_tests(unittest.TestCase):
+class flow_FlowProfiler_tests(unittest.TestCase):
     def setUp(self):
         snap = hoomd.data.make_snapshot(N=5, box=hoomd.data.boxdim(L=10), particle_types=['A','B','C'])
         if hoomd.comm.get_rank() == 0:
@@ -30,20 +30,20 @@ class velocity_profile_tests(unittest.TestCase):
 
         # test that the bins are correct
         expected_bins =[-4.5, -3.5, -2.5, -1.5, -0.5,  0.5,  1.5,  2.5,  3.5,  4.5]
+        np.testing.assert_allclose(self.u.centers, expected_bins)
         for i in range(10):
             self.assertAlmostEqual(expected_bins[i],self.u.centers[i])
 
         # test that the particles are binned correctly
-        expected_counts = [1,0,0,0,0,0,0,1,1,2]
         bin_volume=10*10*1.0
-        for i in range(10):
-            self.assertAlmostEqual(expected_counts[i]/bin_volume,self.u.density[i])
+        expected_densities = np.array([1,0,0,0,0,0,0,1,1,2])/bin_volume
+        if hoomd.comm.get_rank() == 0:
+            np.testing.assert_allclose(self.u.density, expected_densities)
 
         # test that the binned values are correct - last bin is averaged velocity 3.0 and 1.0
-        expected_velocity = [2.0,0,0,0,0,0,0,1.0,-1.0,2.0]
-        for i in range(10):
-            self.assertAlmostEqual(expected_velocity[i],self.u.velocity[i])
-
+        expected_velocities = [2.0,0,0,0,0,0,0,1.0,-1.0,2.0]
+        if hoomd.comm.get_rank() == 0:
+            np.testing.assert_allclose(self.u.velocity, expected_velocities)
 
     def test_missing_params(self):
         with self.assertRaises(TypeError):

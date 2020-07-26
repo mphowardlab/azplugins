@@ -710,16 +710,17 @@ class FlowProfiler:
         snap = self.system.take_snapshot()
         hoomd.util.unquiet_status()
 
-        x = snap.particles.position[:,self.bin_axis]
-        v = snap.particles.velocity[:,self.flow_axis]
+        if hoomd.comm.get_rank() == 0:
+            x = snap.particles.position[:,self.bin_axis]
+            v = snap.particles.velocity[:,self.flow_axis]
 
-        _counts,_ = np.histogram(x, bins=self.bins, range=self.range)
-        self._counts += _counts
+            _counts,_ = np.histogram(x, bins=self.bins, range=self.range)
+            self._counts += _counts
 
-        _velocity,_ = np.histogram(x, bins=self.bins, range=self.range, weights=v)
-        self._velocity += _velocity
+            _velocity,_ = np.histogram(x, bins=self.bins, range=self.range, weights=v)
+            self._velocity += _velocity
 
-        self.samples += 1
+            self.samples += 1
 
     def reset(self):
         r"""Reset the internal averaging counters."""
@@ -730,6 +731,10 @@ class FlowProfiler:
     @property
     def density(self):
         r"""The current average density profile."""
+        if hoomd.comm.get_rank() != 0:
+            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
+            raise RuntimeError('Flow profile only defined on root rank')
+
         if self.samples > 0:
             return self._counts/(self._dx*self.area*self.samples)
         else:
@@ -738,6 +743,10 @@ class FlowProfiler:
     @property
     def velocity(self):
         r"""The current average velocity profile."""
+        if hoomd.comm.get_rank() != 0:
+            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
+            raise RuntimeError('Flow profile only defined on root rank')
+
         if self.samples > 0:
             return np.divide(self._velocity, self._counts, out=np.zeros(self.bins), where=self._counts > 0)/self.samples
         else:

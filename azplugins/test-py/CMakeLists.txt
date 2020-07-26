@@ -11,6 +11,7 @@ set(TEST_LIST_CPU
     test_evaporate_particles
     test_flow_brownian
     test_flow_constant
+    test_flow_flow_profiler
     test_flow_langevin
     test_flow_parabolic
     test_flow_quiescent
@@ -32,7 +33,6 @@ set(TEST_LIST_CPU
     test_special_pair_lj96
     test_update_type
     test_variant_sphere_area
-    test_velocity_profile
     test_wall_colloid
     test_wall_lj93
     )
@@ -47,6 +47,7 @@ set(TEST_LIST_GPU
     test_evaporate_particles
     test_flow_brownian
     test_flow_constant
+    test_flow_flow_profiler
     test_flow_langevin
     test_integrate_slit
     test_pair_ashbaugh
@@ -66,7 +67,6 @@ set(TEST_LIST_GPU
     test_special_pair_lj96
     test_update_type
     test_variant_sphere_area
-    test_velocity_profile
     test_wall_colloid
     test_wall_lj93
     )
