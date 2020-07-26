@@ -3,9 +3,9 @@
 
 # Maintainer: astatt
 
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -16,10 +16,10 @@ import unittest
 class pair_ash24_tests(unittest.TestCase):
     def setUp(self):
         # raw snapshot is fine, just needs to have the types
-        snap = data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
-        self.s = init.read_snapshot(snap)
+        snap = hoomd.data.make_snapshot(N=100, box=hoomd.data.boxdim(L=20), particle_types=['A'])
+        self.s = hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
-        context.current.sorter.set_params(grid=8)
+        hoomd.context.current.sorter.set_params(grid=8)
 
     # basic test of creation
     def test(self):
@@ -90,16 +90,16 @@ class pair_ash24_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s, self.nl
-        context.initialize()
+        hoomd.context.initialize()
 
 # test the validity of the pair potential
 class potential_ash2424_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2, box=data.boxdim(L=20),particle_types=['A'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=2, box=hoomd.data.boxdim(L=20),particle_types=['A'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[0] = (0,0,0)
             snap.particles.position[1] = (1.0,0,0)
-        init.read_snapshot(snap)
+        hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
 
     # test the calculation of force and potential
@@ -111,8 +111,8 @@ class potential_ash2424_tests(unittest.TestCase):
         ash24.set_params(mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         U = 1.0
         F = -96.0
         f0 = ash24.forces[0].force
@@ -133,7 +133,7 @@ class potential_ash2424_tests(unittest.TestCase):
 
         # change lambda to check for shifting of energy (force stays the same)
         ash24.pair_coeff.set('A','A', lam=0.5)
-        run(1)
+        hoomd.run(1)
         U = 0.5
         F =  -96.0
         self.assertAlmostEqual(ash24.forces[0].energy, 0.5*U, 3)
@@ -144,7 +144,7 @@ class potential_ash2424_tests(unittest.TestCase):
         # change sigma so that now the particle is in the LJ region
         # when lambda = 0, then the potential and force are zero
         ash24.pair_coeff.set('A','A', sigma=0.9, lam=0.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(ash24.forces[0].energy, 0)
         self.assertAlmostEqual(ash24.forces[1].energy, 0)
         self.assertAlmostEqual(ash24.forces[0].force[0], 0)
@@ -152,7 +152,7 @@ class potential_ash2424_tests(unittest.TestCase):
 
         # partially switch on the LJ with lambda = 0.6
         ash24.pair_coeff.set('A','A', lam=0.6, sigma=0.9)
-        run(1)
+        hoomd.run(1)
         U = -0.176169018326
         F = 3.86156575841
         self.assertAlmostEqual(ash24.forces[0].energy, 0.5*U, 3)
@@ -165,7 +165,7 @@ class potential_ash2424_tests(unittest.TestCase):
         ash24.pair_coeff.set('A', 'A', r_cut=1.1)
 
         ash24.set_params(mode='no_shift')
-        run(1)
+        hoomd.run(1)
         U = 0
         F = -96.0
 
@@ -174,7 +174,7 @@ class potential_ash2424_tests(unittest.TestCase):
         self.assertAlmostEqual(ash24.forces[0].force[0], F, 3)
         self.assertAlmostEqual(ash24.forces[1].force[0], -F, 3)
         ash24.set_params(mode='shift')
-        run(1)
+        hoomd.run(1)
         U = 0.364872603786
         F = -96.0
 
@@ -195,8 +195,8 @@ class potential_ash2424_tests(unittest.TestCase):
         ash24.set_params(mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         self.assertAlmostEqual(ash24.forces[0].energy, 0)
         self.assertAlmostEqual(ash24.forces[1].energy, 0)
         self.assertAlmostEqual(ash24.forces[0].force[0], 0)
@@ -204,7 +204,7 @@ class potential_ash2424_tests(unittest.TestCase):
 
         # inside cutoff but epsilon = 0
         ash24.pair_coeff.set('A','A', epsilon=0.0, sigma=1.0, lam=0.5, r_cut=1.5)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(ash24.forces[0].energy, 0)
         self.assertAlmostEqual(ash24.forces[1].energy, 0)
         self.assertAlmostEqual(ash24.forces[0].force[0], 0)
@@ -212,7 +212,7 @@ class potential_ash2424_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.nl
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

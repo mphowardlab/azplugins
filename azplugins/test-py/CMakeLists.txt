@@ -3,6 +3,7 @@
 
 set(TEST_LIST_CPU
     test_analyze_rdf
+    test_bond_double_well
     test_bond_fene
     test_bond_fene24
     test_dpd_general
@@ -10,6 +11,7 @@ set(TEST_LIST_CPU
     test_evaporate_particles
     test_flow_brownian
     test_flow_constant
+    test_flow_flow_profiler
     test_flow_langevin
     test_flow_parabolic
     test_flow_quiescent
@@ -37,6 +39,7 @@ set(TEST_LIST_CPU
 
 set(TEST_LIST_GPU
     test_analyze_rdf
+    test_bond_double_well
     test_bond_fene
     test_bond_fene24
     test_dpd_general
@@ -44,6 +47,7 @@ set(TEST_LIST_GPU
     test_evaporate_particles
     test_flow_brownian
     test_flow_constant
+    test_flow_flow_profiler
     test_flow_langevin
     test_integrate_slit
     test_pair_ashbaugh
