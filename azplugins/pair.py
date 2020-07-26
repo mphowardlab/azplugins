@@ -200,22 +200,19 @@ class colloid(hoomd.md.pair.pair):
         return _hoomd.make_scalar4(epsilon, sigma**3, sigma**6, _hoomd.int_as_scalar(style))
 
 class hertz(hoomd.md.pair.pair):
-    R""" Hertz potential
+    R"""Hertz potential
 
     Args:
         r_cut (float): Default cutoff radius (in distance units).
         nlist (:py:mod:`hoomd.md.nlist`): Neighbor list
         name (str): Name of the force instance.
 
-    :py:class:`hertz` is the Hertz potential
-    .. math::
-        :nowrap:
+    :py:class:`hertz` is the Hertz potential:
 
-        \begin{eqnarray*}{
-        V(r)  = & \varepsilon (1-\frac{r}{r_{\mathrm{cut}}})^{5/2} & r < r_{\mathrm{cut}} \\
-              = & 0 r \ge r_{\mathrm{cut}}
-        \f}
-        \end{eqnarray*}
+    .. math::
+
+        V(r)  &= \varepsilon \left(1-\frac{r}{r_{\rm cut}}\right)^{5/2},& r < r_{\rm cut} \\
+              &= 0,& r \ge r_{\mathrm{cut}}
 
     parameters :math:`\varepsilon`, the energy scale of the pair interaction.
     See :py:class:`hoomd.md.pair.pair`for details on how forces are calculated
@@ -256,8 +253,7 @@ class hertz(hoomd.md.pair.pair):
         self.required_coeffs = ['epsilon']
 
     def process_coeff(self, coeff):
-        epsilon = coeff['epsilon']
-        return epsilon
+        return coeff['epsilon']
 
 class lj124(hoomd.md.pair.pair):
     R""" LJ 12-4 potential

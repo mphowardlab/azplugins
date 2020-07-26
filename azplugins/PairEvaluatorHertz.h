@@ -36,7 +36,7 @@ namespace detail
  * <a href="https://doi.org/10.1063/1.3186742">Pàmies, J. C., Cacciuto, A., & Frenkel, D., Journal of Chemical Physics, 131(4) (2009)</a>.
  *
  * The Hertz potential does not need diameter or charge. One parameter is specified and stored in a
- * Scalar2.
+ * Scalar.
  */
 class PairEvaluatorHertz : public PairEvaluator
     {
