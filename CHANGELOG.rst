@@ -1,6 +1,27 @@
 Release notes
 =============
 
+v0.10.0 (Not released)
+----------------------
+This is the first release of azplugins to include compilable documentation. The
+``docs`` can be built using sphinx. Currently, only the APIs are thoroughly documented,
+but we will be expanding the rest of the documentation in future releases with examples
+and tutorials.
+
+*New features*
+
+  * ``restrain.cylinder`` and ``restrain.sphere`` allow particles to be harmonically
+    restrained by their distance relative to a cylinder or sphere, respectively.
+    ``restrain.plane`` has been updated to share a condensed API using HOOMD walls.
+  * ``bond.double_well`` adds a new bond potential having two tunable minima.
+  * ``flow.FlowProfiler`` adds a python-level analyzer for averaging 1d density
+    and velocity profiles for both HOOMD and MPCD systems.
+  * ``pair.hertz`` adds the Hertz pair potential.
+
+*Other changes*
+
+  * The python unit tests have been updated to remove ``import *``.
+
 v0.9.2 (3 Mar 2020)
 -------------------
 *Bug fixes*

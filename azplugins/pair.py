@@ -216,7 +216,7 @@ class hertz(hoomd.md.pair.pair):
               &= 0,& r \ge r_{\mathrm{cut}}
 
     parameters :math:`\varepsilon`, the energy scale of the pair interaction.
-    See :py:class:`hoomd.md.pair.pair`for details on how forces are calculated
+    See :py:class:`hoomd.md.pair.pair` for details on how forces are calculated
     and the available energy shifting and smoothing modes. Use
     :py:meth:`pair_coeff.set <coeff.set>` to set potential coefficients.
 

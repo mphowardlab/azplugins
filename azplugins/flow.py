@@ -661,19 +661,25 @@ class FlowProfiler:
     The average density and velocity profile is computed along a given spatial dimension.
 
     Args:
-        system: `hoomd` or `hoomd.mpcd` system (e.g., returned by `hoomd.md.init.read_gsd`).
-        bin_axis (int): direction for binning (0=*x*, 1=*y*, 2=*z*).
-        flow_axis (int): flow component to measure (0=*x*, 1=*y*, 2=*z*).
+        system: :py:mod:`hoomd` or :py:mod:`hoomd.mpcd` system (e.g., returned by :py:func:`hoomd.init.read_gsd`).
+        bin_axis (int): direction for binning (0=`x`, 1=`y`, 2=`z`).
+        flow_axis (int): flow component to measure (0=`x`, 1=`y`, 2=`z`).
         bins (int): Number of bins to use along `bin_axis`.
-        range (tuple): Lower and upper spatial bounds to use along `bin_axis` like `(lo,hi)`.
-        area (float): Cross-sectional area of bins to normalize density (default: 1.0).
+        range (tuple): Lower and upper spatial bounds to use along ``bin_axis`` like ``(lo,hi)``.
+        area (float): Cross-sectional area of bins to normalize density  (default: 1.0).
 
     Examples::
 
         f = azplugins.flow.FlowProfiler(system=system, bin_axis=2, flow_axis=0, bins=20, range=(-10,10), area=20**2)
         hoomd.analyze.callback(f, period=1e3)
         hoomd.run(1e4)
-        np.savetxt('profiles.dat', np.column_stack((f.centers, f.density, f.velocity)))
+        if hoomd.comm.get_rank() == 0:
+            np.savetxt('profiles.dat', np.column_stack((f.centers, f.density, f.velocity)))
+
+    .. note::
+
+        In MPI simulations, the profiles are **only** valid on the root rank. Accessing them on
+        other ranks will produce an error.
 
     """
     def __init__(self, system, bin_axis, flow_axis, bins, range, area=1.):

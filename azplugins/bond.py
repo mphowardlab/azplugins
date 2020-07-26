@@ -11,7 +11,7 @@ from hoomd import _hoomd
 from . import _azplugins
 
 class double_well(hoomd.md.bond._bond):
-    R""" Double well bond potential.
+    R"""Double well bond potential.
 
     Args:
         name (str): Name of the bond instance.
@@ -21,13 +21,13 @@ class double_well(hoomd.md.bond._bond):
 
     .. math::
 
-        V_{\rm{DW}}(r)  =  \frac{V_{max}}{b^4} \left[ \left( r - a/2 \right)^2 - b^2 \right]^2
+        V_{\rm{DW}}(r)  =  \frac{V_{\rm max}}{b^4} \left[ \left( r - a/2 \right)^2 - b^2 \right]^2
 
     Coefficients:
 
-    - :math:`V_max` - Potential maximum height between the two minima at ``a/2`` (in energy units)
-    - :math:`a` - twice the location of the potential maximum, maximum is at ``a/2`` ( in distance units)
-    - :math:`b` - tunes the disance between the potential minima at ``(a/2 +/- b)`` (in distance units)
+    - :math:`V_{\rm max}` - Potential maximum height between the two minima at :math:`a/2` (in energy units)
+    - :math:`a` - twice the location of the potential maximum, maximum is at :math:`a/2` ( in distance units)
+    - :math:`b` - tunes the disance between the potential minima at :math:`a/2 \pm b` (in distance units)
 
     Examples::
 

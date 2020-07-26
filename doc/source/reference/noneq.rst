@@ -12,6 +12,7 @@ Flow fields
     flow.quiescent
     flow.constant
     flow.parabolic
+    flow.FlowProfiler
 
 Flow integrators
 ----------------

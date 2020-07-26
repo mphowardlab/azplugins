@@ -10,6 +10,7 @@ Bond potentials
     :template: shortclass.rst
     :nosignatures:
 
+    bond.double_well
     bond.fene
     bond.fene24
 
@@ -36,6 +37,7 @@ Pair potentials
     pair.ashbaugh
     pair.ashbaugh24
     pair.colloid
+    pair.hertz
     pair.lj124
     pair.lj96
     pair.slj
