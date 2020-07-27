@@ -16,7 +16,11 @@
 #endif
 
 #include "DynamicBondUpdater.h"
+#include "DynamicBondUpdaterGPU.cuh"
 #include "hoomd/Autotuner.h"
+
+#include "hoomd/extern/neighbor/neighbor/LBVH.h"
+#include "hoomd/extern/neighbor/neighbor/LBVHTraverser.h"
 
 namespace azplugins
 {
@@ -45,11 +49,43 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
     //  virtual void update(unsigned int timestep);
 
     protected:
-  
+          virtual void findAllPossibleBonds();
           virtual void filterPossibleBonds();
+          virtual void updateImageVectors();
     private:
-        std::unique_ptr<Autotuner> m_tuner_filter_bonds; //!< Tuner for existing bond filter
+
         GPUFlags<int> m_num_nonzero_bonds;//!< GPU flags for the number of marked particles
+        neighbor::LBVH m_lbvh;                 //!<  LBVH for group_1
+        neighbor::LBVHTraverser m_traverser;   //!< LBVH traverser for group_2
+
+        std::unique_ptr<Autotuner> m_copy_tuner;    //!< Tuner for the primitive-copy kernel
+        std::unique_ptr<Autotuner> m_tuner_filter_bonds; //!< Tuner for existing bond filter
+
+        //cudaStream_t m_stream;                                    //!< CUDA stream for tree building
+
+        GPUArray<unsigned int> m_traverse_order;    //!< Order to traverse primitives
+        GlobalVector<Scalar3> m_image_list; //!< List of translation vectors for traversal
+        unsigned int m_n_images;            //!< Number of translation vectors for traversal
+
+        //! Compute the LBVH domain from the current box
+        BoxDim getLBVHBox() const
+            {
+            const BoxDim& box = m_pdata->getBox();
+
+            // ghost layer padding
+            Scalar ghost_layer_width(0.0);
+            #ifdef ENABLE_MPI
+            if (m_comm) ghost_layer_width = m_comm->getGhostLayerMaxWidth();
+            #endif
+
+            Scalar3 ghost_width = make_scalar3(0.0, 0.0, 0.0);
+            if (!box.getPeriodic().x) ghost_width.x = ghost_layer_width;
+            if (!box.getPeriodic().y) ghost_width.y = ghost_layer_width;
+            if (!box.getPeriodic().z && m_sysdef->getNDimensions() == 3) ghost_width.z = ghost_layer_width;
+
+            return BoxDim(box.getLo()-ghost_width, box.getHi()+ghost_width, box.getPeriodic());
+            }
+
 
     };
 

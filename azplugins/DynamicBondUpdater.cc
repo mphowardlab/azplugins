@@ -39,6 +39,7 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
     m_max_bonds_overflow = 0;
     GPUArray<Scalar3> all_possible_bonds(m_group_2->getNumMembers()*m_max_bonds, m_exec_conf);
     m_all_possible_bonds.swap(all_possible_bonds);
+    m_num_all_possible_bonds=0;
 
     //todo: reset all aabb componentes if group sizes changes?
     // if groups change during the simulation this updater might just not work properly - groups don't have a change signal?
@@ -67,7 +68,7 @@ void DynamicBondUpdater::update(unsigned int timestep)
     const unsigned int group_size_2 = m_group_2->getNumMembers();
     if(group_size_1 == 0 || group_size_2 == 0)
         return;
-
+      std::cout<<"in DynamicBondUpdater::update "<<std::endl;
     // update properties that depend on the box
     if (m_box_changed)
         {
@@ -86,15 +87,18 @@ void DynamicBondUpdater::update(unsigned int timestep)
     bool overflowed = false;
     do
         {
+        std::cout<<"in DynamicBondUpdater::update before findAllPossibleBonds "<<std::endl;
         findAllPossibleBonds();
+        std::cout<<"in DynamicBondUpdater::update after findAllPossibleBonds "<<std::endl;
         overflowed = m_max_bonds < m_max_bonds_overflow;
         // if we overflowed, need to reallocate memory and re-calculate
         if (overflowed)
             {
+            std::cout<<"resize "<<std::endl;
             resizePossibleBondlists();
             }
         } while (overflowed);
-
+        std::cout<<"in DynamicBondUpdater::update before filterPossibleBonds "<<std::endl;
     filterPossibleBonds();
     // this function is not easily implemented on the GPU, uses addBondedGroup()
     makeBonds();
@@ -249,7 +253,7 @@ void DynamicBondUpdater::resizePossibleBondlists()
       m_max_bonds_overflow=0;
       unsigned int size = m_group_2->getNumMembers()*m_max_bonds;
       m_all_possible_bonds.resize(size);
-
+      m_num_all_possible_bonds=0;
       m_exec_conf->msg->notice(6) << "DynamicBondUpdater: (Re-)size possible bond list, new size " << m_max_bonds << " bonds per particle " << std::endl;
     }
 
@@ -273,10 +277,11 @@ void DynamicBondUpdater::allocateParticleArrays()
     calculateExistingBonds();
   }
 
+// this is based on the NeighborListTree c++ implementation
 void DynamicBondUpdater::findAllPossibleBonds()
   {
-    //std::cout<<" in DynamicBondUpdater::findAllPossibleBonds"<<std::endl;
-    //todo: is it worth it to seperate the tree building out and check if update is necessary similar to neighbor list?
+    std::cout<< "in DynamicBondUpdater::findAllPossibleBonds"<<std::endl;
+    //todo: is it worth it to seperate the tree building out and check if rebuild is necessary similar to neighbor list?
     // make tree for group 1
     ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
@@ -330,7 +335,9 @@ void DynamicBondUpdater::findAllPossibleBonds()
 
                              // skip self-interaction always
                              bool excluded = (i == j);
-
+                             //todo: bonds which already exist should be not put in the array in the first place.
+                             // that could save us from needing to filter out the exclusions later? but why is the
+                             // neighbor list not doing that? to take advantage of the same structure for all the neighbor lists?
                              if (!excluded)
                                  {
                                  // compute distance
@@ -372,7 +379,7 @@ void DynamicBondUpdater::findAllPossibleBonds()
 
 void DynamicBondUpdater::filterPossibleBonds()
 {
-
+  std::cout<< "in DynamicBondUpdater::filterPossibleBonds()"<< std::endl;
   ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::overwrite);
   const unsigned int size = m_group_2->getNumMembers()*m_max_bonds;
 

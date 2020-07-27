@@ -72,14 +72,16 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         unsigned int m_max_existing_bonds_list;        //!< maximum number of  bonds in list of existing bonded particles
         Index2D m_existing_bonds_list_indexer;         //!< Indexer for accessing the by-tag bonded particle list
         virtual void filterPossibleBonds();
-      
+
         bool CheckisExistingLegalBond(Scalar3 i); //this acesses info in m_existing_bonds_list_tag. todo: rename to something sensible
         void calculateExistingBonds();
-        void findAllPossibleBonds();
+
+        virtual void findAllPossibleBonds();
+
         void makeBonds();
         void AddtoExistingBonds(unsigned int tag1,unsigned int tag2);
         bool isExistingBond(unsigned int tag1,unsigned int tag2); //this acesses info in m_existing_bonds_list_tag
-        void updateImageVectors();
+        virtual void updateImageVectors();
         void checkSystemSetup();
         void resizePossibleBondlists();
         void resizeExistingBondList();

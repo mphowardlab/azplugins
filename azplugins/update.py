@@ -179,6 +179,8 @@ class dynamic_bond(hoomd.update._updater):
 
         # how to do handling of exclusions in the neighbor list correctly?
 
+        # todo: check that r_cut is not too large for pbc box
+
 
     def set_params(self, bond_type=None, max_bonds_1=None, max_bonds_2=None,group_1=None, group_2=None):
         # todo - cpp class right now doesn't have any set/get functions

@@ -8,10 +8,14 @@
  * \brief Definition of kernel drivers and kernels for DynamicBondUpdaterGPU
  */
 
+#include "hoomd/HOOMDMath.h"
 #include "DynamicBondUpdaterGPU.cuh"
 #include <thrust/sort.h>
 #include <thrust/device_vector.h>
+// todo: should azplugins have its own "extern"?
 
+#include "hoomd/extern/neighbor/neighbor/LBVH.cuh"
+#include "hoomd/extern/neighbor/neighbor/LBVHTraverser.cuh"
 
 #include <iostream>
 
@@ -26,7 +30,10 @@ struct SortBondsGPUDistance{
       const Scalar r_sq_2 = in1.z;
       const unsigned int tag_0 = __scalar_as_int(in0.x);
       const unsigned int tag_1 = __scalar_as_int(in1.x);
-      if (r_sq_1 ==r_sq_2)
+      // todo: is this necessary for the thrust::unique to filter out all dublicates or
+      // would r_sq_1 < r_sq_2 be enough? What happens if two different potential
+      // bonds have EXACTLY same length?
+      if (r_sq_1 == r_sq_2)
           return tag_0 < tag_1;
       return r_sq_1 < r_sq_2;
     }
@@ -95,27 +102,8 @@ const unsigned int FILTER_BATCH_SIZE = 4;
 namespace kernel
 {
 
-/*! \param d_n_neigh Number of neighbors for each particle (read/write)
-  \param d_nlist Neighbor list for each particle (read/write)
-  \param nli Indexer for indexing into d_nlist
-  \param d_n_ex Number of exclusions for each particle
-  \param d_ex_list List of exclusions for each particle
-  \param exli Indexer for indexing into d_ex_list
-  \param N Number of particles
-  \param ex_start Start filtering the nlist from exclusion number \a ex_start
-
-  gpu_nlist_filter_kernel() processes the neighbor list \a d_nlist and removes any entries that are excluded. To allow
-  for an arbitrary large number of exclusions, these are processed in batch sizes of FILTER_BATCH_SIZE. The kernel
-  must be called multiple times in order to fully remove all exclusions from the nlist.
-
-  \note The driver gpu_nlist_filter properly makes as many calls as are necessary, it only needs to be called once.
-
-  \b Implementation
-
-  One thread is run for each particle. Exclusions \a ex_start, \a ex_start + 1, ... are loaded in for that particle
-  (or the thread returns if there are no exclusions past that point). The thread then loops over the neighbor list,
-  comparing each entry to the list of exclusions. If the entry is not excluded, it is written back out. \a d_n_neigh
-  is updated to reflect the current number of particles in the list at the end of the kernel call.
+/*!
+  This kernel is modeled after the neighbor list exclusions filtering mechanism.
 */
 __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
                                       const unsigned int *d_n_existing_bonds,
@@ -140,7 +128,6 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
 
   //const unsigned int n_neigh = d_n_neigh[idx];
   const unsigned int n_ex = d_n_existing_bonds[tag_1];
-  unsigned int new_n_neigh = 0;
 
   // quit now if the ex_start flag is past the end of n_ex
   if (ex_start >= n_ex)
@@ -164,8 +151,6 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
       //  printf("in filter_existing_bonds idx %d tag_i %d tag_j %d dist %f cur_ex_idx %d l_existing_bonds_list %d \n",idx,tag_1,tag_2,current_bond.z,cur_ex_idx,l_existing_bonds_list[cur_ex_idx]);
       }
 
-
-
       // test if excluded
       bool excluded = false;
       #pragma unroll
@@ -175,7 +160,7 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
               excluded = true;
           }
 
-      // add this entry back to the list if it is not excluded
+      // if it is excluded, overwrite that entry with (0,0,0).
       if (excluded)
           {
             d_all_possible_bonds[idx] = make_scalar3(0,0,0.0);
@@ -183,7 +168,34 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
 
   }
 
+  //! Kernel to copy the particle indexes into traversal order
+  /*!
+   * \param d_traverse_order List of particle indexes in traversal order.
+   * \param d_indexes Original indexes of the sorted primitives.
+   * \param d_primitives List of the primitives (sorted in LBVH order).
+   * \param N Number of primitives.
+   *
+   * The primitive index for this thread is first loaded. It is then mapped back
+   * to its original particle index, which is stored for subsequent traversal.
+   */
+  __global__ void gpu_nlist_copy_primitives_kernel(unsigned int *d_traverse_order,
+                                                   const unsigned int *d_indexes,
+                                                   const unsigned int *d_primitives,
+                                                   const unsigned int N)
+      {
+      // one thread per particle
+      const unsigned int idx = blockDim.x * blockIdx.x + threadIdx.x;
+      if (idx >= N)
+          return;
+
+      const unsigned int primitive = d_primitives[idx];
+      d_traverse_order[idx] = __ldg(d_indexes + primitive);
+      }
+
+
 } //end namespace kernel
+
+
 
 cudaError_t sort_and_remove_zeros_possible_bond_array(Scalar3 *d_all_possible_bonds,
                                              const unsigned int size,
@@ -203,7 +215,7 @@ cudaError_t sort_and_remove_zeros_possible_bond_array(Scalar3 *d_all_possible_bo
     thrust::sort(d_all_possible_bonds_wrap,d_all_possible_bonds_wrap+l0, sort);
     CompareBondsGPU comp;
 
-    // thrust::unique only removes identical consequtive elements.
+    // thrust::unique only removes identical consequtive elements, so sort above is needed.
     thrust::device_ptr<Scalar3> last1 = thrust::unique(d_all_possible_bonds_wrap, d_all_possible_bonds_wrap + l0,comp);
     unsigned int l1 = thrust::distance(d_all_possible_bonds_wrap, last1);
 
@@ -267,6 +279,45 @@ cudaError_t filter_existing_bonds(Scalar3 *d_all_possible_bonds,
     return cudaSuccess;
     }
 
+    /*!
+     * \param d_traverse_order List of particle indexes in traversal order.
+     * \param d_indexes Original indexes of the sorted primitives.
+     * \param d_primitives List of the primitives (sorted in LBVH order).
+     * \param N Number of primitives.
+     * \param block_size Number of CUDA threads per block.
+     *
+     * \sa gpu_nlist_copy_primitives_kernel
+     */
+    cudaError_t gpu_nlist_copy_primitives(unsigned int *d_traverse_order,
+                                          const unsigned int *d_indexes,
+                                          const unsigned int *d_primitives,
+                                          const unsigned int N,
+                                          const unsigned int block_size)
+        {
+        static unsigned int max_block_size = UINT_MAX;
+        if (max_block_size == UINT_MAX)
+            {
+            cudaFuncAttributes attr;
+            cudaFuncGetAttributes(&attr, (const void *)kernel::gpu_nlist_copy_primitives_kernel);
+            max_block_size = attr.maxThreadsPerBlock;
+            }
+
+        int run_block_size = min(block_size,max_block_size);
+        kernel::gpu_nlist_copy_primitives_kernel<<<N/run_block_size + 1, run_block_size>>>(d_traverse_order,
+                                                                                   d_indexes,
+                                                                                   d_primitives,
+                                                                                   N);
+        return cudaSuccess;
+        }
 
 } // end namespace gpu
 } // end namespace azplugins
+
+// explicit templates for neighbor::LBVH with PointMapInsertOp
+template void neighbor::gpu::lbvh_gen_codes(unsigned int *, unsigned int *, const azplugins::gpu::PointMapInsertOp&,
+const Scalar3, const Scalar3, const unsigned int, const unsigned int, cudaStream_t);
+template void neighbor::gpu::lbvh_bubble_aabbs(const neighbor::gpu::LBVHData, const azplugins::gpu::PointMapInsertOp&,
+unsigned int *, const unsigned int, const unsigned int, cudaStream_t);
+template void neighbor::gpu::lbvh_one_primitive(const neighbor::gpu::LBVHData, const azplugins::gpu::PointMapInsertOp&, cudaStream_t);
+template void neighbor::gpu::lbvh_traverse_ropes(azplugins::gpu::NeighborListOp&, const neighbor::gpu::LBVHCompressedData&,
+const azplugins::gpu::ParticleQueryOp<false,false>&, const Scalar3 *, unsigned int, unsigned int, cudaStream_t);
