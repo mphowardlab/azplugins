@@ -22,13 +22,12 @@ class lj96(hoomd.md.special_pair._special_pair):
         :nowrap:
 
         \begin{eqnarray*}
-        V(r)  = & \frac{27}{4} \varepsilon \left(\left(\frac{\sigma}{r}\right)^9 - \alpha \left(\frac{\sigma}{r}\right)^6\right) \\
-                & -\frac{27}{4} \varepsilon \left(\left(\frac{\sigma}{r_{\mathrm{cut}}}\right)^9 \\
-                & -\alpha \left(\frac{\sigma}{r_{\mathrm{cut}}}\right)^6\right) & r < r_{\mathrm{cut}} \\
-              = & 0 & r \ge r_{\mathrm{cut}}
+        V(r)  = & \frac{27}{4} \varepsilon \left(\left(\frac{\sigma}{r}\right)^9
+                - \alpha \left(\frac{\sigma}{r}\right)^6\right) &, r < r_{\mathrm{cut}} \\
+              = & 0 &, r \ge r_{\mathrm{cut}}
         \end{eqnarray*}
 
-    parameters :math:`\varepsilon`, :math:`\sigma`, and :math:`\alpha`. See :py:class:`hoomd.md.special_pair._special_pair`
+    Parameters :math:`\varepsilon`, :math:`\sigma`, and :math:`\alpha`. See :py:class:`hoomd.md.special_pair._special_pair`
     for details on how forces are calculated.
     Use :py:meth:`pair_coeff.set <coeff.set>` to set potential coefficients.
 
@@ -39,6 +38,8 @@ class lj96(hoomd.md.special_pair._special_pair):
     - :math:`\alpha` - *alpha* (unitless) - *optional*: defaults to 1.0
     - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
     - mode - energy shift mode ("shift" or "no_shift") - optional: defaults to "no_shift"
+
+    If `mode` is `"shift"`, the potential is shifted to zero at the cutoff. Otherwise, it is unshifted.
 
     Example::
 

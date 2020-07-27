@@ -57,7 +57,7 @@ class _bounce_back(hoomd.md.integrate._integration_method):
             return None
 
 class slit(_bounce_back):
-    """ NVE integration with bounce-back rules in a slit channel.
+    r"""NVE integration with bounce-back rules in a slit channel.
 
     Args:
         group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
