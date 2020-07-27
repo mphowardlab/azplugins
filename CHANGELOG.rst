@@ -1,8 +1,8 @@
 Release notes
 =============
 
-v0.10.0 (Not released)
-----------------------
+v0.10.0 (27 Jul 2020)
+---------------------
 This is the first release of azplugins to include compilable documentation. The
 ``docs`` can be built using sphinx. Currently, only the APIs are thoroughly documented,
 but we will be expanding the rest of the documentation in future releases with examples
