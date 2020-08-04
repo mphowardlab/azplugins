@@ -30,6 +30,8 @@
 #define HOSTDEVICE
 #endif
 
+//! Sentinel for an invalid particle (e.g., ghost)
+const unsigned int NeighborListTypeSentinel = 0xffffffff;
 
 namespace azplugins
 {
@@ -54,7 +56,24 @@ cudaError_t remove_zeros_possible_bond_array(Scalar3 *d_all_possible_bonds,
                                              const unsigned int size,
                                              int *d_max_non_zero_bonds);
 
+cudaError_t make_sorted_index_array(unsigned int *d_sorted_indexes,
+                                unsigned int *d_indexes_group_1,
+                                unsigned int *d_indexes_group_2,
+                                const unsigned int size_group_1,
+                                const unsigned int size_group_2,
+                                const unsigned int block_size);
 
+cudaError_t nlist_copy_nlist_possible_bonds(Scalar3 *d_all_possible_bonds,
+                          const Scalar4 *d_postype,
+                          const unsigned int * d_tag,
+                          const unsigned int * d_sorted_indexes,
+                          const unsigned int * d_n_neigh,
+                          const unsigned int * d_nlist,
+                          const BoxDim box,
+                          const unsigned int max_bonds,
+                          const  Scalar r_cut,
+                          const unsigned int size,
+                          const unsigned int block_size);
 
 //! Insert operation for a point under a mapping.
 /*!
@@ -111,31 +130,24 @@ struct PointMapInsertOp : public neighbor::PointInsertOp
  * The particles are traversed using a \a map. Ghost particles can be included
  * in this map, and they will be neglected during traversal.
  */
-template<bool use_body, bool use_diam>
 struct ParticleQueryOp
     {
     //! Constructor
     /*!
      * \param positions_ Particle positions.
-     * \param bodies_ Particle body tags.
-     * \param diams_ Particle diameters.
      * \param map_ Map of the particle indexes to traverse.
      * \param N_ Number of particles (total).
      * \param Nown_ Number of locally owned particles.
      * \param rcut_ Cutoff radius for the spheres.
-     * \param rlist_ Total search radius for the spheres (differs under shifting).
      */
     ParticleQueryOp(const Scalar4 *positions_,
-                    const unsigned int *bodies_,
-                    const Scalar *diams_,
                     const unsigned int* map_,
                     unsigned int N_,
                     unsigned int Nown_,
                     const Scalar rcut_,
-                    const Scalar rlist_,
                     const BoxDim& box_)
-        : positions(positions_), bodies(bodies_), diams(diams_), map(map_),
-          N(N_), Nown(Nown_), rcut(rcut_), rlist(rlist_), box(box_)
+        : positions(positions_), map(map_),
+          N(N_), Nown(Nown_), rcut(rcut_), box(box_)
           {}
 
     #ifdef NVCC
@@ -148,16 +160,12 @@ struct ParticleQueryOp
     struct ThreadData
         {
         HOSTDEVICE ThreadData(Scalar3 position_,
-                              int idx_,
-                              unsigned int body_,
-                              Scalar diam_)
-            : position(position_), idx(idx_), body(body_), diam(diam_)
+                              int idx_)
+            : position(position_), idx(idx_)
             {}
 
         Scalar3 position;   //!< Particle position
         int idx;            //!< True particle index
-        unsigned int body;  //!< Particle body tag (may be invalid)
-        Scalar diam;        //!< Particle diameter (may be invalid)
         };
 
     // specify that the traversal Volume is a bounding sphere
@@ -178,19 +186,8 @@ struct ParticleQueryOp
 
         const Scalar4 position = positions[pidx];
         const Scalar3 r = make_scalar3(position.x, position.y, position.z);
-    //    printf("in ParticleQueryOp setup %d %d %f %f %f\n",idx,pidx,position.x, position.y, position.z);
-        unsigned int body(0xffffffff);
-        if (use_body)
-            {
-            body = __ldg(bodies + pidx);
-            }
-        Scalar diam(1.0);
-        if (use_diam)
-            {
-            diam = __ldg(diams + pidx);
-            }
 
-        return ThreadData(r, pidx, body, diam);
+        return ThreadData(r, pidx);
         }
 
     //! Return the traversal volume subject to a translation
@@ -204,7 +201,7 @@ struct ParticleQueryOp
      */
     DEVICE Volume get(const ThreadData& q, const Scalar3& image) const
         {
-        return Volume(q.position+image, (q.idx < Nown) ? rlist : -1.0);
+        return Volume(q.position+image, (q.idx < Nown) ? rcut : -1.0);
         }
 
     //! Perform the overlap test with the LBVH
@@ -226,43 +223,10 @@ struct ParticleQueryOp
      * \param primitive Index of the intersected primitive.
      * \returns True If the volumes still overlap after refinement.
      *
-     * HOOMD's neighbor lists require additional filtering. This first ensures
-     * that the overlap is not with itself. If body filtering is enabled,
-     * particles in the same body do not overlap. If diameter shifting is
-     * enabled, the cutoff radius is adjusted based on the diameters of the
-     * particles.
      */
     DEVICE bool refine(const ThreadData& q, const int primitive) const
         {
         bool exclude = (q.idx == primitive);
-
-        // body exclusion
-        if (use_body && !exclude && q.body != 0xffffffff)
-            {
-            const unsigned int body = __ldg(bodies + primitive);
-            exclude |= (q.body == body);
-            }
-
-        // diameter exclusion
-        if (use_diam && !exclude)
-            {
-            const Scalar4 position = positions[primitive];
-            const Scalar3 r = make_scalar3(position.x, position.y, position.z);
-            const Scalar diam = diams[primitive];
-
-            // compute factor to add to base rc
-            const Scalar delta = (q.diam + diam) * Scalar(0.5) - Scalar(1.0);
-            Scalar rc2 = (rcut+delta);
-            rc2 *= rc2;
-
-            // compute distance and wrap back into box
-            const Scalar3 dr = box.minImage(r - q.position);
-            const Scalar drsq = dot(dr,dr);
-
-            // exclude if outside the sphere
-            exclude |= drsq > rc2;
-            }
-
         return !exclude;
         }
     #endif
@@ -274,13 +238,10 @@ struct ParticleQueryOp
         }
 
     const Scalar4 *positions;   //!< Particle positions
-    const unsigned int *bodies; //!< Particle bodies
-    const Scalar *diams;        //!< Particle diameters
     const unsigned int *map;    //!< Mapping of particles to read
     unsigned int N;             //!< Total number of particles in map
     unsigned int Nown;          //!< Number of particles owned by the local rank
     Scalar rcut;                //!< True cutoff radius + buffer
-    Scalar rlist;               //!< Maximum cutoff (may include shifting)
     const BoxDim box;           //!< Box dimensions
     };
 
@@ -298,7 +259,6 @@ struct NeighborListOp
      * \param neigh_list_ Neighbor list (aligned to multiple of 4)
      * \param nneigh_ Neighbor of neighbors per particle
      * \param new_max_neigh_ Maximum number of neighbors to allocate if overflow occurs.
-     * \param first_neigh_ First index for the current particle index in the neighbor list.
      * \param max_neigh_ Maximum number of neighbors to allow per particle.
      *
      * The \a neigh_list_ pointer is internally cast into a uint4 for coalescing.
@@ -306,10 +266,8 @@ struct NeighborListOp
     NeighborListOp(unsigned int* neigh_list_,
                    unsigned int* nneigh_,
                    unsigned int* new_max_neigh_,
-                   const unsigned int* first_neigh_,
                    unsigned int max_neigh_)
-        : nneigh(nneigh_), new_max_neigh(new_max_neigh_),
-          first_neigh(first_neigh_), max_neigh(max_neigh_)
+        : nneigh(nneigh_), new_max_neigh(new_max_neigh_), max_neigh(max_neigh_)
         {
         neigh_list = reinterpret_cast<uint4*>(neigh_list_);
         }
@@ -361,8 +319,8 @@ struct NeighborListOp
     template<class QueryDataT>
     DEVICE ThreadData setup(const unsigned int idx, const QueryDataT& q) const
         {
-        const unsigned int first = __ldg(first_neigh + q.idx);
-        //printf("in NeighborListOp setup %d %d %d %d \n",first_neigh,first,q.idx,nneigh[q.idx]);
+        //const unsigned int first = __ldg(first_neigh + q.idx);
+        const unsigned int first = q.idx+q.idx*(max_neigh-1);
         const unsigned int num_neigh = nneigh[q.idx]; // no __ldg, since this is writeable
 
         // prefetch from the stack if current number of neighbors does not align with a boundary
@@ -425,7 +383,6 @@ struct NeighborListOp
         if (t.num_neigh > max_neigh)
             {
             atomicMax(new_max_neigh, t.num_neigh);
-            printf("max overwrite %d %d %d\n",new_max_neigh,max_neigh, t.num_neigh);
             }
         else if (t.num_neigh % 4 != 0)
             {
@@ -439,42 +396,13 @@ struct NeighborListOp
     uint4* neigh_list;                  //!< Neighbors of each sphere
     unsigned int* nneigh;               //!< Number of neighbors per search sphere
     unsigned int* new_max_neigh;        //!< New maximum number of neighbors
-    const unsigned int* first_neigh;    //!< Index of first neighbor
     unsigned int max_neigh;             //!< Maximum number of neighbors allocated
     };
 
 //! Sentinel for an invalid particle (e.g., ghost)
 const unsigned int NeighborListTypeSentinel = 0xffffffff;
 
-//! Kernel driver to generate morton code-type keys for particles and reorder by type
-cudaError_t gpu_nlist_mark_types(unsigned int *d_types,
-                                 unsigned int *d_indexes,
-                                 unsigned int *d_lbvh_errors,
-                                 Scalar4 *d_last_pos,
-                                 const Scalar4 *d_pos,
-                                 const unsigned int N,
-                                 const unsigned int nghosts,
-                                 const BoxDim& box,
-                                 const Scalar3 ghost_width,
-                                 const unsigned int block_size);
 
-//! Kernel driver to sort particles by type
-uchar2 gpu_nlist_sort_types(void *d_tmp,
-                            size_t &tmp_bytes,
-                            unsigned int *d_types,
-                            unsigned int *d_sorted_types,
-                            unsigned int *d_indexes,
-                            unsigned int *d_sorted_indexes,
-                            const unsigned int N,
-                            const unsigned int num_bits);
-
-//! Kernel driver to count particles by type
-cudaError_t gpu_nlist_count_types(unsigned int *d_first,
-                                  unsigned int *d_last,
-                                  const unsigned int *d_types,
-                                  const unsigned int ntypes,
-                                  const unsigned int N,
-                                  const unsigned int block_size);
 
 //! Kernel driver to rearrange primitives for faster traversal
 cudaError_t gpu_nlist_copy_primitives(unsigned int *d_traverse_order,
@@ -482,9 +410,10 @@ cudaError_t gpu_nlist_copy_primitives(unsigned int *d_traverse_order,
                                       const unsigned int *d_primitives,
                                       const unsigned int N,
                                       const unsigned int block_size);
-
 } // end namespace gpu
 } // end namespace azplugins
+
+
 
 #undef DEVICE
 #undef HOSTDEVICE

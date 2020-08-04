@@ -35,37 +35,53 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
     public:
       //! Constructor with parameters
       DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
-                  std::shared_ptr<ParticleGroup> group_1,
-                  std::shared_ptr<ParticleGroup> group_2,
-                  const Scalar r_cut,
-                  unsigned int bond_type,
-                  unsigned int max_bonds_group_1,
-                  unsigned int max_bonds_group_2);
+                            std::shared_ptr<NeighborList> nlist,
+                            std::shared_ptr<ParticleGroup> group_1,
+                            std::shared_ptr<ParticleGroup> group_2,
+                            const Scalar r_cut,
+                            unsigned int bond_type,
+                            unsigned int max_bonds_group_1,
+                            unsigned int max_bonds_group_2);
 
       //! Destructor
       virtual ~DynamicBondUpdaterGPU();
 
-      //! find and make new bonds
-    //  virtual void update(unsigned int timestep);
-
     protected:
-          virtual void findAllPossibleBonds();
+
           virtual void filterPossibleBonds();
           virtual void updateImageVectors();
+          virtual void resizePossibleBondlists();
+          virtual void allocateParticleArrays();
+          //! Build the LBVHs using the neighbor library
+          virtual void buildTree();
+          //! Traverse the LBVHs using the neighbor library
+          virtual void traverseTree();
     private:
 
-        GPUFlags<int> m_num_nonzero_bonds;//!< GPU flags for the number of marked particles
-        neighbor::LBVH m_lbvh;                 //!<  LBVH for group_1
-        neighbor::LBVHTraverser m_traverser;   //!< LBVH traverser for group_2
 
+        std::unique_ptr<Autotuner> m_sorted_index_tuner;   //!< Tuner for the type-count kernel
+        std::unique_ptr<Autotuner> m_count_tuner;   //!< Tuner for the type-count kernel
         std::unique_ptr<Autotuner> m_copy_tuner;    //!< Tuner for the primitive-copy kernel
+        std::unique_ptr<Autotuner> m_copy_nlist_tuner;    //!< Tuner for the primitive-copy kernel
         std::unique_ptr<Autotuner> m_tuner_filter_bonds; //!< Tuner for existing bond filter
 
-        //cudaStream_t m_stream;                                    //!< CUDA stream for tree building
 
-        GPUArray<unsigned int> m_traverse_order;    //!< Order to traverse primitives
+        GPUFlags<int> m_num_nonzero_bonds;//!< GPU flags for the number of marked particles
+        GPUFlags<unsigned int> m_max_bonds_overflow_flag;//!< GPU flags for the number of marked particles
+        GPUArray<unsigned int> m_sorted_indexes;    //!< Sorted particle indexes [idx group_1 ...] [idx group_2 ...]
+
+
+        GlobalArray<unsigned int> m_nlist;      //!< Neighbor list data
+        GlobalArray<unsigned int> m_n_neigh;    //!< Number of neighbors for each particle
+        GlobalArray<Scalar4> m_last_pos;        //!< coordinates of last updated particle positions
+
+        GPUFlags<unsigned int> m_lbvh_errors;       //!< Error flags during particle marking (e.g., off rank)
+        neighbor::LBVH m_lbvh_2;                 //!< LBVH for group_2
+        neighbor::LBVHTraverser  m_traverser;   //!< LBVH traverer
         GlobalVector<Scalar3> m_image_list; //!< List of translation vectors for traversal
         unsigned int m_n_images;            //!< Number of translation vectors for traversal
+
+
 
         //! Compute the LBVH domain from the current box
         BoxDim getLBVHBox() const

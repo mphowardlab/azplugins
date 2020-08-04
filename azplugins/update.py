@@ -136,27 +136,25 @@ class types(hoomd.update._updater):
 
 
 class dynamic_bond(hoomd.update._updater):
-    def __init__(self,r_cut,bond_type,group_1, group_2, max_bonds_1,max_bonds_2,period=1, phase=0):
+    def __init__(self,nlist,r_cut,bond_type,group_1, group_2, max_bonds_1,max_bonds_2,period=1, phase=0):
 
         hoomd.util.print_status_line()
         hoomd.update._updater.__init__(self)
-
 
         if not hoomd.context.exec_conf.isCUDAEnabled():
             cpp_class = _azplugins.DynamicBondUpdater
         else:
             cpp_class = _azplugins.DynamicBondUpdaterGPU
-            # hoomd.context.msg.error('update.dynamic_bond not implemented on the GPU \n')
-            # raise ValueError('update.dynamic_bond not implemented on the GPU ')
-
 
         # look up the bond id based on the given name - this will throw an error if the bond types do not exist
         bond_type_id = hoomd.context.current.system_definition.getBondData().getTypeByName(bond_type)
 
+        # todo: check that r_cut is not too large for pbc box
         self.r_cut = r_cut
 
+        self.nlist = nlist
         # it doesn't really make sense to allow partially overlapping groups?
-        # Maybe it should be excluded.
+        # Maybe it should be excluded. At least overlapping groups with different max bonds make no sense.
         # We need to check that the groups have no overlap if the max_bonds_1 and max_bonds_2 are different:
         new_cpp_group = _hoomd.ParticleGroup.groupIntersection(group_1.cpp_group, group_2.cpp_group)
         if new_cpp_group.getNumMembersGlobal()>0 and max_bonds_1 != max_bonds_2:
@@ -167,21 +165,27 @@ class dynamic_bond(hoomd.update._updater):
 
         # preliminary testing indicates that it is faster on the CPU to have group_1 to be the bigger one
         # swap such that group 1 is the bigger of the two
-        if group_2.cpp_group.getNumMembersGlobal()> group_1.cpp_group.getNumMembersGlobal():
-            temp_group = group_1
-            group_1 = group_2
-            group_2 = temp_group
+
+        #if group_2.cpp_group.getNumMembersGlobal()> group_1.cpp_group.getNumMembersGlobal():
+        #    temp_group = group_1
+        #    group_1 = group_2
+        #    group_2 = temp_group
 
         self.cpp_updater = cpp_class(hoomd.context.current.system_definition,
-                            group_1.cpp_group,group_2.cpp_group,self.r_cut,
-                            bond_type_id,max_bonds_1,max_bonds_2)
+                                     self.nlist.cpp_nlist,
+                                     group_1.cpp_group,
+                                     group_2.cpp_group,
+                                     self.r_cut,
+                                     bond_type_id,
+                                     max_bonds_1,
+                                     max_bonds_2)
+
         self.setupUpdater(period, phase)
 
-        # how to do handling of exclusions in the neighbor list correctly?
-
-        # todo: check that r_cut is not too large for pbc box
 
 
-    def set_params(self, bond_type=None, max_bonds_1=None, max_bonds_2=None,group_1=None, group_2=None):
-        # todo - cpp class right now doesn't have any set/get functions
+
+
+    def set_params(self, nlist=None, bond_type=None, max_bonds_1=None, max_bonds_2=None,group_1=None, group_2=None):
+        # todo - class right now doesn't have any set/get functions
         hoomd.util.print_status_line()

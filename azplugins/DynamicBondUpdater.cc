@@ -15,35 +15,36 @@ namespace azplugins
 {
 
 DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
+                         std::shared_ptr<NeighborList> nlist,
                          std::shared_ptr<ParticleGroup> group_1,
                          std::shared_ptr<ParticleGroup> group_2,
                          const Scalar r_cut,
                          unsigned int bond_type,
                          unsigned int max_bonds_group_1,
                          unsigned int max_bonds_group_2)
-        : Updater(sysdef),  m_group_1(group_1), m_group_2(group_2), m_r_cut(r_cut),
+        : Updater(sysdef), m_nlist(nlist), m_group_1(group_1), m_group_2(group_2), m_r_cut(r_cut),
          m_bond_type(bond_type),m_max_bonds_group_1(max_bonds_group_1),m_max_bonds_group_2(max_bonds_group_2),
          m_box_changed(true), m_max_N_changed(true)
     {
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdater" << std::endl;
 
-
     m_pdata->getBoxChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotBoxChanged>(this);
     m_pdata->getGlobalParticleNumberChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotNumParticlesChanged>(this);
-  //  m_pdata->getNumTypesChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotNumParticlesChanged>(this);
 
     m_bond_data = m_sysdef->getBondData();
 
-    // allocate initial Memory - grows if necessary
-    m_max_bonds = (max_bonds_group_1 < max_bonds_group_2) ? max_bonds_group_2 : max_bonds_group_1;
+    m_max_bonds = 4;
     m_max_bonds_overflow = 0;
-    GPUArray<Scalar3> all_possible_bonds(m_group_2->getNumMembers()*m_max_bonds, m_exec_conf);
-    m_all_possible_bonds.swap(all_possible_bonds);
     m_num_all_possible_bonds=0;
 
-    //todo: reset all aabb componentes if group sizes changes?
+    // allocate initial Memory - grows if necessary
+    GPUArray<Scalar3> all_possible_bonds(m_group_1->getNumMembers()*m_max_bonds, m_exec_conf);
+    m_all_possible_bonds.swap(all_possible_bonds);
+
+    // todo: reset if group sizes changes?
     // if groups change during the simulation this updater might just not work properly - groups don't have a change signal?
-    m_aabbs.resize(m_group_1->getNumMembers());
+    // can getNumTypesChangeSignal() be used as a proxy?
+    m_aabbs.resize(m_group_2->getNumMembers());
 
     checkSystemSetup();
 
@@ -63,12 +64,14 @@ DynamicBondUpdater::~DynamicBondUpdater()
  */
 void DynamicBondUpdater::update(unsigned int timestep)
 {
+   if (m_prof) m_prof->push("DynamicBondUpdater");
+
     // don't do anything if either one of the groups is  empty
     const unsigned int group_size_1 = m_group_1->getNumMembers();
     const unsigned int group_size_2 = m_group_2->getNumMembers();
-    if(group_size_1 == 0 || group_size_2 == 0)
+    if (group_size_1 == 0 || group_size_2 == 0)
         return;
-      std::cout<<"in DynamicBondUpdater::update "<<std::endl;
+
     // update properties that depend on the box
     if (m_box_changed)
         {
@@ -85,28 +88,26 @@ void DynamicBondUpdater::update(unsigned int timestep)
 
     // rebuild the list of possible bonds until there is no overflow
     bool overflowed = false;
+    buildTree();
     do
         {
-        std::cout<<"in DynamicBondUpdater::update before findAllPossibleBonds "<<std::endl;
-        findAllPossibleBonds();
-        std::cout<<"in DynamicBondUpdater::update after findAllPossibleBonds "<<std::endl;
+        traverseTree();
         overflowed = m_max_bonds < m_max_bonds_overflow;
         // if we overflowed, need to reallocate memory and re-calculate
         if (overflowed)
             {
-            std::cout<<"resize "<<std::endl;
             resizePossibleBondlists();
             }
         } while (overflowed);
-        std::cout<<"in DynamicBondUpdater::update before filterPossibleBonds "<<std::endl;
     filterPossibleBonds();
+
     // this function is not easily implemented on the GPU, uses addBondedGroup()
     makeBonds();
-
+    if (m_prof) m_prof->pop();
 
 }
 
-//todo: should go into helper class/separate file
+//todo: should go into helper class/separate file?
 bool SortBonds(Scalar3 i, Scalar3 j)
   {
       const Scalar r_sq_1 = i.z;
@@ -114,7 +115,7 @@ bool SortBonds(Scalar3 i, Scalar3 j)
       return r_sq_1 < r_sq_2;
   }
 
-//todo: migrate to separate file/class. faster way without branching?
+//todo: migrate to separate file/class?
   bool CompareBonds(Scalar3 i, Scalar3 j)
   {
 
@@ -150,6 +151,7 @@ bool DynamicBondUpdater::CheckisExistingLegalBond(Scalar3 i)
 
 void DynamicBondUpdater::calculateExistingBonds()
 {
+
   // reset exisitng bond list
   ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::overwrite);
   memset((void*)h_n_existing_bonds.data,0,sizeof(unsigned int)*m_pdata->getRTags().size());
@@ -158,7 +160,6 @@ void DynamicBondUpdater::calculateExistingBonds()
   memset((void*)h_existing_bonds_list.data,0,sizeof(unsigned int)*m_pdata->getRTags().size()*m_existing_bonds_list_indexer.getH());
 
   ArrayHandle<typename BondData::members_t> h_bonds(m_bond_data->getMembersArray(), access_location::host, access_mode::read);
-//  ArrayHandle<typeval_t> h_typeval(m_bond_data->getTypeValArray(), access_location::host, access_mode::read);
 
   // for each of the bonds
   const unsigned int size = (unsigned int)m_bond_data->getN();
@@ -168,14 +169,14 @@ void DynamicBondUpdater::calculateExistingBonds()
       const typename BondData::members_t& bond = h_bonds.data[i];
       unsigned int tag1 = bond.tag[0];
       unsigned int tag2 = bond.tag[1];
-    //  unsigned int type = h_typeval.data[i].type;
 
-      //only keep track of the bond type we are forming - does this make sense?
+    // only keep track of the bond type we are forming - does this make sense?
     //  if (type == m_bond_type)
     //  {
         AddtoExistingBonds(tag1,tag2);
     //  }
   }
+
 }
 
 /*! \param tag1 First particle tag in the pair
@@ -196,14 +197,20 @@ bool DynamicBondUpdater::isExistingBond(unsigned int tag1, unsigned int tag2)
     return false;
     }
 
+
 void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag1,unsigned int tag2)
 {
-
   assert(tag1 <= m_pdata->getMaximumTag());
   assert(tag2 <= m_pdata->getMaximumTag());
 
   // don't add a bond twice - should not happen anyway - todo: might be able to avoid this check
-  if (isExistingBond(tag1, tag2)) return;
+  /*
+  if (isExistingBond(tag1, tag2))
+  {
+    m_exec_conf->msg->warning() << "tried to add existing bond twice! "<< tag1 << " "<< tag2 << std::endl;
+    return;
+  }
+  */
 
   bool overflowed = false;
 
@@ -232,26 +239,27 @@ void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag1,unsigned int tag2)
   assert(pos2 < m_existing_bonds_list_indexer.getH());
   h_existing_bonds_list.data[m_existing_bonds_list_indexer(tag2,pos2)] = tag1;
   h_n_existing_bonds.data[tag2]++;
-
 }
 
 //todo: should the list be grown more than 1 at a time for efficiency?
 void DynamicBondUpdater::resizeExistingBondList()
     {
     unsigned int new_height = m_existing_bonds_list_indexer.getH() + 1;
-
     m_existing_bonds_list.resize(m_pdata->getRTags().size(), new_height);
     // update the indexer
     m_existing_bonds_list_indexer = Index2D(m_existing_bonds_list.getPitch(), new_height);
     m_exec_conf->msg->notice(6) << "DynamicBondUpdater: (Re-)size existing bond list, new size " << new_height << " bonds per particle " << std::endl;
+
     }
 
-//todo: should the list be grown more than 1 at a time for efficiency?
+
 void DynamicBondUpdater::resizePossibleBondlists()
     {
-      m_max_bonds=m_max_bonds_overflow;
-      m_max_bonds_overflow=0;
-      unsigned int size = m_group_2->getNumMembers()*m_max_bonds;
+      // round up to nearest multiple of 4
+      m_max_bonds_overflow = (m_max_bonds_overflow > 4) ? (m_max_bonds_overflow + 3) & ~3 : 4;
+      m_max_bonds = m_max_bonds_overflow;
+      m_max_bonds_overflow = 0;
+      unsigned int size = m_group_1->getNumMembers()*m_max_bonds;
       m_all_possible_bonds.resize(size);
       m_num_all_possible_bonds=0;
       m_exec_conf->msg->notice(6) << "DynamicBondUpdater: (Re-)size possible bond list, new size " << m_max_bonds << " bonds per particle " << std::endl;
@@ -274,114 +282,125 @@ void DynamicBondUpdater::allocateParticleArrays()
     memset(h_n_existing_bonds.data, 0, sizeof(unsigned int)*m_n_existing_bonds.getNumElements());
     memset(h_existing_bonds_list.data, 0, sizeof(unsigned int)*m_existing_bonds_list.getNumElements());
 
-    calculateExistingBonds();
+
   }
 
 // this is based on the NeighborListTree c++ implementation
-void DynamicBondUpdater::findAllPossibleBonds()
+void DynamicBondUpdater::buildTree()
   {
-    std::cout<< "in DynamicBondUpdater::findAllPossibleBonds"<<std::endl;
-    //todo: is it worth it to seperate the tree building out and check if rebuild is necessary similar to neighbor list?
-    // make tree for group 1
+    if (m_prof) m_prof->push("buildTree");
+    //todo: is it worth it to check if rebuild is necessary similar to neighbor list?
+    // make tree for group 2
     ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
-    ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
     ArrayHandle<hpmc::detail::AABB> h_aabbs(m_aabbs, access_location::host, access_mode::readwrite);
 
-    unsigned int group_size_1 = m_group_1->getNumMembers();
-    for (unsigned int group_idx = 0; group_idx < group_size_1; group_idx++)
+    unsigned int group_size_2 = m_group_2->getNumMembers();
+
+    for (unsigned int group_idx = 0; group_idx < group_size_2; group_idx++)
         {
-        unsigned int i = m_group_1->getMemberIndex(group_idx);
+        unsigned int i = m_group_2->getMemberIndex(group_idx);
         // make a point particle AABB
         vec3<Scalar> my_pos(h_postype.data[i]);
         h_aabbs.data[group_idx] = hpmc::detail::AABB(my_pos,i);
         }
 
-    m_aabb_tree.buildTree(&(h_aabbs.data[0]) , group_size_1);
+    m_aabb_tree.buildTree(&(h_aabbs.data[0]) , group_size_2);
 
-     // reset content of possible bond list
-     ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::overwrite);
-     const unsigned int size = m_group_2->getNumMembers()*m_max_bonds;
-     memset((void*)h_all_possible_bonds.data, 0, sizeof(Scalar3)*size);
-
-     // traverse the tree
-     // Loop over all particles in group 2
-     unsigned int group_size_2 = m_group_2->getNumMembers();
-     for (unsigned int group_idx = 0; group_idx < group_size_2; group_idx++)
-         {
-         unsigned int i = m_group_2->getMemberIndex(group_idx);
-         const unsigned int tag_i = h_tag.data[i];
-         const Scalar4 postype_i = h_postype.data[i];
-         const vec3<Scalar> pos_i = vec3<Scalar>(postype_i);
-
-         unsigned int n_curr_bond = 0;
-
-        for (unsigned int cur_image = 0; cur_image < m_n_images; ++cur_image) // for each image vector
-           {
-             // make an AABB for the image of this particle
-             vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
-             hpmc::detail::AABB aabb = hpmc::detail::AABB(pos_i_image, m_r_cut);
-             hpmc::detail::AABBTree *cur_aabb_tree = &m_aabb_tree;
-             // stackless traversal of the tree
-             for (unsigned int cur_node_idx = 0; cur_node_idx < cur_aabb_tree->getNumNodes(); ++cur_node_idx)
-                 {
-                 if (overlap(cur_aabb_tree->getNodeAABB(cur_node_idx), aabb))
-                     {
-                     if (cur_aabb_tree->isNodeLeaf(cur_node_idx))
-                         {
-                         for (unsigned int cur_p = 0; cur_p < cur_aabb_tree->getNodeNumParticles(cur_node_idx); ++cur_p)
-                             {
-                             // neighbor j
-                             unsigned int j = cur_aabb_tree->getNodeParticleTag(cur_node_idx, cur_p);
-
-                             // skip self-interaction always
-                             bool excluded = (i == j);
-                             //todo: bonds which already exist should be not put in the array in the first place.
-                             // that could save us from needing to filter out the exclusions later? but why is the
-                             // neighbor list not doing that? to take advantage of the same structure for all the neighbor lists?
-                             if (!excluded)
-                                 {
-                                 // compute distance
-                                 Scalar4 postype_j = h_postype.data[j];
-                                 Scalar3 drij = make_scalar3(postype_j.x,postype_j.y,postype_j.z)
-                                                - vec_to_scalar3(pos_i_image);
-                                 Scalar dr_sq = dot(drij,drij);
-                                 const Scalar r_cutsq = m_r_cut*m_r_cut;
-                                 if (dr_sq <= r_cutsq)
-                                     {
-                                     if (n_curr_bond < m_max_bonds)
-                                        {
-                                        const unsigned int tag_j = h_tag.data[j];
-                                        Scalar3 d ;
-                                        d = make_scalar3(__int_as_scalar(tag_j),__int_as_scalar(tag_i),dr_sq);
-                                        h_all_possible_bonds.data[group_idx + n_curr_bond] = d;
-                                        }
-                                      else // trigger resize current possible bonds > m_max_bonds
-                                        {
-                                        m_max_bonds_overflow = n_curr_bond;
-                                        }
-                                      ++n_curr_bond;
-
-                                     }
-                                 }
-                             }
-                         }
-                     }
-                 else
-                     {
-                     // skip ahead
-                     cur_node_idx += cur_aabb_tree->getNodeSkip(cur_node_idx);
-                     }
-                 } // end stackless search
-             } // end loop over images
-         } // end loop over group 2
-
+  if (m_prof) m_prof->pop();
  }
+
+
+ // this is based on the NeighborListTree c++ implementation
+ void DynamicBondUpdater::traverseTree()
+   {
+       if (m_prof) m_prof->push("traverseTree");
+      // reset content of possible bond list
+      ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::overwrite);
+      const unsigned int size = m_group_1->getNumMembers()*m_max_bonds;
+      memset((void*)h_all_possible_bonds.data, 0, sizeof(Scalar3)*size);
+      const Scalar r_cutsq = m_r_cut*m_r_cut;
+
+      ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
+      ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
+
+      // traverse the tree
+      // Loop over all particles in group 1
+      unsigned int group_size_1 = m_group_1->getNumMembers();
+      for (unsigned int group_idx = 0; group_idx < group_size_1; group_idx++)
+          {
+          unsigned int i = m_group_1->getMemberIndex(group_idx);
+          const unsigned int tag_i = h_tag.data[i];
+          const Scalar4 postype_i = h_postype.data[i];
+          const vec3<Scalar> pos_i = vec3<Scalar>(postype_i);
+
+          unsigned int n_curr_bond = 0;
+
+         for (unsigned int cur_image = 0; cur_image < m_n_images; ++cur_image) // for each image vector
+            {
+              // make an AABB for the image of this particle
+              vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
+              hpmc::detail::AABB aabb = hpmc::detail::AABB(pos_i_image, m_r_cut);
+              hpmc::detail::AABBTree *cur_aabb_tree = &m_aabb_tree;
+              // stackless traversal of the tree
+              for (unsigned int cur_node_idx = 0; cur_node_idx < cur_aabb_tree->getNumNodes(); ++cur_node_idx)
+                  {
+                  if (overlap(cur_aabb_tree->getNodeAABB(cur_node_idx), aabb))
+                      {
+                      if (cur_aabb_tree->isNodeLeaf(cur_node_idx))
+                          {
+                          for (unsigned int cur_p = 0; cur_p < cur_aabb_tree->getNodeNumParticles(cur_node_idx); ++cur_p)
+                              {
+                              // neighbor j
+                              unsigned int j = cur_aabb_tree->getNodeParticleTag(cur_node_idx, cur_p);
+
+                              // skip self-interaction always
+                              bool excluded = (i == j);
+                              //todo: bonds which already exist should be not put in the array in the first place.
+                              // that could save us from needing to filter out the exclusions later? but why is the
+                              // neighbor list not doing that? to take advantage of the same structure for all the neighbor lists?
+                              if (!excluded)
+                                  {
+                                  // compute distance
+                                  Scalar4 postype_j = h_postype.data[j];
+                                  Scalar3 drij = make_scalar3(postype_j.x,postype_j.y,postype_j.z)
+                                                 - vec_to_scalar3(pos_i_image);
+                                  Scalar dr_sq = dot(drij,drij);
+
+                                  if (dr_sq <= r_cutsq)
+                                      {
+                                      if (n_curr_bond < m_max_bonds)
+                                         {
+                                         const unsigned int tag_j = h_tag.data[j];
+                                         Scalar3 d = make_scalar3(__int_as_scalar(tag_j),__int_as_scalar(tag_i),dr_sq);
+                                         h_all_possible_bonds.data[group_idx + n_curr_bond] = d;
+                                         }
+                                       else // trigger resize current possible bonds > m_max_bonds
+                                         {
+                                         m_max_bonds_overflow = n_curr_bond;
+                                         }
+                                       ++n_curr_bond;
+
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  else
+                      {
+                      // skip ahead
+                      cur_node_idx += cur_aabb_tree->getNodeSkip(cur_node_idx);
+                      }
+                  } // end stackless search
+              } // end loop over images
+          } // end loop over group 2
+   if (m_prof) m_prof->pop();
+  }
 
 void DynamicBondUpdater::filterPossibleBonds()
 {
-  std::cout<< "in DynamicBondUpdater::filterPossibleBonds()"<< std::endl;
+  if (m_prof) m_prof->push("filterPossibleBonds");
   ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::overwrite);
-  const unsigned int size = m_group_2->getNumMembers()*m_max_bonds;
+  const unsigned int size = m_group_1->getNumMembers()*m_max_bonds;
 
 // first sort whole array by distance between particles in that particular possible bond
 std::sort(h_all_possible_bonds.data, h_all_possible_bonds.data + size, SortBonds);
@@ -400,6 +419,7 @@ m_num_all_possible_bonds = std::distance(h_all_possible_bonds.data,last2);
 
 // at this point, the sub-array: h_all_possible_bonds[0,m_num_all_possible_bonds]
 // should contain only unique entries of possible bonds which are not yet formed.
+  if (m_prof) m_prof->pop();
 }
 
 
@@ -412,6 +432,7 @@ m_num_all_possible_bonds = std::distance(h_all_possible_bonds.data,last2);
  */
 void DynamicBondUpdater::updateImageVectors()
     {
+
     const BoxDim& box = m_pdata->getBox();
     uchar3 periodic = box.getPeriodic();
     unsigned char sys3d = (this->m_sysdef->getNDimensions() == 3);
@@ -484,61 +505,45 @@ if (m_bond_type >= m_bond_data -> getNTypes())
 
 }
 
+//todo: this function doesn't have a corresponding GPU implementation - what would make sense for this?
 void DynamicBondUpdater::makeBonds()
 {
+  if (m_prof) m_prof->push("makeBonds");
   // we need to count how many bonds are in the h_all_possible_bonds array for a given tag
   // so that we don't end up forming too many bonds in one step
   ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::read);
   ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::read);
-  ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
-
-  GPUArray<unsigned int> total_counts(m_pdata->getRTags().size(), m_exec_conf);
-  ArrayHandle<unsigned int> h_total_counts(total_counts, access_location::host, access_mode::readwrite);
-  memset((void*)h_total_counts.data,0,sizeof(unsigned int)*m_pdata->getRTags().size());
-
-  // Loop over all possible bonds and count how many times a tag is in h_all_possible_bonds array
-  // save how many bonds to form (max bonds - existing bonds) in h_total_counts
-  for (unsigned int i = 0; i < m_num_all_possible_bonds; i++)
-      {
-        Scalar3 d = h_all_possible_bonds.data[i];
-        const  int tag_i = __scalar_as_int(d.x);
-        const  int tag_j = __scalar_as_int(d.y);
-        h_total_counts.data[tag_i]=m_max_bonds_group_1 - h_n_existing_bonds.data[tag_i];
-        h_total_counts.data[tag_j]=m_max_bonds_group_2 - h_n_existing_bonds.data[tag_j];
-      }
 
   GPUArray<unsigned int> current_counts(m_pdata->getRTags().size(), m_exec_conf);
   ArrayHandle<unsigned int> h_current_counts(current_counts, access_location::host, access_mode::readwrite);
   memset((void*)h_current_counts.data,0,sizeof(unsigned int)*m_pdata->getRTags().size());
 
+  bool exclusions = m_nlist->getExclusionsSet();
+//  std::cout<< "add bond ";
   //todo: can this for loop be simplified/parallelized?
-  bool added_bonds = false;
   for (unsigned int i = 0; i < m_num_all_possible_bonds; i++)
       {
         Scalar3 d = h_all_possible_bonds.data[i];
+
         unsigned int tag_i = __scalar_as_int(d.x);
         unsigned int tag_j = __scalar_as_int(d.y);
 
+      //  std::cout<< i <<" / "<< m_num_all_possible_bonds << " ("<< tag_i << " , "<< tag_j<< ") ";
         //todo: put in other external criteria here, e.g. probability of bond formation etc.
         //todo: randomize which bonds are formed or keep them ordered by their distances?
-        if (h_current_counts.data[tag_i]<h_total_counts.data[tag_i] &&
-        h_current_counts.data[tag_j]< h_total_counts.data[tag_j] )
+        if (h_current_counts.data[tag_i]< m_max_bonds_group_1 - h_n_existing_bonds.data[tag_i] &&
+            h_current_counts.data[tag_j]< m_max_bonds_group_2 - h_n_existing_bonds.data[tag_j] )
         {
           m_bond_data->addBondedGroup(Bond(m_bond_type,tag_i,tag_j));
           AddtoExistingBonds(tag_i,tag_j);
           h_current_counts.data[tag_i]++;
           h_current_counts.data[tag_j]++;
-          added_bonds = true;
+
+         if (exclusions)  m_nlist->addExclusion(tag_i,tag_j);
         }
       }
-
- if (added_bonds) m_pdata->notifyParticleSort();
-
- //todo: how to add this? m_nlist as parameter? also needs to know if exclusions are set in nlist.
- //notify neighbor lists
-//  if (m_exclude_from_nlist)
-//    m_nlist->addExclusion(p_from_idx,p_to_idx);
-
+    //    std::cout<<std::endl;
+  if (m_prof) m_prof->pop();
 }
 
 
@@ -553,7 +558,7 @@ void export_DynamicBondUpdater(pybind11::module& m)
     {
     namespace py = pybind11;
     py::class_< DynamicBondUpdater, std::shared_ptr<DynamicBondUpdater> >(m, "DynamicBondUpdater", py::base<Updater>())
-        .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<ParticleGroup>,
+        .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, std::shared_ptr<ParticleGroup>,
              std::shared_ptr<ParticleGroup>, const Scalar, unsigned int, unsigned int, unsigned int>());
 
         //todo: implement needed getter/setter functions

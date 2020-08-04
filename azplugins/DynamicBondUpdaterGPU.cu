@@ -16,6 +16,7 @@
 
 #include "hoomd/extern/neighbor/neighbor/LBVH.cuh"
 #include "hoomd/extern/neighbor/neighbor/LBVHTraverser.cuh"
+#include "hoomd/extern/cub/cub/cub.cuh"
 
 #include <iostream>
 
@@ -192,9 +193,82 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
       d_traverse_order[idx] = __ldg(d_indexes + primitive);
       }
 
+  __global__ void make_sorted_index_array(  unsigned int *d_sorted_indexes,
+                                          unsigned int *d_indexes_group_1,
+                                          unsigned int *d_indexes_group_2,
+                                          const unsigned int size_group_1,
+                                          const unsigned int size_group_2)
+      {
+      // one thread per element in d_sorted_indexes
+      const unsigned int idx = blockDim.x * blockIdx.x + threadIdx.x;
+      if (idx >= size_group_1+size_group_2)
+          return;
+
+      if (idx<size_group_1){
+          d_sorted_indexes[idx] = d_indexes_group_1[idx];
+      }
+      else{
+          d_sorted_indexes[idx] = d_indexes_group_2[idx-size_group_1];
+         }
+
+      }
+
+  __global__ void  nlist_copy_nlist_possible_bonds(Scalar3 *d_all_possible_bonds,
+                                const Scalar4 *d_postype,
+                                const unsigned int * d_tag,
+                                const unsigned int * d_sorted_indexes,
+                                const unsigned int * d_n_neigh,
+                                const unsigned int * d_nlist,
+                                const BoxDim box,
+                                const unsigned int max_bonds,
+                                const Scalar r_cut,
+                                const unsigned int size)
+      {
+        // one thread per particle in group_1
+        const unsigned int idx = blockDim.x * blockIdx.x + threadIdx.x;
+        if (idx >= size)
+            return;
+
+        // idx = group index , pidx = actual particle index
+        const unsigned int pidx_i = d_sorted_indexes[idx];
+
+        // get all information for this particle
+        Scalar4 postype_i = d_postype[pidx_i];
+        const unsigned int tag_i = d_tag[pidx_i];
+        const unsigned int n_neigh = d_n_neigh[pidx_i];
+
+        // loop over all neighbors of this particle
+        for (unsigned int j=0; j<n_neigh;++j)
+          {
+              // get index of neighbor from neigh_list
+              const unsigned int pidx_j = d_nlist[ pidx_i*max_bonds + j];
+              Scalar4 postype_j = d_postype[pidx_j];
+              const unsigned int tag_j = d_tag[pidx_j];
+              //todo: shouldn't be this test be already taken care of with ParticleQueryOp refine?
+              if (tag_i != tag_j){
+
+               Scalar3 drij = make_scalar3(postype_j.x,postype_j.y,postype_j.z)
+                            - make_scalar3(postype_i.x,postype_i.y,postype_i.z);
+
+             // apply periodic boundary conditions (FLOPS: 12)
+              drij = box.minImage(drij);
+
+               Scalar dr_sq = dot(drij,drij);
+               if (dr_sq<=r_cut*r_cut)
+               {
+                 //printf("nlist_copy_nlist_possible_bonds particle ij %d %d %d %d %f \n",tag_i,tag_j,__scalar_as_int(postype_i.w),__scalar_as_int(postype_j.w),fast::sqrt(dr_sq));
+                 Scalar3 d = make_scalar3(__int_as_scalar(tag_i),__int_as_scalar(tag_j),dr_sq);
+                 d_all_possible_bonds[idx + n_neigh] = d;
+               }
+
+             }
+
+          }
+
+      }
+
 
 } //end namespace kernel
-
 
 
 cudaError_t sort_and_remove_zeros_possible_bond_array(Scalar3 *d_all_possible_bonds,
@@ -279,39 +353,103 @@ cudaError_t filter_existing_bonds(Scalar3 *d_all_possible_bonds,
     return cudaSuccess;
     }
 
-    /*!
-     * \param d_traverse_order List of particle indexes in traversal order.
-     * \param d_indexes Original indexes of the sorted primitives.
-     * \param d_primitives List of the primitives (sorted in LBVH order).
-     * \param N Number of primitives.
-     * \param block_size Number of CUDA threads per block.
-     *
-     * \sa gpu_nlist_copy_primitives_kernel
-     */
-    cudaError_t gpu_nlist_copy_primitives(unsigned int *d_traverse_order,
-                                          const unsigned int *d_indexes,
-                                          const unsigned int *d_primitives,
-                                          const unsigned int N,
-                                          const unsigned int block_size)
+cudaError_t make_sorted_index_array( unsigned int *d_sorted_indexes,
+                                 unsigned int *d_indexes_group_1,
+                                 unsigned int *d_indexes_group_2,
+                                 const unsigned int size_group_1,
+                                 const unsigned int size_group_2,
+                                 const unsigned int block_size)
+    {
+    static unsigned int max_block_size = UINT_MAX;
+    if (max_block_size == UINT_MAX)
         {
-        static unsigned int max_block_size = UINT_MAX;
-        if (max_block_size == UINT_MAX)
-            {
-            cudaFuncAttributes attr;
-            cudaFuncGetAttributes(&attr, (const void *)kernel::gpu_nlist_copy_primitives_kernel);
-            max_block_size = attr.maxThreadsPerBlock;
-            }
-
-        int run_block_size = min(block_size,max_block_size);
-        kernel::gpu_nlist_copy_primitives_kernel<<<N/run_block_size + 1, run_block_size>>>(d_traverse_order,
-                                                                                   d_indexes,
-                                                                                   d_primitives,
-                                                                                   N);
-        return cudaSuccess;
+        cudaFuncAttributes attr;
+        cudaFuncGetAttributes(&attr, (const void *)kernel::make_sorted_index_array);
+        max_block_size = attr.maxThreadsPerBlock;
         }
+
+    const unsigned int run_block_size = min(block_size,max_block_size);
+    const unsigned int num_blocks = ((size_group_1+size_group_2) + run_block_size - 1)/run_block_size;
+
+    kernel::make_sorted_index_array<<<num_blocks, run_block_size>>>(d_sorted_indexes,
+                                                                d_indexes_group_1,
+                                                                d_indexes_group_2,
+                                                                size_group_1,
+                                                                size_group_2);
+
+    return cudaSuccess;
+    }
+
+
+/*!
+ * \param d_traverse_order List of particle indexes in traversal order.
+ * \param d_indexes Original indexes of the sorted primitives.
+ * \param d_primitives List of the primitives (sorted in LBVH order).
+ * \param N Number of primitives.
+ * \param block_size Number of CUDA threads per block.
+ *
+ * \sa gpu_nlist_copy_primitives_kernel
+ */
+cudaError_t gpu_nlist_copy_primitives(unsigned int *d_traverse_order,
+                                      const unsigned int *d_indexes,
+                                      const unsigned int *d_primitives,
+                                      const unsigned int N,
+                                      const unsigned int block_size)
+    {
+    static unsigned int max_block_size = UINT_MAX;
+    if (max_block_size == UINT_MAX)
+        {
+        cudaFuncAttributes attr;
+        cudaFuncGetAttributes(&attr, (const void *)kernel::gpu_nlist_copy_primitives_kernel);
+        max_block_size = attr.maxThreadsPerBlock;
+        }
+
+    int run_block_size = min(block_size,max_block_size);
+    kernel::gpu_nlist_copy_primitives_kernel<<<N/run_block_size + 1, run_block_size>>>(d_traverse_order,
+                                                                               d_indexes,
+                                                                               d_primitives,
+                                                                               N);
+    return cudaSuccess;
+    }
+
+
+cudaError_t nlist_copy_nlist_possible_bonds(Scalar3 *d_all_possible_bonds,
+                          const Scalar4 *d_postype,
+                          const unsigned int *d_tag,
+                          const unsigned int *d_sorted_indexes,
+                          const unsigned int *d_n_neigh,
+                          const unsigned int *d_nlist,
+                          const BoxDim box,
+                          const unsigned int max_bonds,
+                          const Scalar r_cut,
+                          const unsigned int size,
+                          const unsigned int block_size)
+    {
+    static unsigned int max_block_size = UINT_MAX;
+    if (max_block_size == UINT_MAX)
+    {
+    cudaFuncAttributes attr;
+    cudaFuncGetAttributes(&attr, (const void *)kernel::nlist_copy_nlist_possible_bonds);
+    max_block_size = attr.maxThreadsPerBlock;
+    }
+
+    int run_block_size = min(block_size,max_block_size);
+    kernel::nlist_copy_nlist_possible_bonds<<<size/run_block_size + 1, run_block_size>>>(d_all_possible_bonds,
+                                                                         d_postype,
+                                                                         d_tag,
+                                                                         d_sorted_indexes,
+                                                                         d_n_neigh,
+                                                                         d_nlist,
+                                                                         box,
+                                                                         max_bonds,
+                                                                         r_cut,
+                                                                         size);
+    return cudaSuccess;
+    }
 
 } // end namespace gpu
 } // end namespace azplugins
+
 
 // explicit templates for neighbor::LBVH with PointMapInsertOp
 template void neighbor::gpu::lbvh_gen_codes(unsigned int *, unsigned int *, const azplugins::gpu::PointMapInsertOp&,
@@ -320,4 +458,4 @@ template void neighbor::gpu::lbvh_bubble_aabbs(const neighbor::gpu::LBVHData, co
 unsigned int *, const unsigned int, const unsigned int, cudaStream_t);
 template void neighbor::gpu::lbvh_one_primitive(const neighbor::gpu::LBVHData, const azplugins::gpu::PointMapInsertOp&, cudaStream_t);
 template void neighbor::gpu::lbvh_traverse_ropes(azplugins::gpu::NeighborListOp&, const neighbor::gpu::LBVHCompressedData&,
-const azplugins::gpu::ParticleQueryOp<false,false>&, const Scalar3 *, unsigned int, unsigned int, cudaStream_t);
+const azplugins::gpu::ParticleQueryOp&, const Scalar3 *, unsigned int, unsigned int, cudaStream_t);
