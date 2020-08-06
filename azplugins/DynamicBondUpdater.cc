@@ -89,25 +89,19 @@ void DynamicBondUpdater::update(unsigned int timestep)
 
     // rebuild the list of possible bonds until there is no overflow
     bool overflowed = false;
-  //  std::cout<< "before tree "<<std::endl;
     buildTree();
-//    std::cout<< "after tree "<<std::endl;
     do
         {
-    //    std::cout<< "before tree traverse"<<std::endl;
         traverseTree();
-      //  std::cout<< "after tree traverse "<<std::endl;
         overflowed = m_max_bonds < m_max_bonds_overflow;
         // if we overflowed, need to reallocate memory and re-calculate
         if (overflowed)
             {
-          //    std::cout<< " resize "<<std::endl;
             resizePossibleBondlists();
             }
         } while (overflowed);
-  //  std::cout<< "filter "<<std::endl;
+
     filterPossibleBonds();
-  // std::cout<< "amake "<<std::endl;
     // this function is not easily implemented on the GPU, uses addBondedGroup()
     makeBonds();
     if (m_prof) m_prof->pop();
@@ -118,16 +112,16 @@ void DynamicBondUpdater::update(unsigned int timestep)
 
 // bonds need to be sorted such that dublicates end up next to each other, otherwise
 // unique will not work properly. If the possible bond length is different, we can
-// sort according to that, but there might be the case where multiple possible bond lengths are identical,
-// e.g. particles on a lattice. The tags should be ordered in (tag_a,tag_b,d_ab_sq) with tag_a < tag_b.
+// sort according to that, but there might be the case where multiple possible bond lengths are exactly identical,
+// e.g. particles on a lattice.
+// This is hiracical sorting: first according to possible bond distance r_ab_sq, then after first tag_a, last after second tag_b.
+// Should work given that the tags are oredered within each pair, (tag_a,tag_b,d_ab_sq) with tag_a < tag_b.
 
-//todo: because it's possible uniquely map a pair to a single int (and back!) with a pairing function,
+// todo: because it's possible uniquely map a pair to a single int (and back!) with a pairing function,
 // the possible bond array could be restructured into a different data structure?
 // if we don't keep the possible bond length, a unsigned int array could hold all information needed
 // when would that lead to problems with overflow from 0.5*(tag_a+tag_b)*(tag_a+tag_b+1)+tag_b being too large?
 
-// hiracical sorting, first according to possible bond distance r_ab_sq, then after first tag_a, last after second tag_b
-// this should work given that the tags are oredered within each pair.
 bool SortBonds(Scalar3 i, Scalar3 j)
   {
     const Scalar r_sq_1 = i.z;
@@ -153,7 +147,7 @@ bool SortBonds(Scalar3 i, Scalar3 j)
     }
   }
 
-//todo: migrate to separate file/class?
+// todo: migrate to separate file/class?
 // Cantor paring function can also be used for comparison
   bool CompareBonds(Scalar3 i, Scalar3 j)
   {
@@ -208,7 +202,7 @@ void DynamicBondUpdater::calculateExistingBonds()
       unsigned int tag1 = bond.tag[0];
       unsigned int tag2 = bond.tag[1];
 
-    // only keep track of the bond type we are forming - does this make sense?
+    //  keep track of all bond types in the system - does this make sense?
     //  if (type == m_bond_type)
     //  {
         AddtoExistingBonds(tag1,tag2);
@@ -236,19 +230,11 @@ bool DynamicBondUpdater::isExistingBond(unsigned int tag1, unsigned int tag2)
     }
 
 
+
 void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag1,unsigned int tag2)
 {
   assert(tag1 <= m_pdata->getMaximumTag());
   assert(tag2 <= m_pdata->getMaximumTag());
-
-  // don't add a bond twice - should not happen anyway - todo: might be able to avoid this check
-  /*
-  if (isExistingBond(tag1, tag2))
-  {
-    m_exec_conf->msg->warning() << "tried to add existing bond twice! "<< tag1 << " "<< tag2 << std::endl;
-    return;
-  }
-  */
 
   bool overflowed = false;
 
@@ -260,7 +246,6 @@ void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag1,unsigned int tag2)
 
   if (h_n_existing_bonds.data[tag2] == m_existing_bonds_list_indexer.getH())
       overflowed = true;
-
 
   if (overflowed) resizeExistingBondList();
 
@@ -327,7 +312,7 @@ void DynamicBondUpdater::allocateParticleArrays()
 void DynamicBondUpdater::buildTree()
   {
     if (m_prof) m_prof->push("buildTree");
-    //todo: is it worth it to check if rebuild is necessary similar to neighbor list?
+    //todo: is it worth it to check if rebuild is necessary similar to neighbor list with keeping track of old positions?
     // make tree for group 2
     ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<hpmc::detail::AABB> h_aabbs(m_aabbs, access_location::host, access_mode::readwrite);
@@ -392,12 +377,7 @@ void DynamicBondUpdater::buildTree()
                               // neighbor j
                               unsigned int j = cur_aabb_tree->getNodeParticleTag(cur_node_idx, cur_p);
 
-                              // skip self-interaction
-                              bool excluded = (i == j);
-                              //todo: bonds which already exist should be not put in the array in the first place.
-                              // that could save us from needing to filter out the exclusions later? but why is the
-                              // neighbor list not doing that? to take advantage of the same structure for all the neighbor lists?
-                              if (!excluded)
+                              if (i!=j)
                                   {
                                   // compute distance
                                   Scalar4 postype_j = h_postype.data[j];
@@ -453,7 +433,7 @@ void DynamicBondUpdater::buildTree()
 
 void DynamicBondUpdater::filterPossibleBonds()
 {
-//  std::cout<< " in filterPossibleBonds";
+
   if (m_prof) m_prof->push("filterPossibleBonds");
   m_num_all_possible_bonds = 0;
   ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::readwrite);
@@ -575,18 +555,13 @@ void DynamicBondUpdater::makeBonds()
 
   // we need to count how many bonds are in the h_all_possible_bonds array for a given tag
   // so that we don't end up forming too many bonds in one step. "AddtoExistingBonds" increases the count in
-  // h_n_existing_bonds in the for loop below as we go, so no extra book keeping should be needed.
-  // unfortionally, this makes is very difficult to port to the gpu.
-  GPUArray<unsigned int> current_counts(m_pdata->getMaxN(), m_exec_conf);
-  ArrayHandle<unsigned int> h_current_counts(current_counts, access_location::host, access_mode::readwrite);
-  memset((void*)h_current_counts.data,0,sizeof(unsigned int)*m_pdata->getMaxN());
+  // h_n_existing_bonds in the for loop below as we go, so no extra bookkeeping should be needed.
+  // This makes it very difficult to port to the gpu.
 
   ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
-// std::cout<< "max bonds "<< m_max_bonds_group_1<< " "<< m_max_bonds_group_2<<std::endl;
   bool exclusions = m_nlist->getExclusionsSet();
- //  std::cout<< "add bond ";
+
   //todo: can this for loop be simplified/parallelized?
-  //std::cout<< "in DynamicBondUpdater::makeBonds() m_num_all_possible_bonds "<<m_num_all_possible_bonds<<std::endl;
   for (unsigned int i = 0; i < m_num_all_possible_bonds; i++)
       {
         Scalar3 d = h_all_possible_bonds.data[i];
@@ -600,25 +575,19 @@ void DynamicBondUpdater::makeBonds()
         bool is_member = m_group_1->isMember(idx_i);
         unsigned int max_bonds_i = is_member? m_max_bonds_group_1:m_max_bonds_group_2;
         unsigned int max_bonds_j = is_member? m_max_bonds_group_2:m_max_bonds_group_1;
-      //  std::cout<< "make bond "<< i << " tags "<< tag_i << " "<< tag_j << " "<< std::endl;
-      //  std::cout<< "make bond "<< i << " coutns "<< h_n_existing_bonds.data[tag_i] << " "<< h_n_existing_bonds.data[tag_j] << " "<< std::endl;
-    //    std::cout<< "make bond "<< i << " currewnt conuts "<< h_current_counts.data[tag_i] << " "<< h_current_counts.data[tag_j] << " "<< std::endl;
 
-        //todo: put in other external criteria here, e.g. probability of bond formation etc.
+        //todo: put in other external criteria here, e.g. probability of bond formation, max number of bonds possible in one step, etc.
         //todo: randomize which bonds are formed or keep them ordered by their distances?
         if ( max_bonds_i > h_n_existing_bonds.data[tag_i] &&
              max_bonds_j > h_n_existing_bonds.data[tag_j] )
         {
-        //  std::cout<< "make bond inside"<<std::endl;
           m_bond_data->addBondedGroup(Bond(m_bond_type,tag_i,tag_j));
           AddtoExistingBonds(tag_i,tag_j);
-          h_current_counts.data[tag_i]++;
-          h_current_counts.data[tag_j]++;
 
          if (exclusions)  m_nlist->addExclusion(tag_i,tag_j);
         }
       }
-    //    std::cout<<std::endl;
+
   if (m_prof) m_prof->pop();
 }
 

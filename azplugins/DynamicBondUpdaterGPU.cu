@@ -13,12 +13,10 @@
 #include <thrust/sort.h>
 #include <thrust/device_vector.h>
 // todo: should azplugins have its own "extern"?
-
 #include "hoomd/extern/neighbor/neighbor/LBVH.cuh"
 #include "hoomd/extern/neighbor/neighbor/LBVHTraverser.cuh"
 #include "hoomd/extern/cub/cub/cub.cuh"
 
-#include <iostream>
 
 namespace azplugins
 {
@@ -129,8 +127,6 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
   if (ex_start >= n_ex)
       return;
 
-//  printf("in filter_existing_bonds idx %d tag_i %d tag_j %d dist %f \n",idx,tag_1,tag_2,current_bond.z);
-
   // count the number of existing bonds to process in this thread
   const unsigned int n_ex_process = n_ex - ex_start;
 
@@ -139,12 +135,10 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
   #pragma unroll
   for (unsigned int cur_ex_idx = 0; cur_ex_idx < FILTER_BATCH_SIZE; cur_ex_idx++)
       {
-    //  printf("in filter_existing_bonds cur_ex_idx %d \n",cur_ex_idx);
       if (cur_ex_idx < n_ex_process)
           l_existing_bonds_list[cur_ex_idx] = d_existing_bonds_list[exli(tag_1, cur_ex_idx + ex_start)];
       else
           l_existing_bonds_list[cur_ex_idx] = 0xffffffff;
-      //  printf("in filter_existing_bonds idx %d tag_i %d tag_j %d dist %f cur_ex_idx %d l_existing_bonds_list %d \n",idx,tag_1,tag_2,current_bond.z,cur_ex_idx,l_existing_bonds_list[cur_ex_idx]);
       }
 
       // test if excluded
