@@ -30,9 +30,6 @@
 #define HOSTDEVICE
 #endif
 
-//! Sentinel for an invalid particle (e.g., ghost)
-const unsigned int NeighborListTypeSentinel = 0xffffffff;
-
 namespace azplugins
 {
 namespace gpu
@@ -403,13 +400,6 @@ struct NeighborListOp
 const unsigned int NeighborListTypeSentinel = 0xffffffff;
 
 
-
-//! Kernel driver to rearrange primitives for faster traversal
-cudaError_t gpu_nlist_copy_primitives(unsigned int *d_traverse_order,
-                                      const unsigned int *d_indexes,
-                                      const unsigned int *d_primitives,
-                                      const unsigned int N,
-                                      const unsigned int block_size);
 } // end namespace gpu
 } // end namespace azplugins
 

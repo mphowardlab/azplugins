@@ -24,45 +24,41 @@ namespace azplugins
 {
 
 //todo: migrate to separate file/class.
-struct SortBondsGPUDistance{
-  __host__ __device__ bool operator()(const Scalar3 &in0, const Scalar3 &in1)
+//this sorts according distance, then first tag, then second tag
+struct SortBondsGPU{
+  __host__ __device__ bool operator()(const Scalar3 &i, const Scalar3 &j)
     {
-      const Scalar r_sq_1 = in0.z;
-      const Scalar r_sq_2 = in1.z;
-      const unsigned int tag_0 = __scalar_as_int(in0.x);
-      const unsigned int tag_1 = __scalar_as_int(in1.x);
-      // todo: is this necessary for the thrust::unique to filter out all dublicates or
-      // would r_sq_1 < r_sq_2 be enough? What happens if two different potential
-      // bonds have EXACTLY same length?
-      if (r_sq_1 == r_sq_2)
-          return tag_0 < tag_1;
-      return r_sq_1 < r_sq_2;
+      const Scalar r_sq_1 = i.z;
+      const Scalar r_sq_2 = j.z;
+      if (r_sq_1==r_sq_2)
+      {
+        const unsigned int tag_11 = __scalar_as_int(i.x);
+        const unsigned int tag_21 = __scalar_as_int(j.x);
+        if (tag_11==tag_21)
+        {
+        const unsigned int tag_12 = __scalar_as_int(i.y);
+        const unsigned int tag_22 = __scalar_as_int(j.y);
+        return tag_22>tag_12;
+        }
+        else
+        {
+          return tag_21>tag_11;
+        }
+      }
+      else
+      {
+        return r_sq_2>r_sq_1;
+      }
     }
+
 };
 
-struct SortBondsGPUFirstTag{
-  __host__ __device__ bool operator()(const Scalar3 &in0, const Scalar3 &in1)
-    {
-      const unsigned int tag_0 = __scalar_as_int(in0.x);
-      const unsigned int tag_1 = __scalar_as_int(in1.x);
-      return tag_0 < tag_1;
-    }
-};
-
-struct SortBondsGPUSecondTag{
-  __host__ __device__ bool operator()(const Scalar3 &in0, const Scalar3 &in1)
-    {
-      const unsigned int tag_0 = __scalar_as_int(in0.y);
-      const unsigned int tag_1 = __scalar_as_int(in1.y);
-      return tag_0 < tag_1;
-    }
-};
 
 struct isZeroBondGPU{
-  __host__ __device__ bool operator()(const Scalar3 &in0)
+  __host__ __device__ bool operator()(const Scalar3 &i)
     {
-      const unsigned int tag_0 = __scalar_as_int(in0.x);
-      const unsigned int tag_1 = __scalar_as_int(in0.y);
+      const unsigned int tag_0 = __scalar_as_int(i.x);
+      const unsigned int tag_1 = __scalar_as_int(i.y);
       if ( tag_0==0 && tag_1 ==0)
       {
         return true;
@@ -75,23 +71,22 @@ struct isZeroBondGPU{
 };
 
 struct CompareBondsGPU{
-  __host__ __device__ bool operator()(const Scalar3 &in0, const Scalar3 &in1)
+  __host__ __device__ bool operator()(const Scalar3 &i, const Scalar3 &j)
     {
-        const unsigned int tag_11 = __scalar_as_int(in0.x);
-        const unsigned int tag_12 = __scalar_as_int(in0.y);
-        const unsigned int tag_21 = __scalar_as_int(in1.x);
-        const unsigned int tag_22 = __scalar_as_int(in1.y);
+      const unsigned int tag_11 = __scalar_as_int(i.x);
+      const unsigned int tag_12 = __scalar_as_int(i.y);
+      const unsigned int tag_21 = __scalar_as_int(j.x);
+      const unsigned int tag_22 = __scalar_as_int(j.y);
 
-        if ((tag_11==tag_21 && tag_12==tag_22) ||   // (i,j)==(i,j)
-            (tag_11==tag_22 && tag_12==tag_21))     // (i,j)==(j,i)
-        {
-          return true;
-        }
-        else
-        {
-          return false;
-        }
+      if ((tag_11==tag_21 && tag_12==tag_22))   // should work if pairs are ordered
+      {
+        return true;
       }
+      else
+      {
+        return false;
+      }
+    }
   };
 
 namespace gpu
@@ -169,29 +164,6 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
 
   }
 
-  //! Kernel to copy the particle indexes into traversal order
-  /*!
-   * \param d_traverse_order List of particle indexes in traversal order.
-   * \param d_indexes Original indexes of the sorted primitives.
-   * \param d_primitives List of the primitives (sorted in LBVH order).
-   * \param N Number of primitives.
-   *
-   * The primitive index for this thread is first loaded. It is then mapped back
-   * to its original particle index, which is stored for subsequent traversal.
-   */
-  __global__ void gpu_nlist_copy_primitives_kernel(unsigned int *d_traverse_order,
-                                                   const unsigned int *d_indexes,
-                                                   const unsigned int *d_primitives,
-                                                   const unsigned int N)
-      {
-      // one thread per particle
-      const unsigned int idx = blockDim.x * blockIdx.x + threadIdx.x;
-      if (idx >= N)
-          return;
-
-      const unsigned int primitive = d_primitives[idx];
-      d_traverse_order[idx] = __ldg(d_indexes + primitive);
-      }
 
   __global__ void make_sorted_index_array(  unsigned int *d_sorted_indexes,
                                           unsigned int *d_indexes_group_1,
@@ -231,6 +203,8 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
 
         // idx = group index , pidx = actual particle index
         const unsigned int pidx_i = d_sorted_indexes[idx];
+        unsigned int n_curr_bond = 0;
+        const Scalar r_cutsq = r_cut*r_cut;
 
         // get all information for this particle
         Scalar4 postype_i = d_postype[pidx_i];
@@ -241,27 +215,31 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
         for (unsigned int j=0; j<n_neigh;++j)
           {
               // get index of neighbor from neigh_list
-              const unsigned int pidx_j = d_nlist[ pidx_i*max_bonds + j];
+              const unsigned int pidx_j = d_nlist[pidx_i*max_bonds + j];
               Scalar4 postype_j = d_postype[pidx_j];
               const unsigned int tag_j = d_tag[pidx_j];
-              //todo: shouldn't be this test be already taken care of with ParticleQueryOp refine?
-              if (tag_i != tag_j){
 
-               Scalar3 drij = make_scalar3(postype_j.x,postype_j.y,postype_j.z)
-                            - make_scalar3(postype_i.x,postype_i.y,postype_i.z);
+              Scalar3 drij = make_scalar3(postype_j.x,postype_j.y,postype_j.z)
+                           - make_scalar3(postype_i.x,postype_i.y,postype_i.z);
 
              // apply periodic boundary conditions (FLOPS: 12)
               drij = box.minImage(drij);
 
+              // same as on the cpu, just not during the tree traversal
                Scalar dr_sq = dot(drij,drij);
-               if (dr_sq<=r_cut*r_cut)
-               {
-                 //printf("nlist_copy_nlist_possible_bonds particle ij %d %d %d %d %f \n",tag_i,tag_j,__scalar_as_int(postype_i.w),__scalar_as_int(postype_j.w),fast::sqrt(dr_sq));
-                 Scalar3 d = make_scalar3(__int_as_scalar(tag_i),__int_as_scalar(tag_j),dr_sq);
-                 d_all_possible_bonds[idx + n_neigh] = d;
-               }
 
-             }
+               if (dr_sq < r_cutsq)
+                   {
+                   if (n_curr_bond < max_bonds)
+                      {
+                      // sort the two tags in this possible bond pair
+                      const unsigned int tag_a = tag_j>tag_i ? tag_i : tag_j;
+                      const unsigned int tag_b = tag_j>tag_i ? tag_j : tag_i;
+                      Scalar3 d = make_scalar3(__int_as_scalar(tag_a),__int_as_scalar(tag_b),dr_sq);
+                      d_all_possible_bonds[idx*max_bonds + n_curr_bond] = d;
+                      }
+                    ++n_curr_bond;
+                  }
 
           }
 
@@ -270,7 +248,12 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
 
 } //end namespace kernel
 
+/*
+profiling results: sort - find_if - unique 34.5 %
+                  remove_if -> sort -> unique 14.6%
+sort is slow. can we use Radix_sort instead? need keys. cantor pairing function?
 
+*/
 cudaError_t sort_and_remove_zeros_possible_bond_array(Scalar3 *d_all_possible_bonds,
                                              const unsigned int size,
                                             int *d_max_non_zero_bonds)
@@ -285,10 +268,10 @@ cudaError_t sort_and_remove_zeros_possible_bond_array(Scalar3 *d_all_possible_bo
     unsigned int l0 = thrust::distance(d_all_possible_bonds_wrap, last0);
 
     // sort remainder by distance, should make all identical bonds consequtive
-    SortBondsGPUDistance sort;
-    thrust::sort(d_all_possible_bonds_wrap,d_all_possible_bonds_wrap+l0, sort);
-    CompareBondsGPU comp;
+    SortBondsGPU sort;
+    thrust::sort(thrust::device,d_all_possible_bonds_wrap,d_all_possible_bonds_wrap+l0, sort);
 
+    CompareBondsGPU comp;
     // thrust::unique only removes identical consequtive elements, so sort above is needed.
     thrust::device_ptr<Scalar3> last1 = thrust::unique(d_all_possible_bonds_wrap, d_all_possible_bonds_wrap + l0,comp);
     unsigned int l1 = thrust::distance(d_all_possible_bonds_wrap, last1);
@@ -380,37 +363,6 @@ cudaError_t make_sorted_index_array( unsigned int *d_sorted_indexes,
     return cudaSuccess;
     }
 
-
-/*!
- * \param d_traverse_order List of particle indexes in traversal order.
- * \param d_indexes Original indexes of the sorted primitives.
- * \param d_primitives List of the primitives (sorted in LBVH order).
- * \param N Number of primitives.
- * \param block_size Number of CUDA threads per block.
- *
- * \sa gpu_nlist_copy_primitives_kernel
- */
-cudaError_t gpu_nlist_copy_primitives(unsigned int *d_traverse_order,
-                                      const unsigned int *d_indexes,
-                                      const unsigned int *d_primitives,
-                                      const unsigned int N,
-                                      const unsigned int block_size)
-    {
-    static unsigned int max_block_size = UINT_MAX;
-    if (max_block_size == UINT_MAX)
-        {
-        cudaFuncAttributes attr;
-        cudaFuncGetAttributes(&attr, (const void *)kernel::gpu_nlist_copy_primitives_kernel);
-        max_block_size = attr.maxThreadsPerBlock;
-        }
-
-    int run_block_size = min(block_size,max_block_size);
-    kernel::gpu_nlist_copy_primitives_kernel<<<N/run_block_size + 1, run_block_size>>>(d_traverse_order,
-                                                                               d_indexes,
-                                                                               d_primitives,
-                                                                               N);
-    return cudaSuccess;
-    }
 
 
 cudaError_t nlist_copy_nlist_possible_bonds(Scalar3 *d_all_possible_bonds,

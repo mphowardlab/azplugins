@@ -34,6 +34,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
                            std::shared_ptr<ParticleGroup> group_1,
                            std::shared_ptr<ParticleGroup> group_2,
                            const Scalar r_cut,
+                           const Scalar r_buff,
                            unsigned int bond_type,
                            unsigned int max_bonds_group_1,
                            unsigned int max_bonds_group_2);
@@ -53,6 +54,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         std::shared_ptr<ParticleGroup> m_group_2;   //!< Second particle group to form bonds with
 
         const Scalar m_r_cut;                       //!< cutoff for the bond forming criterion
+        const Scalar m_r_buff;                       //!< buffer size for neighbor list
         const unsigned int m_bond_type;                   //!< Type id of the bond to form
         const unsigned int m_max_bonds_group_1;           //!< maximum number of bonds which can be formed by the first group
         const unsigned int m_max_bonds_group_2;           //!< maximum number of bonds which can be formed by the second group

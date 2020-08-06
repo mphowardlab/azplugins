@@ -151,7 +151,7 @@ class dynamic_bond(hoomd.update._updater):
 
         # todo: check that r_cut is not too large for pbc box
         self.r_cut = r_cut
-
+        self.r_buff = 0.4
         self.nlist = nlist
         # it doesn't really make sense to allow partially overlapping groups?
         # Maybe it should be excluded. At least overlapping groups with different max bonds make no sense.
@@ -176,6 +176,7 @@ class dynamic_bond(hoomd.update._updater):
                                      group_1.cpp_group,
                                      group_2.cpp_group,
                                      self.r_cut,
+                                     self.r_buff,
                                      bond_type_id,
                                      max_bonds_1,
                                      max_bonds_2)

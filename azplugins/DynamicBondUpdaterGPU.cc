@@ -15,18 +15,18 @@ namespace azplugins
 {
 
  DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
-                          std::shared_ptr<NeighborList> nlist,
-                          std::shared_ptr<ParticleGroup> group_1,
-                          std::shared_ptr<ParticleGroup> group_2,
-                          const Scalar r_cut,
-                          unsigned int bond_type,
-                          unsigned int max_bonds_group_1,
-                          unsigned int max_bonds_group_2)
-        : DynamicBondUpdater(sysdef, nlist, group_1, group_2, r_cut, bond_type, max_bonds_group_1, max_bonds_group_2),
-        m_num_nonzero_bonds(m_exec_conf),m_max_bonds_overflow_flag(m_exec_conf),m_lbvh_errors(m_exec_conf),
-        m_lbvh_2(m_exec_conf),m_traverser(m_exec_conf)
+                                              std::shared_ptr<NeighborList> nlist,
+                                              std::shared_ptr<ParticleGroup> group_1,
+                                              std::shared_ptr<ParticleGroup> group_2,
+                                              const Scalar r_cut,
+                                              const Scalar r_buff,
+                                              unsigned int bond_type,
+                                              unsigned int max_bonds_group_1,
+                                              unsigned int max_bonds_group_2)
+        : DynamicBondUpdater(sysdef, nlist, group_1, group_2, r_cut, r_buff,bond_type, max_bonds_group_1, max_bonds_group_2),
+        m_num_nonzero_bonds(m_exec_conf),m_max_bonds_overflow_flag(m_exec_conf),
+        m_lbvh_errors(m_exec_conf),m_lbvh_2(m_exec_conf),m_traverser(m_exec_conf)
     {
-
     m_sorted_index_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "dynamic_bond_updater_sorted_index", m_exec_conf));
     m_copy_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "dynamic_bond_updater_tree_copy", m_exec_conf));
     m_copy_nlist_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "dynamic_bond_updater_nlist_copy", m_exec_conf));
@@ -49,44 +49,38 @@ DynamicBondUpdaterGPU::~DynamicBondUpdaterGPU()
 void DynamicBondUpdaterGPU::buildTree()
     {
     if (m_prof) m_prof->push("buildTree");
-    // set the sorted index
-       {
-         // we already know the indexes of the particles in the two groups, we can simply copy them into the m_sorted_indexes array
-         ArrayHandle<unsigned int> d_sorted_indexes(m_sorted_indexes, access_location::device, access_mode::overwrite);
-         ArrayHandle<unsigned int> d_index_group_1(m_group_1->getIndexArray(), access_location::device, access_mode::read);
-         ArrayHandle<unsigned int> d_index_group_2(m_group_2->getIndexArray(), access_location::device, access_mode::read);
 
-         m_sorted_index_tuner->begin();
-         azplugins::gpu::make_sorted_index_array(
-           d_sorted_indexes.data,
-           d_index_group_1.data,
-           d_index_group_2.data,
-           m_group_1->getNumMembers(),
-           m_group_2->getNumMembers(),
-           m_count_tuner->getParam());
-           if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
-           m_sorted_index_tuner->end();
+     // setup the sorted index, we already know the indexes of the particles in
+     // the two groups, we can simply copy them into the m_sorted_indexes array.
+     ArrayHandle<unsigned int> d_sorted_indexes(m_sorted_indexes, access_location::device, access_mode::overwrite);
+     ArrayHandle<unsigned int> d_index_group_1(m_group_1->getIndexArray(), access_location::device, access_mode::read);
+     ArrayHandle<unsigned int> d_index_group_2(m_group_2->getIndexArray(), access_location::device, access_mode::read);
 
-         }
+     m_sorted_index_tuner->begin();
+     azplugins::gpu::make_sorted_index_array(d_sorted_indexes.data,
+                                             d_index_group_1.data,
+                                             d_index_group_2.data,
+                                             m_group_1->getNumMembers(),
+                                             m_group_2->getNumMembers(),
+                                             m_count_tuner->getParam());
+       if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
+       m_sorted_index_tuner->end();
 
-    // build a lbvh for grou_2
-        {
+    // build a lbvh for group_2
+    {
+    ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
+    ArrayHandle<unsigned int> d_sorted_indexes(m_sorted_indexes, access_location::device, access_mode::read);
 
-        ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
-        ArrayHandle<unsigned int> d_sorted_indexes(m_sorted_indexes, access_location::device, access_mode::read);
+    const BoxDim lbvh_box = getLBVHBox();
 
-        const BoxDim lbvh_box = getLBVHBox();
+    // this tree is traversed in traverseTree()
+    m_lbvh_2.build(azplugins::gpu::PointMapInsertOp(d_pos.data,
+                                d_sorted_indexes.data + m_group_1->getNumMembers(),
+                                m_group_2->getNumMembers()),
+                                lbvh_box.getLo(),
+                                lbvh_box.getHi());
 
-        // this tree is traversed in traverseTree()
-        m_lbvh_2.build(azplugins::gpu::PointMapInsertOp(d_pos.data, d_sorted_indexes.data + m_group_1->getNumMembers(), m_group_2->getNumMembers()),
-                                    lbvh_box.getLo(),
-                                    lbvh_box.getHi());
-
-        }
-
-
-
-
+   }
    if (m_prof) m_prof->pop();
     }
 
@@ -100,6 +94,7 @@ void DynamicBondUpdaterGPU::traverseTree()
 
     // clear the neighbor counts
     cudaMemset(d_n_neigh.data, 0, sizeof(unsigned int)*m_pdata->getMaxN());
+    cudaMemset( d_nlist.data,0, sizeof(unsigned int)*m_max_bonds*m_pdata->getMaxN());
 
     const BoxDim& box = m_pdata->getBox();
 
@@ -113,15 +108,17 @@ void DynamicBondUpdaterGPU::traverseTree()
     azplugins::gpu::ParticleQueryOp query_op(d_pos.data,
                                                d_sorted_indexes.data + 0,
                                                m_group_1->getNumMembers(),
-                                               m_pdata->getN(),
-                                               m_r_cut,
+                                               m_pdata->getMaxN(),
+                                               m_r_cut+m_r_buff,
                                                box);
 
      m_traverser.traverse(nlist_op, query_op, map, m_lbvh_2, m_image_list);
 
      m_max_bonds_overflow =  m_max_bonds_overflow_flag.readFlags();
 
-     // copy information from nlist to all_possible_bonds array, do distance checking
+     // if we didn't overflow copy information from nlist to all_possible_bonds array, do distance checking
+     // if it did overflow traverse tree again first to put all neighbor information into nlist and n_neigh
+     if( m_max_bonds_overflow <= m_max_bonds)
      {
 
        ArrayHandle<unsigned int> d_nlist(m_nlist, access_location::device, access_mode::read);
@@ -130,12 +127,12 @@ void DynamicBondUpdaterGPU::traverseTree()
        ArrayHandle<unsigned int> d_tag(m_pdata->getTags(), access_location::device, access_mode::read);
        ArrayHandle<unsigned int> d_sorted_indexes(m_sorted_indexes, access_location::device, access_mode::read);
 
-       // size m_group_1->getNumMembers()*m_max_bonds;
        ArrayHandle<Scalar3> d_all_possible_bonds(m_all_possible_bonds, access_location::device, access_mode::overwrite);
+       unsigned int size = m_group_1->getNumMembers()*m_max_bonds;
+       cudaMemset((void*) d_all_possible_bonds.data, 0, sizeof(Scalar3)*size);
 
 
        const BoxDim& box = m_pdata->getBox();
-
        m_copy_nlist_tuner->begin();
        azplugins::gpu::nlist_copy_nlist_possible_bonds(d_all_possible_bonds.data,
                                  d_pos.data,
@@ -158,14 +155,10 @@ void DynamicBondUpdaterGPU::traverseTree()
 
 void DynamicBondUpdaterGPU::resizePossibleBondlists()
     {
-
       // round up to nearest multiple of 4
       m_max_bonds_overflow = (m_max_bonds_overflow > 4) ? (m_max_bonds_overflow + 3) & ~3 : 4;
-
       m_max_bonds = m_max_bonds_overflow;
       m_max_bonds_overflow = 0;
-      m_exec_conf->msg->notice(6) << "DynamicBondUpdaterGPU: (Re-)size possible bond list, new size " << m_max_bonds << " bonds per particle " << std::endl;
-
       unsigned int size = m_group_1->getNumMembers()*m_max_bonds;
       m_all_possible_bonds.resize(size);
       m_num_all_possible_bonds=0;
@@ -173,6 +166,7 @@ void DynamicBondUpdaterGPU::resizePossibleBondlists()
       GlobalArray<unsigned int> nlist(m_max_bonds*m_pdata->getMaxN(), m_exec_conf);
       m_nlist.swap(nlist);
 
+      m_exec_conf->msg->notice(6) << "DynamicBondUpdaterGPU: (Re-)size possible bond list, new size " << m_max_bonds << " bonds per particle " << std::endl;
 
     }
 
@@ -212,8 +206,6 @@ void DynamicBondUpdaterGPU::allocateParticleArrays()
     GlobalArray<unsigned int> nlist(m_max_bonds*m_pdata->getMaxN(), m_exec_conf);
     m_nlist.swap(nlist);
 
-
-
     calculateExistingBonds();
 
   }
@@ -226,7 +218,7 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
   // todo: figure out in which order the thrust calls are the fastest.
   // is using build in thrust functions the best solution?
   // suspect: sort - remove zeros - unique - filter (which introduces zeros) - remove zeros ?
-
+  m_num_all_possible_bonds = 0;
   const unsigned int size = m_group_1->getNumMembers()*m_max_bonds;
 
   // sort and remove all existing zeros
@@ -241,7 +233,9 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
   if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
   m_num_all_possible_bonds = m_num_nonzero_bonds.readFlags();
   if (m_prof) m_prof->pop();
-if (m_prof) m_prof->push("filterPossibleBonds2");
+
+
+  if (m_prof) m_prof->push("filterPossibleBonds2");
   //filter out the existing bonds - based on neighbor list exclusion handeling
   m_tuner_filter_bonds->begin();
   gpu::filter_existing_bonds(d_all_possible_bonds.data,
@@ -253,7 +247,7 @@ if (m_prof) m_prof->push("filterPossibleBonds2");
   if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
   m_tuner_filter_bonds->end();
   if (m_prof) m_prof->pop();
-if (m_prof) m_prof->push("filterPossibleBonds3");
+  if (m_prof) m_prof->push("filterPossibleBonds3");
 
   // filtering existing bonds out introduced some zeros back into the array, remove them
   gpu::remove_zeros_possible_bond_array(d_all_possible_bonds.data,
@@ -267,6 +261,8 @@ if (m_prof) m_prof->push("filterPossibleBonds3");
 // at this point, the sub-array: d_all_possible_bonds[0,m_num_all_possible_bonds]
 // should contain only unique entries of possible bonds which are not yet formed.
   }
+
+
 
 /*!
  * (Re-)computes the translation vectors for traversing the BVH tree. At most, there are 26 translation vectors
@@ -338,7 +334,7 @@ namespace detail
      namespace py = pybind11;
      py::class_< DynamicBondUpdaterGPU, std::shared_ptr<DynamicBondUpdaterGPU> >(m, "DynamicBondUpdaterGPU", py::base<DynamicBondUpdater>())
          .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, std::shared_ptr<ParticleGroup>,
-              std::shared_ptr<ParticleGroup>, const Scalar, unsigned int, unsigned int, unsigned int>());
+              std::shared_ptr<ParticleGroup>, const Scalar, const Scalar, unsigned int, unsigned int, unsigned int>());
 
          //.def_property("inside", &DynamicBondUpdater::getInsideType, &DynamicBondUpdater::setInsideType)
          //.def_property("outside", &DynamicBondUpdater::getOutsideType, &DynamicBondUpdater::setOutsideType)

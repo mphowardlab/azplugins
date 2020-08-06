@@ -7,6 +7,7 @@ set(TEST_LIST_CPU
     test_bond_fene
     test_bond_fene24
     test_dpd_general
+    test_dynamic_bond
     test_evaporate_implicit
     test_evaporate_particles
     test_flow_brownian
@@ -42,6 +43,7 @@ set(TEST_LIST_GPU
     test_bond_fene
     test_bond_fene24
     test_dpd_general
+    test_dynamic_bond
     test_evaporate_implicit
     test_evaporate_particles
     test_flow_brownian
