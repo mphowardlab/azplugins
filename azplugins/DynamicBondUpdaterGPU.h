@@ -36,6 +36,7 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
       //! Constructor with parameters
       DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
                             std::shared_ptr<NeighborList> nlist,
+                            bool nlist_exclusions_set,
                             std::shared_ptr<ParticleGroup> group_1,
                             std::shared_ptr<ParticleGroup> group_2,
                             const Scalar r_cut,
@@ -70,11 +71,6 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
         GPUFlags<int> m_num_nonzero_bonds;//!< GPU flags for the number of marked particles
         GPUFlags<unsigned int> m_max_bonds_overflow_flag;//!< GPU flags for the number of marked particles
         GPUArray<unsigned int> m_sorted_indexes;    //!< Sorted particle indexes [idx group_1 ...] [idx group_2 ...]
-
-
-        GlobalArray<unsigned int> m_nlist;      //!< Neighbor list data
-        GlobalArray<unsigned int> m_n_neigh;    //!< Number of neighbors for each particle
-        GlobalArray<Scalar4> m_last_pos;        //!< coordinates of last updated particle positions
 
         GPUFlags<unsigned int> m_lbvh_errors;       //!< Error flags during particle marking (e.g., off rank)
         neighbor::LBVH m_lbvh_2;                 //!< LBVH for group_2

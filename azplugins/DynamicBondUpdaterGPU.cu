@@ -51,20 +51,14 @@ struct SortBondsGPU{
 
 };
 
-
+// returns true if given possible bond is zero, e.g. (0,0,0.0)
+// possible bonds are ordered, such that tag_a < tag_b in (tag_a,tag_b,rsq)
+// meaning we only need to check tag_b == 0
 struct isZeroBondGPU{
   __host__ __device__ bool operator()(const Scalar3 &i)
     {
-      const unsigned int tag_0 = __scalar_as_int(i.x);
       const unsigned int tag_1 = __scalar_as_int(i.y);
-      if ( tag_0==0 && tag_1 ==0)
-      {
-        return true;
-      }
-      else
-      {
-        return false;
-      }
+      return !(bool)tag_1;
     }
 };
 
@@ -76,7 +70,7 @@ struct CompareBondsGPU{
       const unsigned int tag_21 = __scalar_as_int(j.x);
       const unsigned int tag_22 = __scalar_as_int(j.y);
 
-      if ((tag_11==tag_21 && tag_12==tag_22))   // should work if pairs are ordered
+      if ((tag_11==tag_21 && tag_12==tag_22))   // should work because pairs are ordered
       {
         return true;
       }
@@ -248,7 +242,7 @@ profiling results: sort - find_if - unique 34.5 %
 sort is slow. can we use Radix_sort instead? need keys. cantor pairing function?
 
 */
-cudaError_t sort_and_remove_zeros_possible_bond_array(Scalar3 *d_all_possible_bonds,
+cudaError_t sort_and_remove_zeros_possible_bond_array_1(Scalar3 *d_all_possible_bonds,
                                              const unsigned int size,
                                             int *d_max_non_zero_bonds)
     {
@@ -256,24 +250,52 @@ cudaError_t sort_and_remove_zeros_possible_bond_array(Scalar3 *d_all_possible_bo
     // wrapper for pointer needed for thrust
     thrust::device_ptr<Scalar3> d_all_possible_bonds_wrap(d_all_possible_bonds);
 
-    // first remove all zeros
+    // first remove all zeros - makes sort after faster
     isZeroBondGPU zero;
     thrust::device_ptr<Scalar3> last0 = thrust::remove_if(d_all_possible_bonds_wrap,d_all_possible_bonds_wrap+size, zero);
     unsigned int l0 = thrust::distance(d_all_possible_bonds_wrap, last0);
 
-    // sort remainder by distance, should make all identical bonds consequtive
-    SortBondsGPU sort;
-    thrust::sort(thrust::device,d_all_possible_bonds_wrap,d_all_possible_bonds_wrap+l0, sort);
-
-    CompareBondsGPU comp;
-    // thrust::unique only removes identical consequtive elements, so sort above is needed.
-    thrust::device_ptr<Scalar3> last1 = thrust::unique(d_all_possible_bonds_wrap, d_all_possible_bonds_wrap + l0,comp);
-    unsigned int l1 = thrust::distance(d_all_possible_bonds_wrap, last1);
-
-    *d_max_non_zero_bonds=l1;
+    *d_max_non_zero_bonds=l0;
 
     return cudaSuccess;
     }
+
+    cudaError_t sort_and_remove_zeros_possible_bond_array_2(Scalar3 *d_all_possible_bonds,
+                                                 const unsigned int size,
+                                                int *d_max_non_zero_bonds)
+        {
+        if (size == 0) return cudaSuccess;
+        // wrapper for pointer needed for thrust
+        thrust::device_ptr<Scalar3> d_all_possible_bonds_wrap(d_all_possible_bonds);
+
+        // sort remainder by distance, should make all identical bonds consequtive
+        SortBondsGPU sort;
+        thrust::sort(thrust::device,d_all_possible_bonds_wrap,d_all_possible_bonds_wrap+size, sort);
+
+        *d_max_non_zero_bonds=size;
+
+        return cudaSuccess;
+        }
+
+
+cudaError_t sort_and_remove_zeros_possible_bond_array_3(Scalar3 *d_all_possible_bonds,
+                                                 const unsigned int size,
+                                                int *d_max_non_zero_bonds)
+      {
+      if (size == 0) return cudaSuccess;
+      // wrapper for pointer needed for thrust
+      thrust::device_ptr<Scalar3> d_all_possible_bonds_wrap(d_all_possible_bonds);
+
+
+      CompareBondsGPU comp;
+      // thrust::unique only removes identical consequtive elements, so sort above is needed.
+      thrust::device_ptr<Scalar3> last1 = thrust::unique(d_all_possible_bonds_wrap, d_all_possible_bonds_wrap + size,comp);
+      unsigned int l1 = thrust::distance(d_all_possible_bonds_wrap, last1);
+
+      *d_max_non_zero_bonds=l1;
+
+      return cudaSuccess;
+      }
 
 cudaError_t remove_zeros_possible_bond_array(Scalar3 *d_all_possible_bonds,
                                              const unsigned int size,

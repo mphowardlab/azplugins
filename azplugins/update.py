@@ -136,7 +136,7 @@ class types(hoomd.update._updater):
 
 
 class dynamic_bond(hoomd.update._updater):
-    def __init__(self,nlist,r_cut,bond_type,group_1, group_2, max_bonds_1,max_bonds_2,period=1, phase=0):
+    def __init__(self,nlist,r_cut,bond_type,group_1, group_2, max_bonds_1,max_bonds_2,nlist_exclusions=True,period=1, phase=0):
 
         hoomd.util.print_status_line()
         hoomd.update._updater.__init__(self)
@@ -149,10 +149,10 @@ class dynamic_bond(hoomd.update._updater):
         # look up the bond id based on the given name - this will throw an error if the bond types do not exist
         bond_type_id = hoomd.context.current.system_definition.getBondData().getTypeByName(bond_type)
 
-        # todo: check that r_cut is not too large for pbc box
         self.r_cut = r_cut
         self.r_buff = 0.4
         self.nlist = nlist
+        self.nlist_exclusions = nlist_exclusions
         # it doesn't really make sense to allow partially overlapping groups?
         # Maybe it should be excluded. At least overlapping groups with different max bonds make no sense.
         # We need to check that the groups have no overlap if the max_bonds_1 and max_bonds_2 are different:
@@ -173,6 +173,7 @@ class dynamic_bond(hoomd.update._updater):
 
         self.cpp_updater = cpp_class(hoomd.context.current.system_definition,
                                      self.nlist.cpp_nlist,
+                                     self.nlist_exclusions,
                                      group_1.cpp_group,
                                      group_2.cpp_group,
                                      self.r_cut,
@@ -184,9 +185,6 @@ class dynamic_bond(hoomd.update._updater):
         self.setupUpdater(period, phase)
 
 
-
-
-
-    def set_params(self, nlist=None, bond_type=None, max_bonds_1=None, max_bonds_2=None,group_1=None, group_2=None):
+    def set_params(self, nlist=None, bond_type=None, max_bonds_1=None, max_bonds_2=None,nlist_exclusions=None,group_1=None, group_2=None):
         # todo - class right now doesn't have any set/get functions
         hoomd.util.print_status_line()

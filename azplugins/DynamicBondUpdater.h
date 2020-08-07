@@ -31,6 +31,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         //! Constructor with parameters
         DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                            std::shared_ptr<NeighborList> nlist,
+                           bool m_nlist_exclusions_set,
                            std::shared_ptr<ParticleGroup> group_1,
                            std::shared_ptr<ParticleGroup> group_2,
                            const Scalar r_cut,
@@ -48,6 +49,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
     protected:
         std::shared_ptr<NeighborList> m_nlist;    //!< The neighborlist to use for bond finding
+        bool m_nlist_exclusions_set;              //!< whether or not the bonds are set as exclusions in nlist
         std::shared_ptr<BondData> m_bond_data;    //!< Bond data
 
         std::shared_ptr<ParticleGroup> m_group_1;   //!< First particle group to form bonds with
@@ -65,7 +67,13 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         GPUArray<Scalar3> m_all_possible_bonds;   //!< list of possible bonds, size:  size(group_1)*m_max_bonds
         unsigned int m_num_all_possible_bonds;    //!< number of valid possible bonds at the beginning of m_all_possible_bonds
 
-        hpmc::detail::AABBTree        m_aabb_tree;  //!< AABB tree for group_2
+        GlobalArray<unsigned int> m_n_list;      //!< Neighbor list data
+        GlobalArray<unsigned int> m_n_neigh;    //!< Number of neighbors for each particle
+        GlobalArray<Scalar4> m_last_pos;        //!< coordinates of last updated particle positions
+        Scalar3 m_last_L;                    //!< Box lengths at last update
+        Scalar3 m_last_L_local;              //!< Local Box lengths at last update
+
+        hpmc::detail::AABBTree        m_aabb_tree;  //!< AABB tree for group_1
         GPUVector<hpmc::detail::AABB> m_aabbs;      //!< Flat array of AABBs of all types
         std::vector< vec3<Scalar> > m_image_list;   //!< List of translation vectors for tree traversal
         unsigned int m_n_images;                    //!< The number of image vectors to check
@@ -74,6 +82,8 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         GPUArray<unsigned int> m_n_existing_bonds;     //!< Number of existing bonds for a given particle tag
         unsigned int m_max_existing_bonds_list;        //!< maximum number of  bonds in list of existing bonded particles
         Index2D m_existing_bonds_list_indexer;         //!< Indexer for accessing the by-tag bonded particle list
+
+
         virtual void filterPossibleBonds();
 
         bool CheckisExistingLegalBond(Scalar3 i); //this acesses info in m_existing_bonds_list_tag. todo: rename to something sensible
@@ -83,6 +93,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         virtual void traverseTree();
 
         void makeBonds();
+        void checkBoxSize();
         void AddtoExistingBonds(unsigned int tag1,unsigned int tag2);
         bool isExistingBond(unsigned int tag1,unsigned int tag2); //this acesses info in m_existing_bonds_list_tag
         virtual void updateImageVectors();
@@ -90,7 +101,9 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         virtual void resizePossibleBondlists();
         void resizeExistingBondList();
         virtual void allocateParticleArrays();
-
+        bool needsUpdating();
+        void setLastUpdatedPos();
+        
         //! Notification of a box size change
         void slotBoxChanged()
             {
@@ -103,8 +116,22 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
             m_max_N_changed = true;
             }
 
-        bool m_box_changed;          //!< Flag if box dimensions changed
-        bool m_max_N_changed;        //!< Flag if total number of particles changed
+        //! Notification of total particle number change
+        void slotParticlesSort()
+            {
+            m_particle_sort_changed = true;
+            }
+
+        //! Forces a full update of the tree build and travertsal on the next call to compute()
+        void forceUpdate()
+            {
+            m_force_update = true;
+            }
+
+        bool m_box_changed;           //!< Flag if box dimensions changed
+        bool m_max_N_changed;         //!< Flag if total number of particles changed
+        bool m_particle_sort_changed; //!< Flag if particle indexes got resorted
+        bool m_force_update;          //!< Flag if the tree needs to be rebuild and traversed
 
     };
 
