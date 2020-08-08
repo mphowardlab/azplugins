@@ -88,6 +88,7 @@ set(_${COMPONENT_NAME}_cu_sources
     SpecialPairPotentials.cu
     TwoStepBrownianFlowGPU.cu
     TwoStepLangevinFlowGPU.cu
+    TwoStepSLLODCouette.cc
     TypeUpdaterGPU.cu
     WallPotentials.cu
     WallRestraintComputeGPU.cu
