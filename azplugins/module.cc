@@ -65,6 +65,7 @@ namespace py = pybind11;
 #include "FlowFields.h"
 #include "TwoStepBrownianFlow.h"
 #include "TwoStepLangevinFlow.h"
+#include "TwoStepSLLODCouette.h"
 #ifdef ENABLE_CUDA
 #include "BounceBackNVEGPU.h"
 #include "TwoStepBrownianFlowGPU.h"
@@ -251,6 +252,7 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_TwoStepLangevinFlow<azplugins::ConstantFlow>(m, "LangevinConstantFlow");
     azplugins::detail::export_TwoStepLangevinFlow<azplugins::ParabolicFlow>(m, "LangevinParabolicFlow");
     azplugins::detail::export_TwoStepLangevinFlow<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluid");
+    azplugins::detail::export_TwoStepSLLODCouette(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_TwoStepBrownianFlowGPU<azplugins::ConstantFlow>(m, "BrownianConstantFlowGPU");
     azplugins::detail::export_TwoStepBrownianFlowGPU<azplugins::ParabolicFlow>(m, "BrownianParabolicFlowGPU");

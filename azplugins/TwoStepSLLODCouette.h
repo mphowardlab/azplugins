@@ -112,11 +112,6 @@ void TwoStepSLLODCouette::integrateStepOne(unsigned int timestep)
 
 void TwoStepSLLODCouette::integrateStepTwo(unsigned int timestep)
     {
-    if (m_aniso)
-        {
-        m_exec_conf->msg->error() << "azplugins.integrate: anisotropic particles are not supported with couette flow integrators." << std::endl;
-        throw std::runtime_error("Anisotropic integration not supported with couette flow");
-        }
     if (m_prof) m_prof->push("SLLOD-Couette step 2");
 
     unsigned int group_size = m_group->getNumMembers();
