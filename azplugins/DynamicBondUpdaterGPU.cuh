@@ -70,10 +70,10 @@ cudaError_t make_sorted_index_array(unsigned int *d_sorted_indexes,
 
 cudaError_t nlist_copy_nlist_possible_bonds(Scalar3 *d_all_possible_bonds,
                           const Scalar4 *d_postype,
-                          const unsigned int * d_tag,
-                          const unsigned int * d_sorted_indexes,
-                          const unsigned int * d_n_neigh,
-                          const unsigned int * d_nlist,
+                          const unsigned int *d_tag,
+                          const unsigned int *d_sorted_indexes,
+                          const unsigned int *d_n_neigh,
+                          const unsigned int *d_nlist,
                           const BoxDim box,
                           const unsigned int max_bonds,
                           const  Scalar r_cut,
@@ -192,7 +192,7 @@ struct ParticleQueryOp
         const Scalar4 position = positions[pidx];
         const Scalar3 r = make_scalar3(position.x, position.y, position.z);
 
-        return ThreadData(r, pidx);
+        return ThreadData(r, idx);
         }
 
     //! Return the traversal volume subject to a translation

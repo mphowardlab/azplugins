@@ -58,6 +58,7 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
           virtual void buildTree();
           //! Traverse the LBVHs using the neighbor library
           virtual void traverseTree();
+
     private:
 
 
@@ -66,10 +67,14 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
         std::unique_ptr<Autotuner> m_copy_tuner;    //!< Tuner for the primitive-copy kernel
         std::unique_ptr<Autotuner> m_copy_nlist_tuner;    //!< Tuner for the primitive-copy kernel
         std::unique_ptr<Autotuner> m_tuner_filter_bonds; //!< Tuner for existing bond filter
+        std::unique_ptr<Autotuner> m_copy_last_pos_tuner;
+        std::unique_ptr<Autotuner> m_tuner_dist_check_last_pos;
 
 
         GPUFlags<int> m_num_nonzero_bonds;//!< GPU flags for the number of marked particles
+        GPUFlags<unsigned int> m_needs_updating;
         GPUFlags<unsigned int> m_max_bonds_overflow_flag;//!< GPU flags for the number of marked particles
+
         GPUArray<unsigned int> m_sorted_indexes;    //!< Sorted particle indexes [idx group_1 ...] [idx group_2 ...]
 
         GPUFlags<unsigned int> m_lbvh_errors;       //!< Error flags during particle marking (e.g., off rank)
@@ -77,7 +82,6 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
         neighbor::LBVHTraverser  m_traverser;   //!< LBVH traverer
         GlobalVector<Scalar3> m_image_list; //!< List of translation vectors for traversal
         unsigned int m_n_images;            //!< Number of translation vectors for traversal
-
 
 
         //! Compute the LBVH domain from the current box

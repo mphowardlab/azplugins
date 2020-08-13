@@ -69,9 +69,6 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
         GlobalArray<unsigned int> m_n_list;      //!< Neighbor list data
         GlobalArray<unsigned int> m_n_neigh;    //!< Number of neighbors for each particle
-        GlobalArray<Scalar4> m_last_pos;        //!< coordinates of last updated particle positions
-        Scalar3 m_last_L;                    //!< Box lengths at last update
-        Scalar3 m_last_L_local;              //!< Local Box lengths at last update
 
         hpmc::detail::AABBTree        m_aabb_tree;  //!< AABB tree for group_1
         GPUVector<hpmc::detail::AABB> m_aabbs;      //!< Flat array of AABBs of all types
@@ -101,9 +98,8 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         virtual void resizePossibleBondlists();
         void resizeExistingBondList();
         virtual void allocateParticleArrays();
-        bool needsUpdating();
-        void setLastUpdatedPos();
-        
+
+
         //! Notification of a box size change
         void slotBoxChanged()
             {

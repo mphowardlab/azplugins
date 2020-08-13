@@ -30,12 +30,6 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
     {
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdater" << std::endl;
 
-    if (m_r_cut < 0.0 || m_r_buff < 0.0)
-        {
-        m_exec_conf->msg->error() << "DynamicBondUpdater: Requested cutoff distance or buffer radius is less than zero" << std::endl;
-        throw std::runtime_error("Error initializing DynamicBondUpdater");
-        }
-
     m_pdata->getBoxChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotBoxChanged>(this);
     m_pdata->getGlobalParticleNumberChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotNumParticlesChanged>(this);
     m_pdata->getParticleSortSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotParticlesSort>(this);
@@ -70,7 +64,6 @@ DynamicBondUpdater::~DynamicBondUpdater()
 
     }
 
-
 /*!
  * \param timestep Timestep update is called
  */
@@ -101,9 +94,6 @@ void DynamicBondUpdater::update(unsigned int timestep)
 
     // rebuild the list of possible bonds until there is no overflow
     bool overflowed = false;
-
-    if (needsUpdating())
-    {
     buildTree();
     do
         {
@@ -115,8 +105,6 @@ void DynamicBondUpdater::update(unsigned int timestep)
             resizePossibleBondlists();
             }
         } while (overflowed);
-    setLastUpdatedPos();
-    }
 
     filterPossibleBonds();
     // this function is not easily implemented on the GPU, uses addBondedGroup()
@@ -304,7 +292,7 @@ void DynamicBondUpdater::resizePossibleBondlists()
       m_all_possible_bonds.resize(size);
       m_num_all_possible_bonds=0;
 
-      GlobalArray<unsigned int> nlist(m_max_bonds*m_pdata->getMaxN(), m_exec_conf);
+      GlobalArray<unsigned int> nlist(size, m_exec_conf);
       m_n_list.swap(nlist);
 
       m_exec_conf->msg->notice(6) << "DynamicBondUpdater: (Re-)size possible bond list, new size " << m_max_bonds << " bonds per particle " << std::endl;
@@ -329,18 +317,14 @@ void DynamicBondUpdater::allocateParticleArrays()
     memset(h_n_existing_bonds.data, 0, sizeof(unsigned int)*m_n_existing_bonds.getNumElements());
     memset(h_existing_bonds_list.data, 0, sizeof(unsigned int)*m_existing_bonds_list.getNumElements());
 
-    // allocate m_last_pos
-    GlobalArray<Scalar4> last_pos(m_pdata->getMaxN(), m_exec_conf);
-    m_last_pos.swap(last_pos);
-
     // allocate the number of neighbors (per particle)
-    GlobalArray<unsigned int> n_neigh(m_pdata->getMaxN(), m_exec_conf);
+    GlobalArray<unsigned int> n_neigh(m_group_1->getNumMembers(), m_exec_conf);
     m_n_neigh.swap(n_neigh);
     ArrayHandle<unsigned int> h_n_neigh(m_n_neigh, access_location::host, access_mode::overwrite);
-    memset(h_n_neigh.data, 0, sizeof(unsigned int)*m_n_neigh.getNumElements());
+    memset(h_n_neigh.data, 0, sizeof(unsigned int)*m_group_1->getNumMembers());
 
     // default allocation of m_max_bonds neighbors per particle for the neighborlist
-    GlobalArray<unsigned int> nlist(m_max_bonds*m_pdata->getMaxN(), m_exec_conf);
+    GlobalArray<unsigned int> nlist(m_group_1->getNumMembers()*m_max_bonds, m_exec_conf);
     m_n_list.swap(nlist);
 
    calculateExistingBonds();
@@ -348,121 +332,6 @@ void DynamicBondUpdater::allocateParticleArrays()
 
   }
 
-bool DynamicBondUpdater::needsUpdating()
-{
-
-  if (m_force_update == true)
-  {
-    m_force_update = false;
-    return true;
-  }
-
-  if (m_r_buff < 1e-6) return true;
-
- //distance checking between last positions (at time of last update) and current positions
- // todo: only check distances between particles in group_1 and 2, not all of them 
- {
-   ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
-
-   // sanity check
-   assert(h_pos.data);
-
-   // profile
-   if (m_prof) m_prof->push("distcheck");
-
-   // temporary storage for the result
-   bool result = false;
-
-   // get a local copy of the simulation box too
-   const BoxDim& box = m_pdata->getBox();
-
-   // get current nearest plane distances
-   Scalar3 L_g = m_pdata->getGlobalBox().getNearestPlaneDistance();
-
-   // Find direction of maximum box length contraction (smallest eigenvalue of deformation tensor)
-   Scalar3 lambda = L_g / m_last_L;
-   Scalar lambda_min = (lambda.x < lambda.y) ? lambda.x : lambda.y;
-   lambda_min = (lambda_min < lambda.z) ? lambda_min : lambda.z;
-
-   ArrayHandle<Scalar4> h_last_pos(m_last_pos, access_location::host, access_mode::read);
-   //ArrayHandle<Scalar> h_rcut_max(m_rcut_max, access_location::host, access_mode::read);
-
-   for (unsigned int i = 0; i < m_pdata->getN(); i++)
-       {
-
-       // minimum distance within which all particles should be included
-       Scalar old_rmin = m_r_cut;
-
-       // maximum value we have checked for neighbors, defined by the buffer layer
-       Scalar rmax = old_rmin + m_r_buff;
-
-       // max displacement for each particle (after subtraction of homogeneous dilations)
-       const Scalar delta_max = (rmax*lambda_min - old_rmin)/Scalar(2.0);
-       Scalar maxsq = (delta_max > 0) ? delta_max*delta_max : 0;
-
-       Scalar3 dx = make_scalar3(h_pos.data[i].x - lambda.x*h_last_pos.data[i].x,
-                                 h_pos.data[i].y - lambda.y*h_last_pos.data[i].y,
-                                 h_pos.data[i].z - lambda.z*h_last_pos.data[i].z);
-
-       dx = box.minImage(dx);
-
-       if (dot(dx, dx) >= maxsq)
-           {
-           result = true;
-           break;
-           }
-       }
-
-   #ifdef ENABLE_MPI
-   if (m_pdata->getDomainDecomposition())
-       {
-       if (m_prof) m_prof->push("MPI allreduce");
-       // check if migrate criterion is fulfilled on any rank
-       int local_result = result ? 1 : 0;
-       int global_result = 0;
-       MPI_Allreduce(&local_result,
-           &global_result,
-           1,
-           MPI_INT,
-           MPI_MAX,
-           m_exec_conf->getMPICommunicator());
-       result = (global_result > 0);
-       if (m_prof) m_prof->pop();
-       }
-   #endif
-
-   if (m_prof) m_prof->pop();
-
-   return result;
- }
-
-}
-
-/*! Copies the current positions of all particles over to m_last_x etc...
-*/
-void DynamicBondUpdater::setLastUpdatedPos()
-    {
-    ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
-
-    // sanity check
-    assert(h_pos.data);
-
-    // profile
-    if (m_prof) m_prof->push("updatePos");
-
-    // update the last position arrays
-    ArrayHandle<Scalar4> h_last_pos(m_last_pos, access_location::host, access_mode::overwrite);
-    for (unsigned int i = 0; i < m_pdata->getN(); i++)
-        {
-        h_last_pos.data[i] = make_scalar4(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z, Scalar(0.0));
-        }
-
-    // update last box nearest plane distance
-    m_last_L = m_pdata->getGlobalBox().getNearestPlaneDistance();
-    m_last_L_local = m_pdata->getBox().getNearestPlaneDistance();
-
-    if (m_prof) m_prof->pop();
-    }
 
 
 // this is based on the NeighborListTree c++ implementation
@@ -499,13 +368,10 @@ void DynamicBondUpdater::buildTree()
        ArrayHandle<unsigned int> h_n_neigh(m_n_neigh, access_location::host, access_mode::overwrite);
 
        // clear the neighbor counts
-       memset(h_n_neigh.data, 0, sizeof(unsigned int)*m_pdata->getMaxN());
-       memset(h_nlist.data,0, sizeof(unsigned int)*m_max_bonds*m_pdata->getMaxN());
+       unsigned int group_size_1 = m_group_1->getNumMembers();
+       memset(h_nlist.data,0, sizeof(unsigned int)*m_max_bonds*group_size_1);
 
       // reset content of possible bond list
-      ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::overwrite);
-      const unsigned int size = m_group_1->getNumMembers()*m_max_bonds;
-      memset((void*)h_all_possible_bonds.data, 0, sizeof(Scalar3)*size);
       const Scalar r_cutsq = (m_r_cut+m_r_buff)*(m_r_cut+m_r_buff);
 
       ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
@@ -513,7 +379,7 @@ void DynamicBondUpdater::buildTree()
 
       // traverse the tree
       // Loop over all particles in group 1
-      unsigned int group_size_1 = m_group_1->getNumMembers();
+
       for (unsigned int group_idx = 0; group_idx < group_size_1; group_idx++)
           {
           unsigned int i = m_group_1->getMemberIndex(group_idx);
@@ -555,7 +421,7 @@ void DynamicBondUpdater::buildTree()
                                       if (n_curr_bond < m_max_bonds)
                                          {
 
-                                         h_nlist.data[i*m_max_bonds + n_curr_bond] = j;
+                                         h_nlist.data[group_idx*m_max_bonds + n_curr_bond] = j;
 
                                          // sort the two tags in this possible bond pair
                                         // const unsigned int tag_a = tag_j>tag_i ? tag_i : tag_j;
@@ -583,7 +449,7 @@ void DynamicBondUpdater::buildTree()
                       }
                   } // end stackless search
               } // end loop over images
-              h_n_neigh.data[i] = n_curr_bond;
+              h_n_neigh.data[group_idx] = n_curr_bond;
           } // end loop over group 2
    if (m_prof) m_prof->pop();
 
@@ -626,13 +492,13 @@ void DynamicBondUpdater::filterPossibleBonds()
       unsigned int n_curr_bond = 0;
       const Scalar r_cutsq = m_r_cut*m_r_cut;
 
-      const unsigned int n_neigh = h_n_neigh.data[i];
+      const unsigned int n_neigh = h_n_neigh.data[group_idx];
 
       // loop over all neighbors of this particle
       for (unsigned int l=0; l<n_neigh; ++l)
         {
             // get index of neighbor from neigh_list
-            const unsigned int j = h_nlist.data[i*m_max_bonds + l];
+            const unsigned int j = h_nlist.data[group_idx*m_max_bonds + l];
             Scalar4 postype_j = h_postype.data[j];
             const unsigned int tag_j = h_tag.data[j];
 
@@ -768,6 +634,11 @@ void DynamicBondUpdater::updateImageVectors()
 
 void DynamicBondUpdater::checkSystemSetup()
 {
+  if (m_r_cut < 0.0 || m_r_buff < 0.0)
+      {
+      m_exec_conf->msg->error() << "DynamicBondUpdater: Requested cutoff distance or buffer radius is less than zero" << std::endl;
+      throw std::runtime_error("Error initializing DynamicBondUpdater");
+      }
 
 if (m_bond_type >= m_bond_data -> getNTypes())
   {

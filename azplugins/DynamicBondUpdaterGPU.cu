@@ -153,7 +153,7 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
   }
 
 
-  __global__ void make_sorted_index_array(  unsigned int *d_sorted_indexes,
+  __global__ void make_sorted_index_array(unsigned int *d_sorted_indexes,
                                           unsigned int *d_indexes_group_1,
                                           unsigned int *d_indexes_group_2,
                                           const unsigned int size_group_1,
@@ -197,13 +197,13 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
         // get all information for this particle
         Scalar4 postype_i = d_postype[pidx_i];
         const unsigned int tag_i = d_tag[pidx_i];
-        const unsigned int n_neigh = d_n_neigh[pidx_i];
+        const unsigned int n_neigh = d_n_neigh[idx];
 
         // loop over all neighbors of this particle
         for (unsigned int j=0; j<n_neigh;++j)
           {
               // get index of neighbor from neigh_list
-              const unsigned int pidx_j = d_nlist[pidx_i*max_bonds + j];
+              const unsigned int pidx_j = d_nlist[idx*max_bonds + j];
               Scalar4 postype_j = d_postype[pidx_j];
               const unsigned int tag_j = d_tag[pidx_j];
 
@@ -232,7 +232,6 @@ __global__ void filter_existing_bonds(Scalar3 *d_all_possible_bonds,
           }
 
       }
-
 
 } //end namespace kernel
 
@@ -414,6 +413,8 @@ cudaError_t nlist_copy_nlist_possible_bonds(Scalar3 *d_all_possible_bonds,
                                                                          size);
     return cudaSuccess;
     }
+
+
 
 } // end namespace gpu
 } // end namespace azplugins
