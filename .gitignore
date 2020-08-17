@@ -2,4 +2,5 @@ build*
 *.pyc
 __pycache__
 .DS_Store
-*ipynb_checkpoints*
+doc/build
+doc/source/reference/api

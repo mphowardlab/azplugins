@@ -3,9 +3,9 @@
 
 # Maintainer: wes_reinhart
 
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -16,12 +16,12 @@ import unittest
 class aniso_pair_two_patch_morse_tests(unittest.TestCase):
     def setUp(self):
         # raw snapshot is fine, just needs to have the types
-        snap = data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=100, box=hoomd.data.boxdim(L=20), particle_types=['A'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.moment_inertia[:] = (0.1,0.1,0.1)
-        self.s = init.read_snapshot(snap)
+        self.s = hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
-        context.current.sorter.set_params(grid=8)
+        hoomd.context.current.sorter.set_params(grid=8)
 
     # basic test of creation
     def test(self):
@@ -101,21 +101,21 @@ class aniso_pair_two_patch_morse_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s, self.nl
-        context.initialize()
+        hoomd.context.initialize()
 
 # test the validity of the pair potential
 class potential_two_patch_morse_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2, box=data.boxdim(L=20),particle_types=['A'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=2, box=hoomd.data.boxdim(L=20),particle_types=['A'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.moment_inertia[:] = (0.1,0.1,0.1)
             snap.particles.position[0] = (-0.5,-0.10,-0.15)
             snap.particles.orientation[0] = (1,0,0,0)
             snap.particles.position[1] = (0.5,0.10,0.15)
             snap.particles.orientation[1] = (1,0,0,0)
-        self.s = init.read_snapshot(snap)
+        self.s = hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
-        context.current.sorter.set_params(grid=8)
+        hoomd.context.current.sorter.set_params(grid=8)
 
     # test the calculation of force and potential
     def test_potential(self):
@@ -126,8 +126,8 @@ class potential_two_patch_morse_tests(unittest.TestCase):
         self.tpm.set_params(mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         U = -0.20567
         F = (11.75766, 2.46991, 3.70487)
         T = (-0.000000, -0.08879,  0.05919)
@@ -160,7 +160,7 @@ class potential_two_patch_morse_tests(unittest.TestCase):
         # test that energy shifting works
         self.tpm.pair_coeff.set('A', 'A', r_cut = 1.10)
         self.tpm.set_params(mode='shift')
-        run(1)
+        hoomd.run(1)
         U = -0.14195
         e0 = self.tpm.forces[0].energy
         e1 = self.tpm.forces[1].energy
@@ -176,8 +176,8 @@ class potential_two_patch_morse_tests(unittest.TestCase):
         self.tpm.pair_coeff.set('A', 'A', Md=1.8341, Mr=0.0302, req=1.0043, omega=5.0, alpha=0.40)
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         self.assertAlmostEqual(self.tpm.forces[0].energy, 0)
         self.assertAlmostEqual(self.tpm.forces[1].energy, 0)
         self.assertAlmostEqual(self.tpm.forces[0].force[0], 0)
@@ -185,7 +185,7 @@ class potential_two_patch_morse_tests(unittest.TestCase):
 
         # inside cutoff but Md = 0
         self.tpm.pair_coeff.set('A','A', Md=0.0, r_cut=1.6)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(self.tpm.forces[0].energy, 0)
         self.assertAlmostEqual(self.tpm.forces[1].energy, 0)
         self.assertAlmostEqual(self.tpm.forces[0].force[0], 0)
@@ -194,7 +194,7 @@ class potential_two_patch_morse_tests(unittest.TestCase):
     # test the cases where the force should be zero
     def test_inside_minimum(self):
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.particles.moment_inertia[:] = (0.1,0.1,0.1)
             snap.particles.position[0] = (-0.25,0,0)
             snap.particles.orientation[0] = (1,0,0,0)
@@ -207,8 +207,8 @@ class potential_two_patch_morse_tests(unittest.TestCase):
         self.tpm.pair_coeff.set('A', 'A', Md=1.8341, Mr=0.0302, req=1.0043, omega=100.0, alpha=0.40,repulsion=False)
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         self.assertAlmostEqual(self.tpm.forces[0].energy, 0.5 * -1.8341)
         self.assertAlmostEqual(self.tpm.forces[1].energy, 0.5 * -1.8341)
         self.assertAlmostEqual(self.tpm.forces[0].force[0], 0)
@@ -218,7 +218,7 @@ class potential_two_patch_morse_tests(unittest.TestCase):
         self.tpm = azplugins.pair.two_patch_morse(r_cut=1.6, nlist = self.nl)
         self.tpm.pair_coeff.set('A', 'A', Md=1.8341, Mr=0.0302, req=1.0043, omega=100.0, alpha=0.40,repulsion=True)
 
-        run(1)
+        hoomd.run(1)
         self.assertTrue(self.tpm.forces[0].energy > 2.92e14)
         self.assertTrue(self.tpm.forces[1].energy > 2.92e14)
         self.assertTrue(self.tpm.forces[0].force[0] < -3.87e16)
@@ -226,7 +226,7 @@ class potential_two_patch_morse_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s, self.nl, self.tpm
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

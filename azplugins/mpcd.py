@@ -8,13 +8,13 @@ import hoomd
 from . import _azplugins
 
 class reverse_perturbation(hoomd.update._updater):
-    R""" Updater class for a shear flow according to the algorithm
-    published by Mueller-Plathe.:
+    R"""Reverse nonequilibrium shear flow in MPCD simulations.
 
-    "Florian Mueller-Plathe. Reversing the perturbation innonequilibrium
+    Implements an algorithm to generate shear flow, originally published by Mueller-Plathe:
+
+    Florian Mueller-Plathe. "Reversing the perturbation in nonequilibrium
     molecular dynamics:  An easy way to calculate the shear viscosity of
-    fluids. Phys. Rev. E, 59:4894-4898, May 1999."
-    <http://link.aps.org/pdf/10.1103/PhysRevE.59.4894>_
+    fluids." `Phys. Rev. E, 59:4894-4898, May 1999 <https://doi.org/10.1103/PhysRevE.59.4894>`_.
 
     The method swaps up to `Nswap` particle velocities every `period`
     timesteps to introduce a momentum flow.  While the swapping is
@@ -39,7 +39,7 @@ class reverse_perturbation(hoomd.update._updater):
     to change the slab distance  parameter `H` from its default value.
 
     The velocity profile needs to be measured and can be influenced by
-    picking the right values for `Nswap`,`target_momentum` and `period`.
+    picking the right values for `Nswap`, `target_momentum` and `period`.
     Too large flows will result in non-linear velocity profiles.
 
     The updater registers a variable to the logger called `rp_momentum`
