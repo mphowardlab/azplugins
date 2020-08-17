@@ -3,6 +3,7 @@
 
 set(TEST_LIST_CPU
     test_analyze_rdf
+    test_bond_double_well
     test_bond_fene
     test_bond_fene24
     test_dpd_general
@@ -22,9 +23,11 @@ set(TEST_LIST_CPU
     test_pair_slj
     test_pair_spline
     test_pair_two_patch_morse
+    test_restrain_cylinder
     test_restrain_orientation
     test_restrain_plane
     test_restrain_position
+    test_restrain_sphere
     test_flow_reverse_perturbation
     test_special_pair_lj96
     test_update_type
@@ -35,6 +38,7 @@ set(TEST_LIST_CPU
 
 set(TEST_LIST_GPU
     test_analyze_rdf
+    test_bond_double_well
     test_bond_fene
     test_bond_fene24
     test_dpd_general
@@ -52,9 +56,11 @@ set(TEST_LIST_GPU
     test_pair_slj
     test_pair_spline
     test_pair_two_patch_morse
+    test_restrain_cylinder
     test_restrain_orientation
     test_restrain_plane
     test_restrain_position
+    test_restrain_sphere
     test_flow_reverse_perturbation
     test_special_pair_lj96
     test_update_type
