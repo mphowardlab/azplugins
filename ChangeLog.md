@@ -2,6 +2,18 @@
 
 ---------
 
+## v0.9.2
+
+3 March 2020
+
+*Bug fixes*
+
+* Fix a compilation error on MacOS clang builds.
+
+*Other changes*
+
+* Update copyright to 2020.
+
 ## v0.9.1
 
 18 December 2019
