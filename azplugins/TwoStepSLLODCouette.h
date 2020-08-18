@@ -31,8 +31,8 @@ class PYBIND11_EXPORT TwoStepSLLODCouette : public IntegrationMethodTwoStep
         //! Constructor
         TwoStepSLLODCouette(std::shared_ptr<SystemDefinition> sysdef,
                             std::shared_ptr<ParticleGroup> group,
-                            Scalar gamma_dot)
-        : IntegrationMethodTwoStep(sysdef, group, gamma_dot)
+                            Scalar n_gamma_dot)
+        : IntegrationMethodTwoStep(sysdef, group), gamma_dot(n_gamma_dot)
             {
             m_exec_conf->msg->notice(5) << "Constructing TwoStepSLLODCouette" << std::endl;
             if (m_sysdef->getNDimensions() < 2)
@@ -54,6 +54,8 @@ class PYBIND11_EXPORT TwoStepSLLODCouette : public IntegrationMethodTwoStep
         //! Performs the second step of the integration
         virtual void integrateStepTwo(unsigned int timestep);
 
+    protected:
+        Scalar gamma_dot;
     };
 
 void TwoStepSLLODCouette::integrateStepOne(unsigned int timestep)
@@ -144,15 +146,13 @@ void TwoStepSLLODCouette::integrateStepTwo(unsigned int timestep)
 namespace detail
 {
 //! Export TwoStepSLLODCouette to python
-void export_TwoStepSLLODCouette(pybind11::module& m, const std::string& name)
+void export_TwoStepSLLODCouette(pybind11::module& m)
     {
     namespace py = pybind11;
-    typedef TwoStepSLLODCouette SLLODCouette;
-
-    py::class_<SLLODCouette, std::shared_ptr<SLLODCouette> >(m, name.c_str(), py::base<IntegrationMethodTwoStep>())
+    py::class_<TwoStepSLLODCouette, std::shared_ptr<TwoStepSLLODCouette> >(m, "TwoStepSLLODCouette", py::base<IntegrationMethodTwoStep>())
         .def(py::init<std::shared_ptr<SystemDefinition>,
                       std::shared_ptr<ParticleGroup>,
-                      Scalar>())
+                      Scalar>());
     }
 } // end namespace detail
 } // end namespace azplugins
