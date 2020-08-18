@@ -532,6 +532,66 @@ class langevin(hoomd.md.integrate._integration_method):
             if a == type_list[i]:
                 self.cpp_method.setGamma(i,gamma)
 
+class sllod(hoomd.md.integrate._integration_method):
+    R""" SLLOD equations of motion for homogenous linear shear flow.
+
+    Args:
+        group (:py:mod:`hoomd.group`): Group of particles to apply this method to.
+        kT (:py:mod:`hoomd.variant` or :py:obj:`float`): Temperature of the simulation (in energy units).
+        gamma_dot (:py:obj:'float'): shear rate of the simulation (in 1/time units).
+
+    :py:class:`sllod` integrates particles forward in time according to the SLLOD equations of motion:
+
+    .. math::
+
+        m \frac{d\vec{r}}{dt} = m \vec{v} + m \vec{r} \cdot \nabla{\vec{u}}
+
+        m \frac{d\vec{v}}{dt} = \vec{F}_\mathrm{C} - m \vec{v} \cdot \nabla{\vec{u}}
+
+    where :math:`\vec{F}_\mathrm{C}` is the force on the particle from all potentials and constraint forces,
+    :math:`\vec{u}` is the velocity gradient tensor, and :math:`\vec{v}` is the particle's velocity.
+
+    :py:class:`sllod` uses the same integrator as :py:class:`nve` with the additional velocity gradient term
+    :math:`m \vec{r} \cdot \nabla{\vec{u}}` where \nabla{\vec{u}} has a constant :math:`\gamma_dot` component
+    that represents homogenous linear shear :math:'\frac{du_x}{dy}'
+
+    :py:class:`sllod` must be used with :py:class:`mode_standard`.
+
+    *T* can be a variant type, allowing for temperature ramps in simulation runs.
+
+    A :py:class:`hoomd.compute.thermo` is automatically created and associated with *group*.
+
+    Examples::
+
+        group_all = hoomd.group.all()
+        azplugins.flow.langevin(group=group_all, kT=1.0, gamma_dot=1.0)
+        azplugins.flow.langevin(group=group_all, kT=hoomd.variant.linear_interp([(0, 4.0), (1e6, 1.0)]), gamma_dot=2.0)
+
+    """
+    def __init__(self, group, kT, gamma_dot):
+        hoomd.util.print_status_line()
+
+        # initialize base class
+        super(sllod, self).__init__()
+
+        # setup the variant inputs
+        kT = hoomd.variant._setup_variant_input(kT)
+
+        # create the compute thermo
+        hoomd.compute._get_unique_thermo(group=group)
+
+        cpp_class = _azplugins.TwoStepSLLODCouette
+        self.cpp_method = cpp_class(hoomd.context.current.system_definition,
+                                    group.cpp_group,
+                                    float(gamma_dot))
+        self.cpp_method.validateGroup()
+
+        # store metadata
+        self.group = group
+        self.kT = kT
+        self.gamma_dot = gamma_dot
+        self.metadata_fields = ['group', 'kT', 'gamma_dot']
+
 class reverse_perturbation(hoomd.update._updater):
     R"""Reverse nonequilibrium shear flow in MD simulations.
 
