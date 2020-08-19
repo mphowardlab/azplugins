@@ -20,13 +20,11 @@ class flow_sllod_tests (unittest.TestCase):
     def setUp(self):
         snap = hoomd.data.make_snapshot(N=100, box=hoomd.data.boxdim(L=20), particle_types=['A'])
         self.s = hoomd.init.read_snapshot(snap)
-
         md.integrate.mode_standard(dt=0.005)
 
     # tests basic creation of the integration method
     def test(self):
         all = hoomd.group.all()
-
         bd = azplugins.flow.sllod(all, kT=1.2, gamma_dot=1.0)
         hoomd.run(1)
         bd.disable()
@@ -49,17 +47,6 @@ class flow_sllod_tests (unittest.TestCase):
     #     bd = azplugins.flow.langevin(all, kT=1.2, flow=self.u, seed=1)
     #     bd.set_gamma('A', 0.5)
     #     bd.set_gamma('B', 1.0)
-    #
-    # # test adding types
-    # def test_add_type(self):
-    #     all = hoomd.group.all()
-    #     bd = azplugins.flow.langevin(all, kT=1.2, flow=self.u, seed=1)
-    #     bd.set_gamma('A', 0.5)
-    #     bd.set_gamma('B', 1.0)
-    #     hoomd.run(1)
-    #
-    #     self.s.particles.types.add('B')
-    #     hoomd.run(1)
 
     def tearDown(self):
         del self.s
