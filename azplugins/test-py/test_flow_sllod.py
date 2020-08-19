@@ -8,10 +8,11 @@
 import hoomd
 hoomd.context.initialize()
 from hoomd import md
-try:
-    from hoomd import azplugins
-except ImportError:
-    import azplugins
+# try:
+#     from hoomd import azplugins
+# except ImportError:
+#     import azplugins
+import azplugins
 import unittest
 import numpy as np
 
@@ -25,7 +26,7 @@ class flow_sllod_tests (unittest.TestCase):
     # tests basic creation of the integration method
     def test(self):
         all = hoomd.group.all()
-        bd = azplugins.flow.langevin(all, kT=1.2, gamma_dot=1.0)
+        bd = azplugins.flow.sllod(all, kT=1.2, gamma_dot=1.0)
         hoomd.run(1)
         bd.disable()
 

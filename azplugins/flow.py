@@ -564,8 +564,8 @@ class sllod(hoomd.md.integrate._integration_method):
     Examples::
 
         group_all = hoomd.group.all()
-        azplugins.flow.langevin(group=group_all, kT=1.0, gamma_dot=1.0)
-        azplugins.flow.langevin(group=group_all, kT=hoomd.variant.linear_interp([(0, 4.0), (1e6, 1.0)]), gamma_dot=2.0)
+        azplugins.flow.sllod(group=group_all, kT=1.0, gamma_dot=1.0)
+        azplugins.flow.sllod(group=group_all, kT=hoomd.variant.linear_interp([(0, 4.0), (1e6, 1.0)]), gamma_dot=2.0)
 
     """
     def __init__(self, group, kT, gamma_dot):
