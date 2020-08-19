@@ -15,6 +15,7 @@ set(TEST_LIST_CPU
     test_flow_langevin
     test_flow_parabolic
     test_flow_quiescent
+    test_flow_sllod
     test_integrate_slit
     test_pair_ashbaugh
     test_pair_ashbaugh24
@@ -50,6 +51,7 @@ set(TEST_LIST_GPU
     test_flow_constant
     test_flow_flow_profiler
     test_flow_langevin
+    test_flow_sllod
     test_integrate_slit
     test_pair_ashbaugh
     test_pair_ashbaugh24

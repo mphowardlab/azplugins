@@ -2,9 +2,9 @@
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 # Maintainer: arjunsg2
+# Unit test class for azplugins.flow.sllod, modelled after
+# test_flow_langevin.py
 
-# Unit test class for azplugins.flow.sllod,
-# modelled off of test_flow_langevin.py
 import hoomd
 hoomd.context.initialize()
 from hoomd import md
@@ -25,7 +25,7 @@ class flow_sllod_tests (unittest.TestCase):
     # tests basic creation of the integration method
     def test(self):
         all = hoomd.group.all()
-        bd = azplugins.flow.sllod(all, kT=1.2, gamma_dot=1.0)
+        bd = azplugins.flow.langevin(all, kT=1.2, gamma_dot=1.0)
         hoomd.run(1)
         bd.disable()
 
