@@ -98,12 +98,37 @@ void TwoStepSLLODCouette::integrateStepOne(unsigned int timestep)
         // shear rate tensor dotted with velocity
         const Scalar3 v_del_u = make_scalar3(gamma_dot * velmass.y, 0.0, 0.0);
 
-        // update position and wrap
+        // update position
         pos += (vel + r_del_u + Scalar(0.5) * m_deltaT * accel) * m_deltaT;
-        box.wrap(pos,h_image.data[idx]);
 
         // update velocity
         vel += Scalar(0.5) * m_deltaT * (accel - v_del_u);
+
+        // Deform box
+        BoxDim newBox = m_pdata->getGlobalBox();
+        Scalar3 x = newBox.getLatticeVector(0);
+        Scalar3 y = newBox.getLatticeVector(1);
+        Scalar3 z = newBox.getLatticeVector(2);
+        Scalar xy = newBox.getTiltFactorXY();
+        Scalar yz = newBox.getTiltFactorYZ();
+        Scalar xz = newBox.getTiltFactorXZ();
+        const Scalar boundary_shear = y.y * gamma_dot;
+        xy += gamma_dot * m_deltaT;
+        if xy > 1:
+            xy = -1;
+        newBox.setTiltFactors(xy, xz, yz);
+        m_pdata->setGlobalBox(newBox);
+
+        // if particle leaves from (+/-) y boundary it gets (-/+) shear_rate
+        // note carefully that pair potentials dependent on dv (e.g. DPD)
+        // not yet explicitly supported due to minimum image convention
+        if pos.y > y.y/2 + yz*pos.z:
+            vel.x -= boundary_shear;
+        if pos.y < -y.y/2 + yz*pos.z:
+            vel.x += boundary_shear;
+
+        // Wrap back into box
+        box.wrap(pos,h_image.data[idx]);
 
         h_pos.data[idx] = make_scalar4(pos.x, pos.y, pos.z, __int_as_scalar(type));
         h_vel.data[idx] = make_scalar4(vel.x, vel.y, vel.z, mass);
