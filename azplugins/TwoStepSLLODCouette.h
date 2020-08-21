@@ -106,26 +106,27 @@ void TwoStepSLLODCouette::integrateStepOne(unsigned int timestep)
 
         // Deform box
         BoxDim newBox = m_pdata->getGlobalBox();
-        Scalar3 x = newBox.getLatticeVector(0);
         Scalar3 y = newBox.getLatticeVector(1);
-        Scalar3 z = newBox.getLatticeVector(2);
         Scalar xy = newBox.getTiltFactorXY();
         Scalar yz = newBox.getTiltFactorYZ();
         Scalar xz = newBox.getTiltFactorXZ();
         const Scalar boundary_shear = y.y * gamma_dot;
         xy += gamma_dot * m_deltaT;
-        if xy > 1:
+        if (xy > 1){
             xy = -1;
+        }
         newBox.setTiltFactors(xy, xz, yz);
         m_pdata->setGlobalBox(newBox);
 
         // if particle leaves from (+/-) y boundary it gets (-/+) shear_rate
         // note carefully that pair potentials dependent on dv (e.g. DPD)
         // not yet explicitly supported due to minimum image convention
-        if pos.y > y.y/2 + yz*pos.z:
+        if (pos.y > y.y/2 + yz*pos.z){
             vel.x -= boundary_shear;
-        if pos.y < -y.y/2 + yz*pos.z:
+        }
+        if (pos.y < -y.y/2 + yz*pos.z){
             vel.x += boundary_shear;
+        }
 
         // Wrap back into box
         box.wrap(pos,h_image.data[idx]);
