@@ -81,6 +81,37 @@ class integrate_sllod_tests(unittest.TestCase):
         self.assertAlmostEqual(snap.particles.position[3][0], 0)
         self.assertAlmostEqual(snap.particles.position[4][0], -5)
 
+    def tearDown(self):
+        del self.s, self.nl
+        hoomd.context.initialize()
+
+class boundary_sllod_tests(unittest.TestCase):
+    def setUp(self):
+        snap = hoomd.data.make_snapshot(N=2, box=data.boxdim(L=20),particle_types=['A'])
+        if hoomd.comm.get_rank() == 0:
+            snap.particles.position[0] = (0,9,0)
+            snap.particles.position[1] = (0,-9,0)
+            snap.particles.velocity[0] = (0,1000,0)
+            snap.particles.velocity[1] = (0,-1000,0)
+        self.s = hoomd.init.read_snapshot(snap)
+        self.nl = md.nlist.cell()
+        md.integrate.mode_standard(dt=0.003)
+
+    def test_boundary_shear(self):
+        all = hoomd.group.all()
+        bd = azplugins.flow.sllod(all, kT=1.2, gamma_dot=0.25)
+        hoomd.run(1)
+        bd.disable()
+
+        snap = self.s.take_snapshot()
+        self.assertAlmostEqual(snap.particles.velocity[0][0], -20*0.25-1000*0.25*0.003)
+        self.assertAlmostEqual(snap.particles.velocity[1][0], 20*0.25-(-1000)*0.25*0.003)
+
+    def tearDown(self):
+        del self.s, self.nl
+        hoomd.context.initialize()
+
+
     # # test the calculation of force and potential
     # def test_potential(self):
     #     hertz = azplugins.pair.hertz(r_cut=1.5, nlist = self.nl)
