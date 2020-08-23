@@ -16,7 +16,9 @@
 #endif
 
 #include "hoomd/md/IntegrationMethodTwoStep.h"
+#include "hoomd/RandomNumbers.h"
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
+#include "RNGIdentifiers.h"
 
 namespace azplugins
 {
@@ -224,11 +226,15 @@ void TwoStepSLLODCouette::integrateStepTwo(unsigned int timestep)
     ArrayHandle<Scalar4> h_net_force(net_force, access_location::host, access_mode::read);
     ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);
     ArrayHandle<Scalar> h_gamma(m_gamma, access_location::host, access_mode::read);
+    ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
+
+    const Scalar currentTemp = m_T->getValue(timestep);
 
     // v(t+deltaT) = v(t+deltaT/2) + 1/2 * deltaT * (a(t+deltaT) - v(t+deltaT/2)*del_u)
     for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
         {
         unsigned int j = m_group->getMemberIndex(group_idx);
+        unsigned int ptag = h_tag.data[j];
 
         Scalar gamma;
         if (m_use_lambda)
@@ -239,11 +245,23 @@ void TwoStepSLLODCouette::integrateStepTwo(unsigned int timestep)
             gamma = h_gamma.data[type];
             }
 
+        hoomd::RandomGenerator rng(azplugins::RNGIdentifier::TwoStepLangevinFlow, m_seed, ptag, timestep);
+        hoomd::UniformDistribution<Scalar> uniform(Scalar(-1), Scalar(1));
+        Scalar rx = uniform(rng);
+        Scalar ry = uniform(rng);
+        Scalar rz = uniform(rng);
+        Scalar coeff = fast::sqrt(Scalar(6.0)*gamma*currentTemp/m_deltaT);
+        if (m_noiseless)
+            coeff = Scalar(0.0);
+        Scalar bd_fx = rx*coeff - gamma*(h_vel.data[j].x - h_pos.data[j].y * m_gamma_dot);
+        Scalar bd_fy = ry*coeff - gamma*h_vel.data[j].y;
+        Scalar bd_fz = rz*coeff - gamma*h_vel.data[j].z;
+
         // first, calculate acceleration from the net force
         Scalar minv = Scalar(1.0) / h_vel.data[j].w;
-        h_accel.data[j].x = h_net_force.data[j].x*minv;
-        h_accel.data[j].y = h_net_force.data[j].y*minv;
-        h_accel.data[j].z = h_net_force.data[j].z*minv;
+        h_accel.data[j].x = (h_net_force.data[j].x + bd_fx)*minv;
+        h_accel.data[j].y = (h_net_force.data[j].y + bd_fy)*minv;
+        h_accel.data[j].z = (h_net_force.data[j].z + bd_fz)*minv;
 
         // then, update the velocity
         h_vel.data[j].x += Scalar(1.0/2.0)*(h_accel.data[j].x - h_vel.data[j].y * m_gamma_dot)*m_deltaT;

@@ -102,6 +102,7 @@ class boundary_sllod_tests(unittest.TestCase):
     def test_boundary_shear(self):
         all = hoomd.group.all()
         bd = azplugins.flow.sllod(all, kT=1.2, seed=7, gamma_dot=0.25)
+        bd.set_gamma('A', 0.0)
         hoomd.run(1)
         bd.disable()
 
