@@ -27,28 +27,30 @@ class flow_sllod_tests (unittest.TestCase):
     # tests basic creation of the integration method
     def test(self):
         all = hoomd.group.all()
-        bd = azplugins.flow.sllod(all, kT=1.2, gamma_dot=1.0)
+        bd = azplugins.flow.sllod(all, kT=1.2, seed=5, gamma_dot=1.0)
         hoomd.run(1)
         bd.disable()
 
-    # # test set_params
-    # def test_set_params(self):
-    #     all = hoomd.group.all()
-    #
-    #     bd = azplugins.flow.langevin(all, kT=1.2, flow=self.u, seed=1)
-    #     bd.set_params(kT=1.3)
-    #     bd.set_params(kT=hoomd.variant.linear_interp([(0, 4.0), (1e6, 1.0)]))
-    #     bd.set_params(noiseless=True)
-    #
-    #     v = azplugins.flow.parabolic(U=1.0, H=4.0)
-    #     bd.set_params(flow=v)
-    #
-    # # test set_gamma
-    # def test_set_gamma(self):
-    #     all = hoomd.group.all()
-    #     bd = azplugins.flow.langevin(all, kT=1.2, flow=self.u, seed=1)
-    #     bd.set_gamma('A', 0.5)
-    #     bd.set_gamma('B', 1.0)
+    # test set_params
+    def test_set_params(self):
+        all = hoomd.group.all()
+        bd = azplugins.flow.sllod(all, kT=1.2, seed=1)
+        bd.set_params(kT=1.3)
+        bd.set_params(kT=hoomd.variant.linear_interp([(0, 4.0), (1e6, 1.0)]))
+        bd.set_params(noiseless=True)
+
+    # test set_gamma_dot
+    def test_set_gamma_dot(self):
+        all = hoomd.group.all()
+        bd = azplugins.flow.sllod(all, kT=1.2, seed=1)
+        bd.set_gamma_dot(3.0)
+
+    # test set_gamma
+    def test_set_gamma(self):
+        all = hoomd.group.all()
+        bd = azplugins.flow.sllod(all, kT=1.2, seed=1)
+        bd.set_gamma('A', 0.5)
+        bd.set_gamma('B', 1.0)
 
     def tearDown(self):
         del self.s
@@ -70,7 +72,7 @@ class integrate_sllod_tests(unittest.TestCase):
 
     def test_1particle(self):
         all = hoomd.group.all()
-        bd = azplugins.flow.sllod(all, kT=1.2, gamma_dot=1.5)
+        bd = azplugins.flow.sllod(all, kT=1.2, seed=10, gamma_dot=1.5)
         hoomd.run(1)
         bd.disable()
 
@@ -99,7 +101,7 @@ class boundary_sllod_tests(unittest.TestCase):
 
     def test_boundary_shear(self):
         all = hoomd.group.all()
-        bd = azplugins.flow.sllod(all, kT=1.2, gamma_dot=0.25)
+        bd = azplugins.flow.sllod(all, kT=1.2, seed=7, gamma_dot=0.25)
         hoomd.run(1)
         bd.disable()
 

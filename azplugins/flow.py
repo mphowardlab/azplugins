@@ -564,11 +564,11 @@ class sllod(hoomd.md.integrate._integration_method):
     Examples::
 
         group_all = hoomd.group.all()
-        azplugins.flow.sllod(group=group_all, kT=1.0, gamma_dot=1.0)
-        azplugins.flow.sllod(group=group_all, kT=hoomd.variant.linear_interp([(0, 4.0), (1e6, 1.0)]), gamma_dot=2.0)
+        azplugins.flow.sllod(group=group_all, kT=1.0, seed=5, gamma_dot=1.0)
+        azplugins.flow.sllod(group=group_all, kT=hoomd.variant.linear_interp([(0, 4.0), (1e6, 1.0)]), seed=10, gamma_dot=2.0)
 
     """
-    def __init__(self, group, kT, gamma_dot):
+    def __init__(self, group, kT, seed, dscale=False, gamma_dot=1.0, noiseless=False):
         hoomd.util.print_status_line()
 
         # initialize base class
@@ -580,17 +580,108 @@ class sllod(hoomd.md.integrate._integration_method):
         # create the compute thermo
         hoomd.compute._get_unique_thermo(group=group)
 
+        if dscale is False or dscale == 0:
+            use_lambda = False
+        else:
+            use_lambda = True
+
         cpp_class = _azplugins.TwoStepSLLODCouette
         self.cpp_method = cpp_class(hoomd.context.current.system_definition,
                                     group.cpp_group,
-                                    float(gamma_dot))
+                                    kT.cpp_variant,
+                                    seed,
+                                    use_lambda,
+                                    float(dscale),
+                                    float(gamma_dot),
+                                    noiseless)
         self.cpp_method.validateGroup()
 
         # store metadata
         self.group = group
         self.kT = kT
+        self.seed = seed
+        self.dscale = dscale
         self.gamma_dot = gamma_dot
-        self.metadata_fields = ['group', 'kT', 'gamma_dot']
+        self.noiseless = noiseless
+        self.metadata_fields = ['group', 'kT', 'seed', 'dscale', 'gamma_dot', 'noiseless']
+
+    def set_params(self, kT=None, noiseless=None):
+        R""" Change sllod integrator parameters.
+
+        Args:
+            kT (:py:mod:`hoomd.variant` or :py:obj:`float`): New temperature (if set) (in energy units).
+            noiseless (bool): If true, do not apply the random noise in the equations of motion
+
+        Examples::
+
+            sllod.set_params(kT=2.0)
+
+        """
+        hoomd.util.print_status_line()
+        self.check_initialization()
+
+        # change the parameters
+        if kT is not None:
+            # setup the variant inputs
+            kT = hoomd.variant._setup_variant_input(kT)
+            self.cpp_method.setT(kT.cpp_variant)
+            self.kT = kT
+
+        if noiseless is not None:
+            self.cpp_method.setNoiseless(noiseless)
+            self.noiseless = noiseless
+
+    def set_gamma(self, a, gamma):
+        R""" Set gamma for a particle type.
+
+        Args:
+            a (str): Particle type name
+            gamma (float): :math:`\gamma` for particle type a (in units of force/velocity)
+
+        :py:meth:`set_gamma()` sets the friction coefficient :math:`\gamma` for a single particle type, identified
+        by name. The default is 1.0 if not specified for a type.
+
+        It is not an error to specify gammas for particle types that do not exist in the simulation.
+        This can be useful in defining a single simulation script for many different types of particles
+        even when some simulations only include a subset.
+
+        Examples::
+
+            sllod.set_gamma('A', gamma=2.0)
+
+        """
+        hoomd.util.print_status_line()
+        self.check_initialization()
+        a = str(a)
+
+        ntypes = hoomd.context.current.system_definition.getParticleData().getNTypes()
+        type_list = []
+        for i in range(0,ntypes):
+            type_list.append(hoomd.context.current.system_definition.getParticleData().getNameByType(i))
+
+        # change the parameters
+        for i in range(0,ntypes):
+            if a == type_list[i]:
+                self.cpp_method.setGamma(i,gamma)
+
+    def set_gamma_dot(self, gamma_dot):
+        R""" Set the shear rate gamma_dot for the system.
+
+        Args:
+            gamma_dot (float): :math:`\dot{gamma}` (in units of 1/time)
+
+        :py:meth:`set_gamma_dot()` sets the shear rate :math:`\dot{gamma}` for the system.
+        The default is 1.0 if not specified.
+
+        Examples::
+
+            sllod.set_gamma_dot(2.0)
+
+        """
+        hoomd.util.print_status_line()
+        self.check_initialization()
+        # change the shear rate parameter
+        self.cpp_method.set_gamma_dot(gamma_dot)
 
 class reverse_perturbation(hoomd.update._updater):
     R"""Reverse nonequilibrium shear flow in MD simulations.
