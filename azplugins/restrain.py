@@ -144,7 +144,7 @@ class plane(force._force):
 
     .. math::
 
-        d = (\mathbf{r)-\mathbf{p}) \cdot \mathbf{n}
+        d = (\mathbf{r}-\mathbf{p}) \cdot \mathbf{n}
 
     where **r** is the **unwrapped** particle position, **p** is a point in the plane,
     and **n** is the unit normal of the plane.
@@ -319,6 +319,7 @@ class position(force._force):
 
     .. math::
         :nowrap:
+
         \begin{equation*}
         V(\mathbf{r}) = \frac{1}{2} \mathbf{k} \mathbf{\Delta r} \mathbf{\Delta r}^T
         \end{equation*}
@@ -460,6 +461,7 @@ class orientation(force._force):
 
     .. math::
         :nowrap:
+
         \begin{equation*}
         V(\mathbf{r}) = V(\theta) = k \sin^2(\theta)
         \end{equation*}

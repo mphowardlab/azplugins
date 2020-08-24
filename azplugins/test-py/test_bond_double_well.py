@@ -3,9 +3,10 @@
 
 # Maintainer: astatt
 
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
+
 try:
     from hoomd import azplugins
 except ImportError:
@@ -15,15 +16,16 @@ import unittest
 # azplugins.bond.double_well
 class bond_double_well_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2, box=data.boxdim(L=20), particle_types=['A'], bond_types=['bond'])
+        snap = hoomd.data.make_snapshot(N=2, box=hoomd.data.boxdim(L=20), particle_types=['A'], bond_types=['bond'])
 
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.bonds.resize(1)
             snap.bonds.group[0] = [0,1]
 
-        self.s = init.read_snapshot(snap)
+        self.s = hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
-        context.current.sorter.set_params(grid=8)
+        hoomd.context.current.sorter.set_params(grid=8)
+
 
     # basic test of creation
     def test(self):
@@ -54,22 +56,22 @@ class bond_double_well_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s
-        context.initialize()
+        hoomd.context.initialize()
 
 # azplugins.bond.double_well
 class potential_bond_double_well_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2, box=data.boxdim(L=20), particle_types=['A'],bond_types = ['bond'])
+        snap = hoomd.data.make_snapshot(N=2, box=hoomd.data.boxdim(L=20), particle_types=['A'],bond_types = ['bond'])
 
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.bonds.resize(1)
             snap.bonds.group[0] = [0,1]
             snap.particles.position[0] = (0,0,0)
             snap.particles.position[1] = (1,0,0)
 
-        self.s = init.read_snapshot(snap)
+        self.s = hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
-        context.current.sorter.set_params(grid=8)
+        hoomd.context.current.sorter.set_params(grid=8)
 
     # test the calculation of force and potential
     def test_potential_minimum(self):
@@ -80,6 +82,7 @@ class potential_bond_double_well_tests(unittest.TestCase):
         md.integrate.mode_standard(dt=0)
         nve = md.integrate.nve(group = group.all())
         run(1)
+
         U = 0
         F = 0
         f0 = double_well.forces[0].force
@@ -105,6 +108,7 @@ class potential_bond_double_well_tests(unittest.TestCase):
         md.integrate.mode_standard(dt=0)
         nve = md.integrate.nve(group = group.all())
         run(1)
+
         U = 5.0
         F = 0
         f0 = double_well.forces[0].force
@@ -129,6 +133,7 @@ class potential_bond_double_well_tests(unittest.TestCase):
         md.integrate.mode_standard(dt=0)
         nve = md.integrate.nve(group = group.all())
         run(1)
+
         U = 0.5625
         F = -1.5
         f0 = double_well.forces[0].force
@@ -171,7 +176,8 @@ class potential_bond_double_well_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s
-        context.initialize()
+        hoomd.context.initialize()
+
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

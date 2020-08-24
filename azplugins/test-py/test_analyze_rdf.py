@@ -3,9 +3,9 @@
 
 # Maintainer: mphoward
 
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -16,12 +16,12 @@ import numpy as np
 # azplugins.analyze.rdf
 class analyze_rdf_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=6, box=data.boxdim(L=20), particle_types=['A','B','C'])
+        snap = hoomd.data.make_snapshot(N=6, box=hoomd.data.boxdim(L=20), particle_types=['A','B','C'])
         snap.particles.position[:] = [[0,0,0],[2,0,0],[0,2,0],[0,0,2],[1,1,1],[0,0,0]]
         snap.particles.typeid[:] = [0,1,0,1,0,2]
-        self.s = init.read_snapshot(snap)
-        self.A = group.type('A')
-        self.B = group.type('B')
+        self.s = hoomd.init.read_snapshot(snap)
+        self.A = hoomd.group.type('A')
+        self.B = hoomd.group.type('B')
 
     # basic test of creation
     def test_creation(self):
@@ -57,7 +57,7 @@ class analyze_rdf_tests(unittest.TestCase):
         rdf_AB = azplugins.analyze.rdf(groups=[self.A, self.B], rcut=3.0, bin_width=0.5, period=1)
 
         # run a few steps and compare against VMD results
-        run(3)
+        hoomd.run(3)
         bins, gr = rdf_A()
         np.testing.assert_array_almost_equal(bins, [0.25, 0.75, 1.25, 1.75, 2.25, 2.75])
         np.testing.assert_array_almost_equal(gr, [0,0,0,275.29503669949463,83.49111768755165,0], decimal=3)
@@ -84,7 +84,7 @@ class analyze_rdf_tests(unittest.TestCase):
         np.testing.assert_array_almost_equal(gr, [0,0,0,0,0,0])
 
         # run again and make sure reset happend correctly
-        run(10)
+        hoomd.run(10)
         bins, gr = rdf_A()
         np.testing.assert_array_almost_equal(bins, [0.25, 0.75, 1.25, 1.75, 2.25, 2.75])
         np.testing.assert_array_almost_equal(gr, [0,0,0,275.29503669949463,83.49111768755165,0], decimal=3)
@@ -99,7 +99,7 @@ class analyze_rdf_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s, self.A, self.B
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

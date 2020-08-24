@@ -109,6 +109,7 @@ class colloid(hoomd.md.pair.pair):
     The pair potential has three different coupling styles between particle types:
 
     - ``slv-slv`` gives the Lennard-Jones potential for coupling between pointlike particles
+
     .. math::
         :nowrap:
 
@@ -142,7 +143,7 @@ class colloid(hoomd.md.pair.pair):
 
     - :math:`\varepsilon` - *epsilon* (in energy units) - Hamaker constant
     - :math:`\sigma` - *sigma* (in distance units) - Size of colloid constituent particles
-        - *optional*: defaults to 1.0
+      - *optional*: defaults to 1.0
     - ``style`` - ``slv-slv``, ``coll-slv``, or ``coll-coll`` - Style of pair interaction
     - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
       - *optional*: defaults to the global r_cut specified in the pair command
@@ -199,6 +200,62 @@ class colloid(hoomd.md.pair.pair):
 
         return _hoomd.make_scalar4(epsilon, sigma**3, sigma**6, _hoomd.int_as_scalar(style))
 
+class hertz(hoomd.md.pair.pair):
+    R"""Hertz potential
+
+    Args:
+        r_cut (float): Default cutoff radius (in distance units).
+        nlist (:py:mod:`hoomd.md.nlist`): Neighbor list
+        name (str): Name of the force instance.
+
+    :py:class:`hertz` is the Hertz potential:
+
+    .. math::
+
+        V(r)  &= \varepsilon \left(1-\frac{r}{r_{\rm cut}}\right)^{5/2},& r < r_{\rm cut} \\
+              &= 0,& r \ge r_{\mathrm{cut}}
+
+    parameters :math:`\varepsilon`, the energy scale of the pair interaction.
+    See :py:class:`hoomd.md.pair.pair` for details on how forces are calculated
+    and the available energy shifting and smoothing modes. Use
+    :py:meth:`pair_coeff.set <coeff.set>` to set potential coefficients.
+
+    The following coefficients must be set per unique pair of particle types:
+
+    - :math:`\varepsilon` - *epsilon* (in energy units)
+    - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
+      - *optional*: defaults to the global r_cut specified in the pair command
+
+    Example::
+
+        nl = hoomd.md.nlist.cell()
+        hertz = azplugins.pair.hertz(r_cut=3.0, nlist=nl)
+        hertz.pair_coeff.set('A', 'A', epsilon=1.0)
+        hertz.pair_coeff.set(['A','B'], 'B', epsilon=2.0)
+
+    """
+    def __init__(self, r_cut, nlist, name=None):
+        hoomd.util.print_status_line()
+
+        # initialize the base class
+        hoomd.md.pair.pair.__init__(self, r_cut, nlist, name)
+
+        # create the c++ mirror class
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            self.cpp_class = _azplugins.PairPotentialHertz
+        else:
+            self.cpp_class = _azplugins.PairPotentialHertzGPU
+            self.nlist.cpp_nlist.setStorageMode(_md.NeighborList.storageMode.full)
+        self.cpp_force = self.cpp_class(hoomd.context.current.system_definition, self.nlist.cpp_nlist, self.name)
+
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
+
+        # setup the coefficent options
+        self.required_coeffs = ['epsilon']
+
+    def process_coeff(self, coeff):
+        return coeff['epsilon']
+
 class lj124(hoomd.md.pair.pair):
     R""" LJ 12-4 potential
 
@@ -208,12 +265,13 @@ class lj124(hoomd.md.pair.pair):
         name (str): Name of the force instance.
 
     :py:class:`lj124` is a Lennard-Jones potential
+
     .. math::
         :nowrap:
 
         \begin{eqnarray*}
-        V(r)  = & \frac{3 \sqrt{3}}{2} \varepsilon \left(\left(\frac{\sigma}{r}\right)^{12} - \alpha \left(\frac{\sigma}{r}\right)^4\right) & r < r_{\mathrm{cut}} \\
-              = & 0 r \ge r_{\mathrm{cut}}
+        V(r)  = & \frac{3 \sqrt{3}}{2} \varepsilon \left(\left(\frac{\sigma}{r}\right)^{12} - \alpha \left(\frac{\sigma}{r}\right)^4\right) &, r < r_{\mathrm{cut}} \\
+              = & 0 &, r \ge r_{\mathrm{cut}}
         \end{eqnarray*}
 
     parameters :math:`\varepsilon`, :math:`\sigma`, and :math:`\alpha`. See :py:class:`hoomd.md.pair.pair`
@@ -280,6 +338,7 @@ class ashbaugh24(hoomd.md.pair.pair):
     parameter :math:`\lambda` setting the strength of the attractive tail.
     When :math:`\lambda` is 0, the potential is purely repulsive.
     When :math:`\lambda` is 1, the potential a generalized Lennard-Jones potential:
+
     .. math::
         :nowrap:
 
@@ -291,6 +350,7 @@ class ashbaugh24(hoomd.md.pair.pair):
 
     Here, :math:`V_{\mathrm{LJ,48-24}}(r,\varepsilon,\sigma)` is a Lennard-Jones potential with
     parameters :math:`\varepsilon`, and :math:`\sigma`:
+
     .. math::
         :nowrap:
 
@@ -359,15 +419,16 @@ class lj96(hoomd.md.pair.pair):
         name (str): Name of the force instance.
 
     :py:class:`lj96` is a Lennard-Jones potential
+
     .. math::
         :nowrap:
 
         \begin{eqnarray*}
-        V(r)  = & \frac{27}{4} \varepsilon \left(\left(\frac{\sigma}{r}\right)^9 - \alpha \left(\frac{\sigma}{r}\right)^6\right) & r < r_{\mathrm{cut}} \\
-              = & 0 r \ge r_{\mathrm{cut}}
+        V(r)  = & \frac{27}{4} \varepsilon \left(\left(\frac{\sigma}{r}\right)^9 - \alpha \left(\frac{\sigma}{r}\right)^6\right) &, r < r_{\mathrm{cut}} \\
+              = & 0 &, r \ge r_{\mathrm{cut}}
         \end{eqnarray*}
 
-    parameters :math:`\varepsilon`, :math:`\sigma`, and :math:`\alpha`. See :py:class:`hoomd.md.pair.pair`
+    Parameters :math:`\varepsilon`, :math:`\sigma`, and :math:`\alpha`. See :py:class:`hoomd.md.pair.pair`
     for details on how forces are calculated and the available energy shifting and smoothing modes.
     Use :py:meth:`pair_coeff.set <coeff.set>` to set potential coefficients.
 
@@ -522,9 +583,9 @@ class spline(hoomd.md.pair.pair):
         :nowrap:
 
         \begin{eqnarray*}
-        V(r) = & a & r < r_{\rm s}\\
-        = & a*(r_{\rm s}**2-r**2)^m * (r_{\rm cut}^2 + m*r**2 - (m+1)*r_{\rm s}^2) / (r_{\rm cut}^2-r_{\rm s}**2)**(m+1) & r_{\rm s} <r < r_{\rm cut} \\
-              = & 0 & r \ge r_{\rm cut}
+        V(r) = & a &, r < r_{\rm s}\\
+        = & \frac{a(r_{\rm s}^2-r^2)^m (r_{\rm cut}^2 + m r^2 - (m+1) r_{\rm s}^2)}{(r_{\rm cut}^2-r_{\rm s}^2)^{m+1}} &, r_{\rm s} < r < r_{\rm cut} \\
+              = & 0 &, r \ge r_{\rm cut}
         \end{eqnarray*}
 
     Here, :math:`a` is the amplitude :math:`m`, the exponent,  :math:`r_{\rm s}` and :math: `r_{\rm cut}` are the cutoff distances. The potential goes smoothly from a value of `a` at `r_{\rm s}` to zero at
@@ -588,26 +649,25 @@ class two_patch_morse(hoomd.md.pair.ai_pair):
         nlist (:py:mod:`hoomd.md.nlist`): Neighbor list
         name (str): Name of the force instance.
 
-    :py:class:`two_patch_morse` is a Morse potential which is modulated by an orientation-dependent
-    function. The potential is smoothed to zero force (making it purely attractive) when :math:`r < r_{\rm eq}` if *repulsion* is false.
+    :py:class:`two_patch_morse` is a Morse potential which is modulated by an orientation-dependent function.
 
     .. math::
-        :nowrap:
 
-        \begin{eqnarray*}
-        V_{M2P} (\vec{r}_{ij}, \hat{n}_i, \hat{n}_j) = & V_M(|\vec{r}_{ij}|) \Omega(\hat{r}_{ij} \cdot \hat{n}_i) \Omega(\hat{r}_{ij} \cdot \hat{n}_j)
-        V_M(r) = &\left\{ \begin{matrix}
-        -M_d,
-        &
-        r < r_{\rm eq} \text{ and } {\rm !repulsion}
-        \\
-        M_d \left( \left[ 1 - \exp\left( -\frac{r-r_{\rm eq}}{M_r}\right) \right]^2 - 1 \right),
-        &
-        \text{otherwise}
-        \end{matrix}
-        \right.
-        \Omega(\gamma) = & \frac{1}{1+\exp[-\omega (\gamma^2 - \alpha)]}
-        \end{eqnarray*}
+        V_{\rm M2P}(\vec{r}_{ij}, \hat{n}_i, \hat{n}_j) = V_{\rm M}(|\vec{r}_{ij}|) \Omega(\hat{r}_{ij} \cdot \hat{n}_i) \Omega(\hat{r}_{ij} \cdot \hat{n}_j)
+
+    where :math:`V_{\rm M}` is the potential that depends on distance
+
+    .. math::
+
+        V_{\rm M}(r) = M_d \left( \left[ 1 - \exp\left( -\frac{r-r_{\rm eq}}{M_r}\right) \right]^2 - 1 \right)
+
+    and :math:`\Omega(\gamma)` depends on the orientations
+
+    .. math::
+        \Omega(\gamma) = \frac{1}{1+\exp[-\omega (\gamma^2 - \alpha)]}
+
+    The potential can be smoothed to zero force (making it purely attractive) when :math:`r < r_{\rm eq}`
+    by making :math:`V_{\rm M}(r < r_{\rm eq}) = -M_d` when the option  *repulsion* is ``False``.
 
     Here, :math:`vec{r}_{ij}` is the displacement vector between particles :math:`i` and :math:`j`,
     :math:`|\vec{r}_{ij}|` is the magnitude of that displacement, and :math:`\hat{n}` is the normalized
@@ -619,9 +679,9 @@ class two_patch_morse(hoomd.md.pair.ai_pair):
 
     The following coefficients must be set per unique pair of particle types:
 
-    - :math:`\M_d` - *Md* (in energy units)
-    - :math:`\M_r` - *Mr* (in distance units)
-    - :math:`\r_{\rm eq}` - *req* (in distance units)
+    - :math:`M_d` - *Md* (in energy units)
+    - :math:`M_r` - *Mr* (in distance units)
+    - :math:`r_{\rm eq}` - *req* (in distance units)
     - :math:`\omega` - *omega* (unitless)
     - :math:`\alpha` - *alpha* (unitless)
     - *repulsion* (boolean)

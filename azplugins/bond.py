@@ -31,11 +31,11 @@ class double_well(hoomd.md.bond._bond):
     - :math:`c` - tunes the energy offset between the two potential minima values, i.e. it tilts the potential (in energy units)
 
     Examples::
-
+    
         dw = azplugins.bond.double_well()
         dw.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.5, c=0)
-
-    """
+   
+   """
     def __init__(self, name=None):
         hoomd.util.print_status_line()
 
@@ -56,18 +56,22 @@ class double_well(hoomd.md.bond._bond):
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
 
         # setup the coefficient options
+
         self.required_coeffs = ['V_max','a','b','c']
+
 
     def process_coeff(self, coeff):
         V_max = coeff['V_max']
         a = coeff['a']
         b = coeff['b']
         c = coeff['c']
+
         if b==0:
             hoomd.context.msg.error("azplugins.bond.double_well(): coefficient b must be non-zero.\n")
             raise ValueError('Coefficient b must be non-zero')
 
         return _hoomd.make_scalar4(V_max, a, b, c)
+
 
 
 class fene(hoomd.md.bond._bond):
@@ -76,14 +80,15 @@ class fene(hoomd.md.bond._bond):
     Args:
         name (str): Name of the bond instance.
 
-    :py:class:`fene` specifies a FENE potential energy between the two particles in each defined bond.
+    :py:class:`fene` specifies a FENE potential energy between the two particles
+    in each defined bond.
 
     .. math::
 
-        V(r) = - \frac{1}{2} k r_0^2 \ln \left( 1 - \left( \frac{r}{r_0} \right)^2 \right) + V_{\mathrm{WCA}}(r)
+        V(r) = - \frac{1}{2} k r_0^2 \ln \left( 1 - \left( \frac{r}{r_0} \right)^2 \right) + V_{\rm WCA}(r)
 
     where :math:`\vec{r}` is the vector pointing from one particle to the other in the bond.
-    The potential :math:`V_{\mathrm{WCA}}(r)` is given by:
+    The potential :math:`V_{\rm WCA}(r)` is given by:
 
     .. math::
         :nowrap:
@@ -172,6 +177,7 @@ class fene24(hoomd.md.bond._bond):
     parameter :math:`\lambda` setting the strength of the attractive tail.
     When :math:`\lambda` is 0, the potential is purely repulsive.
     When :math:`\lambda` is 1, the potential a generalized Lennard-Jones potential:
+
     .. math::
         :nowrap:
 
@@ -183,14 +189,12 @@ class fene24(hoomd.md.bond._bond):
 
     Here, :math:`V_{\mathrm{LJ,48-24}}(r,\varepsilon,\sigma)` is a Lennard-Jones potential with
     parameters :math:`\varepsilon`, and :math:`\sigma`:
+
     .. math::
-        :nowrap:
 
-        \begin{eqnarray*}
-        V_{\mathrm{LJ,48-24}}  = 4 \varepsilon \left(\left(\frac{\sigma}{r}\right)^{48} - \left(\frac{\sigma}{r}\right)^{24}\right)
-        \end{eqnarray*}
+        V_{\mathrm{LJ,48-24}} = 4 \varepsilon \left(\left(\frac{\sigma}{r}\right)^{48} - \left(\frac{\sigma}{r}\right)^{24}\right)
 
-     The following coefficients must be set per unqiue bond type:
+    The following coefficients must be set per unqiue bond type:
 
     - :math:`k` - attractive force strength ``k`` (in units of energy/distance^2)
     - :math:`r_0` - maximal bond stretching ``r0`` (in distance units)

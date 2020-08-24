@@ -3,9 +3,9 @@
 
 # Maintainer: mphoward
 
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -16,10 +16,10 @@ import unittest
 class pair_colloid_tests(unittest.TestCase):
     def setUp(self):
         # raw snapshot is fine, just needs to have the types
-        snap = data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
-        self.s = init.read_snapshot(snap)
+        snap = hoomd.data.make_snapshot(N=100, box=hoomd.data.boxdim(L=20), particle_types=['A'])
+        self.s = hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
-        context.current.sorter.set_params(grid=8)
+        hoomd.context.current.sorter.set_params(grid=8)
 
     # basic test of creation
     def test(self):
@@ -109,24 +109,24 @@ class pair_colloid_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s, self.nl
-        context.initialize()
+        hoomd.context.initialize()
 
 # test the validity of the pair potential
 class potential_colloid_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2, box=data.boxdim(L=100),particle_types=['A'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=2, box=hoomd.data.boxdim(L=100),particle_types=['A'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[0] = (0,0,0)
             snap.particles.diameter[0] = 1.5
 
             snap.particles.position[1] = (3.0,0,0)
             snap.particles.diameter[1] = 3.0
-        init.read_snapshot(snap)
+        hoomd.init.read_snapshot(snap)
 
         self.coll = azplugins.pair.colloid(r_cut=6.0, nlist = md.nlist.cell())
 
         md.integrate.mode_standard(dt=0)
-        md.integrate.nve(group = group.all())
+        md.integrate.nve(group = hoomd.group.all())
 
     # test the calculation of force and potential for solvent-solvent style
     def test_slv_slv_potential(self):
@@ -134,7 +134,7 @@ class potential_colloid_tests(unittest.TestCase):
         self.coll.pair_coeff.set('A','A', epsilon=100.0, sigma=2.0, style='slv-slv')
         self.coll.set_params(mode="no_shift")
 
-        run(1)
+        hoomd.run(1)
         f0 = self.coll.forces[0].force
         f1 = self.coll.forces[1].force
         e0 = self.coll.forces[0].energy
@@ -156,7 +156,7 @@ class potential_colloid_tests(unittest.TestCase):
 
         # test with shifting enabled
         self.coll.set_params(mode="shift")
-        run(1)
+        hoomd.run(1)
         U -= -0.00380516787794
         self.assertAlmostEqual(self.coll.forces[0].energy,0.5*U,3)
         self.assertAlmostEqual(self.coll.forces[1].energy,0.5*U,3)
@@ -166,7 +166,7 @@ class potential_colloid_tests(unittest.TestCase):
         # set epsilon to zero and make sure this is ignored
         self.coll.set_params(mode='no_shift')
         self.coll.pair_coeff.set('A','A', epsilon=0.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(self.coll.forces[0].energy,0)
         self.assertAlmostEqual(self.coll.forces[1].energy,0)
         self.assertAlmostEqual(self.coll.forces[0].force[0],0)
@@ -174,7 +174,7 @@ class potential_colloid_tests(unittest.TestCase):
 
         # shrink cutoff and ensure this case is ignored
         self.coll.pair_coeff.set('A','A', epsilon=100., r_cut=2.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(self.coll.forces[0].energy,0)
         self.assertAlmostEqual(self.coll.forces[1].energy,0)
         self.assertAlmostEqual(self.coll.forces[0].force[0],0)
@@ -186,7 +186,7 @@ class potential_colloid_tests(unittest.TestCase):
         self.coll.pair_coeff.set('A','A', epsilon=100.0, sigma=1.05, style='coll-slv')
         self.coll.set_params(mode="no_shift")
 
-        run(1)
+        hoomd.run(1)
         f0 = self.coll.forces[0].force
         f1 = self.coll.forces[1].force
         e0 = self.coll.forces[0].energy
@@ -208,7 +208,7 @@ class potential_colloid_tests(unittest.TestCase):
 
         # test with shifting enabled
         self.coll.set_params(mode="shift")
-        run(1)
+        hoomd.run(1)
         U -= -0.00225831446085
         self.assertAlmostEqual(self.coll.forces[0].energy,0.5*U,3)
         self.assertAlmostEqual(self.coll.forces[1].energy,0.5*U,3)
@@ -218,7 +218,7 @@ class potential_colloid_tests(unittest.TestCase):
         # set epsilon to zero and make sure this is ignored
         self.coll.set_params(mode='no_shift')
         self.coll.pair_coeff.set('A','A', epsilon=0.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(self.coll.forces[0].energy,0)
         self.assertAlmostEqual(self.coll.forces[1].energy,0)
         self.assertAlmostEqual(self.coll.forces[0].force[0],0)
@@ -226,7 +226,7 @@ class potential_colloid_tests(unittest.TestCase):
 
         # shrink cutoff and ensure this case is ignored
         self.coll.pair_coeff.set('A','A', epsilon=100., r_cut=2.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(self.coll.forces[0].energy,0)
         self.assertAlmostEqual(self.coll.forces[1].energy,0)
         self.assertAlmostEqual(self.coll.forces[0].force[0],0)
@@ -238,7 +238,7 @@ class potential_colloid_tests(unittest.TestCase):
         self.coll.pair_coeff.set('A','A', epsilon=100.0, sigma=1.05, style='coll-coll')
         self.coll.set_params(mode="no_shift")
 
-        run(1)
+        hoomd.run(1)
         f0 = self.coll.forces[0].force
         f1 = self.coll.forces[1].force
         e0 = self.coll.forces[0].energy
@@ -260,7 +260,7 @@ class potential_colloid_tests(unittest.TestCase):
 
         # test with shifting enabled
         self.coll.set_params(mode="shift")
-        run(1)
+        hoomd.run(1)
         U -= -0.00696278336528
         self.assertAlmostEqual(self.coll.forces[0].energy,0.5*U,3)
         self.assertAlmostEqual(self.coll.forces[1].energy,0.5*U,3)
@@ -270,7 +270,7 @@ class potential_colloid_tests(unittest.TestCase):
         # set epsilon to zero and make sure this is ignored
         self.coll.set_params(mode='no_shift')
         self.coll.pair_coeff.set('A','A', epsilon=0.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(self.coll.forces[0].energy,0)
         self.assertAlmostEqual(self.coll.forces[1].energy,0)
         self.assertAlmostEqual(self.coll.forces[0].force[0],0)
@@ -278,7 +278,7 @@ class potential_colloid_tests(unittest.TestCase):
 
         # shrink cutoff and ensure this case is ignored
         self.coll.pair_coeff.set('A','A', epsilon=100., r_cut=2.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(self.coll.forces[0].energy,0)
         self.assertAlmostEqual(self.coll.forces[1].energy,0)
         self.assertAlmostEqual(self.coll.forces[0].force[0],0)
@@ -286,7 +286,7 @@ class potential_colloid_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.coll
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

@@ -31,10 +31,12 @@ namespace detail
 /*!
 This bond potential follows the functional form
 \f{eqnarray*}
+
 V_{\rm{DW}}(r)  =   \frac{V_{max}-c/2}{b^4} \left[ \left( r - a/2 \right)^2 -b^2 \right]^2 + \frac{c}{2b}\left(r-a/2\right)+c/2
 
 \f}
 which has two minima at r = (a/2 +/- b), seperated by a maximum at a/2 of height V_max when c is set to zero.
+
 The parameter a tunes the location of the maximal value and the parameter b tunes the distance of the
 two maxima from each other.  This potential is useful to model bonds which can be either mechanically or
 thermally "activated" into a effectively longer state. The value of V_max can be used to tune the height of the
@@ -49,11 +51,13 @@ The parameters are:
     - \a a (params.y) shift for the location of the V_max, maximun is at approx a/2
     - \a b (params.z) scaling for the distance of the two minima at approx (a/2 +/- b)
     - \a b (params.w) potential difference between the two minima
+
 */
 class BondEvaluatorDoubleWell
     {
     public:
         //! Define the parameter type used by this bond potential evaluator
+
         typedef Scalar4 param_type;
 
         //! Constructs the pair potential evaluator
