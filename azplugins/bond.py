@@ -21,18 +21,19 @@ class double_well(hoomd.md.bond._bond):
 
     .. math::
 
-        V_{\rm{DW}}(r)  =  \frac{V_{max}}{b^4} \left[ \left( r - a/2 \right)^2 - b^2 \right]^2
+        V_{\rm{DW}}(r)  =  \frac{V_{max}-c/2}{b^4} \left[ \left( r - a/2 \right)^2 - b^2 \right]^2 +\frac{c}{2b}(r - a/2) + c/2
 
     Coefficients:
 
-    - :math:`V_max` - Potential maximum height between the two minima at ``a/2`` (in energy units)
-    - :math:`a` - twice the location of the potential maximum, maximum is at ``a/2`` ( in distance units)
-    - :math:`b` - tunes the disance between the potential minima at ``(a/2 +/- b)`` (in distance units)
+    - :math:`V_max` - Potential maximum energy barrier between the two minima at ``a/2`` for c=0 (in energy units)
+    - :math:`a` - twice the location of the potential maximum, maximum is at ``a/2`` for c=0 ( in distance units)
+    - :math:`b` - tunes the disance between the potential minima at ``(a/2 +/- b)`` for c=0 (in distance units)
+    - :math:`c` - tunes the energy offset between the two potential minima  values (in energy units)
 
     Examples::
 
         dw = azplugins.bond.double_well()
-        dw.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.5)
+        dw.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.5, c=0)
 
     """
     def __init__(self, name=None):

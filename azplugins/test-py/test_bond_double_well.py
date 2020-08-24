@@ -145,6 +145,30 @@ class potential_bond_double_well_tests(unittest.TestCase):
         self.assertAlmostEqual(f1[1],0)
         self.assertAlmostEqual(f1[2],0)
 
+    # test the calculation of force and potential
+    def test_potential_non_zero_c(self):
+        double_well = azplugins.bond.double_well()
+        double_well.bond_coeff.set('bond', a=1.0, b=1.0, V_max=1.0, c=1.0)
+
+        md.integrate.mode_standard(dt=0)
+        nve = md.integrate.nve(group = group.all())
+        run(1)
+        U = 1.03125
+        F = -0.25
+        f0 = double_well.forces[0].force
+        f1 = double_well.forces[1].force
+        e0 = double_well.forces[0].energy
+        e1 = double_well.forces[1].energy
+
+        self.assertAlmostEqual(e0,0.5*U,3)
+        self.assertAlmostEqual(e1,0.5*U,3)
+        self.assertAlmostEqual(f0[0],F,3)
+        self.assertAlmostEqual(f0[1],0)
+        self.assertAlmostEqual(f0[2],0)
+        self.assertAlmostEqual(f1[0],-F,3)
+        self.assertAlmostEqual(f1[1],0)
+        self.assertAlmostEqual(f1[2],0)
+
     def tearDown(self):
         del self.s
         context.initialize()
