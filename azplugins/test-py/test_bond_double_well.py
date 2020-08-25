@@ -157,7 +157,7 @@ class potential_bond_double_well_tests(unittest.TestCase):
         md.integrate.mode_standard(dt=0)
         nve = md.integrate.nve(group = hoomd.group.all())
         hoomd.run(1)
-        
+
         U = 1.03125
         F = -0.25
         f0 = double_well.forces[0].force
