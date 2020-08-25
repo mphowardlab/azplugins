@@ -31,10 +31,9 @@ class double_well(hoomd.md.bond._bond):
     - :math:`c` - tunes the energy offset between the two potential minima values, i.e. it tilts the potential (in energy units)
 
     Examples::
-    
+
         dw = azplugins.bond.double_well()
         dw.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.5, c=0)
-   
    """
     def __init__(self, name=None):
         hoomd.util.print_status_line()
