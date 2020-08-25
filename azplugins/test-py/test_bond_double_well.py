@@ -6,7 +6,6 @@
 import hoomd
 from hoomd import md
 hoomd.context.initialize()
-
 try:
     from hoomd import azplugins
 except ImportError:
@@ -80,7 +79,7 @@ class potential_bond_double_well_tests(unittest.TestCase):
         double_well.bond_coeff.set('bond', a=3.0, b=0.5, V_max=1.0, c=0)
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
+        nve = md.integrate.nve(group = hoomd.group.all())
         run(1)
 
         U = 0
@@ -106,7 +105,7 @@ class potential_bond_double_well_tests(unittest.TestCase):
         double_well.bond_coeff.set('bond', a=2.0, b=2.0, V_max=5.0, c=0)
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
+        nve = md.integrate.nve(group = hoomd.group.all())
         run(1)
 
         U = 5.0
@@ -131,7 +130,7 @@ class potential_bond_double_well_tests(unittest.TestCase):
         double_well.bond_coeff.set('bond', a=1.0, b=1.0, V_max=1.0, c=0)
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
+        nve = md.integrate.nve(group = hoomd.group.all())
         run(1)
 
         U = 0.5625
@@ -156,7 +155,7 @@ class potential_bond_double_well_tests(unittest.TestCase):
         double_well.bond_coeff.set('bond', a=1.0, b=1.0, V_max=1.0, c=1.0)
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
+        nve = md.integrate.nve(group = hoomd.group.all())
         run(1)
         U = 1.03125
         F = -0.25
