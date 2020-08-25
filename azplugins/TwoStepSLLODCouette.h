@@ -147,6 +147,21 @@ void TwoStepSLLODCouette::integrateStepOne(unsigned int timestep)
     ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(), access_location::host, access_mode::readwrite);
     ArrayHandle<Scalar3> h_accel(m_pdata->getAccelerations(), access_location::host, access_mode::read);
 
+    // Deform box
+    BoxDim newBox = m_pdata->getGlobalBox();
+    Scalar3 y = newBox.getLatticeVector(1);
+    Scalar xy = newBox.getTiltFactorXY();
+    Scalar yz = newBox.getTiltFactorYZ();
+    Scalar xz = newBox.getTiltFactorXZ();
+    const Scalar boundary_shear = y.y * m_gamma_dot;
+    xy += m_gamma_dot * m_deltaT;
+    bool flipped = false;
+    if (xy > 1){
+        xy = -1;
+        flipped = true;
+    }
+    newBox.setTiltFactors(xy, xz, yz);
+    m_pdata->setGlobalBox(newBox);
     const BoxDim& box = m_pdata->getBox();
 
     // perform the first half step of velocity verlet
@@ -179,20 +194,6 @@ void TwoStepSLLODCouette::integrateStepOne(unsigned int timestep)
         // update velocity
         vel += Scalar(0.5) * m_deltaT * (accel - v_del_u);
 
-        // Deform box
-        BoxDim newBox = m_pdata->getGlobalBox();
-        Scalar3 y = newBox.getLatticeVector(1);
-        Scalar xy = newBox.getTiltFactorXY();
-        Scalar yz = newBox.getTiltFactorYZ();
-        Scalar xz = newBox.getTiltFactorXZ();
-        const Scalar boundary_shear = y.y * m_gamma_dot;
-        xy += m_gamma_dot * m_deltaT;
-        if (xy > 1){
-            xy = -1;
-        }
-        newBox.setTiltFactors(xy, xz, yz);
-        m_pdata->setGlobalBox(newBox);
-
         // if particle leaves from (+/-) y boundary it gets (-/+) shear_rate
         // note carefully that pair potentials dependent on dv (e.g. DPD)
         // not yet explicitly supported due to minimum image convention
@@ -204,6 +205,9 @@ void TwoStepSLLODCouette::integrateStepOne(unsigned int timestep)
         }
 
         // Wrap back into box
+        if (flipped){
+            pos.x *= -1;
+        }
         box.wrap(pos,h_image.data[idx]);
 
         h_pos.data[idx] = make_scalar4(pos.x, pos.y, pos.z, __int_as_scalar(type));
