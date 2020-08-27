@@ -28,12 +28,14 @@ class double_well(hoomd.md.bond._bond):
     - :math:`V_max` - Potential maximum energy barrier between the two minima at ``a/2`` for c=0 (in energy units)
     - :math:`a` - twice the location of the potential maximum, maximum is at ``a/2`` for c=0 ( in distance units)
     - :math:`b` - tunes the distance between the potential minima at ``(a/2 +/- b)`` for c=0 (in distance units)
-    - :math:`c` - tunes the energy offset between the two potential minima values, i.e. it tilts the potential (in energy units)
+    - :math:`c` - tunes the energy offset between the two potential minima values, i.e. it tilts the
+                  potential (in energy units). The default value of c is zero.
 
     Examples::
 
         dw = azplugins.bond.double_well()
-        dw.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.5, c=0)
+        dw.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.5)
+        dw.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.2, c=1.0)
    """
     def __init__(self, name=None):
         hoomd.util.print_status_line()

@@ -50,7 +50,7 @@ The parameters are:
     - \a V_max (params.x) potential difference between the the first minima and maxima
     - \a a (params.y) shift for the location of the V_max, the maximum is at approx. a/2
     - \a b (params.z) scaling for the distance of the two minima at approx. (a/2 +/- b)
-    - \a c (params.w) potential difference between the two minima
+    - \a c (params.w) potential difference between the two minima, default is c=0
 
 */
 class BondEvaluatorDoubleWell
