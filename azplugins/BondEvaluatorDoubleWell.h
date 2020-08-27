@@ -31,24 +31,34 @@ namespace detail
 /*!
 This bond potential follows the functional form
 \f{eqnarray*}
-V_{\rm{DW}}(r)  =   \frac{V_{min}}{b^4} \left[ \left( r - a/2 \right)^2 -b^2 \right]^2
+
+V_{\rm{DW}}(r)  =   \frac{V_{max}-c/2}{b^4} \left[ \left( r - a/2 \right)^2 -b^2 \right]^2 + \frac{c}{2b}\left(r-a/2\right)+c/2
+
 \f}
-and has two minima at r = (a/2 +/- b), seperated by a maximum at a/2 of height V_max.
+which has two minima at r = (a/2 +/- b), seperated by a maximum at a/2 of height V_max when c is set to zero.
+
 The parameter a tunes the location of the maximal value and the parameter b tunes the distance of the
 two maxima from each other.  This potential is useful to model bonds which can be either mechanically or
 thermally "activated" into a effectively longer state. The value of V_max can be used to tune the height of the
 energy barrier in between the two states.
 
+If c is non zero, the relative energy of the minima can be tuned, where c is the energy of the second minima,
+the first minima value is at zero. This  causes a small shift in the location of the minima and the maxima,
+because of the added linear term.
+
 The parameters are:
-    - \a V_max (params.x) maximum potential value between the two minima
-    - \a a (params.y) shift for the location of the V_max, maximun is at a/2
-    - \a b (params.z) scaling for the distance of the two minima at (a/2 +/- b)
+    - \a V_max (params.x) potential difference between the the first minima and maxima
+    - \a a (params.y) shift for the location of the V_max, the maximum is at approx. a/2
+    - \a b (params.z) scaling for the distance of the two minima at approx. (a/2 +/- b)
+    - \a c (params.w) potential difference between the two minima, default is c=0
+
 */
 class BondEvaluatorDoubleWell
     {
     public:
         //! Define the parameter type used by this bond potential evaluator
-        typedef Scalar3 param_type;
+
+        typedef Scalar4 param_type;
 
         //! Constructs the pair potential evaluator
         /*!
@@ -56,7 +66,7 @@ class BondEvaluatorDoubleWell
          * \param _params Per type bond parameters of this potential as given above
          */
         DEVICE BondEvaluatorDoubleWell(Scalar _rsq, const param_type& _params)
-            : rsq(_rsq), V_max(_params.x), a(_params.y), b(_params.z)
+            : rsq(_rsq), V_max(_params.x), a(_params.y), b(_params.z), c(_params.w)
             { }
 
         //! This evaluator doesn't use diameter information
@@ -94,13 +104,14 @@ class BondEvaluatorDoubleWell
             // check for invalid parameters
             if (b == Scalar(0.0)) return false;
 
+            Scalar c_half = Scalar(0.5)*c;
             Scalar r = fast::sqrt(rsq);
             Scalar r_min_half_a = r-Scalar(0.5)*a;
             Scalar b_sq = b*b;
-            Scalar c = r_min_half_a*r_min_half_a - b_sq;
+            Scalar d = r_min_half_a*r_min_half_a - b_sq;
 
-            bond_eng = (V_max/(b_sq*b_sq))*c*c;
-            force_divr = - (4*V_max/(b_sq*b_sq))*c*r_min_half_a/r;
+            bond_eng = ((V_max-c_half)/(b_sq*b_sq))*d*d + c_half/b*r_min_half_a + c_half;
+            force_divr = - (4*(V_max-c_half)/(b_sq*b_sq)*d*r_min_half_a+c_half/b)/r;
 
             return true;
             }
@@ -122,6 +133,7 @@ class BondEvaluatorDoubleWell
         Scalar V_max;     //!< V_max parameter
         Scalar a;         //!< a parameter
         Scalar b;         //!< b parameter
+        Scalar c;         //!< c parameter
     };
 
 } // end namespace detail
