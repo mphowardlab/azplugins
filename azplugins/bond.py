@@ -57,7 +57,7 @@ class double_well(hoomd.md.bond._bond):
         # setup the coefficient options
 
         self.required_coeffs = ['V_max','a','b','c']
-
+        self.bond_coeff.set_default_coeff('c', 0.0)
 
     def process_coeff(self, coeff):
         V_max = coeff['V_max']
