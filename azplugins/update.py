@@ -136,7 +136,48 @@ class types(hoomd.update._updater):
 
 
 class dynamic_bond(hoomd.update._updater):
-    def __init__(self,nlist,r_cut,bond_type,group_1, group_2, max_bonds_1,max_bonds_2,nlist_exclusions=True,period=1, phase=0):
+    R""" Update bonds dynamically during simulation.
+
+    Args:
+        r_cut (float): Distance cutoff for making bonds between particles
+        bond_type (str): Type of bond to be formed
+        group_1 (:py:mod:`hoomd.group`): First particle group to form bonds between
+        group_2 (:py:mod:`hoomd.group`): Second particle group to form bonds between
+        max_bonds_1 (int): Maximum number of bonds a particle in group_1 can have
+        max_bonds_2 (int): Maximum number of bonds a particle in group_2 can have
+        nlist (:py:mod:`hoomd.md.nlist`): NeighborList (optional) for updating the exclusions
+        period (int): Particle types will be updated every *period* time steps
+        phase (int): When -1, start on the current time step. Otherwise, execute
+                     on steps where *(step + phase) % period* is 0.
+
+        Forms bonds of type bond_type between particles in group_1 and group_2 during
+        the simulation, if particle distances are shorter than r_cut. If the neighborlist
+        used for the pair potential in the simulation is given as a parameter nlist, the
+        neighbor list exclusions will be updated to include the newly formed bonds.
+        Each particle has a number of maximum bonds which it can form, given by
+        max_bonds_1 for particles in group_1 and max_bonds_2 for group_2.
+
+        The particles in the two groups group_1 and group_2 should be completely
+        separate with no common elements, e.g. two different types, or the two
+        groups should be identical, where now max_bonds_1 needs to be equal to max_bonds_2.
+
+
+        .. warning::
+            If the groups group_1 and group_2 are modified during the simulation, this
+            Updater will not be updated to reflect the changes. It is the user's
+            responsibility to ensure that the groups do not change as long as this
+            updater is active.
+
+
+        Examples::
+
+            azplugins.update.dynamic_bond(nlist=nl,r_cut=1.0,bond_type='bond',
+                group_1=hoomd.group.all(),group_2=hoomd.group.all(), max_bonds_1=3,max_bonds_2=3)
+            azplugins.update.types(r_cut=1.0,bond_type='bond',
+                group_1=hoomd.group.type(type='A'),group_2=hoomd.group.type(type='B'),max_bonds_1=3,max_bonds_2=2)
+    """
+
+    def __init__(self,r_cut,bond_type,group_1, group_2, max_bonds_1,max_bonds_2,nlist=None,period=1, phase=0):
 
         hoomd.util.print_status_line()
         hoomd.update._updater.__init__(self)
@@ -146,45 +187,76 @@ class dynamic_bond(hoomd.update._updater):
         else:
             cpp_class = _azplugins.DynamicBondUpdaterGPU
 
-        # look up the bond id based on the given name - this will throw an error if the bond types do not exist
-        bond_type_id = hoomd.context.current.system_definition.getBondData().getTypeByName(bond_type)
+        self.cpp_updater = cpp_class(hoomd.context.current.system_definition,group_1.cpp_group,group_2.cpp_group)
 
-        self.r_cut = r_cut
-        self.r_buff = 0.4
-        self.nlist = nlist
-        self.nlist_exclusions = nlist_exclusions
-        # it doesn't really make sense to allow partially overlapping groups?
-        # Maybe it should be excluded. At least overlapping groups with different max bonds make no sense.
-        # We need to check that the groups have no overlap if the max_bonds_1 and max_bonds_2 are different:
-        new_cpp_group = _hoomd.ParticleGroup.groupIntersection(group_1.cpp_group, group_2.cpp_group)
-        if new_cpp_group.getNumMembersGlobal()>0 and max_bonds_1 != max_bonds_2:
-            hoomd.context.msg.error('update.dynamic_bond: groups are overlapping with ' + str(new_cpp_group.getNumMembersGlobal())
-                                    + ' common members, but maximum bonds formed by each is different ' + str(max_bonds_1)
-                                    + ' != '+  str(max_bonds_2)+ '.\n')
-            raise ValueError('update.dynamic_bond: groups are overlapping with different number of maximum bonds')
-
-        # preliminary testing indicates that it is faster on the CPU to have group_1 to be the bigger one
-        # swap such that group 1 is the bigger of the two
-
-        #if group_2.cpp_group.getNumMembersGlobal()> group_1.cpp_group.getNumMembersGlobal():
-        #    temp_group = group_1
-        #    group_1 = group_2
-        #    group_2 = temp_group
-
-        self.cpp_updater = cpp_class(hoomd.context.current.system_definition,
-                                     self.nlist.cpp_nlist,
-                                     self.nlist_exclusions,
-                                     group_1.cpp_group,
-                                     group_2.cpp_group,
-                                     self.r_cut,
-                                     self.r_buff,
-                                     bond_type_id,
-                                     max_bonds_1,
-                                     max_bonds_2)
-
+        self.metadata_fields = ['r_cut','bond_type','group_1', 'group_2', 'max_bonds_1','max_bonds_2','nlist']
         self.setupUpdater(period, phase)
 
+        hoomd.util.quiet_status()
+        self.set_params(r_cut,bond_type,max_bonds_1,max_bonds_2,nlist)
+        hoomd.util.unquiet_status()
 
-    def set_params(self, nlist=None, bond_type=None, max_bonds_1=None, max_bonds_2=None,nlist_exclusions=None,group_1=None, group_2=None):
-        # todo - class right now doesn't have any set/get functions
-        hoomd.util.print_status_line()
+
+    def set_params(self, r_cut=None, bond_type=None, max_bonds_1=None, max_bonds_2=None, nlist=None):
+        R""" Set the dynamic_bond parameters.
+
+        Args:
+            r_cut (float): Distance cutoff for making bonds between particles
+            bond_type (str): Type of bond to be formed
+            max_bonds_1 (int): Maximum number of bonds a particle in group_1 can have
+            max_bonds_2 (int): Maximum number of bonds a particle in group_2 can have
+            nlist (:py:mod:`hoomd.md.nlist`): NeighborList (optional) for updating the exclusions
+
+        Examples::
+
+            bonds =  azplugins.update.dynamic_bond(nlist=nl,r_cut=1.0,bond_type='bond',
+                        group_1=hoomd.group.all(),group_2=hoomd.group.all(), max_bonds_1=3,max_bonds_2=3)
+            bonds.set_params(r_cut=2.0)
+            bonds.set_params(max_bonds_1=5,max_bonds_2=5)
+
+        """
+        if r_cut is not None:
+            if r_cut <=0:
+                hoomd.context.msg.error('update.dynamic_bond: cutoff ' + str(r_cut) + ' <=0 .\n')
+                raise ValueError('update.dynamic_bond: cutoff is smaller or equal to zero.')
+            self.r_cut = r_cut
+            self.cpp_updater.r_cut = self.r_cut
+
+        if bond_type is not None:
+            # look up the bond id based on the given name - this will throw an error if the bond type does not exist
+            bond_type_id = hoomd.context.current.system_definition.getBondData().getTypeByName(bond_type)
+            self.bond_type_id = bond_type_id
+            self.cpp_updater.bond_type = self.bond_type_id
+
+        if max_bonds_1 is not None:
+            if max_bonds_1 <=0:
+                hoomd.context.msg.error('update.dynamic_bond: number of maximum bonds for group 1 is ' + str(max_bonds_1) + ' <=0 .\n')
+                raise ValueError('update.dynamic_bond: number of maximum bonds for group 1 is smaller or equal to zero.')
+            self.max_bonds_1 = max_bonds_1
+            self.cpp_updater.max_bonds_group_1 = self.max_bonds_1
+
+        if max_bonds_2 is not None:
+            if max_bonds_2 <=0:
+                hoomd.context.msg.error('update.dynamic_bond: number of maximum bonds for group 2 is ' + str(max_bonds_2) + ' <=0 .\n')
+                raise ValueError('update.dynamic_bond: number of maximum bonds for group 2 is smaller or equal to zero.')
+            self.max_bonds_2 = max_bonds_2
+            self.cpp_updater.max_bonds_group_2 = self.max_bonds_2
+
+        if nlist is not None:
+            self.nlist = nlist
+            self.cpp_updater.setNeighbourList(self.nlist.cpp_nlist)
+
+
+
+
+        #self.nlist = nlist
+        #self.nlist_exclusions = nlist_exclusions
+        #self.cpp_updater = cpp_class(hoomd.context.current.system_definition,
+        #                                     self.nlist.cpp_nlist,
+        #                                     self.nlist_exclusions,
+        #                                     group_1.cpp_group,
+        #                                     group_2.cpp_group,
+        #                                     self.r_cut,
+        #                                     bond_type_id,
+        #                                     max_bonds_1,
+        #                                     max_bonds_2)

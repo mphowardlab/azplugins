@@ -28,50 +28,116 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
     {
     public:
 
-        //! Constructor with parameters
-        DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
-                           std::shared_ptr<NeighborList> nlist,
-                           bool m_nlist_exclusions_set,
-                           std::shared_ptr<ParticleGroup> group_1,
-                           std::shared_ptr<ParticleGroup> group_2,
-                           const Scalar r_cut,
-                           const Scalar r_buff,
-                           unsigned int bond_type,
-                           unsigned int max_bonds_group_1,
-                           unsigned int max_bonds_group_2);
+      //! Simple constructor
+      DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
+                         std::shared_ptr<ParticleGroup> group_1,
+                         std::shared_ptr<ParticleGroup> group_2);
 
-        //! Destructor
-        virtual ~DynamicBondUpdater();
+      //! Constructor with parameters
+      DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
+                         std::shared_ptr<NeighborList> pair_nlist,
+                         std::shared_ptr<ParticleGroup> group_1,
+                         std::shared_ptr<ParticleGroup> group_2,
+                         const Scalar r_cut,
+                         unsigned int bond_type,
+                         unsigned int max_bonds_group_1,
+                         unsigned int max_bonds_group_2);
 
-        //! update
-        virtual void update(unsigned int timestep);
+      //! Destructor
+      virtual ~DynamicBondUpdater();
 
+      //! update
+      virtual void update(unsigned int timestep);
+
+      //! Set the cutoff distance for finding bonds
+      /*!
+       * \param r_cut cutoff distance between particles for finding potential bonds
+       */
+      void setRcut(Scalar r_cut)
+          {
+          m_r_cut = r_cut;
+          checkRcut();
+          }
+      //! Get the cutoff distance between particles for finding bonds
+      Scalar getRcut()
+          {
+          return m_r_cut;
+          }
+      //! Set the bond type of the dynamically formed bonds
+      /*!
+       * \param bond_type type of bonds to be formed
+       */
+      void setBondType(unsigned int bond_type)
+          {
+          m_bond_type = bond_type;
+          checkBondType();
+          }
+      //! Get the bond type of the dynamically formed bonds
+      unsigned int getBondType()
+          {
+          return m_bond_type;
+          }
+      //! Set the maximum number of bonds on particles in group_1
+      /*!
+       * \param max_bonds_group_1 max number of bonds formed by particles in group 1
+       */
+      void setMaxBondsGroup1(unsigned int max_bonds_group_1)
+          {
+          m_max_bonds_group_1 = max_bonds_group_1;
+          }
+      //! Get the maximum number of bonds on particles in group_1
+      unsigned int getMaxBondsGroup1()
+          {
+          return m_max_bonds_group_1;
+          }
+      //! Set the maximum number of bonds on particles in group_2
+      /*!
+       * \param max_bonds_group_2 max number of bonds formed by particles in group_2
+       */
+      void setMaxBondsGroup2(unsigned int max_bonds_group_2)
+          {
+          m_max_bonds_group_2 = max_bonds_group_2;
+          }
+      //! Get the maximum number of bonds on particles in group_2
+      unsigned int getMaxBondsGroup2()
+          {
+          return m_max_bonds_group_2;
+          }
+
+      //! Set the hoomd neighbor list
+      /*!
+       * \param nlist hoomd NeighborList pointer
+       */
+      void setNeighbourList( std::shared_ptr<NeighborList> nlist)
+          {
+          m_pair_nlist = nlist;
+          m_pair_nlist_exclusions_set = true;
+          }
 
     protected:
-        std::shared_ptr<NeighborList> m_nlist;    //!< The neighborlist to use for bond finding
-        bool m_nlist_exclusions_set;              //!< whether or not the bonds are set as exclusions in nlist
+
         std::shared_ptr<BondData> m_bond_data;    //!< Bond data
 
         std::shared_ptr<ParticleGroup> m_group_1;   //!< First particle group to form bonds with
         std::shared_ptr<ParticleGroup> m_group_2;   //!< Second particle group to form bonds with
+        bool m_groups_identical;
 
-        const Scalar m_r_cut;                       //!< cutoff for the bond forming criterion
-        const Scalar m_r_buff;                       //!< buffer size for neighbor list
-        const unsigned int m_bond_type;                   //!< Type id of the bond to form
-        const unsigned int m_max_bonds_group_1;           //!< maximum number of bonds which can be formed by the first group
-        const unsigned int m_max_bonds_group_2;           //!< maximum number of bonds which can be formed by the second group
+        Scalar m_r_cut;                              //!< cutoff for the bond forming criterion
+        unsigned int m_bond_type;                   //!< Type id of the bond to form
+        unsigned int m_max_bonds_group_1;           //!< maximum number of bonds which can be formed by the first group
+        unsigned int m_max_bonds_group_2;           //!< maximum number of bonds which can be formed by the second group
 
-        unsigned int m_max_bonds;                   //!<  maximum number of possible bonds which can be found
+        unsigned int m_max_bonds;                   //!<  maximum number of possible bonds (or neighbors) which can be found
         unsigned int m_max_bonds_overflow;          //!< registers if there is an overflow in  maximum number of possible bonds
 
-        GPUArray<Scalar3> m_all_possible_bonds;   //!< list of possible bonds, size:  size(group_1)*m_max_bonds
-        unsigned int m_num_all_possible_bonds;    //!< number of valid possible bonds at the beginning of m_all_possible_bonds
+        GPUArray<Scalar3> m_all_possible_bonds;     //!< list of possible bonds, size: NumMembers(group_1)*m_max_bonds
+        unsigned int m_num_all_possible_bonds;      //!< number of valid possible bonds at the beginning of m_all_possible_bonds
 
-        GlobalArray<unsigned int> m_n_list;      //!< Neighbor list data
-        GlobalArray<unsigned int> m_n_neigh;    //!< Number of neighbors for each particle
+        GlobalArray<unsigned int> m_n_list;        //!< Neighbor list data
+        GlobalArray<unsigned int> m_n_neigh;       //!< Number of neighbors for each particle
 
         hpmc::detail::AABBTree        m_aabb_tree;  //!< AABB tree for group_1
-        GPUVector<hpmc::detail::AABB> m_aabbs;      //!< Flat array of AABBs of all types
+        GPUVector<hpmc::detail::AABB> m_aabbs;      //!< Flat array of AABBs of particles in group_2
         std::vector< vec3<Scalar> > m_image_list;   //!< List of translation vectors for tree traversal
         unsigned int m_n_images;                    //!< The number of image vectors to check
 
@@ -80,25 +146,31 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         unsigned int m_max_existing_bonds_list;        //!< maximum number of  bonds in list of existing bonded particles
         Index2D m_existing_bonds_list_indexer;         //!< Indexer for accessing the by-tag bonded particle list
 
+        std::shared_ptr<NeighborList> m_pair_nlist;    //!< The hoomd neighborlist, only used if exclusions of the newly formed bonds need to be set
+        bool m_pair_nlist_exclusions_set;              //!< whether or not the bonds are set as exclusions in the hoomd particle neighborlist. Set to true when m_pair_nlist is set
 
+        //! filter out existing and doublicate bonds from all found possible bonds
         virtual void filterPossibleBonds();
+        //! build the neighbor list AABB tree
+        virtual void buildTree();
+        //! traverse the neighbor list ABB tree
+        virtual void traverseTree();
+
 
         bool CheckisExistingLegalBond(Scalar3 i); //this acesses info in m_existing_bonds_list_tag. todo: rename to something sensible
         void calculateExistingBonds();
-
-        virtual void buildTree();
-        virtual void traverseTree();
-
         void makeBonds();
-        void checkBoxSize();
+
         void AddtoExistingBonds(unsigned int tag1,unsigned int tag2);
         bool isExistingBond(unsigned int tag1,unsigned int tag2); //this acesses info in m_existing_bonds_list_tag
         virtual void updateImageVectors();
-        void checkSystemSetup();
-        virtual void resizePossibleBondlists();
+        void checkBoxSize();
+        void checkRcut();
+        void checkBondType();
+        void setGroupOverlap();
+        void resizePossibleBondlists();
         void resizeExistingBondList();
-        virtual void allocateParticleArrays();
-
+        void allocateParticleArrays();
 
         //! Notification of a box size change
         void slotBoxChanged()
@@ -112,22 +184,8 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
             m_max_N_changed = true;
             }
 
-        //! Notification of total particle number change
-        void slotParticlesSort()
-            {
-            m_particle_sort_changed = true;
-            }
-
-        //! Forces a full update of the tree build and travertsal on the next call to compute()
-        void forceUpdate()
-            {
-            m_force_update = true;
-            }
-
         bool m_box_changed;           //!< Flag if box dimensions changed
         bool m_max_N_changed;         //!< Flag if total number of particles changed
-        bool m_particle_sort_changed; //!< Flag if particle indexes got resorted
-        bool m_force_update;          //!< Flag if the tree needs to be rebuild and traversed
 
     };
 

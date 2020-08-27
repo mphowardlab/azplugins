@@ -37,6 +37,25 @@ class update_dynamic_bond_tests_two_groups(unittest.TestCase):
                                                max_bonds_1=1,
                                                max_bonds_2=2)
 
+    def test_set_params(self):
+        self.assertEqual(self.u.cpp_updater.r_cut, 1)
+        self.u.set_params(r_cut=1.5)
+        self.assertEqual(self.u.cpp_updater.r_cut, 1.5)
+
+        # check the test of box size large enough for cutoff
+        with self.assertRaises(RuntimeError):
+            self.u.set_params(r_cut=15.0)
+
+        self.u.set_params(max_bonds_1=3)
+        self.assertEqual(self.u.cpp_updater.max_bonds_group_1,3)
+        self.u.set_params(max_bonds_2=7)
+        self.assertEqual(self.u.cpp_updater.max_bonds_group_2,7)
+
+        # check the test of bondy_type
+        with self.assertRaises(RuntimeError):
+            self.u.set_params(bond_type='not_existing')
+
+
     def test_form_bond(self):
         # test bond formation between particle 1-2
         # particle 0,1 are in the same group, so even if their distance is
@@ -144,6 +163,7 @@ class update_dynamic_bond_tests_one_group(unittest.TestCase):
         snap = self.s.take_snapshot(bonds=True)
         hoomd.run(1)
         snap = self.s.take_snapshot(bonds=True)
+        print(snap.bonds.group)
         self.assertAlmostEqual(5, snap.bonds.N)
 
         np.testing.assert_array_almost_equal([2,5], snap.bonds.group[0])
@@ -152,10 +172,23 @@ class update_dynamic_bond_tests_one_group(unittest.TestCase):
         np.testing.assert_array_almost_equal([1,2], snap.bonds.group[3])
         np.testing.assert_array_almost_equal([3,4], snap.bonds.group[4])
 
+    def test_group_partial_overlap(self):
+        self.group_1 = hoomd.group.tag_list(name="a", tags = [0,1,2,3])
+        self.group_2 = hoomd.group.tag_list(name="b", tags = [3,4,5])
+        with self.assertRaises(RuntimeError):
+            azplugins.update.dynamic_bond(nlist=self.nl,
+                                     r_cut=1.0,
+                                     bond_type='bond',
+                                     group_1=self.group_1,
+                                     group_2=self.group_2,
+                                     max_bonds_1=1,
+                                     max_bonds_2=2)
 
     def tearDown(self):
         del self.s, self.u
         hoomd.context.initialize()
+
+
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

@@ -33,14 +33,17 @@ namespace azplugins
 class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
     {
     public:
+      //! Simple constructor
+      DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
+                            std::shared_ptr<ParticleGroup> group_1,
+                            std::shared_ptr<ParticleGroup> group_2);
+
       //! Constructor with parameters
       DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
                             std::shared_ptr<NeighborList> nlist,
-                            bool nlist_exclusions_set,
                             std::shared_ptr<ParticleGroup> group_1,
                             std::shared_ptr<ParticleGroup> group_2,
-                            const Scalar r_cut,
-                            const Scalar r_buff,
+                            Scalar r_cut,
                             unsigned int bond_type,
                             unsigned int max_bonds_group_1,
                             unsigned int max_bonds_group_2);
@@ -48,40 +51,48 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
       //! Destructor
       virtual ~DynamicBondUpdaterGPU();
 
-    protected:
+      /*! Set autotuner parameters
+       * \param enable Enable / disable autotuning
+       * \param period period (approximate) in time steps when retuning occurs
+       */
+      virtual void setAutotunerParams(bool enable, unsigned int period)
+          {
+          DynamicBondUpdater::setAutotunerParams(enable, period);
 
+          m_copy_tuner->setPeriod(period);
+          m_copy_tuner->setEnabled(enable);
+
+          m_copy_nlist_tuner->setPeriod(period);
+          m_copy_nlist_tuner->setEnabled(enable);
+
+          m_tuner_filter_bonds->setPeriod(period);
+          m_tuner_filter_bonds->setEnabled(enable);
+
+          }
+
+    protected:
+          //! filter out existing and doublicate bonds from all found possible bonds
           virtual void filterPossibleBonds();
+          //! Update the vectors for traversal of pbc images
           virtual void updateImageVectors();
-          virtual void resizePossibleBondlists();
-          virtual void allocateParticleArrays();
-          //! Build the LBVHs using the neighbor library
+          //! Build the LBVH using the neighbor library
           virtual void buildTree();
-          //! Traverse the LBVHs using the neighbor library
+          //! Traverse the LBVH using the neighbor library
           virtual void traverseTree();
 
     private:
 
+        std::unique_ptr<Autotuner> m_copy_tuner;           //!< Tuner for the primitive-copy kernel
+        std::unique_ptr<Autotuner> m_copy_nlist_tuner;     //!< Tuner for the primitive-copy kernel
+        std::unique_ptr<Autotuner> m_tuner_filter_bonds;   //!< Tuner for existing bond filter
 
-        std::unique_ptr<Autotuner> m_sorted_index_tuner;   //!< Tuner for the type-count kernel
-        std::unique_ptr<Autotuner> m_count_tuner;   //!< Tuner for the type-count kernel
-        std::unique_ptr<Autotuner> m_copy_tuner;    //!< Tuner for the primitive-copy kernel
-        std::unique_ptr<Autotuner> m_copy_nlist_tuner;    //!< Tuner for the primitive-copy kernel
-        std::unique_ptr<Autotuner> m_tuner_filter_bonds; //!< Tuner for existing bond filter
-        std::unique_ptr<Autotuner> m_copy_last_pos_tuner;
-        std::unique_ptr<Autotuner> m_tuner_dist_check_last_pos;
+        GPUFlags<int> m_num_nonzero_bonds_flag;            //!< GPU flag for the number of valid bonds
+        GPUFlags<unsigned int> m_max_bonds_overflow_flag;  //!< GPU flag for overflow
 
-
-        GPUFlags<int> m_num_nonzero_bonds;//!< GPU flags for the number of marked particles
-        GPUFlags<unsigned int> m_needs_updating;
-        GPUFlags<unsigned int> m_max_bonds_overflow_flag;//!< GPU flags for the number of marked particles
-
-        GPUArray<unsigned int> m_sorted_indexes;    //!< Sorted particle indexes [idx group_1 ...] [idx group_2 ...]
-
-        GPUFlags<unsigned int> m_lbvh_errors;       //!< Error flags during particle marking (e.g., off rank)
-        neighbor::LBVH m_lbvh_2;                 //!< LBVH for group_2
-        neighbor::LBVHTraverser  m_traverser;   //!< LBVH traverer
-        GlobalVector<Scalar3> m_image_list; //!< List of translation vectors for traversal
-        unsigned int m_n_images;            //!< Number of translation vectors for traversal
+        neighbor::LBVH m_lbvh;                            //!< LBVH for group_2
+        neighbor::LBVHTraverser  m_traverser;             //!< LBVH traverer
+        GlobalVector<Scalar3> m_image_list;               //!< List of translation vectors for traversal
+        unsigned int m_n_images;                          //!< Number of translation vectors for traversal
 
 
         //! Compute the LBVH domain from the current box

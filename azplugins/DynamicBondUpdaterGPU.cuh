@@ -39,46 +39,28 @@ cudaError_t sort_possible_bond_array(Scalar3 *d_all_possible_bonds,
                                      const unsigned int size);
 
 cudaError_t filter_existing_bonds(Scalar3 *d_all_possible_bonds,
-                             unsigned int *d_n_existing_bonds,
-                             const unsigned int *d_existing_bonds_list,
-                             const Index2D& exli,
-                             const unsigned int size,
-                             const unsigned int block_size);
+                                  unsigned int *d_n_existing_bonds,
+                                  const unsigned int *d_existing_bonds_list,
+                                  const Index2D& exli,
+                                  const unsigned int size,
+                                  const unsigned int block_size);
 
-cudaError_t sort_and_remove_zeros_possible_bond_array_1(Scalar3 *d_all_possible_bonds,
-                                            const unsigned int size,
-                                            int *d_max_non_zero_bonds);
-
-cudaError_t sort_and_remove_zeros_possible_bond_array_2(Scalar3 *d_all_possible_bonds,
-                                            const unsigned int size,
-                                            int *d_max_non_zero_bonds);
-
-cudaError_t sort_and_remove_zeros_possible_bond_array_3(Scalar3 *d_all_possible_bonds,
-                                                        const unsigned int size,
-                                                        int *d_max_non_zero_bonds);
-
-cudaError_t remove_zeros_possible_bond_array(Scalar3 *d_all_possible_bonds,
-                                             const unsigned int size,
-                                             int *d_max_non_zero_bonds);
-
-cudaError_t make_sorted_index_array(unsigned int *d_sorted_indexes,
-                                unsigned int *d_indexes_group_1,
-                                unsigned int *d_indexes_group_2,
-                                const unsigned int size_group_1,
-                                const unsigned int size_group_2,
+cudaError_t copy_possible_bonds(Scalar3 *d_all_possible_bonds,
+                                const Scalar4 *d_postype,
+                                const unsigned int *d_tag,
+                                const unsigned int *d_sorted_indexes,
+                                const unsigned int *d_n_neigh,
+                                const unsigned int *d_nlist,
+                                const BoxDim box,
+                                const unsigned int max_bonds,
+                                const  Scalar r_cut,
+                                const bool groups_identical,
+                                const unsigned int N,
                                 const unsigned int block_size);
 
-cudaError_t nlist_copy_nlist_possible_bonds(Scalar3 *d_all_possible_bonds,
-                          const Scalar4 *d_postype,
-                          const unsigned int *d_tag,
-                          const unsigned int *d_sorted_indexes,
-                          const unsigned int *d_n_neigh,
-                          const unsigned int *d_nlist,
-                          const BoxDim box,
-                          const unsigned int max_bonds,
-                          const  Scalar r_cut,
-                          const unsigned int size,
-                          const unsigned int block_size);
+cudaError_t remove_zeros_and_sort_possible_bond_array(Scalar3 *d_all_possible_bonds,
+                                                      const unsigned int size,
+                                                      int *d_max_non_zero_bonds);
 
 //! Insert operation for a point under a mapping.
 /*!
