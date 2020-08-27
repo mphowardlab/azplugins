@@ -11,7 +11,7 @@ from hoomd import _hoomd
 from . import _azplugins
 
 class double_well(hoomd.md.bond._bond):
-    R"""Double well bond potential.
+    R""" Double well bond potential.
 
     Args:
         name (str): Name of the bond instance.
@@ -21,20 +21,22 @@ class double_well(hoomd.md.bond._bond):
 
     .. math::
 
-        V_{\rm{DW}}(r)  =  \frac{V_{\rm max}}{b^4} \left[ \left( r - a/2 \right)^2 - b^2 \right]^2
+        V_{\rm{DW}}(r)  =  \frac{V_{max}-c/2}{b^4} \left[ \left( r - a/2 \right)^2 - b^2 \right]^2 +\frac{c}{2b}(r - a/2) + c/2
 
     Coefficients:
 
-    - :math:`V_{\rm max}` - Potential maximum height between the two minima at :math:`a/2` (in energy units)
-    - :math:`a` - twice the location of the potential maximum, maximum is at :math:`a/2` ( in distance units)
-    - :math:`b` - tunes the disance between the potential minima at :math:`a/2 \pm b` (in distance units)
+    - :math:`V_max` - Potential maximum energy barrier between the two minima at ``a/2`` for c=0 (in energy units)
+    - :math:`a` - twice the location of the potential maximum, maximum is at ``a/2`` for c=0 ( in distance units)
+    - :math:`b` - tunes the distance between the potential minima at ``(a/2 +/- b)`` for c=0 (in distance units)
+    - :math:`c` - tunes the energy offset between the two potential minima values, i.e. it tilts the
+                  potential (in energy units). The default value of c is zero.
 
     Examples::
 
         dw = azplugins.bond.double_well()
         dw.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.5)
-
-    """
+        dw.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.2, c=1.0)
+   """
     def __init__(self, name=None):
         hoomd.util.print_status_line()
 
@@ -55,17 +57,22 @@ class double_well(hoomd.md.bond._bond):
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
 
         # setup the coefficient options
-        self.required_coeffs = ['V_max','a','b']
+
+        self.required_coeffs = ['V_max','a','b','c']
+        self.bond_coeff.set_default_coeff('c', 0.0)
 
     def process_coeff(self, coeff):
         V_max = coeff['V_max']
         a = coeff['a']
         b = coeff['b']
+        c = coeff['c']
+
         if b==0:
             hoomd.context.msg.error("azplugins.bond.double_well(): coefficient b must be non-zero.\n")
             raise ValueError('Coefficient b must be non-zero')
 
-        return _hoomd.make_scalar3(V_max, a, b)
+        return _hoomd.make_scalar4(V_max, a, b, c)
+
 
 
 class fene(hoomd.md.bond._bond):
