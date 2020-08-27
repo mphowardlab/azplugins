@@ -1,4 +1,4 @@
-# Copyright (c) 2019-2020, Antonia Statt
+# Copyright (c) 2019-2020, Michael P. Howard
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 # Maintainer: astatt / Everyone is free to add additional tutorials
@@ -6,11 +6,14 @@
 
 import numpy as np
 import sys
-sys.path.insert(0,'/Users/statt/programs/hoomd-2.6.0')
 import hoomd
 from hoomd import md
 from hoomd import data
-from hoomd import azplugins
+try:
+    from hoomd import azplugins
+except ImportError:
+    import azplugins
+
 from scipy.spatial.distance import cdist
 
 def init_mixture(system,snapshot,rho_S,rho_A,rho_B,height,s_S,s_A,s_B,kT):

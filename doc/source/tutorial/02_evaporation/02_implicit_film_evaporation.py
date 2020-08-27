@@ -1,15 +1,18 @@
-# Copyright (c) 2019-2020, Antonia Statt
+# Copyright (c) 2019-2020,  Michael P. Howard
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 # Maintainer: astatt / Everyone is free to add additional tutorials
 
 import numpy as np
 import sys
-sys.path.insert(0,'/Users/statt/programs/hoomd-2.6.0')
 import hoomd
 from hoomd import md
 from hoomd import data
-from hoomd import azplugins
+try:
+    from hoomd import azplugins
+except ImportError:
+    import azplugins
+
 from scipy.spatial.distance import cdist
 
 def init_mixture(system,snapshot,rho_B,rho_A,height,s_B,s_A,kT):
@@ -131,11 +134,6 @@ class measure_evaporation:
 
         res = np.vstack((np.asarray(centers),to_save_H,temp)).T
         np.savetxt('tutorial_evaporation_implicit_dens_%05d.hist'%hoomd.get_step(),res, header="z, density %s temp"%self.types)
-
-        # count solvent particles S+T
-        N_sol = len(pos[np.where(np.logical_or(snap.particles.typeid==1,snap.particles.typeid==2))])
-        self.outfile.write("%d %f \n"%(hoomd.get_step(),N_sol))
-        self.outfile.flush()
 
         self.counter += 1
 
