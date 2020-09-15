@@ -182,17 +182,14 @@ void TwoStepSLLODCouette::integrateStepOne(unsigned int timestep)
         // acceleration
         const Scalar3 accel = h_accel.data[idx];
 
-        // shear rate tensor dotted with position
-        const Scalar3 r_del_u = make_scalar3(m_gamma_dot * postype.y, 0.0, 0.0);
-
         // shear rate tensor dotted with velocity
         const Scalar3 v_del_u = make_scalar3(m_gamma_dot * velmass.y, 0.0, 0.0);
 
-        // update position
-        pos += (vel + r_del_u + Scalar(0.5) * m_deltaT * accel) * m_deltaT;
-
         // update velocity
         vel += Scalar(0.5) * m_deltaT * (accel - v_del_u);
+
+        // update position
+        pos += (vel + Scalar(0.5) * m_deltaT * accel) * m_deltaT;
 
         // if particle leaves from (+/-) y boundary it gets (-/+) shear_rate
         // note carefully that pair potentials dependent on dv (e.g. DPD)
