@@ -6,7 +6,7 @@
 
 #include "TwoStepSLLODNVTFlowGPU.h"
 #include "TwoStepSLLODNVTFlowGPU.cuh"
-
+#include "TwoStepSLLODNVTFlowGPU.cuh"
 
 #ifdef ENABLE_MPI
 #include "hoomd/Communicator.h"
@@ -30,7 +30,7 @@ namespace azplugins
 */
 TwoStepSLLODNVTFlowGPU::TwoStepSLLODNVTFlowGPU(std::shared_ptr<SystemDefinition> sysdef,
                              std::shared_ptr<ParticleGroup> group,
-                             std::shared_ptr<ComputeThermo> thermo,
+                             std::shared_ptr<ComputeThermoSLLOD> thermo,
                              Scalar tau,
                              std::shared_ptr<Variant> T,
                              Scalar shear_rate,
@@ -51,8 +51,7 @@ TwoStepSLLODNVTFlowGPU::TwoStepSLLODNVTFlowGPU(std::shared_ptr<SystemDefinition>
 
     m_tuner_one.reset(new Autotuner(valid_params, 5, 100000, "sllod_nvt_step_one", this->m_exec_conf));
     m_tuner_two.reset(new Autotuner(valid_params, 5, 100000, "sllod_nvt_step_two", this->m_exec_conf));
-    m_tuner_add_flowfield.reset(new Autotuner(valid_params, 5, 100000, "sllod_nvt_add_flow_field", this->m_exec_conf));
-    m_tuner_rm_flowfield.reset(new Autotuner(valid_params, 5, 100000, "sllod_nvt_remove_flow_field", this->m_exec_conf));
+
     }
 
 /*! \param timestep Current time step
@@ -169,79 +168,6 @@ void TwoStepSLLODNVTFlowGPU::integrateStepTwo(unsigned int timestep)
         m_prof->pop(m_exec_conf);
     }
 
-void TwoStepSLLODNVTFlowGPU::removeFlowField()
-{
-  unsigned int group_size = m_group->getNumMembers();
-
-  // profile this step
-  if (m_prof)
-      m_prof->push("SLLOD NVT remove flowfield");
-
-  ArrayHandle<Scalar4> d_vel(m_pdata->getVelocities(), access_location::device, access_mode::readwrite);
-  ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
-  ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
-
-  m_exec_conf->beginMultiGPU();
-
-  // perform the removal of the flow field on the GPU
-  m_tuner_rm_flowfield ->begin();
-  gpu::sllod_nvt_remove_flow_field(d_vel.data,
-                   d_pos.data,
-                   d_index_array.data,
-                   group_size,
-                   m_tuner_rm_flowfield->getParam(),
-                   m_shear_rate,
-                   m_group->getGPUPartition());
-
-
-  if(m_exec_conf->isCUDAErrorCheckingEnabled())
-      CHECK_CUDA_ERROR();
-  m_tuner_rm_flowfield->end();
-
-  m_exec_conf->endMultiGPU();
-
-
-  // done profiling
-  if (m_prof)
-      m_prof->pop();
-}
-
-void TwoStepSLLODNVTFlowGPU::addFlowField()
-{
-  unsigned int group_size = m_group->getNumMembers();
-
-  // profile this step
-  if (m_prof)
-      m_prof->push("SLLOD NVT remove flowfield");
-
-  ArrayHandle<Scalar4> d_vel(m_pdata->getVelocities(), access_location::device, access_mode::readwrite);
-  ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
-  ArrayHandle< unsigned int > d_index_array(m_group->getIndexArray(), access_location::device, access_mode::read);
-
-  m_exec_conf->beginMultiGPU();
-
-  // perform the removal of the flow field on the GPU
-  m_tuner_add_flowfield ->begin();
-  gpu::sllod_nvt_add_flow_field(d_vel.data,
-                   d_pos.data,
-                   d_index_array.data,
-                   group_size,
-                   m_tuner_add_flowfield->getParam(),
-                   m_shear_rate,
-                   m_group->getGPUPartition());
-
-
-  if(m_exec_conf->isCUDAErrorCheckingEnabled())
-      CHECK_CUDA_ERROR();
-  m_tuner_add_flowfield->end();
-
-  m_exec_conf->endMultiGPU();
-
-
-  // done profiling
-  if (m_prof)
-      m_prof->pop();
-}
 
 namespace detail {
 
@@ -250,13 +176,12 @@ void export_TwoStepSLLODNVTFlowGPU(pybind11::module& m)
     pybind11::class_<TwoStepSLLODNVTFlowGPU, std::shared_ptr<TwoStepSLLODNVTFlowGPU> >(m, "TwoStepSLLODNVTFlowGPU", pybind11::base<TwoStepSLLODNVTFlow>())
     .def(pybind11::init< std::shared_ptr<SystemDefinition>,
                           std::shared_ptr<ParticleGroup>,
-                          std::shared_ptr<ComputeThermo>,
+                          std::shared_ptr<ComputeThermoSLLOD>,
                           Scalar,
                           std::shared_ptr<Variant>,
                           Scalar,
                           const std::string&
-                          >())
-        ;
+                          >());
     }
 
 } // end namespace detail

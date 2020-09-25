@@ -177,57 +177,7 @@ void sllod_nvt_step_two(Scalar4 *d_vel,
     }
 
 
-extern "C" __global__
-void sllod_nvt_remove_flow_field(Scalar4 *d_vel,
-                                 Scalar4 *d_pos,
-                                 unsigned int *d_group_members,
-                                 unsigned int work_size,
-                                 Scalar shear_rate,
-                                 unsigned int offset)
-     {
-     // determine which particle this thread works on
-     int group_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-     if (group_idx < work_size)
-         {
-         unsigned int idx = d_group_members[group_idx+offset];
-
-         Scalar4 pos = d_pos[idx];
-         Scalar4 vel = d_vel[idx];
-
-         vel.x -= shear_rate*pos.y;
-
-         // write out data
-         d_vel[idx] =vel; // make_scalar4(v.x,v.y,v.z,vel.w);
-
-         }
-     }
-
-extern "C" __global__
-void sllod_nvt_add_flow_field(Scalar4 *d_vel,
-                                Scalar4 *d_pos,
-                                unsigned int *d_group_members,
-                                unsigned int work_size,
-                                Scalar shear_rate,
-                                unsigned int offset)
-    {
-    // determine which particle this thread works on
-    int group_idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (group_idx < work_size)
-        {
-        unsigned int idx = d_group_members[group_idx+offset];
-
-        Scalar4 pos = d_pos[idx];
-        Scalar4 vel = d_vel[idx];
-
-        vel.x += shear_rate*pos.y;
-
-        // write out data
-        d_vel[idx] =vel; // make_scalar4(v.x,v.y,v.z,vel.w);
-
-        }
-    }
 
 } //end namespace kernel
 
@@ -349,77 +299,5 @@ cudaError_t sllod_nvt_step_two(Scalar4 *d_vel,
     return cudaSuccess;
     }
 
-cudaError_t sllod_nvt_remove_flow_field(Scalar4 *d_vel,
-                                        Scalar4 *d_pos,
-                                        unsigned int *d_group_members,
-                                        unsigned int group_size,
-                                        unsigned int block_size,
-                                        Scalar shear_rate,
-                                        const GPUPartition& gpu_partition)
-    {
-    static unsigned int max_block_size = UINT_MAX;
-    if (max_block_size == UINT_MAX)
-        {
-        cudaFuncAttributes attr;
-        cudaFuncGetAttributes(&attr, (const void *)kernel::sllod_nvt_remove_flow_field);
-        max_block_size = attr.maxThreadsPerBlock;
-        }
-
-    unsigned int run_block_size = min(block_size, max_block_size);
-
-    // iterate over active GPUs in reverse, to end up on first GPU when returning from this function
-    for (int idev = gpu_partition.getNumActiveGPUs() - 1; idev >= 0; --idev)
-        {
-        auto range = gpu_partition.getRangeAndSetGPU(idev);
-
-        unsigned int nwork = range.second - range.first;
-
-        // setup the grid to run the kernel
-        dim3 grid( (nwork/run_block_size) + 1, 1, 1);
-        dim3 threads(run_block_size, 1, 1);
-
-        // run the kernel
-        kernel::sllod_nvt_remove_flow_field<<< grid, threads >>>(d_vel, d_pos, d_group_members, nwork, shear_rate, range.first);
-        }
-
-    return cudaSuccess;
-    }
-
-
-cudaError_t sllod_nvt_add_flow_field(Scalar4 *d_vel,
-                                        Scalar4 *d_pos,
-                                        unsigned int *d_group_members,
-                                        unsigned int group_size,
-                                        unsigned int block_size,
-                                        Scalar shear_rate,
-                                        const GPUPartition& gpu_partition)
-    {
-    static unsigned int max_block_size = UINT_MAX;
-    if (max_block_size == UINT_MAX)
-        {
-        cudaFuncAttributes attr;
-        cudaFuncGetAttributes(&attr, (const void *)kernel::sllod_nvt_add_flow_field);
-        max_block_size = attr.maxThreadsPerBlock;
-        }
-
-    unsigned int run_block_size = min(block_size, max_block_size);
-
-    // iterate over active GPUs in reverse, to end up on first GPU when returning from this function
-    for (int idev = gpu_partition.getNumActiveGPUs() - 1; idev >= 0; --idev)
-        {
-        auto range = gpu_partition.getRangeAndSetGPU(idev);
-
-        unsigned int nwork = range.second - range.first;
-
-        // setup the grid to run the kernel
-        dim3 grid( (nwork/run_block_size) + 1, 1, 1);
-        dim3 threads(run_block_size, 1, 1);
-
-        // run the kernel
-        kernel::sllod_nvt_add_flow_field<<< grid, threads >>>(d_vel, d_pos, d_group_members, nwork, shear_rate, range.first);
-        }
-
-    return cudaSuccess;
-    }
 } //end namespace gpu
 } //end namespace azplugins

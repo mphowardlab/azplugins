@@ -18,7 +18,7 @@
 #include <hoomd/extern/pybind/include/pybind11/pybind11.h>
 #include "hoomd/md/IntegrationMethodTwoStep.h"
 #include "hoomd/Variant.h"
-#include "hoomd/ComputeThermo.h"
+#include "ComputeThermoSLLOD.h"
 #include "RNGIdentifiers.h"
 
 namespace azplugins
@@ -44,7 +44,7 @@ class PYBIND11_EXPORT TwoStepSLLODNVTFlow : public IntegrationMethodTwoStep
         //! Constructs the integration method and associates it with the system
         TwoStepSLLODNVTFlow(std::shared_ptr<SystemDefinition> sysdef,
                    std::shared_ptr<ParticleGroup> group,
-                   std::shared_ptr<ComputeThermo> thermo,
+                   std::shared_ptr<ComputeThermoSLLOD> thermo,
                    Scalar tau,
                    std::shared_ptr<Variant> T,
                    Scalar shear_rate,
@@ -127,7 +127,7 @@ class PYBIND11_EXPORT TwoStepSLLODNVTFlow : public IntegrationMethodTwoStep
         virtual void randomizeVelocities(unsigned int timestep);
 
     protected:
-        std::shared_ptr<ComputeThermo> m_thermo;    //!< compute for thermodynamic quantities
+        std::shared_ptr<ComputeThermoSLLOD> m_thermo;    //!< compute for thermodynamic quantities
 
         Scalar m_tau;                     //!< tau value for Nose-Hoover
         std::shared_ptr<Variant> m_T;     //!< Temperature set point
@@ -143,9 +143,6 @@ class PYBIND11_EXPORT TwoStepSLLODNVTFlow : public IntegrationMethodTwoStep
          * \param broadcast True if we should broadcast the integrator variables via MPI
          */
         void advanceThermostat(unsigned int timestep, bool broadcast=true);
-
-        virtual void addFlowField();
-        virtual void removeFlowField();
 
         bool deformGlobalBox();
     };

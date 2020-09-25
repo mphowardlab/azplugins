@@ -35,7 +35,7 @@ namespace azplugins
 */
 TwoStepSLLODNVTFlow::TwoStepSLLODNVTFlow(std::shared_ptr<SystemDefinition> sysdef,
                        std::shared_ptr<ParticleGroup> group,
-                       std::shared_ptr<ComputeThermo> thermo,
+                       std::shared_ptr<ComputeThermoSLLOD> thermo,
                        Scalar tau,
                        std::shared_ptr<Variant> T,
                        Scalar shear_rate,
@@ -85,6 +85,7 @@ std::vector< std::string > TwoStepSLLODNVTFlow::getProvidedLogQuantities()
 
 Scalar TwoStepSLLODNVTFlow::getLogValue(const std::string& quantity, unsigned int timestep, bool &my_quantity_flag)
     {
+
     if (quantity == m_log_name)
         {
         my_quantity_flag = true;
@@ -106,6 +107,7 @@ Scalar TwoStepSLLODNVTFlow::getLogValue(const std::string& quantity, unsigned in
 */
 void TwoStepSLLODNVTFlow::integrateStepOne(unsigned int timestep)
     {
+
     if (m_group->getNumMembersGlobal() == 0)
         {
         m_exec_conf->msg->error() << "azplugins.sllod_nvt(): Integration group empty." << std::endl;
@@ -214,6 +216,7 @@ void TwoStepSLLODNVTFlow::integrateStepOne(unsigned int timestep)
 */
 void TwoStepSLLODNVTFlow::integrateStepTwo(unsigned int timestep)
     {
+
     unsigned int group_size = m_group->getNumMembers();
 
     const GlobalArray< Scalar4 >& net_force = m_pdata->getNetForce();
@@ -294,81 +297,10 @@ bool TwoStepSLLODNVTFlow::deformGlobalBox()
   return flipped;
 }
 
-void TwoStepSLLODNVTFlow::removeFlowField()
-{
-  unsigned int group_size = m_group->getNumMembers();
-
-  // profile this step
-  if (m_prof)
-      m_prof->push("SLLOD NVT remove flowfield");
-
-  ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(), access_location::host, access_mode::readwrite);
-  ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
-
-  for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
-      {
-      unsigned int j = m_group->getMemberIndex(group_idx);
-
-      // load velocity & position
-      Scalar3 v = make_scalar3(h_vel.data[j].x, h_vel.data[j].y, h_vel.data[j].z);
-      const Scalar4 p = h_pos.data[j];
-
-      // remove flow field
-      v.x -= m_shear_rate*p.y;
-
-      // store velocity
-      h_vel.data[j].x = v.x;
-      h_vel.data[j].y = v.y;
-      h_vel.data[j].z = v.z;
-
-      }
-
-  // done profiling
-  if (m_prof)
-      m_prof->pop();
-
-}
-
-void TwoStepSLLODNVTFlow::addFlowField()
-{
-  unsigned int group_size = m_group->getNumMembers();
-
-  // profile this step
-  if (m_prof)
-      m_prof->push("SLLOD NVT add flowfield");
-
-  ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(), access_location::host, access_mode::readwrite);
-  ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
-
-  for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
-      {
-      unsigned int j = m_group->getMemberIndex(group_idx);
-
-      // load velocity & position
-      Scalar3 v = make_scalar3(h_vel.data[j].x, h_vel.data[j].y, h_vel.data[j].z);
-      const Scalar4 p = h_pos.data[j];
-
-      // add flow field
-      v.x += m_shear_rate*p.y;
-
-      // store velocity
-      h_vel.data[j].x = v.x;
-      h_vel.data[j].y = v.y;
-      h_vel.data[j].z = v.z;
-
-      }
-
-  // done profiling
-  if (m_prof)
-      m_prof->pop();
-
-}
 
 void TwoStepSLLODNVTFlow::advanceThermostat(unsigned int timestep, bool broadcast)
     {
 
-    // remove flow field from velocities
-    removeFlowField();
 
     IntegratorVariables v = getIntegratorVariables();
     Scalar& xi = v.variable[0];
@@ -398,8 +330,6 @@ void TwoStepSLLODNVTFlow::advanceThermostat(unsigned int timestep, bool broadcas
 
     setIntegratorVariables(v);
 
-    // add flow field back onto velocities
-    addFlowField();
     }
 
 void TwoStepSLLODNVTFlow::randomizeVelocities(unsigned int timestep)
@@ -448,7 +378,7 @@ void export_TwoStepSLLODNVTFlow(pybind11::module& m)
     pybind11::class_<TwoStepSLLODNVTFlow, std::shared_ptr<TwoStepSLLODNVTFlow> >(m, "TwoStepSLLODNVTFlow", pybind11::base<IntegrationMethodTwoStep>())
         .def(pybind11::init< std::shared_ptr<SystemDefinition>,
                        std::shared_ptr<ParticleGroup>,
-                       std::shared_ptr<ComputeThermo>,
+                       std::shared_ptr<ComputeThermoSLLOD>,
                        Scalar,
                        std::shared_ptr<Variant>,
                        Scalar,

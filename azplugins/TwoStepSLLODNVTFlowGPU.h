@@ -37,7 +37,7 @@ class PYBIND11_EXPORT TwoStepSLLODNVTFlowGPU : public TwoStepSLLODNVTFlow
         //! Constructs the integration method and associates it with the system
         TwoStepSLLODNVTFlowGPU(std::shared_ptr<SystemDefinition> sysdef,
                       std::shared_ptr<ParticleGroup> group,
-                      std::shared_ptr<ComputeThermo> thermo,
+                      std::shared_ptr<ComputeThermoSLLOD> thermo,
                       Scalar tau,
                       std::shared_ptr<Variant> T,
                       Scalar shear_rate,
@@ -61,21 +61,12 @@ class PYBIND11_EXPORT TwoStepSLLODNVTFlowGPU : public TwoStepSLLODNVTFlow
             m_tuner_one->setEnabled(enable);
             m_tuner_two->setPeriod(period);
             m_tuner_two->setEnabled(enable);
-            m_tuner_rm_flowfield->setPeriod(period);
-            m_tuner_rm_flowfield->setEnabled(enable);
-            m_tuner_add_flowfield->setPeriod(period);
-            m_tuner_add_flowfield->setEnabled(enable);
             }
 
     protected:
         std::unique_ptr<Autotuner> m_tuner_one; //!< Autotuner for block size (step one kernel)
         std::unique_ptr<Autotuner> m_tuner_two; //!< Autotuner for block size (step two kernel)
 
-        std::unique_ptr<Autotuner> m_tuner_rm_flowfield; //!< Autotuner for removing flow field from velocities
-        std::unique_ptr<Autotuner> m_tuner_add_flowfield; //!< Autotuner for adding flow field to velocities
-
-        virtual void addFlowField();
-        virtual void removeFlowField();
     };
 
 namespace detail

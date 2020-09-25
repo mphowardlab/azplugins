@@ -3,6 +3,7 @@
 
 # Maintainer: astatt / mphoward
 
+import copy
 import numpy as np
 import hoomd
 from hoomd import _hoomd
@@ -682,6 +683,213 @@ class sllod(hoomd.md.integrate._integration_method):
         self.check_initialization()
         # change the shear rate parameter
         self.cpp_method.set_gamma_dot(gamma_dot)
+
+class compute_thermo(hoomd.compute._compute):
+    def __init__(self, group,shear_rate):
+        hoomd.util.print_status_line();
+
+        # initialize base class
+        super(compute_thermo,self).__init__()
+
+        suffix = 'sllod';
+        if group.name != 'all':
+            suffix = '_' + group.name;
+
+        # warn user if an existing compute thermo already uses this group or name
+        for t in hoomd.context.current.thermos:
+            if t.group is group:
+                hoomd.context.msg.warning("azplugins.compute_thermo already specified for this group");
+            elif t.group.name == group.name:
+                hoomd.context.msg.warning("azplugins.compute_thermo already specified for a group with name " + str(group.name) + "\n");
+
+        # create the c++ mirror class
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            self.cpp_compute = _azplugins.ComputeThermoSLLOD(hoomd.context.current.system_definition, group.cpp_group, shear_rate,suffix);
+        else:
+            self.cpp_compute = _azplugins.ComputeThermoSLLODGPU(hoomd.context.current.system_definition, group.cpp_group, shear_rate,suffix);
+
+        hoomd.context.current.system.addCompute(self.cpp_compute, self.compute_name);
+
+        # save the group for later referencing
+        self.group = group;
+        self.shear_rate = shear_rate;
+        # add ourselves to the list of compute thermos specified so far
+        hoomd.context.current.thermos.append(self);
+
+    def disable(self):
+        R""" Disables the thermo.
+
+        Examples::
+
+            my_thermo.disable()
+
+        Executing the disable command will remove the thermo compute from the system. Any :py:meth:`hoomd.run()` command
+        executed after disabling a thermo compute will not be able to log computed values with :py:class:`hoomd.analyze.log`.
+
+        A disabled thermo compute can be re-enabled with :py:meth:`enable()`.
+        """
+        hoomd.util.print_status_line()
+
+        hoomd.util.quiet_status()
+        _compute.disable(self)
+        hoomd.util.unquiet_status()
+
+        hoomd.context.current.thermos.remove(self)
+
+    def enable(self):
+        R""" Enables the thermo compute.
+
+        Examples::
+
+            my_thermo.enable()
+
+        See :py:meth:`disable()`.
+        """
+        hoomd.util.print_status_line()
+
+        hoomd.util.quiet_status()
+        _compute.enable(self)
+        hoomd.util.unquiet_status()
+
+        hoomd.context.current.thermo.append(self)
+
+class sllod_nvt(hoomd.md.integrate._integration_method):
+    R""" NVT Integration via the Nosé-Hoover thermostat.
+
+    Args:
+        group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
+        kT (:py:mod:`hoomd.variant` or :py:obj:`float`): Temperature set point for the Nosé-Hoover thermostat. (in energy units).
+        tau (float): Coupling constant for the Nosé-Hoover thermostat. (in time units).
+
+    :py:class:`nvt` performs constant volume, constant temperature simulations using the Nosé-Hoover thermostat,
+    using the MTK equations described in Refs. `G. J. Martyna, D. J. Tobias, M. L. Klein  1994 <http://dx.doi.org/10.1063/1.467468>`_ and
+    `J. Cao, G. J. Martyna 1996 <http://dx.doi.org/10.1063/1.470959>`_.
+
+    :py:class:`nvt` is an integration method. It must be used in connection with :py:class:`mode_standard`.
+
+    :py:class:`nvt` uses the proper number of degrees of freedom to compute the temperature of the system in both
+    2 and 3 dimensional systems, as long as the number of dimensions is set before the integrate.nvt command
+    is specified.
+
+    :math:`\tau` is related to the Nosé mass :math:`Q` by
+
+    .. math::
+
+        \tau = \sqrt{\frac{Q}{g k_B T_0}}
+
+    where :math:`g` is the number of degrees of freedom, and :math:`k_B T_0` is the set point (*kT* above).
+
+    *kT* can be a variant type, allowing for temperature ramps in simulation runs.
+
+    A :py:class:`hoomd.compute.thermo` is automatically specified and associated with *group*.
+
+    Examples::
+
+        all = group.all()
+        integrate.nvt(group=all, kT=1.0, tau=0.5)
+        integrator = integrate.nvt(group=all, tau=1.0, kT=0.65)
+        typeA = group.type('A')
+        integrator = integrate.nvt(group=typeA, tau=1.0, kT=hoomd.variant.linear_interp([(0, 4.0), (1e6, 1.0)]))
+    """
+    def __init__(self, group, kT, tau, shear_rate):
+        hoomd.util.print_status_line();
+
+        # initialize base class
+        super(sllod_nvt, self).__init__()
+
+        # setup the variant inputs
+        kT = hoomd.variant._setup_variant_input(kT);
+
+        # create the compute thermo
+        # the NVT integrator uses the ComputeThermo in such a way that ComputeThermo stores half-time step
+        # values. By assigning a separate ComputeThermo to the integrator, we are still able to log full time step values
+        if group is hoomd.context.current.group_all:
+            group_copy = copy.copy(group);
+            group_copy.name = "sllod_all";
+            hoomd.util.quiet_status();
+            thermo = compute_thermo(group_copy,shear_rate);
+            #thermo.cpp_compute.setLoggingEnabled(False);
+            hoomd.util.unquiet_status();
+        else:
+            thermo =  compute_thermo(group,shear_rate);
+
+        # store metadata
+        self.group = group
+        self.kT = kT
+        self.tau = tau
+        self.shear_rate = shear_rate
+        self.metadata_fields = ['group', 'kT', 'tau','shear_rate']
+
+        # setup suffix
+        suffix = '_' + group.name;
+
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            self.cpp_method = _azplugins.TwoStepSLLODNVTFlow(hoomd.context.current.system_definition,\
+                group.cpp_group, thermo.cpp_compute, tau, kT.cpp_variant, shear_rate, suffix);
+        else:
+            self.cpp_method = _azplugins.TwoStepSLLODNVTFlowGPU(hoomd.context.current.system_definition,\
+                group.cpp_group, thermo.cpp_compute, tau, kT.cpp_variant, shear_rate, suffix);
+
+        self.cpp_method.validateGroup()
+
+    def set_params(self, kT=None, tau=None, shear_rate=None):
+        R""" Changes parameters of an existing integrator.
+
+        Args:
+            kT (float): New temperature (if set) (in energy units)
+            tau (float): New coupling constant (if set) (in time units)
+
+        Examples::
+
+            integrator.set_params(tau=0.6)
+            integrator.set_params(tau=0.7, kT=2.0)
+
+        """
+        hoomd.util.print_status_line();
+        self.check_initialization();
+
+        # change the parameters
+        if kT is not None:
+            # setup the variant inputs
+            kT = hoomd.variant._setup_variant_input(kT);
+            self.cpp_method.setT(kT.cpp_variant);
+            self.kT = kT
+
+        if shear_rate is not None:
+            self.cpp_method.setShearRate(shear_rate);
+            self.shear_rate = shear_rate
+
+        if tau is not None:
+            self.cpp_method.setTau(tau);
+            self.tau = tau
+
+    def randomize_velocities(self, seed):
+        R""" Assign random velocities and angular momenta to particles in the
+        group, sampling from the Maxwell-Boltzmann distribution. This method
+        considers the dimensionality of the system and particle anisotropy, and
+        removes drift (the center of mass velocity).
+
+        .. versionadded:: 2.3
+
+        Starting in version 2.5, `randomize_velocities` also chooses random values
+        for the internal integrator variables.
+
+        Args:
+            seed (int): Random number seed
+
+        Note:
+            Randomization is applied at the start of the next call to :py:func:`hoomd.run`.
+
+        Example::
+
+            integrator = md.integrate.nvt(group=group.all(), kT=1.0, tau=0.5)
+            integrator.randomize_velocities(seed=42)
+            run(100)
+
+        """
+        timestep = hoomd.get_step()
+        kT = self.kT.cpp_variant.getValue(timestep)
+        self.cpp_method.setRandomizeVelocitiesParams(kT, seed)
 
 class reverse_perturbation(hoomd.update._updater):
     R"""Reverse nonequilibrium shear flow in MD simulations.

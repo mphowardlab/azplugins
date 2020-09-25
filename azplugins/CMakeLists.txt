@@ -35,6 +35,7 @@ endif(NOT HOOMD_EXTERNAL_BUILD)
 set(_${COMPONENT_NAME}_sources
     module.cc
     BounceBackGeometry.cc
+    ComputeThermoSLLOD.cc
     ImplicitEvaporator.cc
     ImplicitDropletEvaporator.cc
     ImplicitPlaneEvaporator.cc
@@ -44,6 +45,8 @@ set(_${COMPONENT_NAME}_sources
     RDFAnalyzer.cc
     ReversePerturbationFlow.cc
     TypeUpdater.cc
+    TwoStepSLLODNVTFlow.cc
+    TwoStepSLLODCouette.cc
     VariantSphereArea.cc
     WallRestraintCompute.cc
     )
@@ -51,6 +54,7 @@ set(_${COMPONENT_NAME}_sources
 # cuda-enabled c++ source files
 if(ENABLE_CUDA)
 list(APPEND _${COMPONENT_NAME}_sources
+    ComputeThermoSLLODGPU.cc
     ImplicitEvaporatorGPU.cc
     ImplicitDropletEvaporatorGPU.cc
     ImplicitPlaneEvaporatorGPU.cc
@@ -60,6 +64,7 @@ list(APPEND _${COMPONENT_NAME}_sources
     RDFAnalyzerGPU.cc
     ReversePerturbationFlowGPU.cc
     TypeUpdaterGPU.cc
+    TwoStepSLLODNVTFlowGPU.cc
     WallRestraintComputeGPU.cc
     )
 endif(ENABLE_CUDA)
@@ -69,6 +74,7 @@ set(_${COMPONENT_NAME}_cu_sources
     AnisoPairPotentialTwoPatchMorse.cu
     BondPotentials.cu
     BounceBackNVEGPU.cu
+    ComputeThermoSLLODGPU.cu
     DPDPotentialGeneralWeight.cu
     ImplicitDropletEvaporatorGPU.cu
     ImplicitPlaneEvaporatorGPU.cu
@@ -88,7 +94,7 @@ set(_${COMPONENT_NAME}_cu_sources
     SpecialPairPotentials.cu
     TwoStepBrownianFlowGPU.cu
     TwoStepLangevinFlowGPU.cu
-    TwoStepSLLODCouette.cc
+    TwoStepSLLODNVTFlowGPU.cu
     TypeUpdaterGPU.cu
     WallPotentials.cu
     WallRestraintComputeGPU.cu

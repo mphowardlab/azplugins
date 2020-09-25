@@ -53,6 +53,12 @@ namespace py = pybind11;
 #include "WallRestraintComputeGPU.h"
 #endif // ENABLE_CUDA
 
+/*Thermo Computes */
+#include "ComputeThermoSLLOD.h"
+#ifdef ENABLE_CUDA
+#include "ComputeThermoSLLODGPU.h"
+#endif
+
 /* Analyzers */
 #include "RDFAnalyzer.h"
 #ifdef ENABLE_CUDA
@@ -66,10 +72,12 @@ namespace py = pybind11;
 #include "TwoStepBrownianFlow.h"
 #include "TwoStepLangevinFlow.h"
 #include "TwoStepSLLODCouette.h"
+#include "TwoStepSLLODNVTFlow.h"
 #ifdef ENABLE_CUDA
 #include "BounceBackNVEGPU.h"
 #include "TwoStepBrownianFlowGPU.h"
 #include "TwoStepLangevinFlowGPU.h"
+#include "TwoStepSLLODNVTFlowGPU.h"
 #endif // ENABLE_CUDA
 
 /* Variants */
@@ -228,6 +236,11 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_PositionRestraintComputeGPU(m);
     #endif // ENABLE_CUDA
 
+    /*Thermo Computes */
+    azplugins::detail::export_ComputeThermoSLLOD(m);
+    #ifdef ENABLE_CUDA
+    azplugins::detail::export_ComputeThermoSLLODGPU(m);
+    #endif
     /* MPCD */
     #ifdef ENABLE_MPCD
     azplugins::detail::export_MPCDReversePerturbationFlow(m);
@@ -253,6 +266,7 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_TwoStepLangevinFlow<azplugins::ParabolicFlow>(m, "LangevinParabolicFlow");
     azplugins::detail::export_TwoStepLangevinFlow<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluid");
     azplugins::detail::export_TwoStepSLLODCouette(m);
+    azplugins::detail::export_TwoStepSLLODNVTFlow(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_TwoStepBrownianFlowGPU<azplugins::ConstantFlow>(m, "BrownianConstantFlowGPU");
     azplugins::detail::export_TwoStepBrownianFlowGPU<azplugins::ParabolicFlow>(m, "BrownianParabolicFlowGPU");
@@ -260,6 +274,7 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::ConstantFlow>(m, "LangevinConstantFlowGPU");
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::ParabolicFlow>(m, "LangevinParabolicFlowGPU");
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluidGPU");
+    azplugins::detail::export_TwoStepSLLODNVTFlowGPU(m);
     #endif // ENABLE_CUDA
     azplugins::detail::export_BounceBackNVE<mpcd::detail::SlitGeometry>(m);
     #ifdef ENABLE_CUDA

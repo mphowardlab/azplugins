@@ -51,23 +51,6 @@ cudaError_t sllod_nvt_step_two(Scalar4 *d_vel,
                              const GPUPartition& gpu_partition);
 
 
- //! Kernel driver for removing the flow field from velocities
- cudaError_t sllod_nvt_remove_flow_field(Scalar4 *d_vel,
-                                         Scalar4 *d_pos,
-                                         unsigned int *d_group_members,
-                                         unsigned int group_size,
-                                         unsigned int block_size,
-                                         Scalar shear_rate,
-                                         const GPUPartition& gpu_partition);
-
-//! Kernel driver for adding the flow field to velocities
-cudaError_t sllod_nvt_add_flow_field(Scalar4 *d_vel,
-                                       Scalar4 *d_pos,
-                                       unsigned int *d_group_members,
-                                       unsigned int group_size,
-                                       unsigned int block_size,
-                                       Scalar shear_rate,
-                                       const GPUPartition& gpu_partition);
 } // end namespace gpu
 } // end namespace azplugins
 
