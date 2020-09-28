@@ -4,7 +4,7 @@
 // Maintainer: mphoward
 
 /*!
- * \file TwoStepSLLODLangevinFlowGPU.cu
+ * \file TwoStepSLLODLangevinFlowGPU.cuh
  * \brief Definition of kernel drivers and kernels for TwoStepSLLODLangevinFlowGPU
  */
 

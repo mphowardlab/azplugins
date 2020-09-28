@@ -29,17 +29,17 @@ namespace azplugins
 TwoStepSLLODLangevinFlowGPU::TwoStepSLLODLangevinFlowGPU(std::shared_ptr<SystemDefinition> sysdef,
                                        std::shared_ptr<ParticleGroup> group,
                                        std::shared_ptr<Variant> T,
+                                       Scalar shear_rate,
                                        unsigned int seed,
                                        bool use_lambda,
                                        Scalar lambda,
-                                       bool noiseless_t,
-                                       bool noiseless_r,
+                                       bool noiseless,
                                        const std::string& suffix)
-    : TwoStepLangevin(sysdef, group, T, seed, use_lambda, lambda, noiseless_t, noiseless_r, suffix)
+    : TwoStepSLLODLangevinFlow(sysdef, group, T, shear_rate, seed, use_lambda, lambda, noiseless, suffix)
     {
     if (!m_exec_conf->isCUDAEnabled())
         {
-        m_exec_conf->msg->error() << "Creating a TwoStepSLLODLangevinFlowGPU while CUDA is disabled" << endl;
+        m_exec_conf->msg->error() << "Creating a TwoStepSLLODLangevinFlowGPU while CUDA is disabled" << std::endl;
         throw std::runtime_error("Error initializing TwoStepSLLODLangevinFlowGPU");
         }
 
@@ -100,34 +100,6 @@ void TwoStepSLLODLangevinFlowGPU::integrateStepOne(unsigned int timestep)
         CHECK_CUDA_ERROR();
     m_tuner_one->end();
     m_exec_conf->endMultiGPU();
-
-    if (m_aniso)
-        {
-        // first part of angular update
-        ArrayHandle<Scalar4> d_orientation(m_pdata->getOrientationArray(), access_location::device, access_mode::readwrite);
-        ArrayHandle<Scalar4> d_angmom(m_pdata->getAngularMomentumArray(), access_location::device, access_mode::readwrite);
-        ArrayHandle<Scalar4> d_net_torque(m_pdata->getNetTorqueArray(), access_location::device, access_mode::read);
-        ArrayHandle<Scalar3> d_inertia(m_pdata->getMomentsOfInertiaArray(), access_location::device, access_mode::read);
-
-        m_exec_conf->beginMultiGPU();
-        m_tuner_angular_one->begin();
-
-        gpu_nve_angular_step_one(d_orientation.data,
-                                 d_angmom.data,
-                                 d_inertia.data,
-                                 d_net_torque.data,
-                                 d_index_array.data,
-                                 m_group->getGPUPartition(),
-                                 m_deltaT,
-                                 1.0,
-                                 m_tuner_angular_one->getParam());
-
-        m_tuner_angular_one->end();
-        m_exec_conf->endMultiGPU();
-
-    if (m_exec_conf->isCUDAErrorCheckingEnabled())
-        CHECK_CUDA_ERROR();
-    }
 
     // done profiling
     if (m_prof)
@@ -197,34 +169,6 @@ void TwoStepSLLODLangevinFlowGPU::integrateStepTwo(unsigned int timestep)
         if(m_exec_conf->isCUDAErrorCheckingEnabled())
             CHECK_CUDA_ERROR();
 
-        if (m_aniso)
-            {
-            // second part of angular update
-            ArrayHandle<Scalar4> d_orientation(m_pdata->getOrientationArray(), access_location::device, access_mode::read);
-            ArrayHandle<Scalar4> d_angmom(m_pdata->getAngularMomentumArray(), access_location::device, access_mode::readwrite);
-            ArrayHandle<Scalar4> d_net_torque(m_pdata->getNetTorqueArray(), access_location::device, access_mode::read);
-            ArrayHandle<Scalar3> d_inertia(m_pdata->getMomentsOfInertiaArray(), access_location::device, access_mode::read);
-
-            unsigned int group_size = m_group->getNumMembers();
-            gpu_langevin_angular_step_two(d_pos.data,
-                                     d_orientation.data,
-                                     d_angmom.data,
-                                     d_inertia.data,
-                                     d_net_torque.data,
-                                     d_index_array.data,
-                                     d_gamma_r.data,
-                                     d_tag.data,
-                                     group_size,
-                                     args,
-                                     m_deltaT,
-                                     D,
-                                     1.0
-                                     );
-
-            if (m_exec_conf->isCUDAErrorCheckingEnabled())
-                CHECK_CUDA_ERROR();
-            }
-
         }
 
 
@@ -258,9 +202,8 @@ void export_TwoStepSLLODLangevinFlowGPU(py::module& m)
                                bool,
                                Scalar,
                                bool,
-                               bool,
-                               const std::string&
-                               >());
+                               const std::string&>()
+                           );
     }
 } // end namespace detail
 } // end namespace azplugins

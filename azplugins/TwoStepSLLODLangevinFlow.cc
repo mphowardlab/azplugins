@@ -5,17 +5,11 @@
 
 
 #include "TwoStepSLLODLangevinFlow.h"
-#include "hoomd/RandomNumbers.h"
-#include "hoomd/RNGIdentifiers.h"
 #include "hoomd/VectorMath.h"
 
 #ifdef ENABLE_MPI
 #include "hoomd/HOOMDMPI.h"
 #endif
-
-namespace py = pybind11;
-using namespace std;
-using namespace hoomd;
 
 /*! \file TwoStepSLLODLangevinFlow.h
     \brief Contains code for the TwoStepSLLODLangevinFlow class
@@ -27,8 +21,7 @@ using namespace hoomd;
     \param seed Random seed to use in generating random numbers
     \param use_lambda If true, gamma=lambda*diameter, otherwise use a per-type gamma via setGamma()
     \param lambda Scale factor to convert diameter to gamma
-    \param noiseless_t If set true, there will be no translational noise (random force)
-    \param noiseless_r If set true, there will be no rotational noise (random torque)
+    \param noiseless If set true, there will be no translational noise (random force)
     \param suffix Suffix to attach to the end of log quantity names
 
 */
@@ -37,30 +30,30 @@ namespace azplugins
 TwoStepSLLODLangevinFlow::TwoStepSLLODLangevinFlow(std::shared_ptr<SystemDefinition> sysdef,
                            std::shared_ptr<ParticleGroup> group,
                            std::shared_ptr<Variant> T,
+                           Scalar shear_rate,
                            unsigned int seed,
                            bool use_lambda,
                            Scalar lambda,
-                           bool noiseless_t,
-                           bool noiseless_r,
+                           bool noiseless,
                            const std::string& suffix)
-    : TwoStepSLLODLangevinFlowBase(sysdef, group, T, seed, use_lambda, lambda), m_reservoir_energy(0),  m_extra_energy_overdeltaT(0),
-      m_tally(false), m_noiseless_t(noiseless_t), m_noiseless_r(noiseless_r)
+    : TwoStepLangevinBase(sysdef, group, T, seed, use_lambda, lambda), m_shear_rate(shear_rate), m_reservoir_energy(0),  m_extra_energy_overdeltaT(0),
+      m_tally(false), m_noiseless(noiseless)
     {
-    m_exec_conf->msg->notice(5) << "Constructing TwoStepSLLODLangevinFlow" << endl;
+    m_exec_conf->msg->notice(5) << "Constructing TwoStepSLLODLangevinFlow" << std::endl;
 
-    m_log_name = string("langevin_reservoir_energy") + suffix;
+    m_log_name = std::string("langevin_reservoir_energy") + suffix;
     }
 
 TwoStepSLLODLangevinFlow::~TwoStepSLLODLangevinFlow()
     {
-    m_exec_conf->msg->notice(5) << "Destroying TwoStepSLLODLangevinFlow" << endl;
+    m_exec_conf->msg->notice(5) << "Destroying TwoStepSLLODLangevinFlow" << std::endl;
     }
 
 /*! Returns a list of log quantities this compute calculates
 */
 std::vector< std::string > TwoStepSLLODLangevinFlow::getProvidedLogQuantities()
     {
-    vector<string> result;
+    std::vector<std::string> result;
     if (m_tally)
         result.push_back(m_log_name);
     return result;
@@ -92,7 +85,7 @@ void TwoStepSLLODLangevinFlow::integrateStepOne(unsigned int timestep)
 
     // profile this step
     if (m_prof)
-        m_prof->push("Langevin step 1");
+        m_prof->push("SLLOD Langevin step 1");
 
     ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(), access_location::host, access_mode::readwrite);
     ArrayHandle<Scalar3> h_accel(m_pdata->getAccelerations(), access_location::host, access_mode::readwrite);
@@ -102,6 +95,12 @@ void TwoStepSLLODLangevinFlow::integrateStepOne(unsigned int timestep)
     ArrayHandle<Scalar3> h_gamma_r(m_gamma_r, access_location::host, access_mode::read);
 
     const BoxDim& box = m_pdata->getBox();
+    // box deformation: update tilt factor of global box
+    bool flipped = deformGlobalBox();
+
+    BoxDim global_box = m_pdata->getGlobalBox();
+    const Scalar3 global_hi = global_box.getHi();
+    const Scalar3 global_lo = global_box.getLo();
 
     // perform the first half step of velocity verlet
     // r(t+deltaT) = r(t) + v(t)*deltaT + (1/2)a(t)*deltaT^2
@@ -141,7 +140,7 @@ void TwoStepSLLODLangevinFlow::integrateStepTwo(unsigned int timestep)
 
     // profile this step
     if (m_prof)
-        m_prof->push("Langevin step 2");
+        m_prof->push("SLLOD Langevin step 2");
 
     ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(), access_location::host, access_mode::readwrite);
     ArrayHandle<Scalar3> h_accel(m_pdata->getAccelerations(), access_location::host, access_mode::readwrite);
@@ -172,7 +171,7 @@ void TwoStepSLLODLangevinFlow::integrateStepTwo(unsigned int timestep)
         unsigned int ptag = h_tag.data[j];
 
         // Initialize the RNG
-        RandomGenerator rng(RNGIdentifier::TwoStepSLLODLangevinFlow, m_seed, ptag, timestep);
+        hoomd::RandomGenerator rng(RNGIdentifier::TwoStepSLLODLangevinFlow, m_seed, ptag, timestep);
 
         // first, calculate the BD forces
         // Generate three random numbers
@@ -192,7 +191,7 @@ void TwoStepSLLODLangevinFlow::integrateStepTwo(unsigned int timestep)
 
         // compute the bd force
         Scalar coeff = fast::sqrt(Scalar(6.0) *gamma*currentTemp/m_deltaT);
-        if (m_noiseless_t)
+        if (m_noiseless)
             coeff = Scalar(0.0);
         Scalar bd_fx = rx*coeff - gamma*h_vel.data[j].x;
         Scalar bd_fy = ry*coeff - gamma*h_vel.data[j].y;
@@ -235,22 +234,42 @@ void TwoStepSLLODLangevinFlow::integrateStepTwo(unsigned int timestep)
         m_prof->pop();
     }
 
+bool TwoStepSLLODLangevinFlow::deformGlobalBox()
+{
+  // box deformation: update tilt factor of global box
+  BoxDim global_box = m_pdata->getGlobalBox();
+
+  Scalar xy = global_box.getTiltFactorXY();
+  Scalar yz = global_box.getTiltFactorYZ();
+  Scalar xz = global_box.getTiltFactorXZ();
+
+  xy += m_shear_rate * m_deltaT;
+  bool flipped = false;
+  if (xy > 1){
+      xy = -1;
+      flipped = true;
+  }
+  global_box.setTiltFactors(xy, xz, yz);
+  m_pdata->setGlobalBox(global_box);
+  return flipped;
+}
 
 namespace detail
 {
 void export_TwoStepSLLODLangevinFlow(pybind11::module& m)
     {
     pybind11::class_<TwoStepSLLODLangevinFlow, std::shared_ptr<TwoStepSLLODLangevinFlow> >(m, "TwoStepSLLODLangevinFlow", pybind11::base<TwoStepLangevinBase>())
-        .def(py::init< std::shared_ptr<SystemDefinition>,
+        .def(pybind11::init< std::shared_ptr<SystemDefinition>,
                             std::shared_ptr<ParticleGroup>,
                             std::shared_ptr<Variant>,
+                            Scalar,
                             unsigned int,
                             bool,
                             Scalar,
                             bool,
-                            bool,
                             const std::string&>())
         .def("setTally", &TwoStepSLLODLangevinFlow::setTally)
+        .def("setNoiseless", &TwoStepSLLODLangevinFlow::setNoiseless);
         ;
     }
 

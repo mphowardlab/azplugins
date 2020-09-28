@@ -29,15 +29,12 @@ class PYBIND11_EXPORT TwoStepSLLODLangevinFlowGPU : public TwoStepSLLODLangevinF
         TwoStepSLLODLangevinFlowGPU(std::shared_ptr<SystemDefinition> sysdef,
                                std::shared_ptr<ParticleGroup> group,
                                std::shared_ptr<Variant> T,
+                               Scalar shear_rate,
                                unsigned int seed,
                                bool use_lambda,
                                Scalar lambda,
-                               bool noiseless)
-            : TwoStepSLLODLangevinFlow(sysdef, group, T, seed, use_lambda, lambda, noiseless)
-            {
-            this->m_tuner_1.reset(new Autotuner(32, 1024, 32, 5, 100000, "langevin_sllod_flow_1", this->m_exec_conf));
-            this->m_tuner_2.reset(new Autotuner(32, 1024, 32, 5, 100000, "langevin_sllod_flow_2", this->m_exec_conf));
-            }
+                               bool noiseless,
+                               const std::string& suffix);
 
         //! Destructor
         virtual ~TwoStepSLLODLangevinFlowGPU() {};
