@@ -42,6 +42,8 @@ TwoStepSLLODLangevinFlow::TwoStepSLLODLangevinFlow(std::shared_ptr<SystemDefinit
     m_exec_conf->msg->notice(5) << "Constructing TwoStepSLLODLangevinFlow" << std::endl;
 
     m_log_name = std::string("langevin_reservoir_energy") + suffix;
+
+    setShearRate(m_shear_rate);
     }
 
 TwoStepSLLODLangevinFlow::~TwoStepSLLODLangevinFlow()
@@ -109,19 +111,58 @@ void TwoStepSLLODLangevinFlow::integrateStepOne(unsigned int timestep)
         {
         unsigned int j = m_group->getMemberIndex(group_idx);
 
-        Scalar dx = h_vel.data[j].x*m_deltaT + Scalar(1.0/2.0)*h_accel.data[j].x*m_deltaT*m_deltaT;
-        Scalar dy = h_vel.data[j].y*m_deltaT + Scalar(1.0/2.0)*h_accel.data[j].y*m_deltaT*m_deltaT;
-        Scalar dz = h_vel.data[j].z*m_deltaT + Scalar(1.0/2.0)*h_accel.data[j].z*m_deltaT*m_deltaT;
+        // load variables
+        Scalar3 v = make_scalar3(h_vel.data[j].x, h_vel.data[j].y, h_vel.data[j].z);
+        Scalar3 pos = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
+        Scalar3 accel = h_accel.data[j];
 
-        h_pos.data[j].x += dx;
-        h_pos.data[j].y += dy;
-        h_pos.data[j].z += dz;
+
+        // remove flow field
+        v.x -= m_shear_rate*pos.y;
+
+        // apply sllod velocity correction
+        v.x -= Scalar(0.5)*m_shear_rate*v.y*m_deltaT;
+
+        // add flow field
+        v.x += m_shear_rate*pos.y;
+
+        // update velocity
+        v += Scalar(0.5)*accel*m_deltaT;
+
+        // update position
+        pos += m_deltaT * v;
+
+        // if box deformation caused a flip, wrap positions back into box
+        if (flipped){
+            pos.x *= -1;
+        }
+
+        // Periodic boundary correction to velocity:
+        // if particle leaves from (+/-) y boundary it gets (-/+) velocity at boundary
+        // note carefully that pair potentials dependent on differences in
+        // velocities (e.g. DPD) are not yet explicitly supported.
+
+        if (pos.y > global_hi.y) // crossed pbc in +y
+        {
+          v.x -= m_boundary_shear_velocity;//Scalar(2.0)*m_shear_rate*global_hi.y;
+        }
+        else if (pos.y < global_lo.y) // crossed pbc in -y
+        {
+          v.x += m_boundary_shear_velocity;//-= Scalar(2.0)*m_shear_rate*global_lo.y;
+        }
+
+        // store updated variables
+        h_vel.data[j].x = v.x;
+        h_vel.data[j].y = v.y;
+        h_vel.data[j].z = v.z;
+
+        h_pos.data[j].x = pos.x;
+        h_pos.data[j].y = pos.y;
+        h_pos.data[j].z = pos.z;
+
         // particles may have been moved slightly outside the box by the above steps, wrap them back into place
         box.wrap(h_pos.data[j], h_image.data[j]);
 
-        h_vel.data[j].x += Scalar(1.0/2.0)*h_accel.data[j].x*m_deltaT;
-        h_vel.data[j].y += Scalar(1.0/2.0)*h_accel.data[j].y*m_deltaT;
-        h_vel.data[j].z += Scalar(1.0/2.0)*h_accel.data[j].z*m_deltaT;
         }
 
     // done profiling
@@ -173,6 +214,9 @@ void TwoStepSLLODLangevinFlow::integrateStepTwo(unsigned int timestep)
         // Initialize the RNG
         hoomd::RandomGenerator rng(RNGIdentifier::TwoStepSLLODLangevinFlow, m_seed, ptag, timestep);
 
+        // remove flow field
+        h_vel.data[j].x -= m_shear_rate*h_pos.data[j].y;
+
         // first, calculate the BD forces
         // Generate three random numbers
         hoomd::UniformDistribution<Scalar> uniform(Scalar(-1), Scalar(1));
@@ -193,6 +237,8 @@ void TwoStepSLLODLangevinFlow::integrateStepTwo(unsigned int timestep)
         Scalar coeff = fast::sqrt(Scalar(6.0) *gamma*currentTemp/m_deltaT);
         if (m_noiseless)
             coeff = Scalar(0.0);
+
+
         Scalar bd_fx = rx*coeff - gamma*h_vel.data[j].x;
         Scalar bd_fy = ry*coeff - gamma*h_vel.data[j].y;
         Scalar bd_fz = rz*coeff - gamma*h_vel.data[j].z;
@@ -206,13 +252,20 @@ void TwoStepSLLODLangevinFlow::integrateStepTwo(unsigned int timestep)
         h_accel.data[j].y = (h_net_force.data[j].y + bd_fy)*minv;
         h_accel.data[j].z = (h_net_force.data[j].z + bd_fz)*minv;
 
+        // apply sllod velocity correction
+          h_vel.data[j].x -= Scalar(0.5)*m_shear_rate*h_vel.data[j].y*m_deltaT;
+
+        // tally the energy transfer from the bd thermal reservoir to the particles
+        if (m_tally) bd_energy_transfer += bd_fx * h_vel.data[j].x + bd_fy * h_vel.data[j].y + bd_fz * h_vel.data[j].z;
+
+        // add flow field
+        h_vel.data[j].x += m_shear_rate*h_pos.data[j].y;
+
         // then, update the velocity
         h_vel.data[j].x += Scalar(1.0/2.0)*h_accel.data[j].x*m_deltaT;
         h_vel.data[j].y += Scalar(1.0/2.0)*h_accel.data[j].y*m_deltaT;
         h_vel.data[j].z += Scalar(1.0/2.0)*h_accel.data[j].z*m_deltaT;
 
-        // tally the energy transfer from the bd thermal reservoir to the particles
-        if (m_tally) bd_energy_transfer += bd_fx * h_vel.data[j].x + bd_fy * h_vel.data[j].y + bd_fz * h_vel.data[j].z;
 
         }
 

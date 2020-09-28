@@ -52,7 +52,7 @@ class PYBIND11_EXPORT TwoStepSLLODLangevinFlow : public TwoStepLangevinBase
         virtual void integrateStepTwo(unsigned int timestep);
 
         bool deformGlobalBox();
-        
+
         //! Get the flag for if noise is applied to the motion
         bool getNoiseless() const
             {
@@ -75,6 +75,18 @@ class PYBIND11_EXPORT TwoStepSLLODLangevinFlow : public TwoStepLangevinBase
             m_tally= tally;
             }
 
+        //! Update the shear rate and velocity at boundary
+        /*! \param shear_rate New shear rate to set
+        */
+        virtual void setShearRate(Scalar shear_rate)
+            {
+            m_shear_rate = shear_rate;
+            BoxDim global_box = m_pdata->getGlobalBox();
+            const Scalar3 global_hi = global_box.getHi();
+            m_boundary_shear_velocity = global_hi.y * m_shear_rate*2;
+
+            }
+
         //! Returns a list of log quantities this integrator calculates
         virtual std::vector< std::string > getProvidedLogQuantities();
 
@@ -83,6 +95,7 @@ class PYBIND11_EXPORT TwoStepSLLODLangevinFlow : public TwoStepLangevinBase
 
     protected:
         Scalar m_shear_rate;
+        Scalar m_boundary_shear_velocity;
         Scalar m_reservoir_energy;         //!< The energy of the reservoir the system is coupled to.
         Scalar m_extra_energy_overdeltaT;  //!< An energy packet that isn't added until the next time step
         bool m_tally;                      //!< If true, changes to the energy of the reservoir are calculated

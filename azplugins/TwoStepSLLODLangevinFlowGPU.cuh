@@ -31,6 +31,9 @@ cudaError_t langevin_sllod_step1(Scalar4 *d_pos,
                                 const BoxDim& box,
                                 const unsigned int N,
                                 const Scalar dt,
+                                const Scalar shear_rate,
+                                const bool flipped,
+                                const Scalar boundary_shear_velocity,
                                 const unsigned int block_size);
 
 //! Step two of the langevin dynamics step (drag and velocity update)
@@ -51,6 +54,7 @@ cudaError_t langevin_sllod_step2(Scalar4 *d_vel,
                                 const unsigned int seed,
                                 bool noiseless,
                                 bool use_lambda,
+                                const Scalar shear_rate,
                                 const unsigned int block_size);
 
 } // end namespace gpu

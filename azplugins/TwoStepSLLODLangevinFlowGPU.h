@@ -60,6 +60,12 @@ class PYBIND11_EXPORT TwoStepSLLODLangevinFlowGPU : public TwoStepSLLODLangevinF
     private:
         std::unique_ptr<Autotuner> m_tuner_1;   //!< Kernel tuner for step 1
         std::unique_ptr<Autotuner> m_tuner_2;   //!< Kernel tuner for step 2
+
+        unsigned int m_block_size;               //!< block size for partial sum memory
+        unsigned int m_num_blocks;               //!< number of memory blocks reserved for partial sum memory
+        GPUArray<Scalar> m_partial_sum1;         //!< memory space for partial sum over bd energy transfers
+        GPUArray<Scalar> m_sum;                  //!< memory space for sum over bd energy transfers
+
     };
 
 namespace detail

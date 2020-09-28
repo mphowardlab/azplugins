@@ -24,7 +24,10 @@ __global__ void langevin_sllod_step1(Scalar4 *d_pos,
                                     const unsigned int *d_group,
                                     const BoxDim box,
                                     const unsigned int N,
-                                    const Scalar dt)
+                                    const Scalar dt,
+                                    const Scalar shear_rate,
+                                    const bool flipped,
+                                    const Scalar boundary_shear_velocity)
     {
     const unsigned int grp_idx = blockDim.x * blockIdx.x + threadIdx.x;
     if (grp_idx >= N) return;
@@ -44,14 +47,48 @@ __global__ void langevin_sllod_step1(Scalar4 *d_pos,
     // acceleration
     const Scalar3 accel = d_accel[idx];
 
-    // update position and wrap
-    pos += (vel + Scalar(0.5) * dt * accel) * dt;
-    int3 image = d_image[idx];
-    box.wrap(pos,image);
+
+    // remove flow field
+    vel.x -= shear_rate*pos.y;
+
+    // apply sllod velocity correction
+    vel.x -= Scalar(0.5)*shear_rate*vel.y*dt;
+
+    // add flow field
+    vel.x += shear_rate*pos.y;
 
     // update velocity
-    vel += Scalar(0.5) * dt * accel;
+    vel += Scalar(0.5)*accel*dt;
 
+    // update position
+    pos += dt * vel;
+
+    // if box deformation caused a flip, wrap positions back into box
+    if (flipped){
+        pos.x *= -1;
+    }
+
+    // read in the image flags
+    int3 image = d_image[idx];
+
+    // time to fix the periodic boundary conditions
+    box.wrap(pos, image);
+
+    // Periodic boundary correction to velocity:
+    // if particle leaves from (+/-) y boundary it gets (-/+) velocity at boundary
+    // note carefully that pair potentials dependent on differences in
+    // velocities (e.g. DPD) are not yet explicitly supported.
+
+    if ((image.y-d_image[idx].y)==1) // crossed pbc in +y, image increased by 1
+    {
+      vel.x -= boundary_shear_velocity;
+    }
+    else if ((image.y-d_image[idx].y)==-1) // crossed pbc in -y, image decreased by 1
+    {
+      vel.x += boundary_shear_velocity;
+    }
+
+    // save results
     d_pos[idx] = make_scalar4(pos.x, pos.y, pos.z, __int_as_scalar(type));
     d_vel[idx] = make_scalar4(vel.x, vel.y, vel.z, mass);
     d_image[idx] = image;
@@ -74,7 +111,8 @@ __global__ void langevin_sllod_step2(Scalar4 *d_vel,
                                     const unsigned int timestep,
                                     const unsigned int seed,
                                     bool noiseless,
-                                    bool use_lambda)
+                                    bool use_lambda,
+                                    const Scalar shear_rate)
     {
     // optionally cache gamma into shared memory
     extern __shared__ Scalar s_gammas[];
@@ -121,6 +159,13 @@ __global__ void langevin_sllod_step2(Scalar4 *d_vel,
     Scalar3 vel = make_scalar3(velmass.x, velmass.y, velmass.z);
     const Scalar mass = velmass.w;
 
+    // position
+    Scalar3 pos = make_scalar3(postype.x, postype.y, postype.z);
+
+
+    // remove flow field
+    vel.x -= shear_rate*pos.y;
+
     // total BD force
     Scalar3 bd_force = random - gamma * (vel);
 
@@ -132,6 +177,12 @@ __global__ void langevin_sllod_step2(Scalar4 *d_vel,
     accel.x *= minv;
     accel.y *= minv;
     accel.z *= minv;
+
+    // apply sllod velocity correction
+    vel.x -= Scalar(0.5)*shear_rate*vel.y*dt;
+
+    // add flow field
+    vel.x += shear_rate*pos.y;
 
     // update the velocity
     vel += Scalar(0.5) * dt * accel;
@@ -153,6 +204,9 @@ cudaError_t langevin_sllod_step1(Scalar4 *d_pos,
                                 const BoxDim& box,
                                 const unsigned int N,
                                 const Scalar dt,
+                                const Scalar shear_rate,
+                                const bool flipped,
+                                const Scalar boundary_shear_velocity,
                                 const unsigned int block_size)
     {
     if (N == 0) return cudaSuccess;
@@ -173,7 +227,10 @@ cudaError_t langevin_sllod_step1(Scalar4 *d_pos,
                                                                         d_group,
                                                                         box,
                                                                         N,
-                                                                        dt);
+                                                                        dt,
+                                                                        shear_rate,
+                                                                        flipped,
+                                                                        boundary_shear_velocity);
     return cudaSuccess;
     }
 
@@ -194,6 +251,7 @@ cudaError_t langevin_sllod_step2(Scalar4 *d_vel,
                                 const unsigned int seed,
                                 bool noiseless,
                                 bool use_lambda,
+                                const Scalar shear_rate,
                                 const unsigned int block_size)
     {
     if (N == 0) return cudaSuccess;
@@ -225,7 +283,8 @@ cudaError_t langevin_sllod_step2(Scalar4 *d_vel,
                                                                timestep,
                                                                seed,
                                                                noiseless,
-                                                               use_lambda);
+                                                               use_lambda,
+                                                               shear_rate);
     return cudaSuccess;
     }
 

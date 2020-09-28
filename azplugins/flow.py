@@ -691,10 +691,11 @@ class compute_thermo(hoomd.compute._compute):
         # initialize base class
         super(compute_thermo,self).__init__()
 
-        suffix = 'sllod';
+        suffix = '_sllod';
         if group.name != 'all':
-            suffix = '_' + group.name;
-
+            suffix += '_' + group.name;
+        else:
+            suffix += '_all';
         # warn user if an existing compute thermo already uses this group or name
         for t in hoomd.context.current.thermos:
             if t.group is group:
@@ -805,7 +806,7 @@ class sllod_nvt(hoomd.md.integrate._integration_method):
         # values. By assigning a separate ComputeThermo to the integrator, we are still able to log full time step values
         if group is hoomd.context.current.group_all:
             group_copy = copy.copy(group);
-            group_copy.name = "sllod_all";
+            group_copy.name = "all";
             hoomd.util.quiet_status();
             thermo = compute_thermo(group_copy,shear_rate);
             #thermo.cpp_compute.setLoggingEnabled(False);
