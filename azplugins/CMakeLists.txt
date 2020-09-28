@@ -45,8 +45,9 @@ set(_${COMPONENT_NAME}_sources
     RDFAnalyzer.cc
     ReversePerturbationFlow.cc
     TypeUpdater.cc
-    TwoStepSLLODNVTFlow.cc
     TwoStepSLLODCouette.cc
+    TwoStepSLLODLangevinFlow.cc
+    TwoStepSLLODNVTFlow.cc
     VariantSphereArea.cc
     WallRestraintCompute.cc
     )
@@ -64,6 +65,7 @@ list(APPEND _${COMPONENT_NAME}_sources
     RDFAnalyzerGPU.cc
     ReversePerturbationFlowGPU.cc
     TypeUpdaterGPU.cc
+    TwoStepSLLODLangevinFlowGPU.cc
     TwoStepSLLODNVTFlowGPU.cc
     WallRestraintComputeGPU.cc
     )
@@ -94,6 +96,7 @@ set(_${COMPONENT_NAME}_cu_sources
     SpecialPairPotentials.cu
     TwoStepBrownianFlowGPU.cu
     TwoStepLangevinFlowGPU.cu
+    TwoStepSLLODLangevinFlowGPU.cu
     TwoStepSLLODNVTFlowGPU.cu
     TypeUpdaterGPU.cu
     WallPotentials.cu

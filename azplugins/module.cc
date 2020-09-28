@@ -72,11 +72,13 @@ namespace py = pybind11;
 #include "TwoStepBrownianFlow.h"
 #include "TwoStepLangevinFlow.h"
 #include "TwoStepSLLODCouette.h"
+#include "TwoStepSLLODLangevinFlow.h"
 #include "TwoStepSLLODNVTFlow.h"
 #ifdef ENABLE_CUDA
 #include "BounceBackNVEGPU.h"
 #include "TwoStepBrownianFlowGPU.h"
 #include "TwoStepLangevinFlowGPU.h"
+#include "TwoStepSLLODLangevinFlowGPU.h"
 #include "TwoStepSLLODNVTFlowGPU.h"
 #endif // ENABLE_CUDA
 
@@ -266,6 +268,7 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_TwoStepLangevinFlow<azplugins::ParabolicFlow>(m, "LangevinParabolicFlow");
     azplugins::detail::export_TwoStepLangevinFlow<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluid");
     azplugins::detail::export_TwoStepSLLODCouette(m);
+    azplugins::detail::export_TwoStepSLLODLangevinFlow(m);
     azplugins::detail::export_TwoStepSLLODNVTFlow(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_TwoStepBrownianFlowGPU<azplugins::ConstantFlow>(m, "BrownianConstantFlowGPU");
@@ -274,6 +277,7 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::ConstantFlow>(m, "LangevinConstantFlowGPU");
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::ParabolicFlow>(m, "LangevinParabolicFlowGPU");
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluidGPU");
+    azplugins::detail::export_TwoStepSLLODLangevinFlowGPU(m);
     azplugins::detail::export_TwoStepSLLODNVTFlowGPU(m);
     #endif // ENABLE_CUDA
     azplugins::detail::export_BounceBackNVE<mpcd::detail::SlitGeometry>(m);
