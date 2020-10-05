@@ -732,7 +732,7 @@ class FlowProfiler:
 
             # temperature histogram
             _temperature = np.zeros(len(self.centers))
-            for i,c in enumerate(centers):
+            for i,c in enumerate(self.centers):
                 slab_vel = snap.particles.velocity[np.abs(x-c)<0.5*dx[i]]
                 slab_mass = snap.particles.mass[np.abs(x-c)<0.5*dx[i]]
                 if len(slab_vel)>0:
