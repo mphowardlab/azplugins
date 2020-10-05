@@ -683,7 +683,7 @@ class FlowProfiler:
 
     .. note::
 
-        The temperature profile is calculated from the velocity values without substracting any shear flow. 
+        The temperature profile is calculated from the velocity values without substracting any shear flow.
 
     """
     def __init__(self, system, bin_axis, flow_axis, bins, range, area=1.):
@@ -731,7 +731,7 @@ class FlowProfiler:
             self._velocity += _velocity
 
             # temperature histogram
-            _temperature, = np.zeros(len(self.centers))
+            _temperature = np.zeros(len(self.centers))
             for i,c in enumerate(centers):
                 slab_vel = snap.particles.velocity[np.abs(x-c)<0.5*dx[i]]
                 slab_mass = snap.particles.mass[np.abs(x-c)<0.5*dx[i]]
