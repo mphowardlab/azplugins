@@ -658,7 +658,9 @@ class reverse_perturbation(hoomd.update._updater):
 class FlowProfiler:
     R"""Measure average profiles along a spatial dimension.
 
-    The average density and velocity profile is computed along a given spatial dimension.
+    The average density and velocity profile is computed along a given spatial dimension. Both
+    number-averaged quantities are available, `number_density` and `number_velocity`, as well as mass-averaged
+    profiles, `mass_density` and `mass_velocity`.
 
     Args:
         system: :py:mod:`hoomd` or :py:mod:`hoomd.mpcd` system (e.g., returned by :py:func:`hoomd.init.read_gsd`).
@@ -674,7 +676,7 @@ class FlowProfiler:
         hoomd.analyze.callback(f, period=1e3)
         hoomd.run(1e4)
         if hoomd.comm.get_rank() == 0:
-            np.savetxt('profiles.dat', np.column_stack((f.centers, f.density, f.velocity, f.temperature)))
+            np.savetxt('profiles.dat', np.column_stack((f.centers, f.number_density, f.number_velocity, f.kT)))
 
     .. note::
 
@@ -683,7 +685,7 @@ class FlowProfiler:
 
     .. note::
 
-        The temperature profile is calculated from the velocity values without substracting any shear flow.
+        The temperature profile `kT` is calculated from the velocity values without substracting any shear flow.
 
     """
     def __init__(self, system, bin_axis, flow_axis, bins, range, area=1.):
@@ -692,9 +694,9 @@ class FlowProfiler:
         self.flow_axis = flow_axis
 
         # setup bins with edges that span the range
-        edges = np.linspace(range[0], range[1], bins+1)
-        self.centers = 0.5*(edges[:-1]+edges[1:])
-        self._dx = edges[1:]-edges[:-1]
+        self.edges = np.linspace(range[0], range[1], bins+1)
+        self.centers = 0.5*(self.edges[:-1]+self.edges[1:])
+        self._dx = self.edges[1:]-self.edges[:-1]
         self.area = area
         self.range = range
         self.bins = bins
@@ -722,40 +724,40 @@ class FlowProfiler:
 
         if hoomd.comm.get_rank() == 0:
             x = snap.particles.position[:,self.bin_axis]
-            v = snap.particles.velocity[:,self.flow_axis]
+            v = snap.particles.velocity
+            m = snap.particles.mass
 
-            _counts,_ = np.histogram(x, bins=self.bins, range=self.range)
-            self._counts += _counts
+            binids = np.digitize(x, self.edges[1:])
 
-            _velocity,_ = np.histogram(x, bins=self.bins, range=self.range, weights=v)
-            self._velocity += _velocity
+            for dim in range(3):
+               self._number_velocity[dim] += np.bincount(binids,v[:,dim])
+               self._mass_velocity[dim] += np.bincount(binids,m*v[:,dim])
 
-            # temperature histogram
-            _temperature = np.zeros(len(self.centers))
-            for i,c in enumerate(self.centers):
-                slab_vel = snap.particles.velocity[np.abs(x-c)<0.5*self._dx[i]]
-                slab_mass = snap.particles.mass[np.abs(x-c)<0.5*self._dx[i]]
-                if len(slab_vel)>0:
-                    v_squared = np.sum(slab_vel**2)
-                    T = np.average(slab_mass*v_squared)/3.0
-                else:
-                    T=0
-                _temperature[i]=T
+            vsq = np.sum(v**2,axis=1)
 
-            self._temperature += _temperature
+            vsqm = np.bincount(binids, weights=vsq*m)
+            self._vsqm +=vsqm
 
+            self._counts += np.bincount(binids)
+            self._bin_mass += np.bincount(binids, weights=m)
             self.samples += 1
 
     def reset(self):
         r"""Reset the internal averaging counters."""
         self.samples = 0
         self._counts = np.zeros(self.bins)
-        self._velocity = np.zeros(self.bins)
-        self._temperature = np.zeros(self.bins)
+        self._bin_mass = np.zeros(self.bins)
+        self._number_density = np.zeros(self.bins)
+        self._mass_density = np.zeros(self.bins)
+        self._vsqm = np.zeros(self.bins)
+
+        self._number_velocity = np.zeros((3,self.bins))
+        self._mass_velocity = np.zeros((3,self.bins))
+
 
     @property
-    def density(self):
-        r"""The current average density profile."""
+    def number_density(self):
+        r"""The current average number density profile."""
         if hoomd.comm.get_rank() != 0:
             hoomd.context.msg.error('Flow profile only defined on root rank.\n')
             raise RuntimeError('Flow profile only defined on root rank')
@@ -766,25 +768,49 @@ class FlowProfiler:
             return np.zeros(self.bins)
 
     @property
-    def velocity(self):
-        r"""The current average velocity profile."""
+    def mass_density(self):
+        r"""The current mass-averaged density profile."""
         if hoomd.comm.get_rank() != 0:
             hoomd.context.msg.error('Flow profile only defined on root rank.\n')
             raise RuntimeError('Flow profile only defined on root rank')
 
         if self.samples > 0:
-            return np.divide(self._velocity, self._counts, out=np.zeros(self.bins), where=self._counts > 0)/self.samples
+            return self._bin_mass/(self._dx*self.area*self.samples)
         else:
             return np.zeros(self.bins)
 
     @property
-    def temperature(self):
+    def number_velocity(self):
+        r"""The current number-averaged velocity profile ."""
+        if hoomd.comm.get_rank() != 0:
+            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
+            raise RuntimeError('Flow profile only defined on root rank')
+
+        if self.samples > 0:
+            return np.divide(self._number_velocity, self._counts, out=np.zeros(self.bins), where=self._counts > 0)/self.samples
+        else:
+            return np.zeros(self.bins)
+
+    @property
+    def mass_velocity(self):
+        r"""The current mass-averaged velocity profile ."""
+        if hoomd.comm.get_rank() != 0:
+            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
+            raise RuntimeError('Flow profile only defined on root rank')
+
+        if self.samples > 0:
+            return np.divide(self._mass_velocity, self._counts, out=np.zeros(self.bins), where=self._counts > 0)/self.samples
+        else:
+            return np.zeros(self.bins)
+
+    @property
+    def kT(self):
         r"""The current average temperature profile."""
         if hoomd.comm.get_rank() != 0:
             hoomd.context.msg.error('Flow profile only defined on root rank.\n')
             raise RuntimeError('Flow profile only defined on root rank')
 
         if self.samples > 0:
-            return np.divide(self._temperature, self._counts, out=np.zeros(self.bins), where=self._counts > 0)/self.samples
+            return np.divide(self._vsqm, (3*(self._counts-1)), out=np.zeros(self.bins), where=(3*(self._counts-1)) > 0)
         else:
             return np.zeros(self.bins)
