@@ -132,6 +132,7 @@ void TwoStepSLLODNVTFlow::integrateStepOne(unsigned int timestep)
     ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(), access_location::host, access_mode::readwrite);
     ArrayHandle<Scalar3> h_accel(m_pdata->getAccelerations(), access_location::host, access_mode::readwrite);
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::readwrite);
+    ArrayHandle<int3> h_images(m_pdata->getImages(), access_location::host, access_mode::readwrite);
 
     for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
         {
@@ -161,9 +162,10 @@ void TwoStepSLLODNVTFlow::integrateStepOne(unsigned int timestep)
         // update position
         pos += m_deltaT * v;
 
-        // if box deformation caused a flip, wrap positions back into box
+        // if box deformation caused a flip, account for the box wrapping by modifying images
         if (flipped){
-            pos.x *= -1;
+          h_images.data[j].x += h_images.data[j].y;
+          //  pos.x *= -1;
         }
 
         // Periodic boundary correction to velocity:
@@ -288,8 +290,8 @@ bool TwoStepSLLODNVTFlow::deformGlobalBox()
 
   xy += m_shear_rate * m_deltaT;
   bool flipped = false;
-  if (xy > 1){
-      xy = -1;
+  if (xy > 0.5){
+      xy = -0.5;
       flipped = true;
   }
   global_box.setTiltFactors(xy, xz, yz);

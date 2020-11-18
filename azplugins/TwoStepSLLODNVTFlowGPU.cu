@@ -90,13 +90,14 @@ void sllod_nvt_step_one(Scalar4 *d_pos,
         pos += deltaT * vel;
 
 
-        // if box deformation caused a flip, wrap pos back into box
-        if (flipped){
-            pos.x *= -1;
-        }
-
         // read in the image flags
         int3 image = d_image[idx];
+
+        // if box deformation caused a flip, wrap pos back into box
+        if (flipped){
+          image.x += image.y;
+        //    pos.x *= -1;
+        }
 
         // time to fix the periodic boundary conditions
         box.wrap(pos, image);
