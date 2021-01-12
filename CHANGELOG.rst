@@ -1,6 +1,12 @@
 Release notes
 =============
 
+v0.10.1 (12 Jan 2021)
+---------------------
+*Bug fixes*
+
+  * Fix normalization of velocity in ``flow.FlowProfiler``.
+
 v0.10.0 (27 Jul 2020)
 ---------------------
 This is the first release of azplugins to include compilable documentation. The
