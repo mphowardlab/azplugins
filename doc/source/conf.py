@@ -16,8 +16,8 @@ sys.path.insert(0, os.path.abspath('../..'))
 project = 'azplugins'
 copyright = '2018-2020, Michael P. Howard'
 author = 'Michael P. Howard'
-version = '0.10.0'
-release = '0.10.0'
+version = '0.10.1'
+release = '0.10.1'
 
 
 # -- General configuration ---------------------------------------------------
