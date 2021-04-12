@@ -13,7 +13,12 @@
 #include <thrust/sort.h>
 #include <thrust/device_vector.h>
 #include <thrust/functional.h>
+
+#if __CUDACC_VER_MAJOR__ >= 11
+#include <cub/cub.cuh>
+#else
 #include "hoomd/extern/cub/cub/cub.cuh"
+#endif
 
 namespace azplugins
 {
