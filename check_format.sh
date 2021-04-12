@@ -32,7 +32,7 @@ do
     fi
 
     # check for tabs
-    N=$(grep -c "\t" $f)
+    N=$(grep -P -c "\t" $f)
     if [ "$N" -gt "0" ]
     then
         echo "Tabs in $f:"
