@@ -1,6 +1,16 @@
 Release notes
 =============
 
+Unreleased
+----------
+*Other changes*
+
+  * Add a code of conduct for contributors.
+  * Update copyright. azplugins is now maintained as part of our work at
+    Auburn University.
+  * The default git branch is renamed ``main``. More
+    `information <https://sfconservancy.org/news/2020/jun/23/gitbranchname>`_ is available.
+
 v0.10.1 (12 Jan 2021)
 ---------------------
 *Bug fixes*
