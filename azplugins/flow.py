@@ -1,7 +1,6 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
-
-# Maintainer: astatt / mphoward
 
 import numpy as np
 import hoomd
@@ -754,6 +753,6 @@ class FlowProfiler:
             raise RuntimeError('Flow profile only defined on root rank')
 
         if self.samples > 0:
-            return np.divide(self._velocity, self._counts, out=np.zeros(self.bins), where=self._counts > 0)/self.samples
+            return np.divide(self._velocity, self._counts, out=np.zeros(self.bins), where=self._counts > 0)
         else:
             return np.zeros(self.bins)
