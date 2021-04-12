@@ -32,7 +32,7 @@ do
     fi
 
     # check for tabs
-    N=$(grep -P -c "\t" $f)
+    N=$(grep -c "\t" $f)
     if [ "$N" -gt "0" ]
     then
         echo "Tabs in $f:"
@@ -58,20 +58,12 @@ do
     skip_file=$(contains "$skip" "$filename")
     if [ "$skip_file" -eq "0" ]
     then
-        N=$(grep -c "Copyright (c) 2018-2020, Michael P. Howard" $f)
+        N=$(grep -c "Copyright (c) 2021, Auburn University" $f)
         if [ "$N" -ne "1" ]
         then
             echo "Copyright notice incorrect in $f"
             RESULT=1
         fi
-    fi
-
-    # check for maintainer line
-    N=$(grep -c "Maintainer:" $f)
-    if [ "$N" -ne "1" ]
-    then
-        echo "Missing maintainer in $f"
-        RESULT=1
     fi
 
 done
