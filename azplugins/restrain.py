@@ -394,7 +394,7 @@ class position(force._force):
 
         self.cpp_force.setForceConstant(float(kx), float(ky), float(kz))
 
-    def set_reference_positions(self, ref_pos):
+    def set_reference_positions(self, ref_pos):#bugs
         R""" Set the reference positions for all particles.
 
         Args:
