@@ -19,28 +19,26 @@ namespace azplugins
 namespace detail
 {
 
-void export_AntiSymCosGeometry(pybind11::module& m)
+void export_SinusoidalChannel(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<AntiSymCosGeometry, std::shared_ptr<AntiSymCosGeometry> >(m, "AntiSymCosGeometry")
+    py::class_<SinusoidalChannel, std::shared_ptr<SinusoidalChannel> >(m, "SinusoidalChannel")
     .def(py::init<Scalar, Scalar, Scalar, unsigned int, Scalar, mpcd::detail::boundary>())
-    .def("getAmplitude", &AntiSymCosGeometry::getAmplitude)
-    .def("getHnarrow", &AntiSymCosGeometry::getHnarrow)
-    .def("getRepetitions", &AntiSymCosGeometry::getRepetitions)
-    .def("getVelocity", &AntiSymCosGeometry::getVelocity)
-    .def("getBoundaryCondition", &AntiSymCosGeometry::getBoundaryCondition);
+    .def("getAmplitude", &SinusoidalChannel::getAmplitude)
+    .def("getHnarrow", &SinusoidalChannel::getHnarrow)
+    .def("getRepetitions", &SinusoidalChannel::getRepetitions)
+    .def("getBoundaryCondition", &SinusoidalChannel::getBoundaryCondition);
     }
 
-void export_SymCosGeometry(pybind11::module& m)
+void export_SinusoidalExpansionConstriction(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<SymCosGeometry, std::shared_ptr<SymCosGeometry> >(m, "SymCosGeometry")
+    py::class_<SinusoidalExpansionConstriction, std::shared_ptr<SinusoidalExpansionConstriction> >(m, "SinusoidalExpansionConstriction")
     .def(py::init<Scalar, Scalar, Scalar, unsigned int, Scalar, mpcd::detail::boundary>())
-    .def("getHwide", &SymCosGeometry::getHwide)
-    .def("getHnarrow", &SymCosGeometry::getHnarrow)
-    .def("getRepetitions", &SymCosGeometry::getRepetitions)
-    .def("getVelocity", &SymCosGeometry::getVelocity)
-    .def("getBoundaryCondition", &SymCosGeometry::getBoundaryCondition);
+    .def("getHwide", &SinusoidalExpansionConstriction::getHwide)
+    .def("getHnarrow", &SinusoidalExpansionConstriction::getHnarrow)
+    .def("getRepetitions", &SinusoidalExpansionConstriction::getRepetitions)
+    .def("getBoundaryCondition", &SinusoidalExpansionConstriction::getBoundaryCondition);
     }
 
 } // end namespace detail

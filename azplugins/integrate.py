@@ -161,15 +161,14 @@ class slit(_bounce_back):
         self.cpp_method.geometry = _mpcd.SlitGeometry(self.H,self.V,bc)
 
 
-class anti_sym_cos(_bounce_back):
-    """ NVE integration with bounce-back rules in a anti-symmetric cosine channel.
+class sinusoidal_channel(_bounce_back):
+    """ NVE integration with bounce-back rules in a anti-symmetric sinusoidal channel.
 
     Args:
         group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
         A (float): channel cosine amplitude
         h (float): channel half-width
         p (int):   channel periodicity
-        V (float): wall speed (default: 0)
         boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
     This integration method applies to particles in *group* in the symmetric
@@ -216,26 +215,25 @@ class anti_sym_cos(_bounce_back):
     Examples::
 
         all = group.all()
-        integrate.anti_sym_cos(group=all, A=5.0, h=2.0, p=1, V=0.0)
+        integrate.sinusoidal_channel(group=all, A=5.0, h=2.0, p=1)
 
     """
-    def __init__(self, group, A, h, p, V=0.0, boundary="no_slip"):
+    def __init__(self, group, A, h, p, boundary="no_slip"):
         hoomd.util.print_status_line()
 
         # initialize base class
         _bounce_back.__init__(self,group)
-        self.metadata_fields += ['L','A','h','p','V']
+        self.metadata_fields += ['L','A','h','p']
 
         # initialize the c++ class
         if not hoomd.context.exec_conf.isCUDAEnabled():
-            cpp_class = _azplugins.BounceBackNVEAntiSymCos
+            cpp_class = _azplugins.BounceBackNVESinusoidalChannel
         else:
-            cpp_class = _azplugins.BounceBackNVEAntiSymCosGPU
+            cpp_class = _azplugins.BounceBackNVESinusoidalChannelGPU
 
         self.A = A
         self.h = h
         self.p = p
-        self.V = V
         self.boundary = boundary
 
         bc = self._process_boundary(boundary)
@@ -243,27 +241,25 @@ class anti_sym_cos(_bounce_back):
         Lx = system.sysdef.getParticleData().getGlobalBox().getL().x
         self.L = Lx
 
-        geom = _azplugins.SymCosGeometry(self.L, A, h, p, V, bc)
+        geom = _azplugins.SinusoidalExpansionConstriction(self.L, A, h, p, bc)
 
         self.cpp_method = cpp_class(hoomd.context.current.system_definition, group.cpp_group, geom)
         self.cpp_method.validateGroup()
 
-    def set_params(self, A=None, h=None, p=None, V=None, boundary=None):
+    def set_params(self, A=None, h=None, p=None, boundary=None):
         """ Set parameters for the slit geometry.
 
         Args:
             A (float): channel cosine amplitude
             h (float): channel half-width
             p (int):   channel periodicity
-            V (float): wall speed (default: 0)
             boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
         Examples::
 
             sym_cos.set_params(A=8., h=2.0)
-            sym_cos.set_params(V=2.0)
             sym_cos.set_params(boundary='slip')
-            sym_cos.set_params(A=5, V=0., boundary='no_slip')
+            sym_cos.set_params(A=5, boundary='no_slip')
 
         """
         hoomd.util.print_status_line()
@@ -277,24 +273,20 @@ class anti_sym_cos(_bounce_back):
         if p is not None:
             self.p = p
 
-        if V is not None:
-            self.V = V
-
         if boundary is not None:
             self.boundary = boundary
 
         bc = self._process_boundary(self.boundary)
-        self.cpp_method.geometry = _azplugins.AntiSymCosGeometry(self.L,self.A,self.h,self.p,self.V,bc)
+        self.cpp_method.geometry = _azplugins.SinusoidalChannel(self.L,self.A,self.h,self.p,bc)
 
-class sym_cos(_bounce_back):
-    """ NVE integration with bounce-back rules in a symmetric cosine channel.
+class sinusoidal_expansion_constriction(_bounce_back):
+    """ NVE integration with bounce-back rules in a symmetric sinusoidal channel, i.e a expansion constriction channel.
 
     Args:
         group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
         H (float): channel half-width at its widest point
         h (float): channel half-width at its narrowest point
         p (int):   channel periodicity
-        V (float): wall speed (default: 0)
         boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
     This integration method applies to particles in *group* in the symmetric
@@ -325,7 +317,7 @@ class sym_cos(_bounce_back):
         by padding the box size by the largest cutoff radius. Failure to do so
         may result in unphysical interactions.
 
-    :py:class:`sym_cos` is an integration method. It must be used with
+    :py:class:`sinusoidal_expansion_constriction` is an integration method. It must be used with
     :py:class:`hoomd.md.mode_standard`.
 
     Warning:
@@ -341,26 +333,25 @@ class sym_cos(_bounce_back):
     Examples::
 
         all = group.all()
-        integrate.sym_cos(group=all, H=5.0, h=2.0, p=1, V=0.0)
+        integrate.sinusoidal_expansion_constriction(group=all, H=5.0, h=2.0, p=1)
 
     """
-    def __init__(self, group, H, h, p, V=0.0, boundary="no_slip"):
+    def __init__(self, group, H, h, p, boundary="no_slip"):
         hoomd.util.print_status_line()
 
         # initialize base class
         _bounce_back.__init__(self,group)
-        self.metadata_fields += ['L','H','h','p','V']
+        self.metadata_fields += ['L','H','h','p']
 
         # initialize the c++ class
         if not hoomd.context.exec_conf.isCUDAEnabled():
-            cpp_class = _azplugins.BounceBackNVESymCos
+            cpp_class = _azplugins.BounceBackNVESinusoidalExpansionConstriction
         else:
-            cpp_class = _azplugins.BounceBackNVESymCosGPU
+            cpp_class = _azplugins.BounceBackNVESinusoidalExpansionConstrictionGPU
 
         self.H = H
         self.h = h
         self.p = p
-        self.V = V
         self.boundary = boundary
 
         bc = self._process_boundary(boundary)
@@ -368,25 +359,23 @@ class sym_cos(_bounce_back):
         Lx = system.sysdef.getParticleData().getGlobalBox().getL().x
         self.L = Lx
 
-        geom = _azplugins.SymCosGeometry(self.L, H, h, p, V, bc)
+        geom = _azplugins.SinusoidalExpansionConstriction(self.L, H, h, p, bc)
 
         self.cpp_method = cpp_class(hoomd.context.current.system_definition, group.cpp_group, geom)
         self.cpp_method.validateGroup()
 
-    def set_params(self, H=None, h=None, p=None, V=None, boundary=None):
+    def set_params(self, H=None, h=None, p=None, boundary=None):
         """ Set parameters for the slit geometry.
 
         Args:
             H (float): channel half-width at its widest point
             h (float): channel half-width at its narrowest point
             p (int):   channel periodicity
-            V (float): wall speed (default: 0)
             boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
         Examples::
 
             sym_cos.set_params(H=8., h=2.0)
-            sym_cos.set_params(V=2.0)
             sym_cos.set_params(boundary='slip')
             sym_cos.set_params(H=5, V=0., boundary='no_slip')
 
@@ -402,11 +391,8 @@ class sym_cos(_bounce_back):
         if p is not None:
             self.p = p
 
-        if V is not None:
-            self.V = V
-
         if boundary is not None:
             self.boundary = boundary
 
         bc = self._process_boundary(self.boundary)
-        self.cpp_method.geometry = _azplugins.SymCosGeometry(self.L,self.H,self.h,self.p,self.V,bc)
+        self.cpp_method.geometry = _azplugins.SinusoidalExpansionConstriction(self.L,self.H,self.h,self.p,bc)

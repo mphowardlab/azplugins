@@ -5,23 +5,23 @@
 
 
 /*!
- * \file SymCosGeometryFillerGPU.cc
- * \brief Definition of SymCosGeometryFillerGPU
+ * \file SinusoidalExpansionConstrictionFillerGPU.cc
+ * \brief Definition of SinusoidalExpansionConstrictionFillerGPU
  */
 
-#include "MPCDSymCosGeometryFillerGPU.h"
-#include "MPCDSymCosGeometryFillerGPU.cuh"
+#include "MPCDSinusoidalExpansionConstrictionFillerGPU.h"
+#include "MPCDSinusoidalExpansionConstrictionFillerGPU.cuh"
 
 namespace azplugins
 {
 
-SymCosGeometryFillerGPU::SymCosGeometryFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
+SinusoidalExpansionConstrictionFillerGPU::SinusoidalExpansionConstrictionFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
                                                    Scalar density,
                                                    unsigned int type,
                                                    std::shared_ptr<::Variant> T,
                                                    unsigned int seed,
-                                                   std::shared_ptr<const detail::SymCosGeometry> geom)
-    : SymCosGeometryFiller(sysdata, density, type, T, seed, geom)
+                                                   std::shared_ptr<const detail::SinusoidalExpansionConstriction> geom)
+    : SinusoidalExpansionConstrictionFiller(sysdata, density, type, T, seed, geom)
     {
     m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "mpcd_sym_cos_filler", m_exec_conf));
     }
@@ -29,7 +29,7 @@ SymCosGeometryFillerGPU::SymCosGeometryFillerGPU(std::shared_ptr<mpcd::SystemDat
 /*!
  * \param timestep Current timestep
  */
-void SymCosGeometryFillerGPU::drawParticles(unsigned int timestep)
+void SinusoidalExpansionConstrictionFillerGPU::drawParticles(unsigned int timestep)
     {
     ArrayHandle<Scalar4> d_pos(m_mpcd_pdata->getPositions(), access_location::device, access_mode::readwrite);
     ArrayHandle<Scalar4> d_vel(m_mpcd_pdata->getVelocities(), access_location::device, access_mode::readwrite);
@@ -65,17 +65,17 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_SymCosGeometryFillerGPU(pybind11::module& m)
+void export_SinusoidalExpansionConstrictionFillerGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<SymCosGeometryFillerGPU, std::shared_ptr<SymCosGeometryFillerGPU>>
-        (m, "SymCosGeometryFillerGPU", py::base<SymCosGeometryFiller>())
+    py::class_<SinusoidalExpansionConstrictionFillerGPU, std::shared_ptr<SinusoidalExpansionConstrictionFillerGPU>>
+        (m, "SinusoidalExpansionConstrictionFillerGPU", py::base<SinusoidalExpansionConstrictionFiller>())
         .def(py::init<std::shared_ptr<mpcd::SystemData>,
                       Scalar,
                       unsigned int,
                       std::shared_ptr<::Variant>,
                       unsigned int,
-                      std::shared_ptr<const SymCosGeometry>>())
+                      std::shared_ptr<const SinusoidalExpansionConstriction>>())
         ;
     }
 } // end namespace detail

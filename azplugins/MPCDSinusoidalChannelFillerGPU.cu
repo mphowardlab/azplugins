@@ -4,11 +4,11 @@
 // Maintainer: astatt
 
 /*!
- * \file MPCDSymCosGeometryFillerGPU.cu
- * \brief Defines GPU functions and kernels used by azplugins::gpu::SymCosGeometryFillerGPU
+ * \file MPCDSinusoidalChannelFillerGPU.cu
+ * \brief Defines GPU functions and kernels used by azplugins::gpu::SinusoidalChannelFillerGPU
  */
 
-#include "MPCDSymCosGeometryFillerGPU.cuh"
+#include "MPCDSinusoidalChannelFillerGPU.cuh"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
 #include "hoomd/mpcd/ParticleDataUtilities.h"
@@ -46,13 +46,13 @@ namespace kernel
  * a particle tag and local particle index. A random position is drawn within the cuboid. A random velocity
  * is drawn consistent with the speed of the moving wall.
  */
-__global__ void sym_cos_draw_particles(Scalar4 *d_pos,
+__global__ void anti_sym_cos_draw_particles(Scalar4 *d_pos,
                                     Scalar4 *d_vel,
                                     unsigned int *d_tag,
-                                    const azplugins::detail::SymCosGeometry geom,
+                                    const azplugins::detail::SinusoidalChannel geom,
                                     const Scalar m_pi_period_div_L,
                                     const Scalar m_amplitude,
-                                    const Scalar m_H_narrow,
+                                    const Scalar m_h,
                                     const Scalar m_thickness,
                                     const BoxDim box,
                                     const unsigned int type,
@@ -78,7 +78,7 @@ __global__ void sym_cos_draw_particles(Scalar4 *d_pos,
     d_tag[pidx] = tag;
 
     // initialize random number generator for positions and velocity
-    hoomd::RandomGenerator rng(RNGIdentifier::SymCosGeometryFiller, seed, tag, timestep);
+    hoomd::RandomGenerator rng(RNGIdentifier::SinusoidalChannelFiller, seed, tag, timestep);
     signed char sign = (idx >= N_half) - (idx < N_half); // bottom -1 or top +1
 
     Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
@@ -86,7 +86,7 @@ __global__ void sym_cos_draw_particles(Scalar4 *d_pos,
     Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
 
 
-    z = sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+m_amplitude + m_H_narrow ) + z;
+    z = m_amplitude*fast::cos(x*m_pi_period_div_L)+ sign*m_h + z;
 
 
     d_pos[pidx] = make_scalar4(x,
@@ -125,15 +125,15 @@ __global__ void sym_cos_draw_particles(Scalar4 *d_pos,
  * \param seed User seed to PRNG for drawing velocities
  * \param block_size Number of threads per block
  *
- * \sa kernel::slit_draw_particles
+ * \sa kernel::anti_sim_cos_draw_particles
  */
-cudaError_t sym_cos_draw_particles(Scalar4 *d_pos,
+cudaError_t anti_sym_cos_draw_particles(Scalar4 *d_pos,
                                 Scalar4 *d_vel,
                                 unsigned int *d_tag,
-                                const azplugins::detail::SymCosGeometry& geom,
+                                const azplugins::detail::SinusoidalChannel& geom,
                                 const Scalar m_pi_period_div_L,
                                 const Scalar m_amplitude,
-                                const Scalar m_H_narrow,
+                                const Scalar m_h,
                                 const Scalar m_thickness,
                                 const BoxDim& box,
                                 const Scalar mass,
@@ -152,7 +152,7 @@ cudaError_t sym_cos_draw_particles(Scalar4 *d_pos,
     if (max_block_size == UINT_MAX)
         {
         cudaFuncAttributes attr;
-        cudaFuncGetAttributes(&attr, (const void*)kernel::sym_cos_draw_particles);
+        cudaFuncGetAttributes(&attr, (const void*)kernel::anti_sym_cos_draw_particles);
         max_block_size = attr.maxThreadsPerBlock;
         }
 
@@ -161,13 +161,13 @@ cudaError_t sym_cos_draw_particles(Scalar4 *d_pos,
 
     unsigned int run_block_size = min(block_size, max_block_size);
     dim3 grid(N_fill / run_block_size + 1);
-    kernel::sym_cos_draw_particles<<<grid, run_block_size>>>(d_pos,
+    kernel::anti_sym_cos_draw_particles<<<grid, run_block_size>>>(d_pos,
                                                           d_vel,
                                                           d_tag,
                                                           geom,
                                                           m_pi_period_div_L,
                                                           m_amplitude,
-                                                          m_H_narrow,
+                                                          m_h,
                                                           m_thickness,
                                                           box,
                                                           type,

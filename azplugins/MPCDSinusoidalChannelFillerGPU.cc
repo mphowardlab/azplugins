@@ -5,23 +5,23 @@
 
 
 /*!
- * \file AntiSymCosGeometryFillerGPU.cc
- * \brief Definition of AntiSymCosGeometryFillerGPU
+ * \file SinusoidalChannelFillerGPU.cc
+ * \brief Definition of SinusoidalChannelFillerGPU
  */
 
-#include "MPCDAntiSymCosGeometryFillerGPU.h"
-#include "MPCDAntiSymCosGeometryFillerGPU.cuh"
+#include "MPCDSinusoidalChannelFillerGPU.h"
+#include "MPCDSinusoidalChannelFillerGPU.cuh"
 
 namespace azplugins
 {
 
-AntiSymCosGeometryFillerGPU::AntiSymCosGeometryFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
+SinusoidalChannelFillerGPU::SinusoidalChannelFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
                                                    Scalar density,
                                                    unsigned int type,
                                                    std::shared_ptr<::Variant> T,
                                                    unsigned int seed,
-                                                   std::shared_ptr<const detail::AntiSymCosGeometry> geom)
-    : AntiSymCosGeometryFiller(sysdata, density, type, T, seed, geom)
+                                                   std::shared_ptr<const detail::SinusoidalChannel> geom)
+    : SinusoidalChannelFiller(sysdata, density, type, T, seed, geom)
     {
     m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "mpcd_anti_sym_cos_filler", m_exec_conf));
     }
@@ -29,7 +29,7 @@ AntiSymCosGeometryFillerGPU::AntiSymCosGeometryFillerGPU(std::shared_ptr<mpcd::S
 /*!
  * \param timestep Current timestep
  */
-void AntiSymCosGeometryFillerGPU::drawParticles(unsigned int timestep)
+void SinusoidalChannelFillerGPU::drawParticles(unsigned int timestep)
     {
     ArrayHandle<Scalar4> d_pos(m_mpcd_pdata->getPositions(), access_location::device, access_mode::readwrite);
     ArrayHandle<Scalar4> d_vel(m_mpcd_pdata->getVelocities(), access_location::device, access_mode::readwrite);
@@ -65,17 +65,17 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_AntiSymCosGeometryFillerGPU(pybind11::module& m)
+void export_SinusoidalChannelFillerGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<AntiSymCosGeometryFillerGPU, std::shared_ptr<AntiSymCosGeometryFillerGPU>>
-        (m, "AntiSymCosGeometryFillerGPU", py::base<AntiSymCosGeometryFiller>())
+    py::class_<SinusoidalChannelFillerGPU, std::shared_ptr<SinusoidalChannelFillerGPU>>
+        (m, "SinusoidalChannelFillerGPU", py::base<SinusoidalChannelFiller>())
         .def(py::init<std::shared_ptr<mpcd::SystemData>,
                       Scalar,
                       unsigned int,
                       std::shared_ptr<::Variant>,
                       unsigned int,
-                      std::shared_ptr<const AntiSymCosGeometry>>())
+                      std::shared_ptr<const SinusoidalChannel>>())
         ;
     }
 } // end namespace detail

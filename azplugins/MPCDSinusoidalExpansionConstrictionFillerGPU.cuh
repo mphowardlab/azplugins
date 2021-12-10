@@ -8,13 +8,13 @@
 #define AZPLUGINS_MPCD_SYM_COS_GEOMETRY_FILLER_GPU_CUH_
 
 /*!
- * \file SymCosGeometryFillerGPU.cuh
- * \brief Declaration of CUDA kernels for mpcd::SymCosGeometryFillerGPU
+ * \file SinusoidalExpansionConstrictionFillerGPU.cuh
+ * \brief Declaration of CUDA kernels for mpcd::SinusoidalExpansionConstrictionFillerGPU
  */
 
 #include <cuda_runtime.h>
 
-#include "MPCDSymCosGeometry.h"
+#include "MPCDSinusoidalExpansionConstriction.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
 
@@ -28,7 +28,7 @@ namespace gpu
 cudaError_t sym_cos_draw_particles(Scalar4 *d_pos,
                                 Scalar4 *d_vel,
                                 unsigned int *d_tag,
-                                const azplugins::detail::SymCosGeometry& geom,
+                                const azplugins::detail::SinusoidalExpansionConstriction& geom,
                                 const Scalar pi_period_div_L,
                                 const Scalar amplitude,
                                 const Scalar H_narrow,

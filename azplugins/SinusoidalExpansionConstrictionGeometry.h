@@ -5,7 +5,7 @@
 
 
 /*!
- * \file MPCDSymCosGeometry.h
+ * \file MPCDSinusoidalExpansionConstriction.h
  * \brief Definition of the MPCD symmetric cosine channel geometry
  */
 
@@ -77,8 +77,12 @@ namespace detail
  * are required with any embedded particles using appropriate wall potentials.
  *
  * The wall boundary conditions can optionally be changed to slip conditions.
+ *
+ * TODO: Is there a better naming convention? SymCos vs. AntiSymCos have the big potential of being confused with each other.
+ * TODO: Files are right now named MPCDSinusoidalExpansionConstriction/MPCDSinusoidalChannel, because this is where I started the implementation,
+ *       but it is actually not mpcd specific and should/could be renamed
  */
-class __attribute__((visibility("default"))) SymCosGeometry
+class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
     {
     public:
         //! Constructor
@@ -87,11 +91,10 @@ class __attribute__((visibility("default"))) SymCosGeometry
            \param H_wide Channel half-width at widest point
            \param H_narrow Channel half-width at narrowest point
            \param Period Channel cosine period (integer >0)
-         * \param V Velocity of the wall
          * \param bc Boundary condition at the wall (slip or no-slip)
          */
-        HOSTDEVICE SymCosGeometry(Scalar L, Scalar H_wide,Scalar H_narrow, unsigned int Repetitions, Scalar V, mpcd::detail::boundary bc)
-            : m_pi_period_div_L(2*M_PI*Repetitions/L), m_H_wide(H_wide), m_H_narrow(H_narrow), m_Repetitions(Repetitions), m_V(V), m_bc(bc)
+        HOSTDEVICE SinusoidalExpansionConstriction(Scalar L, Scalar H_wide,Scalar H_narrow, unsigned int Repetitions, Scalar V, mpcd::detail::boundary bc)
+            : m_pi_period_div_L(2*M_PI*Repetitions/L), m_H_wide(H_wide), m_H_narrow(H_narrow), m_Repetitions(Repetitions), m_bc(bc)
             {
             }
 
@@ -136,45 +139,109 @@ class __attribute__((visibility("default"))) SymCosGeometry
             *  position outside the wall (at time t-dt) and the current position inside the wall (at time t) as initial
             *  guess for the intersection.
             *
-            *  We limit the number of iterations (max_iteration) and the desired presicion (target_presicion) for performance reasons.
+            *  We limit the number of iterations (max_iteration) and the desired presicion (target_presicion) for
+            *  performance reasons. These values have been tested in python code seperately and gave satisfactory results.
+            *
             */
-            Scalar max_iteration = 5;
+            Scalar max_iteration = 6;
             Scalar counter = 0;
-            Scalar target_presicion = 0.00001;
+            Scalar target_presicion = 1e-5;
             Scalar x0 = pos.x - 0.5*dt*vel.x;
 
-            // delta =  abs(0-f(x))
-            Scalar delta = abs(0 - (sign*(A*fast::cos(x0*m_pi_period_div_L)+ A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
+            //Scalar a_old = A*fast::cos((pos.x-dt*vel.x)*m_pi_period_div_L) + A + m_H_narrow;
+            //const signed char sign_old = (pos.z-dt*vel.z >= a_old) - (pos.z-dt*vel.z <= -a_old);
 
+            Scalar y0;
+            Scalar z0;
             Scalar n,n2;
             Scalar s,c;
-            while( delta > target_presicion && counter < max_iteration)
+            Scalar delta;
+
+            // excatly horizontal z-collision, has a solution:
+            if ( vel.z == 0 )
                 {
-                fast::sincos(x0*m_pi_period_div_L,s,c);
-                n  =  sign*(A*c + A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
-                n2 = -sign*m_pi_period_div_L*A*s - vel.z/vel.x;                       // df
-                x0 = x0 - n/n2;                                                                      // x = x - f/df
-                delta = abs(0-(sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
-                counter +=1;
+                x0 = 1/m_pi_period_div_L*fast::acos((pos.z-A-m_H_narrow)/sign*A);
+                z0 = pos.z;
+                y0 = -(pos.x-dt*vel.x - x0)*vel.y/vel.x + (pos.y-dt*vel.y);
                 }
-
-            /* The new z position is calculated from the wall equation to guarantee that the new particle positon is exactly at the wall
-             * and not accidentally slightly inside of the wall because of nummerical presicion.
-             */
-            Scalar z0 = sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow);
-
-            /* The new y position can be calculated from the fact that the last position outside of the wall, the current position inside
-             * of the  wall, and the new position exactly at the wall are on a straight line.
-             */
-            Scalar y0 = -(pos.x-dt*vel.x - x0)*vel.y/vel.x + (pos.y-dt*vel.y);
-
+            else if ( vel.x == 0)
             /* chatch the case where a particle collides exactly vertically (v_x=0 -> old x pos = new x pos)
              * In this case, y0 = -(0)*0/0 + (y-dt*v_y) == nan, should be y0 =(y-dt*v_y)
              */
-            if (vel.x==0.)
                 {
+                x0 = pos.x;
                 y0 = (pos.y-dt*vel.y);
+                z0 = sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow);
                 }
+            else // not a horizontal or vertical collision - do Newthon's method
+                {
+
+                // delta =  abs(0-f(x))
+                delta = abs(0 - (sign*(A*fast::cos(x0*m_pi_period_div_L)+ A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
+
+                while( delta > target_presicion && counter < max_iteration)
+                {
+                    fast::sincos(x0*m_pi_period_div_L,s,c);
+                    n  =  sign*(A*c + A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
+                    n2 = -sign*m_pi_period_div_L*A*s - vel.z/vel.x;                        // df
+                    x0 = x0 - n/n2;                                                        // x = x - f/df
+                    delta = abs(0-(sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
+                    counter +=1;
+
+
+                }
+                /* The new z position is calculated from the wall equation to guarantee that the new particle positon is exactly at the wall
+                 * and not accidentally slightly inside of the wall because of nummerical presicion.
+                 */
+                z0 = sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow);
+
+                /* The new y position can be calculated from the fact that the last position outside of the wall, the current position inside
+                 * of the  wall, and the new position exactly at the wall are on a straight line.
+                 */
+                y0 = -(pos.x-dt*vel.x - x0)*vel.y/vel.x + (pos.y-dt*vel.y);
+
+                // Newton's method sometimes failes to converge (close to saddle points, df'==0, bad initial guess,..)
+                // catch all of them here and do bisection if Newthon's method didn't work
+                Scalar lower_x = fmin(pos.x - dt*vel.x,pos.x);
+                Scalar upper_x = fmax(pos.x - dt*vel.x,pos.x);
+
+                // found intersection is NOT in between old and new point, ie crossection is wrong/inaccurate.
+                // do bisection to find intersection - slower but more robust than Newton's method
+                if ( !(lower_x - target_presicion <= x0 && x0 <= upper_x + target_presicion))
+                    {
+                    Scalar3 point1 = pos;  //initial position
+                    Scalar3 point2 = pos-dt*vel; // final position at t+dt
+                    Scalar3 point3 = 0.5*(point1+point2); // halfway point
+                    Scalar fpoint1,fpoint2,fpoint3;
+
+                    while ((point1.x-point2.x) > target_presicion)
+                        {
+                        fpoint1 = (sign*(A*fast::cos(point1.x*m_pi_period_div_L)+ A + m_H_narrow) - point1.z);
+                        fpoint2 = (sign*(A*fast::cos(point2.x*m_pi_period_div_L)+ A + m_H_narrow) - point2.z);
+                        fpoint3 = (sign*(A*fast::cos(point3.x*m_pi_period_div_L)+ A + m_H_narrow) - point3.z);
+
+                        if (abs(fpoint3) < target_presicion)
+                            {
+                            break;
+                            }
+                        else if (fpoint3*fpoint1 < 0)
+                            {
+                            point2 = point3;
+                            }
+                        else
+                            {
+                            point1 = point3;
+                            }
+                        point3 = 0.5*(point1+point2);
+                        }
+                    // point3 == intersection
+                    x0 =  point3.x;
+                    z0 = sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow);
+                    y0 = -(pos.x-dt*vel.x - x0)*vel.y/vel.x + (pos.y-dt*vel.y);
+                    }
+
+                }
+
 
             // Remaining integration time dt is amount of time spent traveling distance out of bounds.
             dt = fast::sqrt(((pos.x - x0)*(pos.x - x0) + (pos.y - y0)*(pos.y -y0) + (pos.z - z0)*(pos.z - z0))/(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z));
@@ -190,14 +257,12 @@ class __attribute__((visibility("default"))) SymCosGeometry
              * normal  = (sign*A*2*pi*p/L*sin(x*2*pi*p/L),0,1)/|length|
              * The direction of the normal is not important for the reflection.
              * Calculate components by hand to avoid sqrt in normalization of the normal of the surface.
-             *
-             * TO DO: do moving boundaries (velocity m_V) in opposite directions even make sense for the curved sine geometry?
              */
             Scalar3 vel_new;
             if (m_bc ==  mpcd::detail::boundary::no_slip) // No-slip requires reflection of both tangential and normal components:
                 {
 
-                vel_new.x = -vel.x + Scalar(sign * 2) * m_V;
+                vel_new.x = -vel.x + Scalar(sign * 2);
                 vel_new.y = -vel.y;
                 vel_new.z = -vel.z;
 
@@ -209,7 +274,6 @@ class __attribute__((visibility("default"))) SymCosGeometry
                 vel_new.x = vel.x - 2*B*(B*vel.x + vel.z)/(B*B+1);
                 vel_new.y = vel.y;
                 vel_new.z = vel.z -   2*(B*vel.x + vel.z)/(B*B+1);
-              //  printf("%f %f %f %f %f %f\n",vel.x,vel.y,vel.z,vel_new.x,vel_new.y,vel_new.z );
                 }
 
             vel = vel_new;
@@ -276,15 +340,6 @@ class __attribute__((visibility("default"))) SymCosGeometry
             return m_Repetitions;
             }
 
-        //! Get the wall velocity
-        /*!
-         * \returns Wall velocity
-         */
-        HOSTDEVICE Scalar getVelocity() const
-            {
-            return m_V;
-            }
-
         //! Get the wall boundary condition
         /*!
          * \returns Boundary condition at wall
@@ -307,7 +362,6 @@ class __attribute__((visibility("default"))) SymCosGeometry
         const Scalar m_H_wide;              //!< Half of the channel widest width
         const Scalar m_H_narrow;            //!< Half of the channel narrowest width
         const unsigned int m_Repetitions;         //!< Number of repetitions of the wide sections in the channel =  period
-        const Scalar m_V;                   //!< Velocity of the wall
         const mpcd::detail::boundary m_bc; //!< Boundary condition
     };
 

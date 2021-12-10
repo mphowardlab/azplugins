@@ -5,18 +5,18 @@
 
 
 /*!
- * \file MPCDSymCosGeometryFillerGPU.h
- * \brief Definition of virtual particle filler for azplugins::detail::SymCosGeometry on the GPU.
+ * \file MPCDSinusoidalChannelFillerGPU.h
+ * \brief Definition of virtual particle filler for azplugins::detail::SinusoidalChannel on the GPU.
  */
 
-#ifndef AZPLUGINS_MPCD_SYM_COS_GEOMETRY_FILLER_GPU_H_
-#define AZPLUGINS_MPCD_SYM_COS_GEOMETRY_FILLER_GPU_H_
+#ifndef AZPLUGINS_MPCD_ANTI_SYM_COS_GEOMETRY_FILLER_GPU_H_
+#define AZPLUGINS_MPCD_ANTI_SYM_COS_GEOMETRY_FILLER_GPU_H_
 
 #ifdef NVCC
 #error This header cannot be compiled by nvcc
 #endif
 
-#include "MPCDSymCosGeometryFiller.h"
+#include "MPCDSinusoidalChannelFiller.h"
 #include "hoomd/Autotuner.h"
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 
@@ -24,17 +24,17 @@
 namespace azplugins
 {
 
-//! Adds virtual particles to the MPCD particle data for SymCosGeometry using the GPU
-class PYBIND11_EXPORT SymCosGeometryFillerGPU : public SymCosGeometryFiller
+//! Adds virtual particles to the MPCD particle data for SinusoidalExpansionConstriction using the GPU
+class PYBIND11_EXPORT SinusoidalChannelFillerGPU : public SinusoidalChannelFiller
     {
     public:
         //! Constructor
-        SymCosGeometryFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
+        SinusoidalChannelFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
                               Scalar density,
                               unsigned int type,
                               std::shared_ptr<::Variant> T,
                               unsigned int seed,
-                              std::shared_ptr<const detail::SymCosGeometry> geom);
+                              std::shared_ptr<const detail::SinusoidalChannel> geom);
 
         //! Set autotuner parameters
         /*!
@@ -43,7 +43,7 @@ class PYBIND11_EXPORT SymCosGeometryFillerGPU : public SymCosGeometryFiller
          */
         virtual void setAutotunerParams(bool enable, unsigned int period)
             {
-            SymCosGeometryFiller::setAutotunerParams(enable, period);
+            SinusoidalChannelFiller::setAutotunerParams(enable, period);
 
             m_tuner->setEnabled(enable); m_tuner->setPeriod(period);
             }
@@ -58,8 +58,8 @@ class PYBIND11_EXPORT SymCosGeometryFillerGPU : public SymCosGeometryFiller
 
 namespace detail
 {
-//! Export SymCosGeometryFillerGPU to python
-void export_SymCosGeometryFillerGPU(pybind11::module& m);
+//! Export SinusoidalChannelFillerGPU to python
+void export_SinusoidalChannelFillerGPU(pybind11::module& m);
 } // end namespace detail
 } // end namespace azplugins
-#endif // AZPLUGINS_MPCD_SYM_COS_GEOMETRY_FILLER_GPU_H_
+#endif // AZPLUGINS_MPCD_ANTI_SYM_COS_GEOMETRY_FILLER_GPU_H_

@@ -206,7 +206,7 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
                                  hoomd.context.current.system.getCurrentTimeStep(),
                                  self.period,
                                  0,
-                                 _azplugins.AntiSymCosGeometry(Lx,A,h,p,V,bc))
+                                 _azplugins.SinusoidalChannel(Lx,A,h,p,V,bc))
 
     def set_filler(self, density, kT, seed, type='A'):
         r""" Add virtual particles to symmetric cosine channel.
@@ -240,9 +240,9 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
 
         if self._filler is None:
             if not hoomd.context.exec_conf.isCUDAEnabled():
-                fill_class = _azplugins.AntiSymCosGeometryFiller
+                fill_class = _azplugins.SinusoidalChannelFiller
             else:
-                fill_class = _azplugins.AntiSymCosGeometryFillerGPU
+                fill_class = _azplugins.SinusoidalChannelFillerGPU
             self._filler = fill_class(hoomd.context.current.mpcd.data,
                                       density,
                                       type_id,
@@ -304,7 +304,7 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
             self.boundary = boundary
 
         bc = self._process_boundary(self.boundary)
-        self._cpp.geometry = _azplugins.AntiSymCosGeometry(self.L,self.A,self.h,self.p,self.V,bc)
+        self._cpp.geometry = _azplugins.SinusoidalChannel(self.L,self.A,self.h,self.p,self.V,bc)
         if self._filler is not None:
             self._filler.setGeometry(self._cpp.geometry)
 
@@ -366,7 +366,7 @@ class sym_cos(hoomd.mpcd.stream._streaming_method):
                                  hoomd.context.current.system.getCurrentTimeStep(),
                                  self.period,
                                  0,
-                                 _azplugins.SymCosGeometry(Lx,H,h,p,V,bc))
+                                 _azplugins.SinusoidalExpansionConstriction(Lx,H,h,p,V,bc))
 
     def set_filler(self, density, kT, seed, type='A'):
         r""" Add virtual particles to symmetric cosine channel.
@@ -400,9 +400,9 @@ class sym_cos(hoomd.mpcd.stream._streaming_method):
 
         if self._filler is None:
             if not hoomd.context.exec_conf.isCUDAEnabled():
-                fill_class = _azplugins.SymCosGeometryFiller
+                fill_class = _azplugins.SinusoidalExpansionConstrictionFiller
             else:
-                fill_class = _azplugins.SymCosGeometryFillerGPU
+                fill_class = _azplugins.SinusoidalExpansionConstrictionFillerGPU
             self._filler = fill_class(hoomd.context.current.mpcd.data,
                                       density,
                                       type_id,
@@ -464,6 +464,6 @@ class sym_cos(hoomd.mpcd.stream._streaming_method):
             self.boundary = boundary
 
         bc = self._process_boundary(self.boundary)
-        self._cpp.geometry = _azplugins.SymCosGeometry(self.L,self.H,self.h,self.p,self.V,bc)
+        self._cpp.geometry = _azplugins.SinusoidalExpansionConstriction(self.L,self.H,self.h,self.p,self.V,bc)
         if self._filler is not None:
             self._filler.setGeometry(self._cpp.geometry)

@@ -8,13 +8,13 @@
 #define AZPLUGINS_MPCD_ANTI_SYM_COS_GEOMETRY_FILLER_GPU_CUH_
 
 /*!
- * \file SymCosGeometryFillerGPU.cuh
- * \brief Declaration of CUDA kernels for mpcd::SymCosGeometryFillerGPU
+ * \file SinusoidalExpansionConstrictionFillerGPU.cuh
+ * \brief Declaration of CUDA kernels for mpcd::SinusoidalExpansionConstrictionFillerGPU
  */
 
 #include <cuda_runtime.h>
 
-#include "MPCDAntiSymCosGeometry.h"
+#include "MPCDSinusoidalChannel.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
 
@@ -28,7 +28,7 @@ namespace gpu
 cudaError_t anti_sym_cos_draw_particles(Scalar4 *d_pos,
                                 Scalar4 *d_vel,
                                 unsigned int *d_tag,
-                                const azplugins::detail::AntiSymCosGeometry& geom,
+                                const azplugins::detail::SinusoidalChannel& geom,
                                 const Scalar pi_period_div_L,
                                 const Scalar amplitude,
                                 const Scalar H_narrow,

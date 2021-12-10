@@ -4,33 +4,33 @@
 // Maintainer: astatt
 
 /*!
- * \file SymCosGeometryFiller.cc
- * \brief Definition of SymCosGeometryFiller
+ * \file SinusoidalExpansionConstrictionFiller.cc
+ * \brief Definition of SinusoidalExpansionConstrictionFiller
  */
 
-#include "MPCDSymCosGeometryFiller.h"
+#include "MPCDSinusoidalExpansionConstrictionFiller.h"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
 
 namespace azplugins
 {
-SymCosGeometryFiller::SymCosGeometryFiller(std::shared_ptr<mpcd::SystemData> sysdata,
+SinusoidalExpansionConstrictionFiller::SinusoidalExpansionConstrictionFiller(std::shared_ptr<mpcd::SystemData> sysdata,
                                              Scalar density,
                                              unsigned int type,
                                              std::shared_ptr<::Variant> T,
                                              unsigned int seed,
-                                             std::shared_ptr<const detail::SymCosGeometry> geom)
+                                             std::shared_ptr<const detail::SinusoidalExpansionConstriction> geom)
     : mpcd::VirtualParticleFiller(sysdata, density, type, T, seed), m_geom(geom)
     {
-    m_exec_conf->msg->notice(5) << "Constructing MPCD SymCosGeometryFiller" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing MPCD SinusoidalExpansionConstrictionFiller" << std::endl;
     }
 
-SymCosGeometryFiller::~SymCosGeometryFiller()
+SinusoidalExpansionConstrictionFiller::~SinusoidalExpansionConstrictionFiller()
     {
-    m_exec_conf->msg->notice(5) << "Destroying MPCD SymCosGeometryFiller" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying MPCD SinusoidalExpansionConstrictionFiller" << std::endl;
     }
 
-void SymCosGeometryFiller::computeNumFill()
+void SinusoidalExpansionConstrictionFiller::computeNumFill()
     {
     // as a precaution, validate the global box with the current cell list
     const BoxDim& global_box = m_pdata->getGlobalBox();
@@ -71,7 +71,7 @@ void SymCosGeometryFiller::computeNumFill()
 /*!
  * \param timestep Current timestep to draw particles
  */
-void SymCosGeometryFiller::drawParticles(unsigned int timestep)
+void SinusoidalExpansionConstrictionFiller::drawParticles(unsigned int timestep)
     {
     ArrayHandle<Scalar4> h_pos(m_mpcd_pdata->getPositions(), access_location::host, access_mode::readwrite);
     ArrayHandle<Scalar4> h_vel(m_mpcd_pdata->getVelocities(), access_location::host, access_mode::readwrite);
@@ -89,7 +89,7 @@ void SymCosGeometryFiller::drawParticles(unsigned int timestep)
     for (unsigned int i=0; i < m_N_fill; ++i)
         {
         const unsigned int tag = m_first_tag + i;
-        hoomd::RandomGenerator rng(RNGIdentifier::SymCosGeometryFiller, m_seed, tag, timestep);
+        hoomd::RandomGenerator rng(RNGIdentifier::SinusoidalExpansionConstrictionFiller, m_seed, tag, timestep);
         signed char sign = (i >= N_half) - (i < N_half); // bottom -1 or top +1
 
         Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
@@ -111,7 +111,7 @@ void SymCosGeometryFiller::drawParticles(unsigned int timestep)
         gen(vel.x, vel.y, rng);
         vel.z = gen(rng);
         // TODO: should these be given zero net-momentum contribution (relative to the frame of reference?)
-        h_vel.data[pidx] = make_scalar4(vel.x + sign * m_geom->getVelocity(),
+        h_vel.data[pidx] = make_scalar4(vel.x,
                                         vel.y,
                                         vel.z,
                                         __int_as_scalar(mpcd::detail::NO_CELL));
@@ -124,18 +124,18 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_SymCosGeometryFiller(pybind11::module& m)
+void export_SinusoidalExpansionConstrictionFiller(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<SymCosGeometryFiller, std::shared_ptr<SymCosGeometryFiller>>
-        (m, "SymCosGeometryFiller", py::base<mpcd::VirtualParticleFiller>())
+    py::class_<SinusoidalExpansionConstrictionFiller, std::shared_ptr<SinusoidalExpansionConstrictionFiller>>
+        (m, "SinusoidalExpansionConstrictionFiller", py::base<mpcd::VirtualParticleFiller>())
         .def(py::init<std::shared_ptr<mpcd::SystemData>,
                       Scalar,
                       unsigned int,
                       std::shared_ptr<::Variant>,
                       unsigned int,
-                      std::shared_ptr<const SymCosGeometry>>())
-        .def("setGeometry", &SymCosGeometryFiller::setGeometry)
+                      std::shared_ptr<const SinusoidalExpansionConstriction>>())
+        .def("setGeometry", &SinusoidalExpansionConstrictionFiller::setGeometry)
         ;
     }
 

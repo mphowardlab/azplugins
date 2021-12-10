@@ -18,8 +18,8 @@
 #include "hoomd/mpcd/BoundaryCondition.h"
 #include "hoomd/mpcd/SlitGeometry.h"
 #include "hoomd/mpcd/BoundaryCondition.h"
-#include "MPCDAntiSymCosGeometry.h"
-#include "MPCDSymCosGeometry.h"
+#include "SinusoidalChannelGeometry.h"
+#include "SinusoidalExpansionConstrictionGeometry.h"
 #ifndef NVCC
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 
@@ -28,11 +28,11 @@ namespace azplugins
 namespace detail
 {
 
-//! Export AntiSymCosGeometry to python
-void export_AntiSymCosGeometry(pybind11::module& m);
+//! Export SinusoidalChannel to python
+void export_SinusoidalChannel(pybind11::module& m);
 
-//! Export SymCosGeometry to python
-void export_SymCosGeometry(pybind11::module& m);
+//! Export SinusoidalExpansionConstriction to python
+void export_SinusoidalExpansionConstriction(pybind11::module& m);
 
 } // end namespace detail
 } // end namespace azplugins

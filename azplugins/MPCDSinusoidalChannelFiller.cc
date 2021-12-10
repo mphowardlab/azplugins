@@ -4,33 +4,33 @@
 // Maintainer: astatt
 
 /*!
- * \file AntiSymCosGeometryFiller.cc
- * \brief Definition of AntiSymCosGeometryFiller
+ * \file SinusoidalChannelFiller.cc
+ * \brief Definition of SinusoidalChannelFiller
  */
 
-#include "MPCDAntiSymCosGeometryFiller.h"
+#include "MPCDSinusoidalChannelFiller.h"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
 
 namespace azplugins
 {
-AntiSymCosGeometryFiller::AntiSymCosGeometryFiller(std::shared_ptr<mpcd::SystemData> sysdata,
+SinusoidalChannelFiller::SinusoidalChannelFiller(std::shared_ptr<mpcd::SystemData> sysdata,
                                              Scalar density,
                                              unsigned int type,
                                              std::shared_ptr<::Variant> T,
                                              unsigned int seed,
-                                             std::shared_ptr<const detail::AntiSymCosGeometry> geom)
+                                             std::shared_ptr<const detail::SinusoidalChannel> geom)
     : mpcd::VirtualParticleFiller(sysdata, density, type, T, seed), m_geom(geom)
     {
-    m_exec_conf->msg->notice(5) << "Constructing MPCD AntiSymCosGeometryFiller" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing MPCD SinusoidalChannelFiller" << std::endl;
     }
 
-AntiSymCosGeometryFiller::~AntiSymCosGeometryFiller()
+SinusoidalChannelFiller::~SinusoidalChannelFiller()
     {
-    m_exec_conf->msg->notice(5) << "Destroying MPCD AntiSymCosGeometryFiller" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying MPCD SinusoidalChannelFiller" << std::endl;
     }
 
-void AntiSymCosGeometryFiller::computeNumFill()
+void SinusoidalChannelFiller::computeNumFill()
     {
     // as a precaution, validate the global box with the current cell list
     const BoxDim& global_box = m_pdata->getGlobalBox();
@@ -71,7 +71,7 @@ void AntiSymCosGeometryFiller::computeNumFill()
 /*!
  * \param timestep Current timestep to draw particles
  */
-void AntiSymCosGeometryFiller::drawParticles(unsigned int timestep)
+void SinusoidalChannelFiller::drawParticles(unsigned int timestep)
     {
     ArrayHandle<Scalar4> h_pos(m_mpcd_pdata->getPositions(), access_location::host, access_mode::readwrite);
     ArrayHandle<Scalar4> h_vel(m_mpcd_pdata->getVelocities(), access_location::host, access_mode::readwrite);
@@ -89,7 +89,7 @@ void AntiSymCosGeometryFiller::drawParticles(unsigned int timestep)
     for (unsigned int i=0; i < m_N_fill; ++i)
         {
         const unsigned int tag = m_first_tag + i;
-        hoomd::RandomGenerator rng(RNGIdentifier::AntiSymCosGeometryFiller, m_seed, tag, timestep);
+        hoomd::RandomGenerator rng(RNGIdentifier::SinusoidalChannelFiller, m_seed, tag, timestep);
         signed char sign = (i >= N_half) - (i < N_half); // bottom -1 or top +1
 
         Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
@@ -111,7 +111,7 @@ void AntiSymCosGeometryFiller::drawParticles(unsigned int timestep)
         gen(vel.x, vel.y, rng);
         vel.z = gen(rng);
         // TODO: should these be given zero net-momentum contribution (relative to the frame of reference?)
-        h_vel.data[pidx] = make_scalar4(vel.x + sign * m_geom->getVelocity(),
+        h_vel.data[pidx] = make_scalar4(vel.x,
                                         vel.y,
                                         vel.z,
                                         __int_as_scalar(mpcd::detail::NO_CELL));
@@ -124,18 +124,18 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_AntiSymCosGeometryFiller(pybind11::module& m)
+void export_SinusoidalChannelFiller(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<AntiSymCosGeometryFiller, std::shared_ptr<AntiSymCosGeometryFiller>>
-        (m, "AntiSymCosGeometryFiller", py::base<mpcd::VirtualParticleFiller>())
+    py::class_<SinusoidalChannelFiller, std::shared_ptr<SinusoidalChannelFiller>>
+        (m, "SinusoidalChannelFiller", py::base<mpcd::VirtualParticleFiller>())
         .def(py::init<std::shared_ptr<mpcd::SystemData>,
                       Scalar,
                       unsigned int,
                       std::shared_ptr<::Variant>,
                       unsigned int,
-                      std::shared_ptr<const AntiSymCosGeometry>>())
-        .def("setGeometry", &AntiSymCosGeometryFiller::setGeometry)
+                      std::shared_ptr<const SinusoidalChannel>>())
+        .def("setGeometry", &SinusoidalChannelFiller::setGeometry)
         ;
     }
 

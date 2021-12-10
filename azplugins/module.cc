@@ -33,15 +33,13 @@ namespace py = pybind11;
 #ifdef ENABLE_MPCD
 #include "MPCDReversePerturbationFlow.h"
 #include "hoomd/mpcd/ConfinedStreamingMethod.h"
-#include "MPCDAntiSymCosGeometry.h"
-#include "MPCDAntiSymCosGeometryFiller.h"
-#include "MPCDSymCosGeometry.h"
-#include "MPCDSymCosGeometryFiller.h"
+#include "MPCDSinusoidalChannelFiller.h"
+#include "MPCDSinusoidalExpansionConstrictionFiller.h"
 #ifdef ENABLE_CUDA
 #include "MPCDReversePerturbationFlowGPU.h"
 #include "hoomd/mpcd/ConfinedStreamingMethodGPU.h"
-#include "MPCDAntiSymCosGeometryFillerGPU.h"
-#include "MPCDSymCosGeometryFillerGPU.h"
+#include "MPCDSinusoidalChannelFillerGPU.h"
+#include "MPCDSinusoidalExpansionConstrictionFillerGPU.h"
 #endif // ENABLE_CUDA
 #endif // ENABLE_MPCD
 
@@ -66,6 +64,10 @@ namespace py = pybind11;
 #ifdef ENABLE_CUDA
 #include "RDFAnalyzerGPU.h"
 #endif // ENABLE_CUDA
+
+/* Streaming Geometries */
+#include "SinusoidalChannelGeometry.h"
+#include "SinusoidalExpansionConstrictionGeometry.h"
 
 /* Integrators */
 #include "BounceBackGeometry.h"
@@ -229,18 +231,18 @@ PYBIND11_MODULE(_azplugins, m)
 
     /* MPCD components */
     #ifdef ENABLE_MPCD
-    azplugins::detail::export_AntiSymCosGeometry(m);
-    azplugins::detail::export_SymCosGeometry(m);
-    azplugins::detail::export_AntiSymCosGeometryFiller(m);
-    azplugins::detail::export_SymCosGeometryFiller(m);
-    mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::AntiSymCosGeometry>(m);
-    mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::SymCosGeometry>(m);
+    azplugins::detail::export_SinusoidalChannel(m);
+    azplugins::detail::export_SinusoidalExpansionConstriction(m);
+    azplugins::detail::export_SinusoidalChannelFiller(m);
+    azplugins::detail::export_SinusoidalExpansionConstrictionFiller(m);
+    mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::SinusoidalChannel>(m);
+    mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::SinusoidalExpansionConstriction>(m);
     azplugins::detail::export_MPCDReversePerturbationFlow(m);
     #ifdef ENABLE_CUDA
-    azplugins::detail::export_AntiSymCosGeometryFillerGPU(m);
-    azplugins::detail::export_SymCosGeometryFillerGPU(m);
-    mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::AntiSymCosGeometry>(m);
-    mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SymCosGeometry>(m);
+    azplugins::detail::export_SinusoidalChannelFillerGPU(m);
+    azplugins::detail::export_SinusoidalExpansionConstrictionFillerGPU(m);
+    mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SinusoidalChannel>(m);
+    mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SinusoidalExpansionConstriction>(m);
     azplugins::detail::export_MPCDReversePerturbationFlowGPU(m);
     #endif // ENABLE_CUDA
     #endif // ENABLE_MPCD
@@ -270,12 +272,12 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluidGPU");
     #endif // ENABLE_CUDA
     azplugins::detail::export_BounceBackNVE<mpcd::detail::SlitGeometry>(m);
-    azplugins::detail::export_BounceBackNVE<azplugins::detail::AntiSymCosGeometry>(m);
-    azplugins::detail::export_BounceBackNVE<azplugins::detail::SymCosGeometry>(m);
+    azplugins::detail::export_BounceBackNVE<azplugins::detail::SinusoidalChannel>(m);
+    azplugins::detail::export_BounceBackNVE<azplugins::detail::SinusoidalExpansionConstriction>(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_BounceBackNVEGPU<mpcd::detail::SlitGeometry>(m);
-    azplugins::detail::export_BounceBackNVEGPU<azplugins::detail::AntiSymCosGeometry>(m);
-    azplugins::detail::export_BounceBackNVEGPU<azplugins::detail::SymCosGeometry>(m);
+    azplugins::detail::export_BounceBackNVEGPU<azplugins::detail::SinusoidalChannel>(m);
+    azplugins::detail::export_BounceBackNVEGPU<azplugins::detail::SinusoidalExpansionConstriction>(m);
     #endif // ENABLE_CUDA
 
     /* Variants */
