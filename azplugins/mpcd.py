@@ -150,8 +150,8 @@ class reverse_perturbation(hoomd.update._updater):
             self.cpp_updater.target_momentum = target_momentum
 
 
-class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
-    r""" Anti-symmetric Cosine channel streaming geometry.
+class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
+    r""" Anti-symmetric Sinusoidal channel streaming geometry.
 
     Args:
         A (float): Amplitude of Cosine wall
@@ -202,6 +202,7 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
             stream_class = _azplugins.ConfinedStreamingMethodAntiSymCos
         else:
             stream_class = _azplugins.ConfinedStreamingMethodGPUAntiSymCos
+
         self._cpp = stream_class(hoomd.context.current.mpcd.data,
                                  hoomd.context.current.system.getCurrentTimeStep(),
                                  self.period,
@@ -230,7 +231,7 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
 
         Example::
 
-            anti_sym_cos.set_filler(density=5.0, kT=1.0, seed=42)
+            sinusoidal_channel.set_filler(density=5.0, kT=1.0, seed=42)
 
         """
         hoomd.util.print_status_line()
@@ -308,8 +309,8 @@ class anti_sym_cos(hoomd.mpcd.stream._streaming_method):
         if self._filler is not None:
             self._filler.setGeometry(self._cpp.geometry)
 
-class sym_cos(hoomd.mpcd.stream._streaming_method):
-    r""" Symmetric Cosine channel streaming geometry.
+class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
+    r""" Symmetric Sinusoidal  streaming geometry, i.e a constriction expansion channel.
 
     Args:
         H (float): channel half-width at its widest point
@@ -390,7 +391,7 @@ class sym_cos(hoomd.mpcd.stream._streaming_method):
 
         Example::
 
-            sym_cos.set_filler(density=5.0, kT=1.0, seed=42)
+            sinusoidal_expansion_constriction.set_filler(density=5.0, kT=1.0, seed=42)
 
         """
         hoomd.util.print_status_line()
@@ -442,8 +443,8 @@ class sym_cos(hoomd.mpcd.stream._streaming_method):
 
         Examples::
 
-            sym_cos.set_params(H=15.0)
-            sym_cos.set_params(V=0.2, boundary="no_slip")
+            sinusoidal_expansion_constriction.set_params(H=15.0)
+            sinusoidal_expansion_constriction.set_params(V=0.2, boundary="no_slip")
 
         """
         hoomd.util.print_status_line()
