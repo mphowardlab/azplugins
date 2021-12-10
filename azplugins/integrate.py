@@ -257,9 +257,9 @@ class sinusoidal_channel(_bounce_back):
 
         Examples::
 
-            sym_cos.set_params(A=8., h=2.0)
-            sym_cos.set_params(boundary='slip')
-            sym_cos.set_params(A=5, boundary='no_slip')
+            sinusoidal_channel.set_params(A=8., h=2.0)
+            sinusoidal_channel.set_params(boundary='slip')
+            sinusoidal_channel.set_params(A=5, boundary='no_slip')
 
         """
         hoomd.util.print_status_line()
@@ -271,7 +271,10 @@ class sinusoidal_channel(_bounce_back):
             self.h = h
 
         if p is not None:
-            self.p = p
+            if type(p) == type(1):
+                self.p = p
+            else:
+                hoomd.context.msg.error('integrate.sinusoidal_channel: p needs to be an integer!\n')
 
         if boundary is not None:
             self.boundary = boundary
@@ -375,9 +378,9 @@ class sinusoidal_expansion_constriction(_bounce_back):
 
         Examples::
 
-            sym_cos.set_params(H=8., h=2.0)
-            sym_cos.set_params(boundary='slip')
-            sym_cos.set_params(H=5, V=0., boundary='no_slip')
+            sinusoidal_expansion_constriction.set_params(H=8., h=2.0)
+            sinusoidal_expansion_constriction.set_params(boundary='slip')
+            sinusoidal_expansion_constriction.set_params(H=5, V=0., boundary='no_slip')
 
         """
         hoomd.util.print_status_line()
@@ -389,7 +392,10 @@ class sinusoidal_expansion_constriction(_bounce_back):
             self.h = h
 
         if p is not None:
-            self.p = p
+            if type(p) == type(1):
+                self.p = p
+            else:
+                hoomd.context.msg.error('integrate.sinusoidal_expansion_constriction: p needs to be an integer!\n')
 
         if boundary is not None:
             self.boundary = boundary

@@ -297,7 +297,10 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
             self.h = h
 
         if p is not None:
-            self.p = p
+            if type(p) == type(1):
+                self.p = p
+            else:
+                hoomd.context.msg.error('mpcd.stream.sinusoidal_channel: p needs to be an integer!\n')
 
         if V is not None:
             self.V = V
@@ -459,7 +462,10 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
             self.h = h
 
         if p is not None:
-            self.p = p
+            if type(p) == type(1):
+                self.p = p
+            else:
+                hoomd.context.msg.error('mpcd.stream.sinusoidal_expansion_constriction: p needs to be an integer!\n')
 
         if V is not None:
             self.V = V
