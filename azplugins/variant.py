@@ -1,7 +1,6 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
-
-# Maintainer: mphoward / Everyone is free to add additional variants
 
 import hoomd
 
@@ -15,6 +14,7 @@ class sphere_area(hoomd.variant._variant):
         alpha (float): Rate of surface-area reduction (units: area per timestep).
 
     The radius of the sphere :math:`R(t)` is reduced according to:
+
     .. math::
 
         R(t) = \sqrt{R(0)^2 - (\alpha/4\pi) t}
@@ -22,6 +22,7 @@ class sphere_area(hoomd.variant._variant):
     where :math:`R(0)` is the initial radius and :math:`\alpha` is the rate of
     surface-area reduction per time. This physics corresponds to the evaporation
     of a droplet into stagnant air under the mapping:
+
     .. math::
 
         \alpha = \frac{8 \pi D_{\rm v} m \Delta p}{\rho_{\rm l} k_{\rm B} T}

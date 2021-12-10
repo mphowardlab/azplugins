@@ -7,6 +7,9 @@ executors:
         type: string
     docker:
       - image: mphoward/ci:hoomd<< parameters.hoomd-version >>-ubuntu18.04
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
     working_directory: /home/ci/project
 
 commands:
@@ -141,34 +144,42 @@ workflows:
   workflow:
     jobs:
       - ext_build_and_test:
+          context: docker-hub-creds
           name: py3-nocuda-nompi-double
           hoomd-config: "nocuda/nompi/double"
 
       - ext_build_and_test:
+          context: docker-hub-creds
           name: py3-nocuda-nompi-single
           hoomd-config: "nocuda/nompi/single"
 
       - ext_build_and_test:
+          context: docker-hub-creds
           name: py3-nocuda-mpi-double
           hoomd-config: "nocuda/mpi/double"
 
       - ext_build_and_test:
+          context: docker-hub-creds
           name: py3-nocuda-mpi-single
           hoomd-config: "nocuda/mpi/single"
 
       - ext_build:
+          context: docker-hub-creds
           name: py3-cuda-nompi-double
           hoomd-config: "cuda/nompi/double"
 
       - ext_build:
+          context: docker-hub-creds
           name: py3-cuda-nompi-single
           hoomd-config: "cuda/nompi/single"
 
       - ext_build:
+          context: docker-hub-creds
           name: py3-cuda-mpi-double
           hoomd-config: "cuda/mpi/double"
 
       - ext_build:
+          context: docker-hub-creds
           name: py3-cuda-mpi-single
           hoomd-config: "cuda/mpi/single"
 
@@ -178,52 +189,63 @@ workflows:
           hoomd-config: "nocuda/nompi/double"
 
       - int_build_and_test:
+          context: docker-hub-creds
           name: py3-internal
 
       - int_build_and_test:
+          context: docker-hub-creds
           name: py2-internal
           python-version: "2"
 
       - ext_build_and_test:
+          context: docker-hub-creds
           name: 2.8.0-nocuda-nompi-double
           hoomd-version: "2.8.0"
           hoomd-config: "nocuda/nompi/double"
 
       - ext_build_and_test:
+          context: docker-hub-creds
           name: 2.8.0-nocuda-nompi-single
           hoomd-version: "2.8.0"
           hoomd-config: "nocuda/nompi/single"
 
       - ext_build_and_test:
+          context: docker-hub-creds
           name: 2.8.0-nocuda-mpi-double
           hoomd-version: "2.8.0"
           hoomd-config: "nocuda/mpi/double"
 
       - ext_build_and_test:
+          context: docker-hub-creds
           name: 2.8.0-nocuda-mpi-single
           hoomd-version: "2.8.0"
           hoomd-config: "nocuda/mpi/single"
 
       - ext_build:
+          context: docker-hub-creds
           name: 2.8.0-cuda-nompi-double
           hoomd-version: "2.8.0"
           hoomd-config: "cuda/nompi/double"
 
       - ext_build:
+          context: docker-hub-creds
           name: 2.8.0-cuda-nompi-single
           hoomd-version: "2.8.0"
           hoomd-config: "cuda/nompi/single"
 
       - ext_build:
+          context: docker-hub-creds
           name: 2.8.0-cuda-mpi-double
           hoomd-version: "2.8.0"
           hoomd-config: "cuda/mpi/double"
 
       - ext_build:
+          context: docker-hub-creds
           name: 2.8.0-cuda-mpi-single
           hoomd-version: "2.8.0"
           hoomd-config: "cuda/mpi/single"
 
       - int_build_and_test:
+          context: docker-hub-creds
           name: 2.8.0-internal
           hoomd-version: "2.8.0"

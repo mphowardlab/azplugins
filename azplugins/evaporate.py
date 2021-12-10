@@ -1,7 +1,6 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
-
-# Maintainer: mphoward
 
 import hoomd
 
@@ -154,79 +153,78 @@ class implicit(hoomd.md.force._force):
         return data
 
 class particles(hoomd.update._updater):
+    R""" Evaporate particles from a region.
+
+    Args:
+        solvent (str): Solvent particle type
+        evaporated (str): Evaporated particle
+        lo (float): *z* coordinate of evaporation region lower bound
+        hi (float): *z* coordinate of evaporation region upper bound
+        seed (int): Seed to the pseudo-random number generator
+        Nmax (int): Maximum number of particles to evaporate
+        period (int): Particle types will be updated every *period* time steps
+        phase (int): When -1, start on the current time step. Otherwise, execute
+                     on steps where *(step + phase) % period* is 0.
+
+    Evaporate particles of type *solvent* from the slab defined by coordinates
+    *lo* and *hi* along the *z*-azis. Every *period* time steps, the positions of all
+    particles are checked. Up to *Nmax* particles of type *solvent* in the
+    slab have their types changed to *evaporated*. If *Nmax* is None, all
+    *solvent* particles have their types changed. Other particle types
+    are ignored.
+
+    .. note::
+
+        The evaporation region must lie inside the simulation box. An
+        error will be raised at runtime if the region lies outside the box.
+        In simulations where the size of the simulation box changes, the
+        size of the region is not rescaled, and could eventually end up
+        outside the simulation box if not chosen appropriately.
+
+    Evaporated particles are not actually removed from the simulation
+    due to the inefficiency of resizing particle arrays frequently.
+    All potential interactions for the *evaporated* type should be
+    switched off to simulate full deletion of the particles from the box.
+    Periodically, it is advisable to stop the simulation, remove the
+    evaporated particles, and restart the simulation. This can be achieved
+    efficiently using the snapshot API.
+
+    .. warning::
+
+        Because evaporated particles are not removed from the simulation box,
+        the temperature, pressure, etc. reported by :py:class:`hoomd.compute.thermo`
+        will not be meaningful. (Their degrees of freedom are still included
+        in calculations.) This is OK because evaporation is a nonequilibrium
+        process, and care should be taken in defining these quantities anyway.
+        If necessary, make sure that you compute these properties in post-processing.
+
+    Because of the nonequilibrium simulation, it is ill-advised to couple
+    the entire system to a thermostat. However, evaporation can
+    cause the system to cool throughout the simulation. It is recommended
+    to couple another slab of the box to a Langevin thermostat to help
+    control the temperature. See :py:class:`update.types` for an example
+    of how to do this.
+
+    The flux of particles out of the box is controlled by *Nmax*. If the
+    simulation box has a cross sectional area *A*, then the flux
+    *j* is:
+
+    .. math::
+
+        j = \frac{N_{\rm max}}{A \times \Delta t \times {\rm period}}
+
+    It should be emphasized that this is the **maximum** flux attainable.
+    If the evaporation process becomes diffusion-limited (there are fewer
+    than *Nmax* particles in the evaporation region), then the actual
+    flux obtained will be lower.
+
+    Examples::
+
+        azplugins.evaporate.particles(solvent='S', evaporated='Z', lo=-5.0, hi=5.0, seed=42, Nmax=5)
+        azplugins.evaporate.particles(solvent='S', evaporated='Z', lo=-15.0, hi=-10.0, seed=77, period=10)
+
+    """
     def __init__(self, solvent, evaporated, lo, hi, seed, Nmax=False, period=1, phase=0):
-        R""" Evaporate particles from a region.
-
-        Args:
-            solvent (str): Solvent particle type
-            evaporated (str): Evaporated particle
-            lo (float): *z* coordinate of evaporation region lower bound
-            hi (float): *z* coordinate of evaporation region upper bound
-            seed (int): Seed to the pseudo-random number generator
-            Nmax (int): Maximum number of particles to evaporate
-            period (int): Particle types will be updated every *period* time steps
-            phase (int): When -1, start on the current time step. Otherwise, execute
-                         on steps where *(step + phase) % period* is 0.
-
-        Evaporate particles of type *solvent* from the slab defined by coordinates
-        *lo* and *hi* along the *z*-azis. Every *period* time steps, the positions of all
-        particles are checked. Up to *Nmax* particles of type *solvent* in the
-        slab have their types changed to *evaporated*. If *Nmax* is None, all
-        *solvent* particles have their types changed. Other particle types
-        are ignored.
-
-        .. note::
-
-            The evaporation region must lie inside the simulation box. An
-            error will be raised at runtime if the region lies outside the box.
-            In simulations where the size of the simulation box changes, the
-            size of the region is not rescaled, and could eventually end up
-            outside the simulation box if not chosen appropriately.
-
-        Evaporated particles are not actually removed from the simulation
-        due to the inefficiency of resizing particle arrays frequently.
-        All potential interactions for the *evaporated* type should be
-        switched off to simulate full deletion of the particles from the box.
-        Periodically, it is advisable to stop the simulation, remove the
-        evaporated particles, and restart the simulation. This can be achieved
-        efficiently using the snapshot API.
-
-        .. warning::
-
-            Because evaporated particles are not removed from the simulation box,
-            the temperature, pressure, etc. reported by :py:class:`hoomd.compute.thermo`
-            will not be meaningful. (Their degrees of freedom are still included
-            in calculations.) This is OK because evaporation is a nonequilibrium
-            process, and care should be taken in defining these quantities anyway.
-            If necessary, make sure that you compute these properties in post-processing.
-
-        Because of the nonequilibrium simulation, it is ill-advised to couple
-        the entire system to a thermostat. However, evaporation can
-        cause the system to cool throughout the simulation. It is recommended
-        to couple another slab of the box to a Langevin thermostat to help
-        control the temperature. See :py:class:`update.types` for an example
-        of how to do this.
-
-        The flux of particles out of the box is controlled by *Nmax*. If the
-        simulation box has a cross sectional area *A*, then the flux
-        *j* is:
-
-        .. math::
-            :nowrap:
-
-            j = \frac{N_{\rm max}}{A \times \Delta t \times {\rm period}}
-
-        It should be emphasized that this is the **maximum** flux attainable.
-        If the evaporation process becomes diffusion-limited (there are fewer
-        than *Nmax* particles in the evaporation region), then the actual
-        flux obtained will be lower.
-
-        Examples::
-
-            azplugins.evaporate.particles(solvent='S', evaporated='Z', lo=-5.0, hi=5.0, seed=42, Nmax=5)
-            azplugins.evaporate.particles(solvent='S', evaporated='Z', lo=-15.0, hi=-10.0, seed=77, period=10)
-
-        """
         hoomd.util.print_status_line()
 
         hoomd.update._updater.__init__(self)

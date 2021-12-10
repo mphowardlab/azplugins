@@ -1,7 +1,6 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
-
-# Maintainer: mphoward
 
 import numpy as np
 
@@ -16,7 +15,7 @@ import unittest
 
 # azplugins.restrain.plane
 class restrain_plane_tests(unittest.TestCase):
-    """Tests md.force.harmonic_plane"""
+    """Tests azplugins.restrain.plane"""
 
     def setUp(self):
         snap = hoomd.data.make_snapshot(N=3, box=hoomd.data.boxdim(L=5.0))

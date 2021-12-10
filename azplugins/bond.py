@@ -1,7 +1,6 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
-
-# Maintainer: astatt / Everyone is free to add additional potentials
 
 import math
 
@@ -10,20 +9,79 @@ from hoomd import _hoomd
 
 from . import _azplugins
 
+class double_well(hoomd.md.bond._bond):
+    R"""Double well bond potential.
+
+    Args:
+        name (str): Name of the bond instance.
+
+    :py:class:`double_well` specifies a double well potential between the two particles in each defined bond.
+    The potential is given by:
+
+    .. math::
+
+        V_{\rm{DW}}(r)  =  \frac{V_{\rm max}}{b^4} \left[ \left( r - a/2 \right)^2 - b^2 \right]^2
+
+    Coefficients:
+
+    - :math:`V_{\rm max}` - Potential maximum height between the two minima at :math:`a/2` (in energy units)
+    - :math:`a` - twice the location of the potential maximum, maximum is at :math:`a/2` ( in distance units)
+    - :math:`b` - tunes the disance between the potential minima at :math:`a/2 \pm b` (in distance units)
+
+    Examples::
+
+        dw = azplugins.bond.double_well()
+        dw.bond_coeff.set('polymer', V_max=2.0, a=2.5, b=0.5)
+
+    """
+    def __init__(self, name=None):
+        hoomd.util.print_status_line()
+
+        # check that some bonds are defined
+        if hoomd.context.current.system_definition.getBondData().getNGlobal() == 0:
+            hoomd.context.msg.error("azplugins.bond.double_well(): No bonds are defined.\n")
+            raise RuntimeError("Error creating bond forces")
+
+        # initialize the base class
+        hoomd.md.bond._bond.__init__(self, name)
+
+        # create the c++ mirror class
+        if not hoomd.context.exec_conf.isCUDAEnabled():
+            self.cpp_force = _azplugins.BondPotentialDoubleWell(hoomd.context.current.system_definition,self.name)
+        else:
+            self.cpp_force =  _azplugins.BondPotentialDoubleWellGPU(hoomd.context.current.system_definition,self.name)
+
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
+
+        # setup the coefficient options
+        self.required_coeffs = ['V_max','a','b']
+
+    def process_coeff(self, coeff):
+        V_max = coeff['V_max']
+        a = coeff['a']
+        b = coeff['b']
+        if b==0:
+            hoomd.context.msg.error("azplugins.bond.double_well(): coefficient b must be non-zero.\n")
+            raise ValueError('Coefficient b must be non-zero')
+
+        return _hoomd.make_scalar3(V_max, a, b)
+
+
 class fene(hoomd.md.bond._bond):
     R""" FENE bond potential.
 
     Args:
         name (str): Name of the bond instance.
 
-    :py:class:`fene` specifies a FENE potential energy between the two particles in each defined bond.
+    :py:class:`fene` specifies a FENE potential energy between the two particles
+    in each defined bond.
 
     .. math::
 
-        V(r) = - \frac{1}{2} k r_0^2 \ln \left( 1 - \left( \frac{r}{r_0} \right)^2 \right) + V_{\mathrm{WCA}}(r)
+        V(r) = - \frac{1}{2} k r_0^2 \ln \left( 1 - \left( \frac{r}{r_0} \right)^2 \right) + V_{\rm WCA}(r)
 
     where :math:`\vec{r}` is the vector pointing from one particle to the other in the bond.
-    The potential :math:`V_{\mathrm{WCA}}(r)` is given by:
+    The potential :math:`V_{\rm WCA}(r)` is given by:
 
     .. math::
         :nowrap:
@@ -112,6 +170,7 @@ class fene24(hoomd.md.bond._bond):
     parameter :math:`\lambda` setting the strength of the attractive tail.
     When :math:`\lambda` is 0, the potential is purely repulsive.
     When :math:`\lambda` is 1, the potential a generalized Lennard-Jones potential:
+
     .. math::
         :nowrap:
 
@@ -123,14 +182,12 @@ class fene24(hoomd.md.bond._bond):
 
     Here, :math:`V_{\mathrm{LJ,48-24}}(r,\varepsilon,\sigma)` is a Lennard-Jones potential with
     parameters :math:`\varepsilon`, and :math:`\sigma`:
+
     .. math::
-        :nowrap:
 
-        \begin{eqnarray*}
-        V_{\mathrm{LJ,48-24}}  = 4 \varepsilon \left(\left(\frac{\sigma}{r}\right)^{48} - \left(\frac{\sigma}{r}\right)^{24}\right)
-        \end{eqnarray*}
+        V_{\mathrm{LJ,48-24}} = 4 \varepsilon \left(\left(\frac{\sigma}{r}\right)^{48} - \left(\frac{\sigma}{r}\right)^{24}\right)
 
-     The following coefficients must be set per unqiue bond type:
+    The following coefficients must be set per unqiue bond type:
 
     - :math:`k` - attractive force strength ``k`` (in units of energy/distance^2)
     - :math:`r_0` - maximal bond stretching ``r0`` (in distance units)

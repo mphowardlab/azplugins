@@ -1,7 +1,22 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: wes_reinhart
+r""" Restraining forces.
+
+Restraints are harmonic forces that are applied to particle groups with the
+goal of holding them to a region of space. Depending on the type of restraint,
+this may be done to keep the particles near surface like a plane or near an
+initial position as a tether. Restraints can be useful for equilibration,
+biased sampling with tracers in a region, or performing thermodynamic
+integration (free-energy calculations).
+
+Restraints are additive forces, and multiple restraints can be used in
+the same simulation. The user **must** ensure that the groups assigned
+to each restraint and the restraint types are initialized properly and
+are compatible.
+
+"""
 
 import numpy
 import hoomd
@@ -9,6 +24,105 @@ from hoomd import _hoomd
 from hoomd.md import force
 
 from . import _azplugins
+
+class cylinder(force._force):
+    r"""Apply a harmonic potential to restrain particles to a cylinder.
+
+    Args:
+        group (:py:mod:`hoomd.group`): Group of particles to apply potential to.
+        radius (float): Radius of the cylinder.
+        origin (tuple): Center of the cylinder.
+        axis (tuple): Axis of the cylinder.
+        k (float): Harmonic spring constant.
+
+    The harmonic potential is:
+
+    .. math::
+
+        U(d) = \frac{k}{2} d^2
+
+    where *k* is the spring constant and *d* is the distance of the point from the cylinder
+    using the **unwrapped** particle position.
+
+    The reason that the position is unwrapped is to ensure that the harmonic potential is always
+    increasing. Wrapping **r** would introduce force discontinuities and set a maximum value
+    for *U*. However, the virial contribution is still computed by applying the force at the
+    wrapped position, as the same force is applied to all images. Note that there is still a
+    maximum set on *U* by the *radius*.
+
+    .. note::
+        The cylinder must be transformed to point along *axis*. This achieved by a
+        quaternion rotation relative to the *z* axis. Choosing an axis other than `(0,0,1)`
+        may incur small numerical errors if HOOMD is compiled in single-precision.
+
+    Examples::
+
+        hp = azplugins.restrain.cylinder(group=hoomd.group.all(), radius=10, origin=(0,0,0), axis=(0,0,1), k=10.0)
+
+    """
+    def __init__(self, group, radius, origin, axis, k):
+        hoomd.util.print_status_line()
+
+        # initialize the base class
+        force._force.__init__(self)
+
+        # create the c++ mirror class
+        if hoomd.context.exec_conf.isCUDAEnabled():
+            _cpp = _azplugins.CylinderRestraintComputeGPU
+        else:
+            _cpp = _azplugins.CylinderRestraintCompute
+
+        # process the parameters
+        self._radius = radius
+        self._origin = _hoomd.make_scalar3(origin[0],origin[1],origin[2])
+        self._axis = _hoomd.make_scalar3(axis[0],axis[1],axis[2])
+
+        self.cpp_force = _cpp(hoomd.context.current.system_definition,
+                              group.cpp_group,
+                              _azplugins._CylinderWall(self._radius, self._origin, self._axis, True),
+                              k)
+
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
+
+    def set_params(self, radius=None, origin=None, axis=None, k=None):
+        R""" Update the cylinder geometry or spring constant.
+
+        Args:
+            radius (float): Radius of the cylinder.
+            origin (tuple): Center of the cylinder.
+            axis (tuple): Axis of the cylinder.
+            k (float): Harmonic spring constant.
+
+        Parameters are only updated if they are specified.
+
+        Examples::
+
+            hp.set_params(radius=5.)
+            hp.set_params(radius=8, origin=(0,1,0), axis=(0,1,0), k=5.0)
+
+        """
+        hoomd.util.print_status_line()
+        self.check_initialization()
+
+        if radius is not None:
+            self._radius = radius
+            self.cpp_force.getWall().radius = self._radius
+
+        if origin is not None:
+            self._origin = _hoomd.make_scalar3(origin[0],origin[1],origin[2])
+
+        if axis is not None:
+            self._axis = _hoomd.make_scalar3(axis[0],axis[1],axis[2])
+
+        # replace the wall object if something has changed
+        if origin is not None or axis is not None:
+            self.cpp_force.setWall(_azplugins._CylinderWall(self._radius, self._origin, self._axis, True))
+
+        if k is not None:
+            self.cpp_force.setForceConstant(k)
+
+    def update_coeffs(self):
+        pass
 
 class plane(force._force):
     r"""Apply a harmonic potential to restrain particles to a plane.
@@ -29,7 +143,7 @@ class plane(force._force):
 
     .. math::
 
-        d = (\mathbf{r)-\mathbf{p}) \cdot \mathbf{n}
+        d = (\mathbf{r}-\mathbf{p}) \cdot \mathbf{n}
 
     where **r** is the **unwrapped** particle position, **p** is a point in the plane,
     and **n** is the unit normal of the plane.
@@ -60,13 +174,12 @@ class plane(force._force):
             _cpp = _azplugins.PlaneRestraintCompute
 
         # process the parameters
-        _p = _hoomd.make_scalar3(point[0],point[1],point[2])
-        _n = _hoomd.make_scalar3(normal[0],normal[1],normal[2])
+        self._p = _hoomd.make_scalar3(point[0],point[1],point[2])
+        self._n = _hoomd.make_scalar3(normal[0],normal[1],normal[2])
 
         self.cpp_force = _cpp(hoomd.context.current.system_definition,
                               group.cpp_group,
-                              _p,
-                              _n,
+                              _azplugins._PlaneWall(self._p, self._n, True),
                               k)
 
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
@@ -91,12 +204,99 @@ class plane(force._force):
         self.check_initialization()
 
         if point is not None:
-            _p = _hoomd.make_scalar3(point[0],point[1],point[2])
-            self.cpp_force.setPoint(_p)
+            self._p = _hoomd.make_scalar3(point[0],point[1],point[2])
 
         if normal is not None:
-            _n = _hoomd.make_scalar3(normal[0], normal[1], normal[2])
-            self.cpp_force.setNormal(_n)
+            self._n = _hoomd.make_scalar3(normal[0],normal[1],normal[2])
+
+        # replace the wall object if something has changed
+        if point is not None or normal is not None:
+            self.cpp_force.setWall(_azplugins._PlaneWall(self._p, self._n, True))
+
+        if k is not None:
+            self.cpp_force.setForceConstant(k)
+
+    def update_coeffs(self):
+        pass
+
+class sphere(force._force):
+    r"""Apply a harmonic potential to restrain particles to a sphere.
+
+    Args:
+        group (:py:mod:`hoomd.group`): Group of particles to apply potential to.
+        radius (float): Radius of the sphere.
+        origin (tuple): Center of the cylinder.
+        k (float): Harmonic spring constant.
+
+    The harmonic potential is:
+
+    .. math::
+
+        U(d) = \frac{k}{2} d^2
+
+    where *k* is the spring constant and *d* is the distance of the point from the sphere
+    using the **unwrapped** particle position.
+
+    The reason that the position is unwrapped is to ensure that the harmonic potential is always
+    increasing. Wrapping **r** would introduce force discontinuities and set a maximum value
+    for *U*. However, the virial contribution is still computed by applying the force at the
+    wrapped position, as the same force is applied to all images. Note that there is still a
+    maximum set on *U* by the *radius*.
+
+    Examples::
+
+        hp = azplugins.restrain.sphere(group=hoomd.group.all(), radius=10, origin=(0,0,0), k=10.0)
+
+    """
+    def __init__(self, group, radius, origin, k):
+        hoomd.util.print_status_line()
+
+        # initialize the base class
+        force._force.__init__(self)
+
+        # create the c++ mirror class
+        if hoomd.context.exec_conf.isCUDAEnabled():
+            _cpp = _azplugins.SphereRestraintComputeGPU
+        else:
+            _cpp = _azplugins.SphereRestraintCompute
+
+        # process the parameters
+        self._radius = radius
+        self._origin = _hoomd.make_scalar3(origin[0],origin[1],origin[2])
+
+        self.cpp_force = _cpp(hoomd.context.current.system_definition,
+                              group.cpp_group,
+                              _azplugins._SphereWall(self._radius, self._origin, True),
+                              k)
+
+        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
+
+    def set_params(self, radius=None, origin=None, k=None):
+        R""" Update the sphere geometry or spring constant.
+
+        Args:
+            radius (float): Radius of the sphere.
+            origin (tuple): Center of the sphere.
+            k (float): Harmonic spring constant.
+
+        Parameters are only updated if they are specified.
+
+        Examples::
+
+            hp.set_params(radius=5.)
+            hp.set_params(radius=8, origin=(0,1,0), k=5.0)
+
+        """
+        hoomd.util.print_status_line()
+        self.check_initialization()
+
+        if radius is not None:
+            self._radius = radius
+            self.cpp_force.getWall().radius = self._radius
+
+        if origin is not None:
+            self._origin = _hoomd.make_scalar3(origin[0],origin[1],origin[2])
+            self.cpp_force.setWall(_azplugins._SphereWall(self._radius, self._origin, True))
 
         if k is not None:
             self.cpp_force.setForceConstant(k)
@@ -118,6 +318,7 @@ class position(force._force):
 
     .. math::
         :nowrap:
+
         \begin{equation*}
         V(\mathbf{r}) = \frac{1}{2} \mathbf{k} \mathbf{\Delta r} \mathbf{\Delta r}^T
         \end{equation*}
@@ -259,6 +460,7 @@ class orientation(force._force):
 
     .. math::
         :nowrap:
+
         \begin{equation*}
         V(\mathbf{r}) = V(\theta) = k \sin^2(\theta)
         \end{equation*}

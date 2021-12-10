@@ -1,11 +1,10 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: mphoward
-
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -15,9 +14,9 @@ import unittest
 # azplugins.evaporate.implicit
 class evaporate_implicit_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
-        self.s = init.read_snapshot(snap)
-        self.interf = variant.linear_interp([[0,9.],[1e6,5.]],zero=0)
+        snap = hoomd.data.make_snapshot(N=100, box=hoomd.data.boxdim(L=20), particle_types=['A'])
+        self.s = hoomd.init.read_snapshot(snap)
+        self.interf = hoomd.variant.linear_interp([[0,9.],[1e6,5.]],zero=0)
 
     # basic test of creation
     def test_basic(self):
@@ -90,30 +89,30 @@ class evaporate_implicit_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s, self.interf
-        context.initialize()
+        hoomd.context.initialize()
 
 # test the validity of the potential
 class evaporate_implicit_film_potential_tests(unittest.TestCase):
     def setUp(self):
-        if comm.get_num_ranks() > 1:
-            comm.decomposition(nx=2, ny=1, nz=1)
+        if hoomd.comm.get_num_ranks() > 1:
+            hoomd.comm.decomposition(nx=2, ny=1, nz=1)
 
-        snap = data.make_snapshot(N=4, box=data.boxdim(L=20),particle_types=['A','B'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=4, box=hoomd.data.boxdim(L=20),particle_types=['A','B'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[0] = (1,1,4.6)
             snap.particles.position[1] = (-1,1,5.4)
             snap.particles.position[2] = (1,-1,5.6)
             snap.particles.position[3] = (-1,-1,6.6)
             snap.particles.typeid[:] = (0,1,0,0)
-        init.read_snapshot(snap)
+        hoomd.init.read_snapshot(snap)
 
         # integrator with zero timestep to compute forces
         md.integrate.mode_standard(dt=0)
-        md.integrate.nve(group = group.all())
+        md.integrate.nve(group = hoomd.group.all())
 
     # test the calculation of force and potential
     def test_potential(self):
-        evap = azplugins.evaporate.implicit(interface=variant.linear_interp([[0,5.0],[1,5.0],[2,4.0],[3,4.0]]), geometry='film')
+        evap = azplugins.evaporate.implicit(interface=hoomd.variant.linear_interp([[0,5.0],[1,5.0],[2,4.0],[3,4.0]]), geometry='film')
         kA = 50.0
         dB = 2.0
         kB = kA*dB**2
@@ -121,7 +120,7 @@ class evaporate_implicit_film_potential_tests(unittest.TestCase):
         evap.force_coeff.set('B', k=kB, offset=-0.1, g=kB*dB/2., cutoff=dB/2.)
 
         # in the first run step, the interface stays at 5.0 in both verlet steps
-        run(1)
+        hoomd.run(1)
         # particle 0 is outside the interaction range
         self.assertAlmostEqual(evap.forces[0].energy, 0)
         f0 = evap.forces[0].force
@@ -154,7 +153,7 @@ class evaporate_implicit_film_potential_tests(unittest.TestCase):
         evap.force_coeff.set('B', cutoff=False)
         # advance the simulation two steps so that now the interface is at 4.0
         # in both verlet steps
-        run(2)
+        hoomd.run(2)
         # particle 0 is now inside the harmonic region
         self.assertAlmostEqual(evap.forces[0].energy, 0.5*kA*0.5**2, 4)
         f0 = evap.forces[0].force
@@ -189,42 +188,42 @@ class evaporate_implicit_film_potential_tests(unittest.TestCase):
         evap.force_coeff.set('B', k=0.0, g=0.0, cutoff=False)
 
         with self.assertRaises(RuntimeError):
-            run(1)
+            hoomd.run(1)
 
     def test_log_warning(self):
         evap = azplugins.evaporate.implicit(interface=5.0, geometry='film')
         evap.force_coeff.set('A', k=1.0, g=1.0, cutoff=1.0)
         evap.force_coeff.set('B', k=1.0, g=1.0, cutoff=1.0)
 
-        analyze.log(filename=None, quantities=['pressure'], period=1)
-        run(1)
-        run(1)
+        hoomd.analyze.log(filename=None, quantities=['pressure'], period=1)
+        hoomd.run(1)
+        hoomd.run(1)
 
     def tearDown(self):
-        context.initialize()
+        hoomd.context.initialize()
 
 # test the validity of the potential
 class evaporate_implicit_droplet_potential_tests(unittest.TestCase):
     def setUp(self):
-        if comm.get_num_ranks() > 1:
-            comm.decomposition(nx=2, ny=1, nz=1)
+        if hoomd.comm.get_num_ranks() > 1:
+            hoomd.comm.decomposition(nx=2, ny=1, nz=1)
 
-        snap = data.make_snapshot(N=4, box=data.boxdim(L=20),particle_types=['A','B'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=4, box=hoomd.data.boxdim(L=20),particle_types=['A','B'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[0] = (0,0,4.6)
             snap.particles.position[1] = (0,0,-5.4)
             snap.particles.position[2] = (0,5.6,0)
             snap.particles.position[3] = (6.6,0,0)
             snap.particles.typeid[:] = (0,1,0,0)
-        init.read_snapshot(snap)
+        hoomd.init.read_snapshot(snap)
 
         # integrator with zero timestep to compute forces
         md.integrate.mode_standard(dt=0)
-        md.integrate.nve(group = group.all())
+        md.integrate.nve(group = hoomd.group.all())
 
     # test the calculation of force and potential
     def test_potential(self):
-        evap = azplugins.evaporate.implicit(interface=variant.linear_interp([[0,5.0],[1,5.0],[2,4.0],[3,4.0]]), geometry='droplet')
+        evap = azplugins.evaporate.implicit(interface=hoomd.variant.linear_interp([[0,5.0],[1,5.0],[2,4.0],[3,4.0]]), geometry='droplet')
         kA = 50.0
         dB = 2.0
         kB = kA*dB**2
@@ -232,7 +231,7 @@ class evaporate_implicit_droplet_potential_tests(unittest.TestCase):
         evap.force_coeff.set('B', k=kB, offset=-0.1, g=kB*dB/2., cutoff=dB/2.)
 
         # in the first run step, the interface stays at 5.0 in both verlet steps
-        run(1)
+        hoomd.run(1)
         # particle 0 is outside the interaction range
         self.assertAlmostEqual(evap.forces[0].energy, 0)
         f0 = evap.forces[0].force
@@ -265,7 +264,7 @@ class evaporate_implicit_droplet_potential_tests(unittest.TestCase):
         evap.force_coeff.set('B', cutoff=False)
         # advance the simulation two steps so that now the interface is at 4.0
         # in both verlet steps
-        run(2)
+        hoomd.run(2)
         # particle 0 is now inside the harmonic region, -x
         self.assertAlmostEqual(evap.forces[0].energy, 0.5*kA*0.5**2, 4)
         f0 = evap.forces[0].force
@@ -300,10 +299,10 @@ class evaporate_implicit_droplet_potential_tests(unittest.TestCase):
         evap.force_coeff.set('B', k=0.0, g=0.0, cutoff=False)
 
         with self.assertRaises(RuntimeError):
-            run(1)
+            hoomd.run(1)
 
     def tearDown(self):
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

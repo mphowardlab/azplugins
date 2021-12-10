@@ -1,8 +1,10 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 set(TEST_LIST_CPU
     test_analyze_rdf
+    test_bond_double_well
     test_bond_fene
     test_bond_fene24
     test_dpd_general
@@ -10,6 +12,7 @@ set(TEST_LIST_CPU
     test_evaporate_particles
     test_flow_brownian
     test_flow_constant
+    test_flow_flow_profiler
     test_flow_langevin
     test_flow_parabolic
     test_flow_quiescent
@@ -17,14 +20,17 @@ set(TEST_LIST_CPU
     test_pair_ashbaugh
     test_pair_ashbaugh24
     test_pair_lj124
+    test_pair_hertz
     test_pair_lj96
     test_pair_colloid
     test_pair_slj
     test_pair_spline
     test_pair_two_patch_morse
+    test_restrain_cylinder
     test_restrain_orientation
     test_restrain_plane
     test_restrain_position
+    test_restrain_sphere
     test_flow_reverse_perturbation
     test_special_pair_lj96
     test_update_type
@@ -35,6 +41,7 @@ set(TEST_LIST_CPU
 
 set(TEST_LIST_GPU
     test_analyze_rdf
+    test_bond_double_well
     test_bond_fene
     test_bond_fene24
     test_dpd_general
@@ -42,19 +49,23 @@ set(TEST_LIST_GPU
     test_evaporate_particles
     test_flow_brownian
     test_flow_constant
+    test_flow_flow_profiler
     test_flow_langevin
     test_integrate_slit
     test_pair_ashbaugh
     test_pair_ashbaugh24
     test_pair_lj124
+    test_pair_hertz
     test_pair_lj96
     test_pair_colloid
     test_pair_slj
     test_pair_spline
     test_pair_two_patch_morse
+    test_restrain_cylinder
     test_restrain_orientation
     test_restrain_plane
     test_restrain_position
+    test_restrain_sphere
     test_flow_reverse_perturbation
     test_special_pair_lj96
     test_update_type

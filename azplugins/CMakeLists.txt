@@ -1,7 +1,6 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
-
-# Maintainer: mphoward / All developers are free to add new source files as needed
 
 set(COMPONENT_NAME azplugins)
 
@@ -40,12 +39,12 @@ set(_${COMPONENT_NAME}_sources
     ImplicitPlaneEvaporator.cc
     OrientationRestraintCompute.cc
     ParticleEvaporator.cc
-    PlaneRestraintCompute.cc
     PositionRestraintCompute.cc
     RDFAnalyzer.cc
     ReversePerturbationFlow.cc
     TypeUpdater.cc
     VariantSphereArea.cc
+    WallRestraintCompute.cc
     )
 
 # cuda-enabled c++ source files
@@ -56,11 +55,11 @@ list(APPEND _${COMPONENT_NAME}_sources
     ImplicitPlaneEvaporatorGPU.cc
     OrientationRestraintComputeGPU.cc
     ParticleEvaporatorGPU.cc
-    PlaneRestraintComputeGPU.cc
     PositionRestraintComputeGPU.cc
     RDFAnalyzerGPU.cc
     ReversePerturbationFlowGPU.cc
     TypeUpdaterGPU.cc
+    WallRestraintComputeGPU.cc
     )
 endif(ENABLE_CUDA)
 
@@ -76,12 +75,12 @@ set(_${COMPONENT_NAME}_cu_sources
     PairPotentialAshbaugh.cu
     PairPotentialAshbaugh24.cu
     PairPotentialColloid.cu
+    PairPotentialHertz.cu
     PairPotentialLJ96.cu
     PairPotentialLJ124.cu
     PairPotentialShiftedLJ.cu
     PairPotentialSpline.cu
     ParticleEvaporatorGPU.cu
-    PlaneRestraintComputeGPU.cu
     PositionRestraintComputeGPU.cu
     RDFAnalyzerGPU.cu
     ReversePerturbationFlowGPU.cu
@@ -90,6 +89,7 @@ set(_${COMPONENT_NAME}_cu_sources
     TwoStepLangevinFlowGPU.cu
     TypeUpdaterGPU.cu
     WallPotentials.cu
+    WallRestraintComputeGPU.cu
     )
 
 # python files

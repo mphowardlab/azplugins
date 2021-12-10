@@ -1,11 +1,10 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: mphoward
-
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -16,10 +15,10 @@ import unittest
 class pair_ashbaugh_tests(unittest.TestCase):
     def setUp(self):
         # raw snapshot is fine, just needs to have the types
-        snap = data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
-        self.s = init.read_snapshot(snap)
-        self.nl = md.nlist.cell()
-        context.current.sorter.set_params(grid=8)
+        snap = hoomd.data.make_snapshot(N=100, box=hoomd.data.boxdim(L=20), particle_types=['A'])
+        self.s = hoomd.init.read_snapshot(snap)
+        self.nl = hoomd.md.nlist.cell()
+        hoomd.context.current.sorter.set_params(grid=8)
 
     # basic test of creation
     def test(self):
@@ -103,16 +102,16 @@ class pair_ashbaugh_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s, self.nl
-        context.initialize()
+        hoomd.context.initialize()
 
 # test the validity of the pair potential
 class potential_ashbaugh_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2, box=data.boxdim(L=20),particle_types=['A'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=2, box=hoomd.data.boxdim(L=20),particle_types=['A'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[0] = (0,0,0)
             snap.particles.position[1] = (1.05,0,0)
-        init.read_snapshot(snap)
+        hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
 
     # test the calculation of force and potential
@@ -124,8 +123,8 @@ class potential_ashbaugh_tests(unittest.TestCase):
         ash.set_params(mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         U = 2.0
         F = -45.7143
         f0 = ash.forces[0].force
@@ -146,7 +145,7 @@ class potential_ashbaugh_tests(unittest.TestCase):
 
         # change lambda to check for shifting of energy (force stays the same)
         ash.pair_coeff.set('A','A', lam=0.5)
-        run(1)
+        hoomd.run(1)
         U = 1.0
         F = -45.7143
         self.assertAlmostEqual(ash.forces[0].energy, 0.5*U, 3)
@@ -157,7 +156,7 @@ class potential_ashbaugh_tests(unittest.TestCase):
         # change sigma so that now the particle is in the LJ region
         # when lambda = 0, then the potential and force are zero
         ash.pair_coeff.set('A','A', sigma=0.5, lam=0.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(ash.forces[0].energy, 0)
         self.assertAlmostEqual(ash.forces[1].energy, 0)
         self.assertAlmostEqual(ash.forces[0].force[0], 0)
@@ -165,7 +164,7 @@ class potential_ashbaugh_tests(unittest.TestCase):
 
         # partially switch on the LJ with lambda = 0.5
         ash.pair_coeff.set('A','A', lam=0.5)
-        run(1)
+        hoomd.run(1)
         U = -0.0460947
         F = 0.260291
         self.assertAlmostEqual(ash.forces[0].energy, 0.5*U, 3)
@@ -177,7 +176,7 @@ class potential_ashbaugh_tests(unittest.TestCase):
         # check wca is shifted first
         ash.pair_coeff.set('A','A', sigma=1.05)
         ash.set_params(mode='shift')
-        run(1)
+        hoomd.run(1)
         U = 1.00734
         F = -45.7143
         self.assertAlmostEqual(ash.forces[0].energy, 0.5*U, 3)
@@ -188,7 +187,7 @@ class potential_ashbaugh_tests(unittest.TestCase):
         # and check lj
         ash.pair_coeff.set('A','A', sigma=0.85)
         ash.set_params(mode='shift')
-        run(1)
+        hoomd.run(1)
         U = -0.806849
         F = 2.81197
         self.assertAlmostEqual(ash.forces[0].energy, 0.5*U, 3)
@@ -203,16 +202,16 @@ class potential_ashbaugh_tests(unittest.TestCase):
         ash.pair_coeff.set('A','A', epsilon=2.0, sigma=1.05, alpha=0.5, lam=0.5)
         ash.set_params(mode="no_shift")
 
-        md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        hoomd.md.integrate.mode_standard(dt=0)
+        nve = hoomd.md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
 
         U = 4.25
         self.assertAlmostEqual(ash.forces[0].energy,0.5*U,3)
         self.assertAlmostEqual(ash.forces[1].energy,0.5*U,3)
 
         ash.pair_coeff.set('A','A', sigma=0.5)
-        run(1)
+        hoomd.run(1)
         U = -0.022775444603705584
         self.assertAlmostEqual(ash.forces[0].energy,0.5*U,3)
         self.assertAlmostEqual(ash.forces[1].energy,0.5*U,3)
@@ -225,9 +224,9 @@ class potential_ashbaugh_tests(unittest.TestCase):
         ash.pair_coeff.set('A','A', epsilon=1.0, sigma=1.0, lam=0.5)
         ash.set_params(mode="no_shift")
 
-        md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        hoomd.md.integrate.mode_standard(dt=0)
+        nve = hoomd.md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         self.assertAlmostEqual(ash.forces[0].energy, 0)
         self.assertAlmostEqual(ash.forces[1].energy, 0)
         self.assertAlmostEqual(ash.forces[0].force[0], 0)
@@ -235,7 +234,7 @@ class potential_ashbaugh_tests(unittest.TestCase):
 
         # inside cutoff but epsilon = 0
         ash.pair_coeff.set('A','A', epsilon=0.0, sigma=1.0, lam=0.5, r_cut=3.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(ash.forces[0].energy, 0)
         self.assertAlmostEqual(ash.forces[1].energy, 0)
         self.assertAlmostEqual(ash.forces[0].force[0], 0)
@@ -243,7 +242,7 @@ class potential_ashbaugh_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.nl
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

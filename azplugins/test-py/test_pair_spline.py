@@ -1,11 +1,10 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: astatt
-
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -16,10 +15,10 @@ import unittest
 class pair_spline_tests(unittest.TestCase):
     def setUp(self):
         # raw snapshot is fine, just needs to have the types
-        snap = data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
-        self.s = init.read_snapshot(snap)
+        snap = hoomd.data.make_snapshot(N=100, box=hoomd.data.boxdim(L=20), particle_types=['A'])
+        self.s = hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
-        context.current.sorter.set_params(grid=8)
+        hoomd.context.current.sorter.set_params(grid=8)
 
     # basic test of creation
     def test(self):
@@ -88,16 +87,16 @@ class pair_spline_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s, self.nl
-        context.initialize()
+        hoomd.context.initialize()
 
 # test the validity of the pair potential
 class potential_spline_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2, box=data.boxdim(L=20),particle_types=['A'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=2, box=hoomd.data.boxdim(L=20),particle_types=['A'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[0] = (0,0,0)
             snap.particles.position[1] = (2.0,0,0)
-        init.read_snapshot(snap)
+        hoomd.init.read_snapshot(snap)
         self.nl = md.nlist.cell()
 
     # test the calculation of force and potential
@@ -106,8 +105,8 @@ class potential_spline_tests(unittest.TestCase):
         spline.pair_coeff.set('A','A', m=2.0, amp=0.3, r_start=1.0)
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         U = 0.205005
         F = 0.211059
         f0 = spline.forces[0].force
@@ -131,8 +130,8 @@ class potential_spline_tests(unittest.TestCase):
         spline.pair_coeff.set('A','A', m=2.0, amp=0.3, r_start=1.0)
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         U = 0.0
         F = 0.0
         f0 = spline.forces[0].force
@@ -150,8 +149,8 @@ class potential_spline_tests(unittest.TestCase):
         spline.pair_coeff.set('A','A', m=2.0, amp=-0.389, r_start=2.5)
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         U = -0.389
         F = 0.0
         f0 = spline.forces[0].force
@@ -166,7 +165,7 @@ class potential_spline_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.nl
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

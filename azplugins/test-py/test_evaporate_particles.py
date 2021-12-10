@@ -1,11 +1,10 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: mphoward
-
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -15,16 +14,16 @@ import numpy as np
 
 class evaporate_particles_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=4, box=data.boxdim(L=20), particle_types=['A','B','C'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=4, box=hoomd.data.boxdim(L=20), particle_types=['A','B','C'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[:,0] = (-5.,-5.,5.,5.)
             snap.particles.position[:,2] = (-7.5,2.5,4.5,3.)
             snap.particles.typeid[:] = [0,1,0,2]
 
-        if comm.get_num_ranks() > 1:
-            comm.decomposition(nx=2, ny=1, nz=1)
+        if hoomd.comm.get_num_ranks() > 1:
+            hoomd.comm.decomposition(nx=2, ny=1, nz=1)
 
-        self.s = init.read_snapshot(snap)
+        self.s = hoomd.init.read_snapshot(snap)
         self.u = azplugins.evaporate.particles(solvent='A', evaporated='B', lo=-5.0, hi=5.0, seed=42)
 
     # test for basic initialization and call of cpp updater
@@ -123,133 +122,133 @@ class evaporate_particles_tests(unittest.TestCase):
     def test_change_types(self):
         # require initial types are set correctly
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             np.testing.assert_array_equal(snap.particles.typeid[:], [0,1,0,2])
 
         # first run should evaporate the last particle
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             np.testing.assert_array_equal(snap.particles.typeid, [0,1,1,2])
 
         # make sure multiple particles can be evaporated at once
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.particles.typeid[:-1] = (0,0,0)
         self.s.restore_snapshot(snap)
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             np.testing.assert_array_equal(snap.particles.typeid, [0,1,1,2])
 
         # make sure at least one particle gets evaporated with limit set
         # this is a random choice of the number generator, so we just count the number of ones
         self.u.set_params(Nmax=1)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.particles.typeid[:-1] = (0,0,0)
         self.s.restore_snapshot(snap)
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             self.assertEqual(list(snap.particles.typeid).count(1), 1)
 
     # test that nothing quirky happens with empty region
     def test_empty_region(self):
         # check first with particles in region, but none of type to process
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.particles.typeid[:] = (2,2,2,2)
         self.s.restore_snapshot(snap)
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             np.testing.assert_array_equal(snap.particles.typeid, [2,2,2,2])
 
         # now check with particles of solvent type, but outside evaporation region
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[:,2] = (-7.5, -7.5, -7.5, -7.5)
             snap.particles.typeid[:] = (0,0,0,0)
         self.s.restore_snapshot(snap)
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             np.testing.assert_array_equal(snap.particles.typeid, (0,0,0,0))
 
     # test box change signal
     def test_box_change(self):
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[:,2] = [-2., 0., 2. ,0.]
         self.s.restore_snapshot(snap)
-        run(1)
+        hoomd.run(1)
 
         # shrink box smaller than region, which should trigger signal to check
         # box and cause a runtime error
-        update.box_resize(L=5.0, period=None)
+        hoomd.update.box_resize(L=5.0, period=None)
         with self.assertRaises(RuntimeError):
-            run(1)
+            hoomd.run(1)
 
     def tearDown(self):
         del self.s, self.u
-        context.initialize()
+        hoomd.context.initialize()
 
 class evaporate_particles_big_test(unittest.TestCase):
     # put all particles into the deletion zone
     def setUp(self):
-        snap = data.make_snapshot(N=5000, box=data.boxdim(L=20), particle_types=['A','B'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=5000, box=hoomd.data.boxdim(L=20), particle_types=['A','B'])
+        if hoomd.comm.get_rank() == 0:
             # some in -x, some in +x in MPI
             snap.particles.position[:500,0] = -5.
             snap.particles.position[500:,0] = 5.
             snap.particles.position[:,2] = 0.
             snap.particles.typeid[:] = np.zeros(snap.particles.N)
 
-        if comm.get_num_ranks() > 1:
-            comm.decomposition(nx=2, ny=1, nz=1)
+        if hoomd.comm.get_num_ranks() > 1:
+            hoomd.comm.decomposition(nx=2, ny=1, nz=1)
 
-        self.s = init.read_snapshot(snap)
+        self.s = hoomd.init.read_snapshot(snap)
         self.u = azplugins.evaporate.particles(solvent='A', evaporated='B', lo=-5.0, hi=5.0, seed=771991)
 
     # test that all particles can be evaporated at once
     def test_all(self):
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             np.testing.assert_array_equal(snap.particles.typeid, np.ones(snap.particles.N))
 
     def test_limit(self):
         self.u.set_params(Nmax=50)
 
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             self.assertEqual(list(snap.particles.typeid).count(1), 50)
 
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             self.assertEqual(list(snap.particles.typeid).count(1), 100)
 
         self.u.set_params(Nmax=900)
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             self.assertEqual(list(snap.particles.typeid).count(1), 1000)
 
         self.u.set_params(Nmax=4000)
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             self.assertEqual(list(snap.particles.typeid).count(1), 5000)
             np.testing.assert_array_equal(snap.particles.typeid, np.ones(snap.particles.N))
 
-        run(1)
+        hoomd.run(1)
         snap = self.s.take_snapshot(all=True)
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             np.testing.assert_array_equal(snap.particles.typeid, np.ones(snap.particles.N))
 
     def tearDown(self):
         del self.s, self.u
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

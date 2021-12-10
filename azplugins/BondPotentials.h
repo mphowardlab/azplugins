@@ -1,7 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021, Auburn University
 // This file is part of the azplugins project, released under the Modified BSD License.
-
-// Maintainer: mphoward / Everyone is free to add additional potentials
 
 /*!
  * \file BondPotentials.h
@@ -29,6 +28,7 @@
 #define AZPLUGINS_BOND_POTENTIALS_H_
 
 // All bonded potential evaluators must be included here
+#include "BondEvaluatorDoubleWell.h"
 #include "BondEvaluatorFENE.h"
 #include "BondEvaluatorFENEAsh24.h"
 
