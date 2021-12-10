@@ -176,8 +176,8 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
 
     Examples::
 
-        stream.anti_sim_cos(A=30.,h=1.5, p=1)
-        stream.anti_sim_cos(A=25.,h=2,p=2, boundary="no_slip", V=0.1, period=10)
+        stream.sinusoidal_channel(A=30.,h=1.5, p=1)
+        stream.sinusoidal_channel(A=25.,h=2,p=2, boundary="no_slip", V=0.1, period=10)
 
 
     """
@@ -201,6 +201,7 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
         if not hoomd.context.exec_conf.isCUDAEnabled():
             stream_class = _azplugins.ConfinedStreamingMethodAntiSymCos
         else:
+            hoomd.context.msg.error('mpcd.stream.sinusoidal_channel: no GPU support implemented!\n')
             stream_class = _azplugins.ConfinedStreamingMethodGPUAntiSymCos
 
         self._cpp = stream_class(hoomd.context.current.mpcd.data,
@@ -337,8 +338,8 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
 
     Examples::
 
-        stream.sim_cos(H=30.,h=1.5, p=1)
-        stream.sim_cos(H=25.,h=2,p=2, boundary="no_slip", V=0.1, period=10)
+        stream.sinusoidal_expansion_constriction(H=30.,h=1.5, p=1)
+        stream.sinusoidal_expansion_constriction(H=25.,h=2,p=2, boundary="no_slip", V=0.1, period=10)
 
 
     """
@@ -362,7 +363,9 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
         if not hoomd.context.exec_conf.isCUDAEnabled():
             stream_class = _azplugins.ConfinedStreamingMethodSymCos
         else:
+            hoomd.context.msg.error('mpcd.stream.sinusoidal_expansion_constriction: no GPU support implemented!\n')
             stream_class = _azplugins.ConfinedStreamingMethodGPUSymCos
+
         self._cpp = stream_class(hoomd.context.current.mpcd.data,
                                  hoomd.context.current.system.getCurrentTimeStep(),
                                  self.period,
