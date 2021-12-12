@@ -1,4 +1,5 @@
 // Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021, Auburn University
 // This file is part of the azplugins project, released under the Modified BSD License.
 
 // Maintainer: astatt
@@ -93,9 +94,10 @@ class __attribute__((visibility("default"))) SinusoidalChannel
            \param Period Channel cosine period (integer >0)
          * \param bc Boundary condition at the wall (slip or no-slip)
          */
-        HOSTDEVICE SinusoidalChannel(Scalar L, Scalar Amplitude, Scalar h, unsigned int Repetitions, Scalar V, mpcd::detail::boundary bc)
+        HOSTDEVICE SinusoidalChannel(Scalar L, Scalar Amplitude, Scalar h, unsigned int Repetitions, mpcd::detail::boundary bc)
             : m_pi_period_div_L(2*M_PI*Repetitions/L), m_Amplitude(Amplitude), m_h(h), m_Repetitions(Repetitions), m_bc(bc)
             {
+
             }
 
         //! Detect collision between the particle and the boundary
@@ -112,10 +114,11 @@ class __attribute__((visibility("default"))) SinusoidalChannel
          */
         HOSTDEVICE bool detectCollision(Scalar3& pos, Scalar3& vel, Scalar& dt) const
             {
+
             /*
-             * Detect if particle has left the box, and try to avoid branching or absolute value calls. The sign used
-             * in calculations is +1 if the particle is out-of-bounds in the +z direction, -1 if the particle is
-             * out-of-bounds in the -z direction, and 0 otherwise.
+             * Detect if particle has left the box. The sign used
+             * in calculations is +1 if the particle is out-of-bounds at the top wall, -1 if the particle is
+             * out-of-bounds at the bottom wall, and 0 otherwise.
              *
              * We intentionally use > / < rather than >= / <= to make sure that spurious collisions do not get detected
              * when a particle is reset to the boundary location. A particle landing exactly on the boundary from the bulk
@@ -132,6 +135,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                 dt = Scalar(0);
                 return false;
                 }
+
 
             /* Calculate position (x0,y0,z0) of collision with wall:
             *  Because there is no analythical solution for f(x) = cos(x)-x = 0, we use Newtons's method to nummerically estimate the
@@ -157,16 +161,18 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                 x0 = pos.x;
                 y0 = (pos.y-dt*vel.y);
                 z0 = (m_Amplitude*fast::cos(x0*m_pi_period_div_L)+sign*m_h);
+
                 }
             else if (vel.z == 0) // exactly horizontal z-collision
                 {
                 x0 = 1/m_pi_period_div_L*fast::acos((pos.z-sign*m_h)/m_Amplitude);
                 y0 = -(pos.x-dt*vel.x - x0)*vel.y/vel.x + (pos.y-dt*vel.y);
                 z0 = pos.z;
+
                 }
             else
                 {
-                // delta =  abs(0-f(x))
+
                 Scalar delta = abs(0 - ((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+ sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
 
                 Scalar n,n2;
@@ -193,27 +199,27 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                  */
                 y0 = -(pos.x-dt*vel.x - x0)*vel.y/vel.x + (pos.y-dt*vel.y);
 
-                // Newton's method sometimes failes to converge (close to saddle points, df'==0, bad initial guess,..)
+                // Newton's method sometimes failes to converge (close to saddle points, df'==0, bad initial guess,overshoot,..)
                 // catch all of them here and do bisection if Newthon's method didn't work
                 Scalar lower_x = fmin(pos.x - dt*vel.x,pos.x);
                 Scalar upper_x = fmax(pos.x - dt*vel.x,pos.x);
 
-                // found intersection is NOT in between old and new point, ie crossection is wrong/inaccurate.
+                // found intersection is NOT in between old and new point, ie intersection is wrong/inaccurate.
                 // do bisection to find intersection - slower but more robust than Newton's method
-                if ( !(lower_x - target_presicion <= x0 && x0 <= upper_x + target_presicion))
+                if ( !(lower_x  <= x0 && x0 <= upper_x ))
                     {
                     Scalar3 point1 = pos;  //initial position
                     Scalar3 point2 = pos-dt*vel; // final position at t+dt
                     Scalar3 point3 = 0.5*(point1+point2); // halfway point
                     Scalar fpoint1,fpoint2,fpoint3;
-
-                    while ((point1.x-point2.x) > target_presicion)
+                    //TODO: technically, the presicion of Newton's method and bisection is different. Should this be unified?
+                    while ((point1.x-point2.x) > target_presicion && counter < max_iteration)
                         {
                         fpoint1 = ((m_Amplitude*fast::cos(point1.x*m_pi_period_div_L)+ sign*m_h) - point1.z);
                         fpoint2 = ((m_Amplitude*fast::cos(point2.x*m_pi_period_div_L)+ sign*m_h) - point2.z);
                         fpoint3 = ((m_Amplitude*fast::cos(point3.x*m_pi_period_div_L)+ sign*m_h) - point3.z);
 
-                        if (abs(fpoint3) < target_presicion)
+                        if (abs(fpoint3) == 0) // found exact solution
                             {
                             break;
                             }
@@ -255,7 +261,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
             if (m_bc ==  mpcd::detail::boundary::no_slip) // No-slip requires reflection of both tangential and normal components:
                 {
 
-                vel_new.x = -vel.x + Scalar(sign * 2);
+                vel_new.x = -vel.x;
                 vel_new.y = -vel.y;
                 vel_new.z = -vel.z;
 
@@ -270,6 +276,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                 }
 
             vel = vel_new;
+
             return true;
             }
 
@@ -345,7 +352,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
         //! Get the unique name of this geometry
         static std::string getName()
             {
-            return std::string("AntiSymCos");
+            return std::string("SinusoidalChannel");
             }
         #endif // NVCC
 

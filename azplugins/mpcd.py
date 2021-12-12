@@ -156,7 +156,6 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
         A (float): Amplitude of Cosine wall
         h (float): channel half-width
         p (int):   channel periodicity
-        V (float): wall speed (default: 0)
         boundary (str): boundary condition at wall ("slip" or "no_slip"", default "no_slip")
         period (int): Number of integration steps between collisions
 
@@ -167,8 +166,7 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
     and :math: `p` is the period of the wall cosine. The channel is
     anti-symmetric around the origin in *z* direction. The cosines of top and
     bottom are running in parallel and create a "wavy" cannel with :math: `p`
-    repetitions. The walls may be put into motion, moving with speeds
-    :math:`-V` and :math:`+V` in the *x* direction, respectively.
+    repetitions.
 
     The "inside" of the :py:class:`anti_sim_cos` is the space where
     :math:`|z- cos(2*pi*p*x/Lx)| < h`.
@@ -176,7 +174,7 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
     Examples::
 
         stream.sinusoidal_channel(A=30.,h=1.5, p=1)
-        stream.sinusoidal_channel(A=25.,h=2,p=2, boundary="no_slip", V=0.1, period=10)
+        stream.sinusoidal_channel(A=25.,h=2,p=2, boundary="no_slip", period=10)
 
 
     """
@@ -185,11 +183,10 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
 
         hoomd.mpcd.stream._streaming_method.__init__(self, period)
 
-        self.metadata_fields += ['L','A','h','p','V','boundary']
+        self.metadata_fields += ['L','A','h','p','boundary']
         self.A = A
         self.h = h
         self.p = p
-        self.V = V
         self.boundary = boundary
 
         bc = self._process_boundary(boundary)
@@ -198,16 +195,16 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
         self.L = Lx
         # create the base streaming class
         if not hoomd.context.exec_conf.isCUDAEnabled():
-            stream_class = _azplugins.ConfinedStreamingMethodAntiSymCos
+            stream_class = _azplugins.ConfinedStreamingMethodSinusoidalChannel
         else:
             hoomd.context.msg.error('mpcd.stream.sinusoidal_channel: no GPU support implemented!\n')
-            stream_class = _azplugins.ConfinedStreamingMethodGPUAntiSymCos
+            stream_class = _azplugins.ConfinedStreamingMethodGPUSinusoidalChannel
 
         self._cpp = stream_class(hoomd.context.current.mpcd.data,
                                  hoomd.context.current.system.getCurrentTimeStep(),
                                  self.period,
                                  0,
-                                 _azplugins.SinusoidalChannel(Lx,A,h,p,V,bc))
+                                 _azplugins.SinusoidalChannel(Lx,A,h,p,bc))
 
     def set_filler(self, density, kT, seed, type='A'):
         r""" Add virtual particles to symmetric cosine channel.
@@ -268,14 +265,13 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
 
         self._filler = None
 
-    def set_params(self, A=None, h=None, p=None, V=None, boundary=None):
+    def set_params(self, A=None, h=None, p=None, boundary=None):
         """ Set parameters for the symmetric cosine geometry.
 
         Args:
             A (float): channel Amplitude
             h (float): channel half-width
             p (int):   channel periodicity
-            V (float): wall speed (default: 0)
             boundary (str): boundary condition at wall ("slip" or "no_slip"", default "no_slip")
 
         Changing any of these parameters will require the geometry to be
@@ -283,8 +279,8 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
 
         Examples::
 
-            anti_sym_cos.set_params(A=15.0)
-            anti_sym_cos.set_params(V=0.2, boundary="no_slip")
+            sinusoidal_channel.set_params(A=15.0)
+            sinusoidal_channel.set_params(boundary="no_slip")
 
         """
         hoomd.util.print_status_line()
@@ -301,14 +297,11 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
             else:
                 hoomd.context.msg.error('mpcd.stream.sinusoidal_channel: p needs to be an integer!\n')
 
-        if V is not None:
-            self.V = V
-
         if boundary is not None:
             self.boundary = boundary
 
         bc = self._process_boundary(self.boundary)
-        self._cpp.geometry = _azplugins.SinusoidalChannel(self.L,self.A,self.h,self.p,self.V,bc)
+        self._cpp.geometry = _azplugins.SinusoidalChannel(self.L,self.A,self.h,self.p,bc)
         if self._filler is not None:
             self._filler.setGeometry(self._cpp.geometry)
 
@@ -319,7 +312,6 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
         H (float): channel half-width at its widest point
         h (float): channel half-width at its narrowest point
         p (int):   channel periodicity
-        V (float): wall speed (default: 0)
         boundary (str): boundary condition at wall ("slip" or "no_slip"", default "no_slip")
         period (int): Number of integration steps between collisions
 
@@ -332,8 +324,7 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
     *z* direction. The two symmetric cosine walls create a periodic series of
     :math: `p` constrictions and expansions. The parameter :math: `H` gives the
     channel half-width at its widest and :math: `h` is the channel half-width at
-    its narrowest point. The walls may be put into motion, moving with speeds
-    :math:`-V` and :math:`+V` in the *x* direction, respectively.
+    its narrowest point.
 
     The "inside" of the :py:class:`sim_cos` is the space where
     :math:`|z| < (A cos(2pi*p*x/Lx) + A + h)`.
@@ -341,20 +332,19 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
     Examples::
 
         stream.sinusoidal_expansion_constriction(H=30.,h=1.5, p=1)
-        stream.sinusoidal_expansion_constriction(H=25.,h=2,p=2, boundary="no_slip", V=0.1, period=10)
+        stream.sinusoidal_expansion_constriction(H=25.,h=2,p=2, boundary="no_slip", period=10)
 
 
     """
-    def __init__(self, H,h,p, V=0.0, boundary="no_slip", period=1):
+    def __init__(self, H,h,p,boundary="no_slip", period=1):
         hoomd.util.print_status_line()
 
         hoomd.mpcd.stream._streaming_method.__init__(self, period)
 
-        self.metadata_fields += ['L','H','h','p','V','boundary']
+        self.metadata_fields += ['L','H','h','p','boundary']
         self.H = H
         self.h = h
         self.p = p
-        self.V = V
         self.boundary = boundary
 
         bc = self._process_boundary(boundary)
@@ -363,16 +353,16 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
         self.L = Lx
         # create the base streaming class
         if not hoomd.context.exec_conf.isCUDAEnabled():
-            stream_class = _azplugins.ConfinedStreamingMethodSymCos
+            stream_class = _azplugins.ConfinedStreamingMethodSinusoidalExpansionConstriction
         else:
             hoomd.context.msg.error('mpcd.stream.sinusoidal_expansion_constriction: no GPU support implemented!\n')
-            stream_class = _azplugins.ConfinedStreamingMethodGPUSymCos
+            stream_class = _azplugins.ConfinedStreamingMethodGPUSinusoidalExpansionConstriction
 
         self._cpp = stream_class(hoomd.context.current.mpcd.data,
                                  hoomd.context.current.system.getCurrentTimeStep(),
                                  self.period,
                                  0,
-                                 _azplugins.SinusoidalExpansionConstriction(Lx,H,h,p,V,bc))
+                                 _azplugins.SinusoidalExpansionConstriction(Lx,H,h,p,bc))
 
     def set_filler(self, density, kT, seed, type='A'):
         r""" Add virtual particles to symmetric cosine channel.
@@ -433,14 +423,13 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
 
         self._filler = None
 
-    def set_params(self, H=None, h=None, p=None, V=None, boundary=None):
+    def set_params(self, H=None, h=None, p=None,boundary=None):
         """ Set parameters for the symmetric cosine geometry.
 
         Args:
             H (float): channel half-width at its widest point
             h (float): channel half-width at its narrowest point
             p (int):   channel periodicity
-            V (float): wall speed (default: 0)
             boundary (str): boundary condition at wall ("slip" or "no_slip"", defaul "no_slip")
 
         Changing any of these parameters will require the geometry to be
@@ -449,7 +438,7 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
         Examples::
 
             sinusoidal_expansion_constriction.set_params(H=15.0)
-            sinusoidal_expansion_constriction.set_params(V=0.2, boundary="no_slip")
+            sinusoidal_expansion_constriction.set_params(boundary="no_slip")
 
         """
         hoomd.util.print_status_line()
@@ -466,13 +455,10 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
             else:
                 hoomd.context.msg.error('mpcd.stream.sinusoidal_expansion_constriction: p needs to be an integer!\n')
 
-        if V is not None:
-            self.V = V
-
         if boundary is not None:
             self.boundary = boundary
 
         bc = self._process_boundary(self.boundary)
-        self._cpp.geometry = _azplugins.SinusoidalExpansionConstriction(self.L,self.H,self.h,self.p,self.V,bc)
+        self._cpp.geometry = _azplugins.SinusoidalExpansionConstriction(self.L,self.H,self.h,self.p,bc)
         if self._filler is not None:
             self._filler.setGeometry(self._cpp.geometry)

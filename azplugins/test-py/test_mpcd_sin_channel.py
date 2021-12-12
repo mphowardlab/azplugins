@@ -1,4 +1,5 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 # Maintainer: astatt
@@ -41,31 +42,23 @@ class mpcd_anti_sym_cos_test(unittest.TestCase):
 
     # test creation can happen (with all parameters set)
     def test_create(self):
-        azplugins.mpcd.anti_sym_cos(A=4., h=2. ,p=1, V=0.1, boundary="no_slip")
+        azplugins.mpcd.sinusoidal_channel(A=4., h=2., p=1,boundary="no_slip")
 
     # test for setting parameters
     def test_set_params(self):
-      anti_sym_cos = azplugins.mpcd.anti_sym_cos(A=4.,h=2. ,p=1)
+      anti_sym_cos = azplugins.mpcd.sinusoidal_channel(A=4.,h=2., p=1)
       self.assertAlmostEqual(anti_sym_cos.A, 4.)
-      self.assertAlmostEqual(anti_sym_cos.V, 0.)
       self.assertEqual(anti_sym_cos.boundary, "no_slip")
       self.assertAlmostEqual(anti_sym_cos._cpp.geometry.getAmplitude(), 4.)
-      self.assertAlmostEqual(anti_sym_cos._cpp.geometry.getVelocity(), 0.)
       self.assertEqual(anti_sym_cos._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.no_slip)
 
       # change H and also ensure other parameters stay the same
       anti_sym_cos.set_params(A=2.)
       self.assertAlmostEqual(anti_sym_cos.A, 2.)
-      self.assertAlmostEqual(anti_sym_cos.V, 0.)
       self.assertEqual(anti_sym_cos.boundary, "no_slip")
       self.assertAlmostEqual(anti_sym_cos._cpp.geometry.getAmplitude(), 2.)
-      self.assertAlmostEqual(anti_sym_cos._cpp.geometry.getVelocity(), 0.)
       self.assertEqual(anti_sym_cos._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.no_slip)
 
-      # change V
-      anti_sym_cos.set_params(V=0.1)
-      self.assertAlmostEqual(anti_sym_cos.V, 0.1)
-      self.assertAlmostEqual(anti_sym_cos._cpp.geometry.getVelocity(), 0.1)
 
       # change BCs
       anti_sym_cos.set_params(boundary="slip")
@@ -74,7 +67,7 @@ class mpcd_anti_sym_cos_test(unittest.TestCase):
 
     # test for invalid boundary conditions being set
     def test_bad_boundary(self):
-      anti_sym_cos = azplugins.mpcd.anti_sym_cos(A=4.,h=2. ,p=1)
+      anti_sym_cos = azplugins.mpcd.sinusoidal_channel(A=4., h=2., p=1)
       anti_sym_cos.set_params(boundary="no_slip")
       anti_sym_cos.set_params(boundary="slip")
 
@@ -84,7 +77,7 @@ class mpcd_anti_sym_cos_test(unittest.TestCase):
     # test that setting the cosine size too large raises an error
     def test_validate_box(self):
       # initial configuration is invalid
-      anti_sym_cos = azplugins.mpcd.anti_sym_cos(A=10.,h=2. ,p=1)
+      anti_sym_cos = azplugins.mpcd.sinusoidal_channel(A=10.,h=2., p=1)
       with self.assertRaises(RuntimeError):
           hoomd.run(1)
 
@@ -99,7 +92,7 @@ class mpcd_anti_sym_cos_test(unittest.TestCase):
 
     # test that particles out of bounds can be caught
     def test_out_of_bounds(self):
-      anti_sym_cos = azplugins.mpcd.anti_sym_cos(A=2., h=1. ,p=1)
+      anti_sym_cos = azplugins.mpcd.sinusoidal_channel(A=2., h=1., p=1)
       with self.assertRaises(RuntimeError):
           hoomd.run(1)
 
@@ -108,7 +101,7 @@ class mpcd_anti_sym_cos_test(unittest.TestCase):
 
     # test basic stepping behavior with no slip boundary conditions
     def test_step_noslip(self):
-      azplugins.mpcd.anti_sym_cos(A=4.,h=2. ,p=1, boundary='no_slip')
+      azplugins.mpcd.sinusoidal_channel(A=4.,h=2., p=1, boundary='no_slip')
 
       # take one step, particle 1 hits the wall
       hoomd.run(1)
@@ -144,7 +137,7 @@ class mpcd_anti_sym_cos_test(unittest.TestCase):
         np.testing.assert_array_almost_equal(snap.particles.velocity[2], [1,1,1])
     #same as test above except for slip -> velcities differ
     def test_step_slip(self):
-        azplugins.mpcd.anti_sym_cos(A=4.,h=2. ,p=1, boundary="slip")
+        azplugins.mpcd.sinusoidal_channel(A=4.,h=2. ,p=1, boundary="slip")
 
         # take one step,  particle 1 hits the wall
         hoomd.run(1)
@@ -176,15 +169,11 @@ class mpcd_anti_sym_cos_test(unittest.TestCase):
     # test that virtual particle filler can be attached, removed, and updated
     def test_filler(self):
       # initialization of a filler
-      anti_sym_cos = azplugins.mpcd.anti_sym_cos(A=4.,h=2. ,p=1)
+      anti_sym_cos = azplugins.mpcd.sinusoidal_channel(A=4.,h=2. ,p=1)
       anti_sym_cos.set_filler(density=5., kT=1.0, seed=42, type='A')
       self.assertTrue(anti_sym_cos._filler is not None)
 
       # run should be able to setup the filler, although this all happens silently
-      hoomd.run(1)
-
-      # changing the geometry should still be OK with a run
-      anti_sym_cos.set_params(V=1.0)
       hoomd.run(1)
 
       # changing filler should be allowed

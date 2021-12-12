@@ -240,13 +240,13 @@ class sinusoidal_channel(_bounce_back):
         Lx = system.sysdef.getParticleData().getGlobalBox().getL().x
         self.L = Lx
 
-        geom = _azplugins.SinusoidalExpansionConstriction(self.L, A, h, p, bc)
+        geom = _azplugins.SinusoidalChannel(self.L, A, h, p, bc)
 
         self.cpp_method = cpp_class(hoomd.context.current.system_definition, group.cpp_group, geom)
         self.cpp_method.validateGroup()
 
     def set_params(self, A=None, h=None, p=None, boundary=None):
-        """ Set parameters for the slit geometry.
+        """ Set parameters for the sinusoidal channel geometry.
 
         Args:
             A (float): channel cosine amplitude
@@ -367,7 +367,7 @@ class sinusoidal_expansion_constriction(_bounce_back):
         self.cpp_method.validateGroup()
 
     def set_params(self, H=None, h=None, p=None, boundary=None):
-        """ Set parameters for the slit geometry.
+        """ Set parameters for the expansion constriction geometry.
 
         Args:
             H (float): channel half-width at its widest point
@@ -379,7 +379,7 @@ class sinusoidal_expansion_constriction(_bounce_back):
 
             sinusoidal_expansion_constriction.set_params(H=8., h=2.0)
             sinusoidal_expansion_constriction.set_params(boundary='slip')
-            sinusoidal_expansion_constriction.set_params(H=5, V=0., boundary='no_slip')
+            sinusoidal_expansion_constriction.set_params(H=5, boundary='no_slip')
 
         """
         hoomd.util.print_status_line()
