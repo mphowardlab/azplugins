@@ -15,7 +15,7 @@
 
 #include <cuda_runtime.h>
 
-#include "MPCDSinusoidalChannel.h"
+#include "SinusoidalChannelGeometry.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
 

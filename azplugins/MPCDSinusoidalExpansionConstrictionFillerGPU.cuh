@@ -15,7 +15,7 @@
 
 #include <cuda_runtime.h>
 
-#include "MPCDSinusoidalExpansionConstriction.h"
+#include "SinusoidalExpansionConstrictionGeometry.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
 
