@@ -207,12 +207,11 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                     Scalar3 point1 = pos;  //initial position
                     Scalar3 point2 = pos-dt*vel; // final position at t+dt
                     Scalar3 point3 = 0.5*(point1+point2); // halfway point
-                    Scalar fpoint1,fpoint2,fpoint3;
+                    Scalar fpoint1,fpoint3;
                     //TODO: technically, the presicion of Newton's method and bisection is different. Should this be unified?
                     while ((point1.x-point2.x) > target_presicion && counter < max_iteration)
                         {
                         fpoint1 = ((m_Amplitude*fast::cos(point1.x*m_pi_period_div_L)+ sign*m_h) - point1.z);
-                        fpoint2 = ((m_Amplitude*fast::cos(point2.x*m_pi_period_div_L)+ sign*m_h) - point2.z);
                         fpoint3 = ((m_Amplitude*fast::cos(point3.x*m_pi_period_div_L)+ sign*m_h) - point3.z);
 
                         if (abs(fpoint3) == 0) // found exact solution
