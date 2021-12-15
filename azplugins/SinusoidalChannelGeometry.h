@@ -78,10 +78,6 @@ namespace detail
  * appropriate wall potentials.
  *
  * The wall boundary conditions can optionally be changed to slip conditions.
- *
- * TODO: Is there a better naming convention? SymCos vs. AntiSymCos have the big potential of being confused with each other.
- * TODO: Files are right now named MPCDSinusoidalExpansionConstriction/MPCDSinusoidalChannel, because this is where I started the implementation,
- *       but it is actually not mpcd specific and should/could be renamed
  */
 class __attribute__((visibility("default"))) SinusoidalChannel
     {
