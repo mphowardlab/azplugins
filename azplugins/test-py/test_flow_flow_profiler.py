@@ -47,7 +47,9 @@ class flow_FlowProfiler_tests(unittest.TestCase):
             np.testing.assert_allclose(self.u.number_density, expected_densities)
 
         # test that the binned values are correct - last bin is averaged velocity 3.0 and 1.0
-        expected_velocities = [2.0,0,0,0,0,0,0,1.0,-1.0,2.0]
+        expected_velocities =  [[2.0,  0.,  0.,  0.,  0.,  0.,  0., 1.0,-1.0,  2.0],\
+                                [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,   0.,  0.],\
+                                [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,   0.,  0.]]
         if hoomd.comm.get_rank() == 0:
             np.testing.assert_allclose(self.u.number_velocity, expected_velocities)
 

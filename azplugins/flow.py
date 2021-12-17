@@ -664,7 +664,6 @@ class FlowProfiler:
     Args:
         system: :py:mod:`hoomd` or :py:mod:`hoomd.mpcd` system (e.g., returned by :py:func:`hoomd.init.read_gsd`).
         bin_axis (int): direction for binning (0=`x`, 1=`y`, 2=`z`).
-        flow_axis (int): flow component to measure (0=`x`, 1=`y`, 2=`z`).
         bins (int): Number of bins to use along `bin_axis`.
         range (tuple): Lower and upper spatial bounds to use along ``bin_axis`` like ``(lo,hi)``.
         area (float): Cross-sectional area of bins to normalize density  (default: 1.0).
@@ -675,7 +674,7 @@ class FlowProfiler:
         hoomd.analyze.callback(f, period=1e3)
         hoomd.run(1e4)
         if hoomd.comm.get_rank() == 0:
-            np.savetxt('profiles.dat', np.column_stack((f.centers, f.number_density, f.number_velocity, f.kT)))
+            np.savetxt('profiles.dat', np.column_stack((f.centers, f.number_density, f.number_velocity[:,2], f.kT)))
 
     .. note::
 
@@ -687,10 +686,10 @@ class FlowProfiler:
         The temperature profile `kT` is calculated from the velocity values without substracting any shear flow.
 
     """
-    def __init__(self, system, bin_axis, flow_axis, bins, range, area=1.):
+    def __init__(self, system, bin_axis, bins, range, area=1.):
         self.system = system
         self.bin_axis = bin_axis
-        self.flow_axis = flow_axis
+
 
         # setup bins with edges that span the range
         self.edges = np.linspace(range[0], range[1], bins+1)
@@ -703,7 +702,7 @@ class FlowProfiler:
         # profiles are initially empty
         self.reset()
 
-        if self.bin_axis not in (0,1,2) or self.flow_axis not in (0,1,2):
+        if self.bin_axis not in (0,1,2):
             hoomd.context.msg.error('flow.FlowProfiler: axis needs to be 0, 1, or 2.\n')
             raise ValueError('Axis not recognized.')
 
