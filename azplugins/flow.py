@@ -727,17 +727,12 @@ class FlowProfiler:
             m = snap.particles.mass
 
             binids = np.digitize(x, self.edges[1:])
-            print(self._number_velocity.shape)
-            print(x.shape,binids,binids.shape)
-            print(np.bincount(binids,v[:,0]),np.bincount(binids,v[:,0]).shape)
-            for dim in range(3):
-               self._number_velocity[dim] += np.bincount(binids,v[:,dim],minlength=self.bins)
-               self._mass_velocity[dim] += np.bincount(binids,m*v[:,dim],minlength=self.bins)
 
             for dim in range(3):
-               num_vel2 = np.bincount(binids,v[:,dim],minlength=self.bins)
+               num_vel = np.bincount(binids,v[:,dim],minlength=self.bins)
                counts = np.bincount(binids,minlength=self.bins)
-               self._number_velocity2[dim] += np.divide(num_vel2, counts, out=np.zeros(self.bins), where=counts > 0)
+               self._mass_velocity[dim] += np.bincount(binids,m*v[:,dim],minlength=self.bins)
+               self._number_velocity[dim] += np.divide(num_vel, counts, out=np.zeros(self.bins), where=counts > 0)
 
             vsq = np.sum(v**2,axis=1)
             vsqm = np.bincount(binids, weights=vsq*m, minlength=self.bins)
@@ -757,7 +752,6 @@ class FlowProfiler:
         self._vsqm = np.zeros(self.bins)
 
         self._number_velocity = np.zeros((3,self.bins))
-        self._number_velocity2 = np.zeros((3,self.bins))
         self._mass_velocity = np.zeros((3,self.bins))
 
 
@@ -795,20 +789,7 @@ class FlowProfiler:
         result = np.zeros_like(self._number_velocity)
         if self.samples > 0:
             for dim in range(3):
-               result[dim] = np.divide(self._number_velocity[dim], self._counts, out=np.zeros(self.bins), where=self._counts > 0)
-        return result
-
-    @property
-    def number_velocity2(self):
-        r"""The current number-averaged velocity profile ."""
-        if hoomd.comm.get_rank() != 0:
-            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
-            raise RuntimeError('Flow profile only defined on root rank')
-
-        result = np.zeros_like(self._number_velocity2)
-        if self.samples > 0:
-            for dim in range(3):
-               result[dim] = self._number_velocity2[dim]/self.samples
+               result[dim] = self._number_velocity[dim]/self.samples
         return result
 
     @property
