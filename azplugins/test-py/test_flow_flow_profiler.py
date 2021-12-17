@@ -22,7 +22,7 @@ class flow_FlowProfiler_tests(unittest.TestCase):
             snap.particles.mass[:] = (0.5,0.5,0.5,0.5,1.0)
 
         self.s = hoomd.init.read_snapshot(snap)
-        self.u = azplugins.flow.FlowProfiler(system=self.s, bin_axis=2, flow_axis=0, bins=10, range=(-5,5), area=10**2)
+        self.u = azplugins.flow.FlowProfiler(system=self.s, bin_axis=2, bins=10, range=(-5,5), area=10**2)
         hoomd.analyze.callback(self.u, period=1)
 
     def test_binning(self):
@@ -78,15 +78,13 @@ class flow_FlowProfiler_tests(unittest.TestCase):
 
     def test_missing_params(self):
         with self.assertRaises(TypeError):
-            self.u = azplugins.flow.FlowProfiler(system=self.s, flow_axis=0, bins=10, range=(-5,5), area=10**2)
+            self.u = azplugins.flow.FlowProfiler(system=self.s, bins=10.5, range=(-5,5), area=10**2)
         with self.assertRaises(TypeError):
-            self.u = azplugins.flow.FlowProfiler(system=self.s, bin_axis=2, bins=10, range=(-5,5), area=10**2)
+            self.u = azplugins.flow.FlowProfiler(system=self.s, bin_axis=3.0, bins=10, range=(-5,5), area=10**2)
         with self.assertRaises(TypeError):
-            self.u = azplugins.flow.FlowProfiler(system=self.s, bin_axis=2, flow_axis=0)
+            self.u = azplugins.flow.FlowProfiler(system=self.s, bin_axis='x')
         with self.assertRaises(ValueError):
-            self.u = azplugins.flow.FlowProfiler(system=self.s, flow_axis=56, bin_axis=2,bins=10,range=(-5,5))
-        with self.assertRaises(ValueError):
-            self.u = azplugins.flow.FlowProfiler(system=self.s, flow_axis=0, bin_axis=28,bins=10,range=(-5,5))
+            self.u = azplugins.flow.FlowProfiler(system=self.s, bin_axis=28,bins=10,range=(-5,5))
 
     def tearDown(self):
         del self.s, self.u
