@@ -775,7 +775,7 @@ class FlowProfiler:
             raise RuntimeError('Flow profile only defined on root rank')
 
         if self.samples > 0:
-            return np.divide(self._velocity, self._counts, out=np.zeros(self.bins), where=self._counts > 0)
+            return np.divide(self._bin_mass, self._counts, out=np.zeros(self.bins), where=self._counts > 0)
         else:
             return np.zeros(self.bins)
 
@@ -790,6 +790,19 @@ class FlowProfiler:
         if self.samples > 0:
             for dim in range(3):
                result[dim] = self._number_velocity[dim]/self.samples
+        return result
+
+    @property
+    def mass_velocity(self):
+        r"""The current mass-averaged velocity profile ."""
+        if hoomd.comm.get_rank() != 0:
+            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
+            raise RuntimeError('Flow profile only defined on root rank')
+
+        result = np.zeros_like(self._mass_velocity)
+        if self.samples > 0:
+            for dim in range(3):
+               result[dim] = np.divide(self._mass_velocity[dim], self._counts, out=np.zeros(self.bins), where=self._counts > 0)
         return result
 
     @property
