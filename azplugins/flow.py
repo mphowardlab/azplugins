@@ -755,7 +755,7 @@ class FlowProfiler:
             vsq = np.sum(v**2,axis=1)
             ke_cm = mass*0.5*np.sum(mass_vel**2,axis=1)
             ke = np.bincount(binids, weights=vsq*m*0.5, minlength=self.bins)
-            np.divide(2*(ke-ke_cm), 3*(counts-1), out=ke, where=counts > 0)
+            np.divide(2*(ke-ke_cm), 3*(counts-1), out=ke, where=counts > 1)
 
             self._temperature +=ke
             self.samples += 1
