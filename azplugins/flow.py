@@ -727,11 +727,21 @@ class FlowProfiler:
 
             binids = np.digitize(x, self.edges[1:])
 
+            counts = np.bincount(binids,minlength=self.bins)
+            self._counts += counts
+
+            mass = np.bincount(binids,weight=m,minlength=self.bins)
+            self._bin_mass += mass
+
+            num_vel = np.zeros((self.bins,3))
+            mass_vel = np.zeros((self.bins,3))
             for dim in range(3):
-               num_vel = np.bincount(binids,v[:,dim],minlength=self.bins)
-               counts = np.bincount(binids,minlength=self.bins)
-               self._mass_velocity[dim] += np.bincount(binids,m*v[:,dim],minlength=self.bins)
-               self._number_velocity[dim] += np.divide(num_vel, counts, out=np.zeros(self.bins), where=counts > 0)
+               num_vel[:,dim] = np.bincount(binids,v[:,dim],minlength=self.bins)
+               mass_vel[:,dim] = np.bincount(binids,m*v[:,dim],minlength=self.bins)
+           np.divide(num_vel, counts, out=num_vel, where=counts > 0)
+           np.divide(mass_vel, mass, out=mass_vel, where=mass > 0)
+           self._number_velocity[dim] += num_vel
+           self._mass_velocity[dim] += mass_vel
 
             vsq = np.sum(v**2,axis=1)
             vsqm = np.bincount(binids, weights=vsq*m, minlength=self.bins)
