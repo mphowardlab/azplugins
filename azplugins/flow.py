@@ -725,30 +725,36 @@ class FlowProfiler:
             v = snap.particles.velocity
             m = snap.particles.mass
 
-            binids = np.digitize(x, self.edges[1:])
+            binids = np.digitize(x, self.edges)-1
+
+            # filter particles outside of range
+            x = x[(binids > -1) & (binids < self.bins)]
+            v = v[(binids > -1) & (binids < self.bins)]
+            m = m[(binids > -1) & (binids < self.bins)]
+            binids=binids[(binids > -1) & (binids < self.bins)]
 
             counts = np.bincount(binids,minlength=self.bins)
+
             self._counts += counts
 
-            mass = np.bincount(binids,weight=m,minlength=self.bins)
+            mass = np.bincount(binids,weights=m,minlength=self.bins)
             self._bin_mass += mass
 
             num_vel = np.zeros((self.bins,3))
             mass_vel = np.zeros((self.bins,3))
+
             for dim in range(3):
                num_vel[:,dim] = np.bincount(binids,v[:,dim],minlength=self.bins)
                mass_vel[:,dim] = np.bincount(binids,m*v[:,dim],minlength=self.bins)
-           np.divide(num_vel, counts, out=num_vel, where=counts > 0)
-           np.divide(mass_vel, mass, out=mass_vel, where=mass > 0)
-           self._number_velocity[dim] += num_vel
-           self._mass_velocity[dim] += mass_vel
+            np.divide(num_vel, np.tile(counts,(3,1)).T , out=num_vel, where=np.tile(counts,(3,1)).T  > 0)
+            np.divide(mass_vel,  np.tile(mass,(3,1)).T , out=mass_vel, where=np.tile(mass,(3,1)).T > 0)
+
+            self._number_velocity += num_vel.T
+            self._mass_velocity += mass_vel.T
 
             vsq = np.sum(v**2,axis=1)
             vsqm = np.bincount(binids, weights=vsq*m, minlength=self.bins)
             self._vsqm +=vsqm
-
-            self._counts += np.bincount(binids, minlength=self.bins)
-            self._bin_mass += np.bincount(binids, weights=m, minlength=self.bins)
             self.samples += 1
 
     def reset(self):
@@ -784,7 +790,7 @@ class FlowProfiler:
             raise RuntimeError('Flow profile only defined on root rank')
 
         if self.samples > 0:
-            return np.divide(self._bin_mass, self._counts, out=np.zeros(self.bins), where=self._counts > 0)
+            return self._bin_mass/(self._dx*self.area*self.samples)
         else:
             return np.zeros(self.bins)
 
