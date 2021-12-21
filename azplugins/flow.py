@@ -743,6 +743,7 @@ class FlowProfiler:
             mass = np.bincount(binids,weights=m,minlength=self.bins)
             self._bin_mass += mass
 
+
             # velocity profiles
             # need to do each dimension separeately because of how bincount works
             num_vel = np.zeros((self.bins,3))
@@ -760,7 +761,6 @@ class FlowProfiler:
             ke_cm = 0.5*mass*np.sum(mass_vel**2,axis=1)
             kT = np.zeros(self.bins)
             np.divide(2*(ke-ke_cm), 3*(counts-1), out=kT, where=counts > 1)
-
             self._temperature += kT
             self.samples += 1
 

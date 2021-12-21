@@ -60,27 +60,34 @@ class flow_FlowProfiler_tests(unittest.TestCase):
         if hoomd.comm.get_rank() == 0:
             np.testing.assert_allclose(self.u.mass_density, expected_densities)
 
-        # last bin is averaged velocity 3.0 and 1.0 with mass 0.5 and 1.0
-        expected_velocities = [2.0/0.5,0,0,0,0,0,0,1.0/0.5,-1.0/0.5,((3.0+1.0)/(0.5+1.0))]
+        # last bin is mass averaged velocity 3.0 and 1.0 with masses 0.5 and 1.0
+        expected_velocities = [[2.0*0.5/0.5,0,0,0,0,0,0,1.0*0.5/0.5,-1.0*0.5/0.5,(3.0*0.5+1.0*1.0)/(0.5+1.0)],\
+                              [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,   0.,  0.],\
+                              [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,   0.,  0.]]
         if hoomd.comm.get_rank() == 0:
             np.testing.assert_allclose(self.u.mass_velocity, expected_velocities)
 
     def test_temperature(self):
         hoomd.run(1)
-        bin_volume=10*10*1.0
-        print(self.u.kT)
-    #    expected_densities = np.array([0.5,0,0,0,0,0,0,0.5,0.5,1+0.5])/bin_volume # last particle is heavier
-    #    if hoomd.comm.get_rank() == 0:
-    #        np.testing.assert_allclose(self.u.mass_density, expected_densities)
+        # Temperature is calculated via kT= 2(KE-KE_cm)/(3*(n-1)) for each bin
+        # all bins have either one or zero particles except for the last one with two. The only temperature we need to
+        # calculate is the one for the last bin. KE_cm for the last bin is 2.08333333=0.5*((3.0*0.5+1.0*1.0)/(0.5+1.0))^2*(0.5+1.0)
+        # KE for this bin is 2.75=0.5*(0.5*3^2+1^2*1), and 2*(2.75-2.08333333)/3=0.4444=kT for last bin.
+
+        expected_temperature = np.array([0,0,0,0,0,0,0,0,0,0.444444444])
+        if hoomd.comm.get_rank() == 0:
+            np.testing.assert_allclose(self.u.kT, expected_temperature)
 
 
     def test_missing_params(self):
         with self.assertRaises(TypeError):
             self.u = azplugins.flow.FlowProfiler(system=self.s, bins=10.5, range=(-5,5), area=10**2)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             self.u = azplugins.flow.FlowProfiler(system=self.s, axis=3.0, bins=10, range=(-5,5), area=10**2)
         with self.assertRaises(TypeError):
             self.u = azplugins.flow.FlowProfiler(system=self.s, axis='x')
+        with self.assertRaises(TypeError):
+            self.u = azplugins.flow.FlowProfiler(system=self.s)
         with self.assertRaises(ValueError):
             self.u = azplugins.flow.FlowProfiler(system=self.s, axis=28,bins=10,range=(-5,5))
 
