@@ -657,20 +657,20 @@ class reverse_perturbation(hoomd.update._updater):
 class FlowProfiler:
     R"""Measure average profiles along a spatial dimension.
 
-    The average density and velocity profile is computed along a given spatial dimension. Both
-    number-averaged quantities are available, `number_density` and `number_velocity`, as well as mass-averaged
-    profiles, `mass_density` and `mass_velocity`. The flow profile unbiased temperature `kT` is recorded as well.
+    The average density, velocity, and temperature profiles are computed along
+    a given spatial dimension. Both number and mass densities and velocities are
+    available.
 
     Args:
         system: :py:mod:`hoomd` or :py:mod:`hoomd.mpcd` system (e.g., returned by :py:func:`hoomd.init.read_gsd`).
-        axis (int): direction for binning (0=`x`, 1=`y`, 2=`z`).
+        axis (int): direction for binning (0=*x*, 1=*y*, 2=*z*).
         bins (int): Number of bins to use along ``axis``.
         range (tuple): Lower and upper spatial bounds to use along ``axis`` like ``(lo,hi)``.
         area (float): Cross-sectional area of bins to normalize density  (default: 1.0).
 
     Examples::
 
-        f = azplugins.flow.FlowProfiler(system=system, axis=2, flow_axis=0, bins=20, range=(-10,10), area=20**2)
+        f = azplugins.flow.FlowProfiler(system=system, axis=2, bins=20, range=(-10,10), area=20**2)
         hoomd.analyze.callback(f, period=1e3)
         hoomd.run(1e4)
         if hoomd.comm.get_rank() == 0:
@@ -679,12 +679,12 @@ class FlowProfiler:
     .. note::
 
         In MPI simulations, the profiles are **only** valid on the root rank. Accessing them on
-        other ranks will produce an error.
+        other ranks will give ``None``.
 
     .. note::
 
-        If `range` is smaller than the box, paritcles outside of  `range` will be ignored, if `range` is larger than the
-        box, the bins outside of the box will be filled with zeros
+        If ``range`` is smaller than the box, paritcles outside of  ``range`` will be ignored.
+        If ``range`` is larger than the box, the bins outside of the box will be filled with zeros.
 
     """
     def __init__(self, system, axis, bins, range, area=1.):
@@ -725,39 +725,43 @@ class FlowProfiler:
             v = snap.particles.velocity
             m = snap.particles.mass
 
+            # bin particles, shifting by -1 due to numpy binning convention
             binids = np.digitize(x, self.edges)-1
 
             # filter particles outside of range
-            x = x[(binids > -1) & (binids < self.bins)]
-            v = v[(binids > -1) & (binids < self.bins)]
-            m = m[(binids > -1) & (binids < self.bins)]
-            binids = binids[(binids > -1) & (binids < self.bins)]
+            flags = np.logical_and(binids > -1, binids < self.bins)
+            binids = binids[flags]
+            x = x[flags]
+            v = v[flags]
+            m = m[flags]
 
+            # number density (counts)
             counts = np.bincount(binids,minlength=self.bins)
-
             self._counts += counts
 
+            # mass density (mass)
             mass = np.bincount(binids,weights=m,minlength=self.bins)
             self._bin_mass += mass
 
+            # velocity profiles
+            # need to do each dimension separeately because of how bincount works
             num_vel = np.zeros((self.bins,3))
             mass_vel = np.zeros((self.bins,3))
-
             for dim in range(3):
                num_vel[:,dim] = np.bincount(binids,v[:,dim],minlength=self.bins)
                mass_vel[:,dim] = np.bincount(binids,m*v[:,dim],minlength=self.bins)
-            np.divide(num_vel, np.tile(counts,(3,1)).T , out=num_vel, where=np.tile(counts,(3,1)).T  > 0)
-            np.divide(mass_vel,  np.tile(mass,(3,1)).T , out=mass_vel, where=np.tile(mass,(3,1)).T > 0)
-
+            np.divide(num_vel, counts[:,None], out=num_vel, where=counts[:,None]  > 0)
+            np.divide(mass_vel, mass[:,None], out=mass_vel, where=mass[:,None] > 0)
             self._number_velocity += num_vel.T
             self._mass_velocity += mass_vel.T
 
-            vsq = np.sum(v**2,axis=1)
-            ke_cm = mass*0.5*np.sum(mass_vel**2,axis=1)
-            ke = np.bincount(binids, weights=vsq*m*0.5, minlength=self.bins)
-            np.divide(2*(ke-ke_cm), 3*(counts-1), out=ke, where=counts > 1)
+            # temperature
+            ke = np.bincount(binids, weights=0.5*m*np.sum(v**2,axis=1), minlength=self.bins)
+            ke_cm = 0.5*mass*np.sum(mass_vel**2,axis=1)
+            kT = np.zeros(self.bins)
+            np.divide(2*(ke-ke_cm), 3*(counts-1), out=kT, where=counts > 1)
 
-            self._temperature +=ke
+            self._temperature += kT
             self.samples += 1
 
     def reset(self):
@@ -776,59 +780,39 @@ class FlowProfiler:
     @property
     def number_density(self):
         r"""The current average number density profile."""
-        if hoomd.comm.get_rank() != 0:
-            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
-            raise RuntimeError('Flow profile only defined on root rank')
-
-        if self.samples > 0:
+        if hoomd.comm.get_rank() == 0 and self.samples > 0:
             return self._counts/(self._dx*self.area*self.samples)
         else:
-            return np.zeros(self.bins)
+            return None
 
     @property
     def mass_density(self):
         r"""The current mass-averaged density profile."""
-        if hoomd.comm.get_rank() != 0:
-            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
-            raise RuntimeError('Flow profile only defined on root rank')
-
-        if self.samples > 0:
+        if hoomd.comm.get_rank() == 0 and self.samples > 0:
             return self._bin_mass/(self._dx*self.area*self.samples)
         else:
-            return np.zeros(self.bins)
+            return None
 
     @property
     def number_velocity(self):
         r"""The current number-averaged velocity profile ."""
-        if hoomd.comm.get_rank() != 0:
-            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
-            raise RuntimeError('Flow profile only defined on root rank')
-
-        if self.samples > 0:
+        if hoomd.comm.get_rank() == 0 and self.samples > 0:
             return self._number_velocity / self.samples
         else:
-            return np.zeros(self.bins)
+            return None
 
     @property
     def mass_velocity(self):
         r"""The current mass-averaged velocity profile ."""
-        if hoomd.comm.get_rank() != 0:
-            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
-            raise RuntimeError('Flow profile only defined on root rank')
-
-        if self.samples > 0:
+        if hoomd.comm.get_rank() == 0 and self.samples > 0:
             return self._mass_velocity / self.samples
         else:
-            return np.zeros(self.bins)
+            return None
 
     @property
     def kT(self):
         r"""The current average temperature profile."""
-        if hoomd.comm.get_rank() != 0:
-            hoomd.context.msg.error('Flow profile only defined on root rank.\n')
-            raise RuntimeError('Flow profile only defined on root rank')
-
-        if self.samples > 0:
+        if hoomd.comm.get_rank() == 0 and self.samples > 0:
             return self._temperature / self.samples
         else:
-            return np.zeros(self.bins)
+            return None
