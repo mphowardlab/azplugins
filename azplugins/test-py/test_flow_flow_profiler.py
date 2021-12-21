@@ -22,7 +22,7 @@ class flow_FlowProfiler_tests(unittest.TestCase):
             snap.particles.mass[:] = (0.5,0.5,0.5,0.5,1.0)
 
         self.s = hoomd.init.read_snapshot(snap)
-        self.u = azplugins.flow.FlowProfiler(system=self.s, bin_axis=2, bins=10, range=(-5,5), area=10**2)
+        self.u = azplugins.flow.FlowProfiler(system=self.s, axis=2, bins=10, range=(-5,5), area=10**2)
         hoomd.analyze.callback(self.u, period=1)
 
     def test_binning(self):
@@ -54,7 +54,6 @@ class flow_FlowProfiler_tests(unittest.TestCase):
             np.testing.assert_allclose(self.u.number_velocity, expected_velocities)
 
     def test_mass_averaging(self):
-
         hoomd.run(1)
         bin_volume=10*10*1.0
         expected_densities = np.array([0.5,0,0,0,0,0,0,0.5,0.5,1+0.5])/bin_volume # last particle is heavier
@@ -80,11 +79,11 @@ class flow_FlowProfiler_tests(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.u = azplugins.flow.FlowProfiler(system=self.s, bins=10.5, range=(-5,5), area=10**2)
         with self.assertRaises(TypeError):
-            self.u = azplugins.flow.FlowProfiler(system=self.s, bin_axis=3.0, bins=10, range=(-5,5), area=10**2)
+            self.u = azplugins.flow.FlowProfiler(system=self.s, axis=3.0, bins=10, range=(-5,5), area=10**2)
         with self.assertRaises(TypeError):
-            self.u = azplugins.flow.FlowProfiler(system=self.s, bin_axis='x')
+            self.u = azplugins.flow.FlowProfiler(system=self.s, axis='x')
         with self.assertRaises(ValueError):
-            self.u = azplugins.flow.FlowProfiler(system=self.s, bin_axis=28,bins=10,range=(-5,5))
+            self.u = azplugins.flow.FlowProfiler(system=self.s, axis=28,bins=10,range=(-5,5))
 
     def tearDown(self):
         del self.s, self.u
