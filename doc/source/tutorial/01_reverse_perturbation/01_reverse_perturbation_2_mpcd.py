@@ -43,7 +43,7 @@ bulk  = hoomd.mpcd.stream.bulk(period=1)
 # equilibration
 hoomd.run(1e5)
 
-vel_zx = azplugins.flow.FlowProfiler(system=system, bin_axis=2, flow_axis=0, bins=100, range=(-L/2,L/2), area=L**2)
+vel_zx = azplugins.flow.FlowProfiler(system=system, axis=2, bins=100, range=(-L/2,L/2), area=L**2)
 analyze = hoomd.analyze.callback(vel_zx, period=1e2)
 log = hoomd.analyze.log(filename="tutorial_reverse_perturbation_2_mpcd.log",
                         quantities=['rp_momentum'],
@@ -58,4 +58,4 @@ pos  = snap.particles.position
 vel  = snap.particles.velocity
 np.save('tutorial_reverse_perturbation_2_mpcd_pos.npy',pos)
 np.save('tutorial_reverse_perturbation_2_mpcd_vel.npy',vel)
-np.savetxt('tutorial_reverse_perturbation_2_mpcd_vx.hist', np.column_stack((vel_zx.centers, vel_zx.velocity)))
+np.savetxt('tutorial_reverse_perturbation_2_mpcd_vx.hist', np.column_stack((vel_zx.centers, vel_zx.number_velocity[0])))

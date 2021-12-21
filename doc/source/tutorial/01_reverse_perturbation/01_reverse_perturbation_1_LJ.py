@@ -1,10 +1,13 @@
 # Copyright (c) 2019-2020, Michael P. Howard
+# Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 # Maintainer: astatt / Everyone is free to add additional tutorials
 
 import numpy as np
 import sys
+sys.path.append('/Users/statt/Programs/hoomd-2.9.7_cpu/')
+sys.path.append('/Users/statt/Programs//azplugins-0.9.2_sine_channel')
 import hoomd
 from hoomd import md
 from hoomd import data
@@ -50,8 +53,8 @@ langevin = hoomd.md.integrate.langevin(group=all, kT=kT, seed=457)
 hoomd.run(1e4)
 langevin.disable()
 
-vel_zx = azplugins.flow.FlowProfiler(system=system, bin_axis=2, flow_axis=0, bins=100, range=(-L/2,L/2), area=L**2)
-analyze = hoomd.analyze.callback(vel_zx, period=1e2)
+measure_vel = azplugins.flow.FlowProfiler(system=system, axis=2, bins=100, range=(-L/2,L/2), area=L**2)
+analyze = hoomd.analyze.callback(measure_vel, period=1e2)
 
 log = hoomd.analyze.log(filename="tutorial_reverse_perturbation_1_LJ.log",
                         quantities=['rp_momentum'],
@@ -62,4 +65,4 @@ hoomd.dump.gsd(filename="tutorial_reverse_perturbation_1_LJ_trajectory.gsd",
 nve = hoomd.md.integrate.nve(group = all)
 f = azplugins.flow.reverse_perturbation(group=all,width=1,Nswap=1,period=10,target_momentum=0.5)
 hoomd.run(5e5)
-np.savetxt('tutorial_reverse_perturbation_1_LJ_vx.hist', np.column_stack((vel_zx.centers, vel_zx.velocity)))
+np.savetxt('tutorial_reverse_perturbation_1_LJ_vx.hist', np.column_stack((measure_vel.centers, measure_vel.velocity[0])))
