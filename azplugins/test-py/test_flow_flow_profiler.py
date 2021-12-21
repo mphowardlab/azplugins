@@ -66,7 +66,6 @@ class flow_FlowProfiler_tests(unittest.TestCase):
             np.testing.assert_allclose(self.u.mass_velocity, expected_velocities)
 
     def test_temperature(self):
-
         hoomd.run(1)
         bin_volume=10*10*1.0
         print(self.u.kT)
