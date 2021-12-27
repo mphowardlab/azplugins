@@ -31,11 +31,11 @@ class PYBIND11_EXPORT SinusoidalExpansionConstrictionFillerGPU : public Sinusoid
     public:
         //! Constructor
         SinusoidalExpansionConstrictionFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
-                              Scalar density,
-                              unsigned int type,
-                              std::shared_ptr<::Variant> T,
-                              unsigned int seed,
-                              std::shared_ptr<const detail::SinusoidalExpansionConstriction> geom);
+                                                 Scalar density,
+                                                 unsigned int type,
+                                                 std::shared_ptr<::Variant> T,
+                                                 unsigned int seed,
+                                                 std::shared_ptr<const detail::SinusoidalExpansionConstriction> geom);
 
         //! Set autotuner parameters
         /*!

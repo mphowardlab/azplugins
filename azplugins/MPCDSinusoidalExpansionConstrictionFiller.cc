@@ -16,12 +16,12 @@
 namespace azplugins
 {
 SinusoidalExpansionConstrictionFiller::SinusoidalExpansionConstrictionFiller(std::shared_ptr<mpcd::SystemData> sysdata,
-                                             Scalar density,
-                                             unsigned int type,
-                                             std::shared_ptr<::Variant> T,
-                                             unsigned int seed,
-                                             std::shared_ptr<const detail::SinusoidalExpansionConstriction> geom)
-    : mpcd::VirtualParticleFiller(sysdata, density, type, T, seed), m_geom(geom)
+                                                                             Scalar density,
+                                                                             unsigned int type,
+                                                                             std::shared_ptr<::Variant> T,
+                                                                             unsigned int seed,
+                                                                             std::shared_ptr<const detail::SinusoidalExpansionConstriction> geom)
+        : mpcd::VirtualParticleFiller(sysdata, density, type, T, seed), m_geom(geom)
     {
     m_exec_conf->msg->notice(5) << "Constructing MPCD SinusoidalExpansionConstrictionFiller" << std::endl;
     }

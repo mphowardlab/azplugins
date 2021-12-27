@@ -17,11 +17,11 @@ namespace azplugins
 {
 
 SinusoidalChannelFillerGPU::SinusoidalChannelFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
-                                                   Scalar density,
-                                                   unsigned int type,
-                                                   std::shared_ptr<::Variant> T,
-                                                   unsigned int seed,
-                                                   std::shared_ptr<const detail::SinusoidalChannel> geom)
+                                                       Scalar density,
+                                                       unsigned int type,
+                                                       std::shared_ptr<::Variant> T,
+                                                       unsigned int seed,
+                                                       std::shared_ptr<const detail::SinusoidalChannel> geom)
     : SinusoidalChannelFiller(sysdata, density, type, T, seed, geom)
     {
     m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "mpcd_anti_sym_cos_filler", m_exec_conf));
@@ -40,23 +40,23 @@ void SinusoidalChannelFillerGPU::drawParticles(unsigned int timestep)
 
     m_tuner->begin();
     gpu::anti_sym_cos_draw_particles(d_pos.data,
-                                   d_vel.data,
-                                   d_tag.data,
-                                   *m_geom,
-                                   m_pi_period_div_L,
-                                   m_Amplitude,
-                                   m_H_narrow,
-                                   m_thickness,
-                                   m_pdata->getBox(),
-                                   m_mpcd_pdata->getMass(),
-                                   m_type,
-                                   m_N_fill,
-                                   m_first_tag,
-                                   first_idx,
-                                   m_T->getValue(timestep),
-                                   timestep,
-                                   m_seed,
-                                   m_tuner->getParam());
+                                     d_vel.data,
+                                     d_tag.data,
+                                     *m_geom,
+                                     m_pi_period_div_L,
+                                     m_Amplitude,
+                                     m_H_narrow,
+                                     m_thickness,
+                                     m_pdata->getBox(),
+                                     m_mpcd_pdata->getMass(),
+                                     m_type,
+                                     m_N_fill,
+                                     m_first_tag,
+                                     first_idx,
+                                     m_T->getValue(timestep),
+                                     timestep,
+                                     m_seed,
+                                     m_tuner->getParam());
     if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
     m_tuner->end();
     }
@@ -72,11 +72,11 @@ void export_SinusoidalChannelFillerGPU(pybind11::module& m)
     py::class_<SinusoidalChannelFillerGPU, std::shared_ptr<SinusoidalChannelFillerGPU>>
         (m, "SinusoidalChannelFillerGPU", py::base<SinusoidalChannelFiller>())
         .def(py::init<std::shared_ptr<mpcd::SystemData>,
-                      Scalar,
-                      unsigned int,
-                      std::shared_ptr<::Variant>,
-                      unsigned int,
-                      std::shared_ptr<const SinusoidalChannel>>())
+             Scalar,
+             unsigned int,
+             std::shared_ptr<::Variant>,
+             unsigned int,
+             std::shared_ptr<const SinusoidalChannel>>())
         ;
     }
 } // end namespace detail

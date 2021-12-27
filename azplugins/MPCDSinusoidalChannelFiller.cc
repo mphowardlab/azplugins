@@ -16,11 +16,11 @@
 namespace azplugins
 {
 SinusoidalChannelFiller::SinusoidalChannelFiller(std::shared_ptr<mpcd::SystemData> sysdata,
-                                             Scalar density,
-                                             unsigned int type,
-                                             std::shared_ptr<::Variant> T,
-                                             unsigned int seed,
-                                             std::shared_ptr<const detail::SinusoidalChannel> geom)
+                                                 Scalar density,
+                                                 unsigned int type,
+                                                 std::shared_ptr<::Variant> T,
+                                                 unsigned int seed,
+                                                 std::shared_ptr<const detail::SinusoidalChannel> geom)
     : mpcd::VirtualParticleFiller(sysdata, density, type, T, seed), m_geom(geom)
     {
     m_exec_conf->msg->notice(5) << "Constructing MPCD SinusoidalChannelFiller" << std::endl;
@@ -131,11 +131,11 @@ void export_SinusoidalChannelFiller(pybind11::module& m)
     py::class_<SinusoidalChannelFiller, std::shared_ptr<SinusoidalChannelFiller>>
         (m, "SinusoidalChannelFiller", py::base<mpcd::VirtualParticleFiller>())
         .def(py::init<std::shared_ptr<mpcd::SystemData>,
-                      Scalar,
-                      unsigned int,
-                      std::shared_ptr<::Variant>,
-                      unsigned int,
-                      std::shared_ptr<const SinusoidalChannel>>())
+             Scalar,
+             unsigned int,
+             std::shared_ptr<::Variant>,
+             unsigned int,
+             std::shared_ptr<const SinusoidalChannel>>())
         .def("setGeometry", &SinusoidalChannelFiller::setGeometry)
         ;
     }

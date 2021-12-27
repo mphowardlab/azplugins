@@ -131,7 +131,6 @@ list(APPEND _${COMPONENT_NAME}_sources
     MPCDSinusoidalExpansionConstrictionFillerGPU.cc
     )
 list(APPEND _${COMPONENT_NAME}_cu_sources
-    MPCDStreamingMethod.cu
     MPCDReversePerturbationFlowGPU.cu
     MPCDSinusoidalChannelFillerGPU.cu
     MPCDSinusoidalExpansionConstrictionFillerGPU.cu

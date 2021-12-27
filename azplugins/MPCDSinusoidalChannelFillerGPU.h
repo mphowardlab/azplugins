@@ -31,11 +31,11 @@ class PYBIND11_EXPORT SinusoidalChannelFillerGPU : public SinusoidalChannelFille
     public:
         //! Constructor
         SinusoidalChannelFillerGPU(std::shared_ptr<mpcd::SystemData> sysdata,
-                              Scalar density,
-                              unsigned int type,
-                              std::shared_ptr<::Variant> T,
-                              unsigned int seed,
-                              std::shared_ptr<const detail::SinusoidalChannel> geom);
+                                   Scalar density,
+                                   unsigned int type,
+                                   std::shared_ptr<::Variant> T,
+                                   unsigned int seed,
+                                   std::shared_ptr<const detail::SinusoidalChannel> geom);
 
         //! Set autotuner parameters
         /*!
