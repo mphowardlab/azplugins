@@ -5,8 +5,8 @@
 // Maintainer: astatt
 
 
-#ifndef AZPLUGINS_MPCD_ANTI_SYM_COS_GEOMETRY_FILLER_GPU_CUH_
-#define AZPLUGINS_MPCD_ANTI_SYM_COS_GEOMETRY_FILLER_GPU_CUH_
+#ifndef AZPLUGINS_MPCD_SINE_CHANNEL_GEOMETRY_FILLER_GPU_CUH_
+#define AZPLUGINS_MPCD_SINE_CHANNEL_GEOMETRY_FILLER_GPU_CUH_
 
 /*!
  * \file SinusoidalExpansionConstrictionFillerGPU.cuh
@@ -48,4 +48,4 @@ cudaError_t sin_channel_draw_particles(Scalar4 *d_pos,
 } // end namespace gpu
 } // end namespace azplugins
 
-#endif // AZPLUGINS_MPCD_ANTI_SYM_COS_GEOMETRY_FILLER_GPU_CUH_
+#endif // AZPLUGINS_MPCD_SINE_CHANNEL_GEOMETRY_FILLER_GPU_CUH_

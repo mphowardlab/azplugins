@@ -10,8 +10,8 @@
  * \brief Definition of the MPCD symmetric cosine channel geometry
  */
 
-#ifndef AZPLUGINS_MPCD_SYM_COS_GEOMETRY_H_
-#define AZPLUGINS_MPCD_SYM_COS_GEOMETRY_H_
+#ifndef AZPLUGINS_MPCD_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
+#define AZPLUGINS_MPCD_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
 
 #include "hoomd/mpcd/BoundaryCondition.h"
 #include "hoomd/HOOMDMath.h"
@@ -361,4 +361,4 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
 } // end namespace azplugins
 #undef HOSTDEVICE
 
-#endif // AZPLUGINS_MPCD_SYM_COS_GEOMETRY_H_
+#endif // AZPLUGINS_MPCD_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_

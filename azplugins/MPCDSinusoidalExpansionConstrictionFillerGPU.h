@@ -10,8 +10,8 @@
  * \brief Definition of virtual particle filler for azplugins::detail::SinusoidalExpansionConstriction on the GPU.
  */
 
-#ifndef AZPLUGINS_MPCD_SYM_COS_GEOMETRY_FILLER_GPU_H_
-#define AZPLUGINS_MPCD_SYM_COS_GEOMETRY_FILLER_GPU_H_
+#ifndef AZPLUGINS_MPCD_SINE_EXPANSION_CONSTRICTION_GEOMETRY_FILLER_GPU_H_
+#define AZPLUGINS_MPCD_SINE_EXPANSION_CONSTRICTION_GEOMETRY_FILLER_GPU_H_
 
 #ifdef NVCC
 #error This header cannot be compiled by nvcc
@@ -63,4 +63,4 @@ namespace detail
 void export_SinusoidalExpansionConstrictionFillerGPU(pybind11::module& m);
 } // end namespace detail
 } // end namespace azplugins
-#endif // AZPLUGINS_MPCD_SYM_COS_GEOMETRY_FILLER_GPU_H_
+#endif // AZPLUGINS_MPCD_SINE_EXPANSION_CONSTRICTION_GEOMETRY_FILLER_GPU_H_
