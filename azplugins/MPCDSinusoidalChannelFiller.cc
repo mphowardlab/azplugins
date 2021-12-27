@@ -105,7 +105,6 @@ void SinusoidalChannelFiller::drawParticles(unsigned int timestep)
                                         z,
                                         __int_as_scalar(m_type));
 
-        //m_exec_conf->msg->notice(0)<< "filler " << x << " "<< y << " "<< z << std::endl;
 
         hoomd::NormalDistribution<Scalar> gen(vel_factor, 0.0);
         Scalar3 vel;
