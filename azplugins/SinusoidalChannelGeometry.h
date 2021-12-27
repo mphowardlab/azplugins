@@ -136,9 +136,9 @@ class __attribute__((visibility("default"))) SinusoidalChannel
             *
             *  We limit the number of iterations (max_iteration) and the desired presicion (target_presicion) for performance reasons.
             */
-            Scalar max_iteration = 6;
-            Scalar counter = 0;
-            Scalar target_presicion = 1e-5;
+            const unsigned int max_iteration = 6;
+            const unsigned int counter = 0;
+            const Scalar target_presicion = 1e-5;
             Scalar x0 = pos.x - 0.5*dt*vel.x;
             Scalar y0;
             Scalar z0;
