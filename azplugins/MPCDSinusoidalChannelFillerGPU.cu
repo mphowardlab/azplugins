@@ -99,7 +99,7 @@ __global__ void anti_sym_cos_draw_particles(Scalar4 *d_pos,
     Scalar3 vel;
     gen(vel.x, vel.y, rng);
     vel.z = gen(rng);
-    // TODO: should these be given zero net-momentum contribution (relative to the frame of reference?)
+
     d_vel[pidx] = make_scalar4(vel.x,
                                vel.y,
                                vel.z,

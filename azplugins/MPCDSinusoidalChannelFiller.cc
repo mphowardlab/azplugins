@@ -62,7 +62,15 @@ void SinusoidalChannelFiller::computeNumFill()
     m_pi_period_div_L = 2*M_PI*r/L.x;
     m_H_narrow = h;
 
-    // This geometry needs a larger filler thickness than just a single cell_size because of its curved bounds.
+    /* This geometry needs a larger filler thickness than just a single cell_size because of its curved bounds.
+     * Each cell along the wall boundary must be filled such that a cell shifted with max_shift is still entirely covered.
+     * At the top/bottom this is straightforward, so cell_size+max_shift should be enough (max_shift = 0.5*cell_size).
+     * At the steepest point of the sine (i.e., around the zero crossing), we actually need more thickness, such that the
+     * diagonal of cell_size+max_shift fits into the filler area. The equation below comes from calculating the minimum
+     * shift necessary to fit the diagonal of a by max_shift shifted cell at the narrowest point.
+     * It will fail when A=0 (but then the slit geometry should be used anyway). This creates a filler that is at least
+     * cell_size+max_shift wide everywhere.
+     */
     const Scalar filler_thickness = cell_size +  m_Amplitude*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
     m_thickness = filler_thickness;
     // total number of fill particles
