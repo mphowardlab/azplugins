@@ -10,15 +10,13 @@
  * \brief Definition of the MPCD symmetric cosine channel geometry
  */
 
-#ifndef AZPLUGINS_MPCD_SINE_CHANNEL_GEOMETRY_H_
-#define AZPLUGINS_MPCD_SINE_CHANNEL_GEOMETRY_H_
+#ifndef AZPLUGINS_SINE_CHANNEL_GEOMETRY_H_
+#define AZPLUGINS_SINE_CHANNEL_GEOMETRY_H_
 
 #include "hoomd/mpcd/BoundaryCondition.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
 
-#include <cstdio>
-#include <iostream>
 
 #ifdef NVCC
 #define HOSTDEVICE __host__ __device__ inline
@@ -32,10 +30,10 @@ namespace azplugins
 namespace detail
 {
 
-//! Antisymmetric Cosine channel geometry
+//! Sinusoidal channel geometry
 /*!
  * This class defines a channel with anti-symmetric cosine walls given by the
- * equations (A cos(x*2*pi*p/Lx) +/- H_narrow).
+ * equations (A cos(x*2*pi*p/Lx) +/- H_narrow), creating a sinusoidal channel.
  * A is the amplitude and p is the period of the wall cosine.
  * H_narrow is the half height of the channel. This creates a wavy channel.
  * The cosine wall wavelength/frenquency needs to be consumable with the
@@ -73,9 +71,6 @@ namespace detail
  *          -4        -2         0        2         4
  *                               x
  *
- * The geometry enforces boundary conditions \b only on the MPCD solvent particles.
- * Additional interactions are required with any embedded particles using
- * appropriate wall potentials.
  *
  * The wall boundary conditions can optionally be changed to slip conditions.
  */
@@ -124,7 +119,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
 
             Scalar a = pos.z - m_Amplitude*fast::cos(pos.x*m_pi_period_div_L);
             const signed char sign = (a > m_h) - (a < -m_h);
-            //printf("in detectCollision\n");
+    
             // exit immediately if no collision is found
             if (sign == 0)
                 {
@@ -363,4 +358,4 @@ class __attribute__((visibility("default"))) SinusoidalChannel
 } // end namespace azplugins
 #undef HOSTDEVICE
 
-#endif // AZPLUGINS_MPCD_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
+#endif // AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_

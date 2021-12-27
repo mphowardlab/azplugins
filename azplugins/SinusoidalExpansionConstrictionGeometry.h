@@ -10,8 +10,8 @@
  * \brief Definition of the MPCD symmetric cosine channel geometry
  */
 
-#ifndef AZPLUGINS_MPCD_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
-#define AZPLUGINS_MPCD_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
+#ifndef AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
+#define AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
 
 #include "hoomd/mpcd/BoundaryCondition.h"
 #include "hoomd/HOOMDMath.h"
@@ -32,9 +32,10 @@ namespace azplugins
 namespace detail
 {
 
-//! Symmetric Cosine channel geometry
+//! Sinusoidal expansion constriction channel geometry
 /*!
- * This class defines a channel with symmetric cosine walls given by the equations +/-(A cos(x*2*pi*p/Lx) + A + H_narrow).
+ * This class defines a channel with a series of expansions and constrictions. Symmetric cosines
+ * given by the equations +/-(A cos(x*2*pi*p/Lx) + A + H_narrow) are used for the walls.
  * A = 0.5*(H_wide-H_narrow) is the amplitude and p is the period of the wall cosine.
  * H_wide is the half height of the channel at its widest point, H_narrow is the half height of the channel at its
  * narrowest point. The cosine wall wavelength/frenquency needs to be consumable with the periodic boundary conditions in x,
@@ -70,12 +71,6 @@ namespace detail
  * -15 +-------------------------------------------------+
  *    -15     -10      -5       0       5        10      15
  *                              x
- *
- *
- *
- *
- * The geometry enforces boundary conditions \b only on the MPCD solvent particles. Additional interactions
- * are required with any embedded particles using appropriate wall potentials.
  *
  * The wall boundary conditions can optionally be changed to slip conditions.
  *
@@ -361,4 +356,4 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
 } // end namespace azplugins
 #undef HOSTDEVICE
 
-#endif // AZPLUGINS_MPCD_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
+#endif // AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
