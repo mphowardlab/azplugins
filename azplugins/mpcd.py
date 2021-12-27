@@ -258,7 +258,7 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
 
         Example::
 
-            anti_sym_cos.remove_filler()
+            sinusoidal_channel.remove_filler()
 
         """
         hoomd.util.print_status_line()
@@ -416,7 +416,7 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
 
         Example::
 
-            sym_cos.remove_filler()
+            sinusoidal_expansion_constriction.remove_filler()
 
         """
         hoomd.util.print_status_line()

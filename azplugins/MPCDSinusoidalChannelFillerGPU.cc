@@ -24,7 +24,7 @@ SinusoidalChannelFillerGPU::SinusoidalChannelFillerGPU(std::shared_ptr<mpcd::Sys
                                                        std::shared_ptr<const detail::SinusoidalChannel> geom)
     : SinusoidalChannelFiller(sysdata, density, type, T, seed, geom)
     {
-    m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "mpcd_anti_sym_cos_filler", m_exec_conf));
+    m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "mpcd_sin_channel_filler", m_exec_conf));
     }
 
 /*!
@@ -39,7 +39,7 @@ void SinusoidalChannelFillerGPU::drawParticles(unsigned int timestep)
     const unsigned int first_idx = m_mpcd_pdata->getN() + m_mpcd_pdata->getNVirtual() - m_N_fill;
 
     m_tuner->begin();
-    gpu::anti_sym_cos_draw_particles(d_pos.data,
+    gpu::sin_channel_draw_particles(d_pos.data,
                                      d_vel.data,
                                      d_tag.data,
                                      *m_geom,

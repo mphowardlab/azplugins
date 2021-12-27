@@ -43,26 +43,25 @@ namespace kernel
  * \b Implementation:
  *
  * Using one thread per particle (in both slabs), the thread is assigned to fill either the lower
- * or upper region. This defines a local cuboid of volume to fill. The thread index is translated into
- * a particle tag and local particle index. A random position is drawn within the cuboid. A random velocity
- * is drawn consistent with the speed of the moving wall.
+ * or upper region.  A random position is drawn within a cuboid, which is then shifted in z using the wall equation.
+ * The thread index is translated into a particle tag and local particle index.
  */
-__global__ void sym_cos_draw_particles(Scalar4 *d_pos,
-                                       Scalar4 *d_vel,
-                                       unsigned int *d_tag,
-                                       const azplugins::detail::SinusoidalExpansionConstriction geom,
-                                       const Scalar m_pi_period_div_L,
-                                       const Scalar m_amplitude,
-                                       const Scalar m_H_narrow,
-                                       const Scalar m_thickness,
-                                       const BoxDim box,
-                                       const unsigned int type,
-                                       const unsigned int N_fill,
-                                       const unsigned int first_tag,
-                                       const unsigned int first_idx,
-                                       const Scalar vel_factor,
-                                       const unsigned int timestep,
-                                       const unsigned int seed)
+__global__ void sin_expansion_constriction_draw_particles(Scalar4 *d_pos,
+                                                          Scalar4 *d_vel,
+                                                          unsigned int *d_tag,
+                                                          const azplugins::detail::SinusoidalExpansionConstriction geom,
+                                                          const Scalar m_pi_period_div_L,
+                                                          const Scalar m_amplitude,
+                                                          const Scalar m_H_narrow,
+                                                          const Scalar m_thickness,
+                                                          const BoxDim box,
+                                                          const unsigned int type,
+                                                          const unsigned int N_fill,
+                                                          const unsigned int first_tag,
+                                                          const unsigned int first_idx,
+                                                          const Scalar vel_factor,
+                                                          const unsigned int timestep,
+                                                          const unsigned int seed)
     {
     // one thread per particle
     const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -126,9 +125,9 @@ __global__ void sym_cos_draw_particles(Scalar4 *d_pos,
  * \param seed User seed to PRNG for drawing velocities
  * \param block_size Number of threads per block
  *
- * \sa kernel::slit_draw_particles
+ * \sa kernel::sin_expansion_constriction_draw_particles
  */
-cudaError_t sym_cos_draw_particles(Scalar4 *d_pos,
+cudaError_t sin_expansion_constriction_draw_particles(Scalar4 *d_pos,
                                    Scalar4 *d_vel,
                                    unsigned int *d_tag,
                                    const azplugins::detail::SinusoidalExpansionConstriction& geom,
@@ -153,7 +152,7 @@ cudaError_t sym_cos_draw_particles(Scalar4 *d_pos,
     if (max_block_size == UINT_MAX)
         {
         cudaFuncAttributes attr;
-        cudaFuncGetAttributes(&attr, (const void*)kernel::sym_cos_draw_particles);
+        cudaFuncGetAttributes(&attr, (const void*)kernel::sin_expansion_constriction_draw_particles);
         max_block_size = attr.maxThreadsPerBlock;
         }
 
@@ -162,7 +161,7 @@ cudaError_t sym_cos_draw_particles(Scalar4 *d_pos,
 
     unsigned int run_block_size = min(block_size, max_block_size);
     dim3 grid(N_fill / run_block_size + 1);
-    kernel::sym_cos_draw_particles<<<grid, run_block_size>>>(d_pos,
+    kernel::sin_expansion_constriction_draw_particles<<<grid, run_block_size>>>(d_pos,
                                                              d_vel,
                                                              d_tag,
                                                              geom,

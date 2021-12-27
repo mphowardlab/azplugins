@@ -18,8 +18,8 @@ except ImportError:
     import azplugins.mpcd
 import unittest
 
-# unit tests for mpcd symmetric cosine channel  geometry
-class mpcd_sym_cos_test(unittest.TestCase):
+# unit tests for mpcd sinusoidal expansion constriction channel geometry
+class mpcd_sinusoidal_expansion_constriction_test(unittest.TestCase):
     def setUp(self):
 
         hoomd.context.initialize()

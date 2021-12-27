@@ -198,7 +198,7 @@ class sinusoidal_channel(_bounce_back):
         by padding the box size by the largest cutoff radius. Failure to do so
         may result in unphysical interactions.
 
-    :py:class:`sym_cos` is an integration method. It must be used with
+    :py:class:`sinusoidal_channel` is an integration method. It must be used with
     :py:class:`hoomd.md.mode_standard`.
 
     Warning:

@@ -24,7 +24,7 @@ SinusoidalExpansionConstrictionFillerGPU::SinusoidalExpansionConstrictionFillerG
                                                                                    std::shared_ptr<const detail::SinusoidalExpansionConstriction> geom)
         : SinusoidalExpansionConstrictionFiller(sysdata, density, type, T, seed, geom)
     {
-    m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "mpcd_sym_cos_filler", m_exec_conf));
+    m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "mpcd_sin_expansion_constriction_filler", m_exec_conf));
     }
 
 /*!
@@ -39,24 +39,24 @@ void SinusoidalExpansionConstrictionFillerGPU::drawParticles(unsigned int timest
     const unsigned int first_idx = m_mpcd_pdata->getN() + m_mpcd_pdata->getNVirtual() - m_N_fill;
 
     m_tuner->begin();
-    gpu::sym_cos_draw_particles(d_pos.data,
-                                d_vel.data,
-                                d_tag.data,
-                                *m_geom,
-                                m_pi_period_div_L,
-                                m_amplitude,
-                                m_H_narrow,
-                                m_thickness,
-                                m_pdata->getBox(),
-                                m_mpcd_pdata->getMass(),
-                                m_type,
-                                m_N_fill,
-                                m_first_tag,
-                                first_idx,
-                                m_T->getValue(timestep),
-                                timestep,
-                                m_seed,
-                                m_tuner->getParam());
+    gpu::sin_expansion_constriction_draw_particles(d_pos.data,
+                                                   d_vel.data,
+                                                   d_tag.data,
+                                                   *m_geom,
+                                                   m_pi_period_div_L,
+                                                   m_amplitude,
+                                                   m_H_narrow,
+                                                   m_thickness,
+                                                   m_pdata->getBox(),
+                                                   m_mpcd_pdata->getMass(),
+                                                   m_type,
+                                                   m_N_fill,
+                                                   m_first_tag,
+                                                   first_idx,
+                                                   m_T->getValue(timestep),
+                                                   timestep,
+                                                   m_seed,
+                                                   m_tuner->getParam());
     if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
     m_tuner->end();
     }
@@ -72,11 +72,11 @@ void export_SinusoidalExpansionConstrictionFillerGPU(pybind11::module& m)
     py::class_<SinusoidalExpansionConstrictionFillerGPU, std::shared_ptr<SinusoidalExpansionConstrictionFillerGPU>>
         (m, "SinusoidalExpansionConstrictionFillerGPU", py::base<SinusoidalExpansionConstrictionFiller>())
         .def(py::init<std::shared_ptr<mpcd::SystemData>,
-                      Scalar,
-                      unsigned int,
-                      std::shared_ptr<::Variant>,
-                      unsigned int,
-                      std::shared_ptr<const SinusoidalExpansionConstriction>>())
+             Scalar,
+             unsigned int,
+             std::shared_ptr<::Variant>,
+             unsigned int,
+             std::shared_ptr<const SinusoidalExpansionConstriction>>())
         ;
     }
 } // end namespace detail
