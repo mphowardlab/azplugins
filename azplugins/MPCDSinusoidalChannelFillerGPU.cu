@@ -40,12 +40,6 @@ namespace kernel
  * \param timestep Current timestep
  * \param seed User seed to PRNG for drawing velocities
  *
- * \b Implementation:
- *
- * Using one thread per particle (in both slabs), the thread is assigned to fill either the lower
- * or upper region. This defines a local cuboid of volume to fill. The thread index is translated into
- * a particle tag and local particle index. A random position is drawn within the cuboid. A random velocity
- * is drawn consistent with the speed of the moving wall.
  */
 __global__ void anti_sym_cos_draw_particles(Scalar4 *d_pos,
                                             Scalar4 *d_vel,
