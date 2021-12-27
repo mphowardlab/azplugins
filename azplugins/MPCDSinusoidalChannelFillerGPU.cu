@@ -64,7 +64,7 @@ __global__ void anti_sym_cos_draw_particles(Scalar4 *d_pos,
         return;
     Scalar3 lo = box.getLo();
     Scalar3 hi = box.getHi();
-    const unsigned int N_half = 0.5*N_fill;
+    const unsigned int N_half = N_fill/2;
 
 
     // particle tag and index
