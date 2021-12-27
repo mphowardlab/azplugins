@@ -197,7 +197,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
 
                 // found intersection is NOT in between old and new point, ie intersection is wrong/inaccurate.
                 // do bisection to find intersection - slower but more robust than Newton's method
-                if ( !(lower_x  <= x0 && x0 <= upper_x ))
+                if (x0 < lower_x || x0 > upper_x)
                     {
                     Scalar3 point1 = pos;  //initial position
                     Scalar3 point2 = pos-dt*vel; // final position at t+dt
