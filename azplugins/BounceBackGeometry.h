@@ -16,7 +16,6 @@
 
 #include "hoomd/mpcd/BoundaryCondition.h"
 #include "hoomd/mpcd/SlitGeometry.h"
-#include "hoomd/mpcd/BoundaryCondition.h"
 #include "SinusoidalChannelGeometry.h"
 #include "SinusoidalExpansionConstrictionGeometry.h"
 #ifndef NVCC
