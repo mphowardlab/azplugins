@@ -81,7 +81,7 @@ void SinusoidalChannelFiller::drawParticles(unsigned int timestep)
     const BoxDim& box = m_pdata->getBox();
     Scalar3 lo = box.getLo();
     Scalar3 hi = box.getHi();
-    const unsigned int N_half = 0.5*m_N_fill;
+    const unsigned int N_half = m_N_fill/2;
     const Scalar vel_factor = fast::sqrt(m_T->getValue(timestep) / m_mpcd_pdata->getMass());
 
     // index to start filling from
