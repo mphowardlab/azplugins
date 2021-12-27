@@ -250,11 +250,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
             Scalar3 vel_new;
             if (m_bc ==  mpcd::detail::boundary::no_slip) // No-slip requires reflection of both tangential and normal components:
                 {
-
-                vel_new.x = -vel.x;
-                vel_new.y = -vel.y;
-                vel_new.z = -vel.z;
-
+                vel_new = -vel;
                 }
             else // Slip conditions require only tangential components to be reflected:
                 {
