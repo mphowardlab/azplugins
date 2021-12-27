@@ -110,7 +110,6 @@ void SinusoidalChannelFiller::drawParticles(unsigned int timestep)
         Scalar3 vel;
         gen(vel.x, vel.y, rng);
         vel.z = gen(rng);
-        // TODO: should these be given zero net-momentum contribution (relative to the frame of reference?)
         h_vel.data[pidx] = make_scalar4(vel.x,
                                         vel.y,
                                         vel.z,
