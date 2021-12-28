@@ -137,8 +137,9 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
             *  performance reasons. These values have been tested in python code seperately and gave satisfactory results.
             *
             */
-            Scalar max_iteration = 6;
-            Scalar target_presicion = 1e-5;
+            const unsigned int max_iteration = 6;
+            const Scalar target_presicion = 1e-5;
+            unsigned int counter = 0;
             Scalar x0 = pos.x - 0.5*dt*vel.x;
 
             Scalar y0;
@@ -196,15 +197,15 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
 
                 // found intersection is NOT in between old and new point, ie intersection is wrong/inaccurate.
                 // do bisection to find intersection - slower but more robust than Newton's method
-                if ( !(lower_x <= x0 && x0 <= upper_x ))
+                if (x0 < lower_x || x0 > upper_x)
                     {
-                    Scalar3 point1 = pos;  //initial position
-                    Scalar3 point2 = pos-dt*vel; // final position at t+dt
+                    Scalar3 point1 = pos;  // final position at t+dt
+                    Scalar3 point2 = pos-dt*vel; // initial position
                     Scalar3 point3 = 0.5*(point1+point2); // halfway point
                     Scalar fpoint1,fpoint3;
 
                     Scalar counter = 0;
-                    //TODO: technically, the presicion of Newton's method and bisection is different. Should this be unified?
+                    //Note: technically, the presicion of Newton's method and bisection is slightly different.
                     while ((point1.x-point2.x) > target_presicion && counter < max_iteration)
                         {
                         fpoint1 = (sign*(A*fast::cos(point1.x*m_pi_period_div_L)+ A + m_H_narrow) - point1.z);

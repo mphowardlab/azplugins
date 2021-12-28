@@ -119,7 +119,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
 
             Scalar a = pos.z - m_Amplitude*fast::cos(pos.x*m_pi_period_div_L);
             const signed char sign = (a > m_h) - (a < -m_h);
-    
+
             // exit immediately if no collision is found
             if (sign == 0)
                 {
@@ -137,8 +137,8 @@ class __attribute__((visibility("default"))) SinusoidalChannel
             *  We limit the number of iterations (max_iteration) and the desired presicion (target_presicion) for performance reasons.
             */
             const unsigned int max_iteration = 6;
-            const unsigned int counter = 0;
             const Scalar target_presicion = 1e-5;
+            unsigned int counter = 0;
             Scalar x0 = pos.x - 0.5*dt*vel.x;
             Scalar y0;
             Scalar z0;
@@ -199,11 +199,11 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                 // do bisection to find intersection - slower but more robust than Newton's method
                 if (x0 < lower_x || x0 > upper_x)
                     {
-                    Scalar3 point1 = pos;  //initial position
-                    Scalar3 point2 = pos-dt*vel; // final position at t+dt
+                    Scalar3 point1 = pos;  // final position at t+dt
+                    Scalar3 point2 = pos-dt*vel; // initial position
                     Scalar3 point3 = 0.5*(point1+point2); // halfway point
                     Scalar fpoint1,fpoint3;
-                    //TODO: technically, the presicion of Newton's method and bisection is different. Should this be unified?
+                    //Note: technically, the presicion of Newton's method and bisection is slightly different.
                     while ((point1.x-point2.x) > target_presicion && counter < max_iteration)
                         {
                         fpoint1 = ((m_Amplitude*fast::cos(point1.x*m_pi_period_div_L)+ sign*m_h) - point1.z);
@@ -235,7 +235,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
             // Remaining integration time dt is amount of time spent traveling distance out of bounds.
             dt = fast::sqrt(((pos.x - x0)*(pos.x - x0) + (pos.y - y0)*(pos.y -y0) + (pos.z - z0)*(pos.z - z0))/(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z));
 
-            //  positions are updated
+            // positions are updated
             pos.x = x0;
             pos.y = y0;
             pos.z = z0;
