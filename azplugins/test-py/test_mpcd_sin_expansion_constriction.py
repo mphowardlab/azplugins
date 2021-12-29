@@ -46,32 +46,32 @@ class mpcd_sinusoidal_expansion_constriction_test(unittest.TestCase):
 
     # test for setting parameters
     def test_set_params(self):
-        sym_cos = azplugins.mpcd.sinusoidal_expansion_constriction(H=4.,h=2. ,p=1)
-        self.assertAlmostEqual(sym_cos.H, 4.)
-        self.assertEqual(sym_cos.boundary, "no_slip")
-        self.assertAlmostEqual(sym_cos._cpp.geometry.getHwide(), 4.)
-        self.assertEqual(sym_cos._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.no_slip)
+        expansion_constriction = azplugins.mpcd.sinusoidal_expansion_constriction(H=4.,h=2. ,p=1)
+        self.assertAlmostEqual(expansion_constriction.H, 4.)
+        self.assertEqual(expansion_constriction.boundary, "no_slip")
+        self.assertAlmostEqual(expansion_constriction._cpp.geometry.getHwide(), 4.)
+        self.assertEqual(expansion_constriction._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.no_slip)
 
         # change H and also ensure other parameters stay the same
-        sym_cos.set_params(H=2.)
-        self.assertAlmostEqual(sym_cos.H, 2.)
-        self.assertEqual(sym_cos.boundary, "no_slip")
-        self.assertAlmostEqual(sym_cos._cpp.geometry.getHwide(), 2.)
-        self.assertEqual(sym_cos._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.no_slip)
+        expansion_constriction.set_params(H=2.)
+        self.assertAlmostEqual(expansion_constriction.H, 2.)
+        self.assertEqual(expansion_constriction.boundary, "no_slip")
+        self.assertAlmostEqual(expansion_constriction._cpp.geometry.getHwide(), 2.)
+        self.assertEqual(expansion_constriction._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.no_slip)
 
         # change BCs
-        sym_cos.set_params(boundary="slip")
-        self.assertEqual(sym_cos.boundary, "slip")
-        self.assertEqual(sym_cos._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.slip)
+        expansion_constriction.set_params(boundary="slip")
+        self.assertEqual(expansion_constriction.boundary, "slip")
+        self.assertEqual(expansion_constriction._cpp.geometry.getBoundaryCondition(), mpcd._mpcd.boundary.slip)
 
     # test for invalid boundary conditions being set
     def test_bad_boundary(self):
-        sym_cos = azplugins.mpcd.sinusoidal_expansion_constriction(H=4.,h=2. ,p=1)
-        sym_cos.set_params(boundary="no_slip")
-        sym_cos.set_params(boundary="slip")
+        expansion_constriction = azplugins.mpcd.sinusoidal_expansion_constriction(H=4.,h=2. ,p=1)
+        expansion_constriction.set_params(boundary="no_slip")
+        expansion_constriction.set_params(boundary="slip")
 
         with self.assertRaises(ValueError):
-            sym_cos.set_params(boundary="invalid")
+            expansion_constriction.set_params(boundary="invalid")
 
     # test basic stepping behavior with no slip boundary conditions
     def test_step_noslip(self):
@@ -199,55 +199,55 @@ class mpcd_sinusoidal_expansion_constriction_test(unittest.TestCase):
     # test that setting the cosine size too large raises an error
     def test_validate_box(self):
         # initial configuration is invalid
-        sym_cos = azplugins.mpcd.sinusoidal_expansion_constriction(H=10.,h=2., p=1)
+        expansion_constriction = azplugins.mpcd.sinusoidal_expansion_constriction(H=10.,h=2., p=1)
         with self.assertRaises(RuntimeError):
             hoomd.run(1)
 
         # now it should be valid
-        sym_cos.set_params(H=4.,h=2. ,p=1)
+        expansion_constriction.set_params(H=4.,h=2. ,p=1)
         hoomd.run(2)
 
         # make sure we can invalidate it again
-        sym_cos.set_params(H=10.,h=2. ,p=1)
+        expansion_constriction.set_params(H=10.,h=2. ,p=1)
         with self.assertRaises(RuntimeError):
             hoomd.run(1)
 
     # test that particles out of bounds can be caught
     def test_out_of_bounds(self):
-        sym_cos = azplugins.mpcd.sinusoidal_expansion_constriction(H=2., h=1., p=1)
+        expansion_constriction = azplugins.mpcd.sinusoidal_expansion_constriction(H=2., h=1., p=1)
         with self.assertRaises(RuntimeError):
             hoomd.run(1)
 
-        sym_cos.set_params(H=5.,h=2. ,p=1)
+        expansion_constriction.set_params(H=5.,h=2. ,p=1)
         hoomd.run(1)
 
 
     # test that virtual particle filler can be attached, removed, and updated
     def test_filler(self):
         # initialization of a filler
-        sym_cos = azplugins.mpcd.sinusoidal_expansion_constriction(H=5.,h=2., p=1)
-        sym_cos.set_filler(density=5., kT=1.0, seed=42, type='A')
-        self.assertTrue(sym_cos._filler is not None)
+        expansion_constriction = azplugins.mpcd.sinusoidal_expansion_constriction(H=5.,h=2., p=1)
+        expansion_constriction.set_filler(density=5., kT=1.0, seed=42, type='A')
+        self.assertTrue(expansion_constriction._filler is not None)
 
         # run should be able to setup the filler, although this all happens silently
         hoomd.run(1)
 
         # changing filler should be allowed
-        sym_cos.set_filler(density=10., kT=1.5, seed=7)
-        self.assertTrue(sym_cos._filler is not None)
+        expansion_constriction.set_filler(density=10., kT=1.5, seed=7)
+        self.assertTrue(expansion_constriction._filler is not None)
         hoomd.run(1)
 
         # assert an error is raised if we set a bad particle type
         with self.assertRaises(RuntimeError):
-            sym_cos.set_filler(density=5., kT=1.0, seed=42, type='B')
+            expansion_constriction.set_filler(density=5., kT=1.0, seed=42, type='B')
 
         # assert an error is raised if we set a bad density
         with self.assertRaises(RuntimeError):
-            sym_cos.set_filler(density=-1.0, kT=1.0, seed=42)
+            expansion_constriction.set_filler(density=-1.0, kT=1.0, seed=42)
 
         # removing the filler should still allow a run
-        sym_cos.remove_filler()
-        self.assertTrue(sym_cos._filler is None)
+        expansion_constriction.remove_filler()
+        self.assertTrue(expansion_constriction._filler is None)
         hoomd.run(1)
 
 
