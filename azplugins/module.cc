@@ -31,14 +31,14 @@ namespace py = pybind11;
 /* MPCD */
 #ifdef ENABLE_MPCD
 #include "MPCDReversePerturbationFlow.h"
-#include "hoomd/mpcd/ConfinedStreamingMethod.h"
 #include "MPCDSinusoidalChannelFiller.h"
 #include "MPCDSinusoidalExpansionConstrictionFiller.h"
+#include "hoomd/mpcd/ConfinedStreamingMethod.h"
 #ifdef ENABLE_CUDA
 #include "MPCDReversePerturbationFlowGPU.h"
-#include "hoomd/mpcd/ConfinedStreamingMethodGPU.h"
 #include "MPCDSinusoidalChannelFillerGPU.h"
 #include "MPCDSinusoidalExpansionConstrictionFillerGPU.h"
+#include "hoomd/mpcd/ConfinedStreamingMethodGPU.h"
 #endif // ENABLE_CUDA
 #endif // ENABLE_MPCD
 
@@ -249,8 +249,9 @@ PYBIND11_MODULE(_azplugins, m)
     #ifdef ENABLE_CUDA
     azplugins::detail::export_SinusoidalChannelFillerGPU(m);
     azplugins::detail::export_SinusoidalExpansionConstrictionFillerGPU(m);
-    mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SinusoidalChannel>(m);
-    mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SinusoidalExpansionConstriction>(m);
+    // TODO: Currently these streaming methods are not working on the because of issues with polymorphism on the GPU
+    // mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SinusoidalChannel>(m);
+    // mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SinusoidalExpansionConstriction>(m);
     azplugins::detail::export_MPCDReversePerturbationFlowGPU(m);
     #endif // ENABLE_CUDA
     #endif // ENABLE_MPCD

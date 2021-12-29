@@ -161,7 +161,7 @@ class slit(_bounce_back):
 
 
 class sinusoidal_channel(_bounce_back):
-    """ NVE integration with bounce-back rules in a anti-symmetric sinusoidal channel.
+    """ NVE integration with bounce-back rules in an sinusoidal channel.
 
     Args:
         group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
@@ -170,8 +170,7 @@ class sinusoidal_channel(_bounce_back):
         p (int):   channel periodicity
         boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
-    This integration method applies to particles in *group* in the symmetric
-    cosine channel geometry.
+    This integration method applies to particles in *group* in the sine channel geometry.
 
     The boundary condition at the wall can be specified with *boundary* to either
     `'slip'` or `'no_slip'`. A no-slip condition is more common for solid boundaries.
@@ -185,7 +184,7 @@ class sinusoidal_channel(_bounce_back):
 
     HOOMD uses a periodic simulation box, but the geometry imposes inherent
     non-periodic boundary conditions. You **must** ensure that the box is
-    sufficiently large to enclose the geometry (i.e., :math:`L_z > 2H`). An
+    sufficiently large to enclose the geometry. An
     error will be raised if the simulation box is not large enough to contain
     the geometry. Additionally, all particles must lie initially **inside** the
     geometry (i.e., all particles are between the cosines). The particle
@@ -282,7 +281,8 @@ class sinusoidal_channel(_bounce_back):
         self.cpp_method.geometry = _azplugins.SinusoidalChannel(self.L,self.A,self.h,self.p,bc)
 
 class sinusoidal_expansion_constriction(_bounce_back):
-    """ NVE integration with bounce-back rules in a symmetric sinusoidal channel, i.e a expansion constriction channel.
+    """ NVE integration with bounce-back rules in a symmetric sinusoidal channel, i.e an
+    expansion constriction channel.
 
     Args:
         group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
@@ -291,8 +291,8 @@ class sinusoidal_expansion_constriction(_bounce_back):
         p (int):   channel periodicity
         boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
-    This integration method applies to particles in *group* in the symmetric
-    cosine channel geometry.
+    This integration method applies to particles in *group* in the expansion constriction
+    channel geometry.
 
     The boundary condition at the wall can be specified with *boundary* to either
     `'slip'` or `'no_slip'`. A no-slip condition is more common for solid boundaries.
@@ -306,7 +306,7 @@ class sinusoidal_expansion_constriction(_bounce_back):
 
     HOOMD uses a periodic simulation box, but the geometry imposes inherent
     non-periodic boundary conditions. You **must** ensure that the box is
-    sufficiently large to enclose the geometry (i.e., :math:`L_z > 2H`). An error
+    sufficiently large to enclose the geometry. An error
     will be raised if the simulation box is not large enough to contain the geometry.
     Additionally, all particles must lie initially **inside** the geometry (i.e.,
     all particles are between the cosines). The particle configuration will be
