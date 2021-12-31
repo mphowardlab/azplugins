@@ -743,7 +743,6 @@ class FlowProfiler:
             mass = np.bincount(binids,weights=m,minlength=self.bins)
             self._bin_mass += mass
 
-
             # velocity profiles
             # need to do each dimension separeately because of how bincount works
             num_vel = np.zeros((self.bins,3))
@@ -753,15 +752,15 @@ class FlowProfiler:
                mass_vel[:,dim] = np.bincount(binids,m*v[:,dim],minlength=self.bins)
             np.divide(num_vel, counts[:,None], out=num_vel, where=counts[:,None]  > 0)
             np.divide(mass_vel, mass[:,None], out=mass_vel, where=mass[:,None] > 0)
-            self._number_velocity += num_vel.T
-            self._mass_velocity += mass_vel.T
+            self._number_velocity += num_vel
+            self._mass_velocity += mass_vel
 
             # temperature
             ke = np.bincount(binids, weights=0.5*m*np.sum(v**2,axis=1), minlength=self.bins)
             ke_cm = 0.5*mass*np.sum(mass_vel**2,axis=1)
             kT = np.zeros(self.bins)
             np.divide(2*(ke-ke_cm), 3*(counts-1), out=kT, where=counts > 1)
-            self._temperature += kT
+            self._kT += kT
             self.samples += 1
 
     def reset(self):
@@ -771,11 +770,9 @@ class FlowProfiler:
         self._bin_mass = np.zeros(self.bins)
         self._number_density = np.zeros(self.bins)
         self._mass_density = np.zeros(self.bins)
-        self._temperature = np.zeros(self.bins)
-
-        self._number_velocity = np.zeros((3,self.bins))
-        self._mass_velocity = np.zeros((3,self.bins))
-
+        self._number_velocity = np.zeros((self.bins,3))
+        self._mass_velocity = np.zeros((self.bins,3))
+        self._kT = np.zeros(self.bins)
 
     @property
     def number_density(self):
@@ -795,7 +792,7 @@ class FlowProfiler:
 
     @property
     def number_velocity(self):
-        r"""The current number-averaged velocity profile ."""
+        r"""The current number-averaged velocity profile."""
         if hoomd.comm.get_rank() == 0 and self.samples > 0:
             return self._number_velocity / self.samples
         else:
@@ -803,7 +800,7 @@ class FlowProfiler:
 
     @property
     def mass_velocity(self):
-        r"""The current mass-averaged velocity profile ."""
+        r"""The current mass-averaged velocity profile."""
         if hoomd.comm.get_rank() == 0 and self.samples > 0:
             return self._mass_velocity / self.samples
         else:
@@ -813,6 +810,6 @@ class FlowProfiler:
     def kT(self):
         r"""The current average temperature profile."""
         if hoomd.comm.get_rank() == 0 and self.samples > 0:
-            return self._temperature / self.samples
+            return self._kT / self.samples
         else:
             return None

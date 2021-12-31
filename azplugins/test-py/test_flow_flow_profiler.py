@@ -47,9 +47,9 @@ class flow_FlowProfiler_tests(unittest.TestCase):
             np.testing.assert_allclose(self.u.number_density, expected_densities)
 
         # test that the binned values are correct - last bin is averaged velocity 3.0 and 1.0
-        expected_velocities =  [[2.0,  0.,  0.,  0.,  0.,  0.,  0., 1.0,-1.0,  2.0],\
-                                [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,   0.,  0.],\
-                                [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,   0.,  0.]]
+        expected_velocities = [[2,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],
+                               [1,0,0],[-1,0,0],[(3.0+1.0)/2,0,0]]
+
         if hoomd.comm.get_rank() == 0:
             np.testing.assert_allclose(self.u.number_velocity, expected_velocities)
 
@@ -61,9 +61,8 @@ class flow_FlowProfiler_tests(unittest.TestCase):
             np.testing.assert_allclose(self.u.mass_density, expected_densities)
 
         # last bin is mass averaged velocity 3.0 and 1.0 with masses 0.5 and 1.0
-        expected_velocities = [[2.0*0.5/0.5,0,0,0,0,0,0,1.0*0.5/0.5,-1.0*0.5/0.5,(3.0*0.5+1.0*1.0)/(0.5+1.0)],\
-                              [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,   0.,  0.],\
-                              [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,   0.,  0.]]
+        expected_velocities = [[2,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],
+                               [1,0,0],[-1,0,0],[(3.0*0.5+1.0*1.0)/(0.5+1.0),0,0]]
         if hoomd.comm.get_rank() == 0:
             np.testing.assert_allclose(self.u.mass_velocity, expected_velocities)
 
