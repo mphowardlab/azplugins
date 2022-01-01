@@ -281,8 +281,7 @@ class sinusoidal_channel(_bounce_back):
         self.cpp_method.geometry = _azplugins.SinusoidalChannel(self.L,self.A,self.h,self.p,bc)
 
 class sinusoidal_expansion_constriction(_bounce_back):
-    """ NVE integration with bounce-back rules in a symmetric sinusoidal channel, i.e an
-    expansion constriction channel.
+    """ NVE integration with bounce-back rules in a sinusoidal expansion–constriction channel.
 
     Args:
         group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
