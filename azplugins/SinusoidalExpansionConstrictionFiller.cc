@@ -9,7 +9,7 @@
  * \brief Definition of SinusoidalExpansionConstrictionFiller
  */
 
-#include "MPCDSinusoidalExpansionConstrictionFiller.h"
+#include "SinusoidalExpansionConstrictionFiller.h"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
 

@@ -6,7 +6,7 @@
 
 
 /*!
- * \file MPCDSinusoidalExpansionConstriction.h
+ * \file SinusoidalExpansionConstriction.h
  * \brief Definition of the MPCD symmetric cosine channel geometry
  */
 

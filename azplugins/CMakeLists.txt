@@ -120,20 +120,20 @@ list(APPEND py_files
 # mpcd c++ files
 list(APPEND _${COMPONENT_NAME}_sources
     MPCDReversePerturbationFlow.cc
-    MPCDSinusoidalChannelFiller.cc
-    MPCDSinusoidalExpansionConstrictionFiller.cc
+    SinusoidalChannelFiller.cc
+    SinusoidalExpansionConstrictionFiller.cc
     )
 # mpcd c++/cu cuda files
 if(ENABLE_CUDA)
 list(APPEND _${COMPONENT_NAME}_sources
     MPCDReversePerturbationFlowGPU.cc
-    MPCDSinusoidalChannelFillerGPU.cc
-    MPCDSinusoidalExpansionConstrictionFillerGPU.cc
+    SinusoidalChannelFillerGPU.cc
+    SinusoidalExpansionConstrictionFillerGPU.cc
     )
 list(APPEND _${COMPONENT_NAME}_cu_sources
     MPCDReversePerturbationFlowGPU.cu
-    MPCDSinusoidalChannelFillerGPU.cu
-    MPCDSinusoidalExpansionConstrictionFillerGPU.cu
+    SinusoidalChannelFillerGPU.cu
+    SinusoidalExpansionConstrictionFillerGPU.cu
     )
 endif(ENABLE_CUDA)
 endif(BUILD_MPCD)

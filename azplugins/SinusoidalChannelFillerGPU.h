@@ -6,18 +6,18 @@
 
 
 /*!
- * \file MPCDSinusoidalChannelFillerGPU.h
+ * \file SinusoidalChannelFillerGPU.h
  * \brief Definition of virtual particle filler for azplugins::detail::SinusoidalChannel on the GPU.
  */
 
-#ifndef AZPLUGINS_MPCD_SINE_CHANNEL_GEOMETRY_FILLER_GPU_H_
-#define AZPLUGINS_MPCD_SINE_CHANNEL_GEOMETRY_FILLER_GPU_H_
+#ifndef AZPLUGINS_SINE_CHANNEL_GEOMETRY_FILLER_GPU_H_
+#define AZPLUGINS_SINE_CHANNEL_GEOMETRY_FILLER_GPU_H_
 
 #ifdef NVCC
 #error This header cannot be compiled by nvcc
 #endif
 
-#include "MPCDSinusoidalChannelFiller.h"
+#include "SinusoidalChannelFiller.h"
 #include "hoomd/Autotuner.h"
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 
@@ -63,4 +63,4 @@ namespace detail
 void export_SinusoidalChannelFillerGPU(pybind11::module& m);
 } // end namespace detail
 } // end namespace azplugins
-#endif // AZPLUGINS_MPCD_SINE_CHANNEL_GEOMETRY_FILLER_GPU_H_
+#endif // AZPLUGINS_SINE_CHANNEL_GEOMETRY_FILLER_GPU_H_

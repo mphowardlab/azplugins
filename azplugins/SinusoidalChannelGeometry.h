@@ -6,7 +6,7 @@
 
 
 /*!
- * \file MPCDSinusoidalExpansionConstriction.h
+ * \file SinusoidalExpansionConstriction.h
  * \brief Definition of the MPCD symmetric cosine channel geometry
  */
 
@@ -355,4 +355,4 @@ class __attribute__((visibility("default"))) SinusoidalChannel
 } // end namespace azplugins
 #undef HOSTDEVICE
 
-#endif // AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
+#endif // AZPLUGINS_SINE_CHANNEL_GEOMETRY_H_

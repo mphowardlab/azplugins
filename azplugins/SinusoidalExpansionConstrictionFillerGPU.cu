@@ -5,11 +5,11 @@
 // Maintainer: astatt
 
 /*!
- * \file MPCDSinusoidalExpansionConstrictionFillerGPU.cu
+ * \file SinusoidalExpansionConstrictionFillerGPU.cu
  * \brief Defines GPU functions and kernels used by azplugins::gpu::SinusoidalExpansionConstrictionFillerGPU
  */
 
-#include "MPCDSinusoidalExpansionConstrictionFillerGPU.cuh"
+#include "SinusoidalExpansionConstrictionFillerGPU.cuh"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
 #include "hoomd/mpcd/ParticleDataUtilities.h"

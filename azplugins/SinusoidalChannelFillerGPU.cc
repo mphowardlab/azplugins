@@ -10,8 +10,8 @@
  * \brief Definition of SinusoidalChannelFillerGPU
  */
 
-#include "MPCDSinusoidalChannelFillerGPU.h"
-#include "MPCDSinusoidalChannelFillerGPU.cuh"
+#include "SinusoidalChannelFillerGPU.h"
+#include "SinusoidalChannelFillerGPU.cuh"
 
 namespace azplugins
 {

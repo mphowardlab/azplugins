@@ -31,13 +31,13 @@ namespace py = pybind11;
 /* MPCD */
 #ifdef ENABLE_MPCD
 #include "MPCDReversePerturbationFlow.h"
-#include "MPCDSinusoidalChannelFiller.h"
-#include "MPCDSinusoidalExpansionConstrictionFiller.h"
+#include "SinusoidalChannelFiller.h"
+#include "SinusoidalExpansionConstrictionFiller.h"
 #include "hoomd/mpcd/ConfinedStreamingMethod.h"
 #ifdef ENABLE_CUDA
 #include "MPCDReversePerturbationFlowGPU.h"
-#include "MPCDSinusoidalChannelFillerGPU.h"
-#include "MPCDSinusoidalExpansionConstrictionFillerGPU.h"
+#include "SinusoidalChannelFillerGPU.h"
+#include "SinusoidalExpansionConstrictionFillerGPU.h"
 #include "hoomd/mpcd/ConfinedStreamingMethodGPU.h"
 #endif // ENABLE_CUDA
 #endif // ENABLE_MPCD

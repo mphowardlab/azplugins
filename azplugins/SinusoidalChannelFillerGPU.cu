@@ -5,11 +5,11 @@
 // Maintainer: astatt
 
 /*!
- * \file MPCDSinusoidalChannelFillerGPU.cu
+ * \file SinusoidalChannelFillerGPU.cu
  * \brief Defines GPU functions and kernels used by azplugins::gpu::SinusoidalChannelFillerGPU
  */
 
-#include "MPCDSinusoidalChannelFillerGPU.cuh"
+#include "SinusoidalChannelFillerGPU.cuh"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
 #include "hoomd/mpcd/ParticleDataUtilities.h"

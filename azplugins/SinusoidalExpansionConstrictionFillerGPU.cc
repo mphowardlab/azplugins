@@ -10,8 +10,8 @@
  * \brief Definition of SinusoidalExpansionConstrictionFillerGPU
  */
 
-#include "MPCDSinusoidalExpansionConstrictionFillerGPU.h"
-#include "MPCDSinusoidalExpansionConstrictionFillerGPU.cuh"
+#include "SinusoidalExpansionConstrictionFillerGPU.h"
+#include "SinusoidalExpansionConstrictionFillerGPU.cuh"
 
 namespace azplugins
 {

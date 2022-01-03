@@ -9,7 +9,7 @@
  * \brief Definition of SinusoidalChannelFiller
  */
 
-#include "MPCDSinusoidalChannelFiller.h"
+#include "SinusoidalChannelFiller.h"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
 
