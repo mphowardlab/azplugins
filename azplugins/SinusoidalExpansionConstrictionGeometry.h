@@ -86,7 +86,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
            \param Period Channel cosine period (integer >0)
          * \param bc Boundary condition at the wall (slip or no-slip)
          */
-        HOSTDEVICE SinusoidalExpansionConstriction(Scalar L, Scalar H_wide,Scalar H_narrow, unsigned int Repetitions,mpcd::detail::boundary bc)
+        HOSTDEVICE SinusoidalExpansionConstriction(Scalar L, Scalar H_wide,Scalar H_narrow, unsigned int Repetitions, mpcd::detail::boundary bc)
             : m_pi_period_div_L(2*M_PI*Repetitions/L), m_H_wide(H_wide), m_H_narrow(H_narrow), m_Repetitions(Repetitions), m_bc(bc)
             {
             }
@@ -205,7 +205,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                     Scalar3 point3 = 0.5*(point1+point2); // halfway point
                     Scalar fpoint3 = (sign*(A*fast::cos(point3.x*m_pi_period_div_L)+ A + m_H_narrow) - point3.z); // value at halfway point, f(x)
                     // Note: technically, the presicion of Newton's method and bisection is slightly different, with
-                    // bisection being less precise and has slower convergence.
+                    // bisection being less precise and slower convergence.
                     while (abs(fpoint3)  > target_presicion && counter < max_iteration)
                         {
                         counter++;

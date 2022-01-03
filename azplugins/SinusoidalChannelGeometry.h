@@ -207,7 +207,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                     Scalar3 point3 = 0.5*(point1+point2); // halfway point
                     Scalar fpoint3 = ((m_Amplitude*fast::cos(point3.x*m_pi_period_div_L)+ sign*m_h) - point3.z); // value at halfway point, f(x)
                     // Note: technically, the presicion of Newton's method and bisection is slightly different, with
-                    // bisection being less precise and has slower convergence.
+                    // bisection being less precise and slower convergence.
                     while (abs(fpoint3)  > target_presicion && counter < max_iteration)
                         {
                         counter++;
