@@ -139,7 +139,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
             */
             const unsigned int max_iteration = 6;
             const Scalar target_presicion = 1e-5;
-            unsigned int counter = 0;
+
             Scalar x0 = pos.x - 0.5*dt*vel.x;
 
             Scalar y0;
@@ -168,7 +168,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                 {
                 delta = abs(0 - (sign*(A*fast::cos(x0*m_pi_period_div_L)+ A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
 
-                Scalar counter = 0;
+                unsigned int counter = 0;
                 while( delta > target_presicion && counter < max_iteration)
                 {
                     fast::sincos(x0*m_pi_period_div_L,s,c);
@@ -244,18 +244,17 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
              * normal  = (sign*A*2*pi*p/L*sin(x*2*pi*p/L),0,1)/|length|
              * We define B = sign*A*2*pi*p/L*sin(x*2*pi*p/L), so then the normal is given by (B,0,1)/|length|
              * The direction of the normal is not important for the reflection.
-             * Calculate components by hand to avoid sqrt in normalization of the normal of the surface.
              */
             Scalar3 vel_new;
             if (m_bc ==  mpcd::detail::boundary::no_slip) // No-slip requires reflection of both tangential and normal components:
                 {
-                vel_new.x = -vel.x;
-                vel_new.y = -vel.y;
-                vel_new.z = -vel.z;
+                vel_new -vel;
                 }
             else // Slip conditions require only tangential components to be reflected:
                 {
                 Scalar B = sign*A*m_pi_period_div_L*fast::sin(x0*m_pi_period_div_L);
+                // The reflected vector is given by v_reflected = -2*(v_normal*v_incoming)*v_normal + v_incoming
+                // Calculate components by hand to avoid sqrt in normalization of the normal of the surface.
                 vel_new.x = vel.x - 2*B*(B*vel.x + vel.z)/(B*B+1);
                 vel_new.y = vel.y;
                 vel_new.z = vel.z -   2*(B*vel.x + vel.z)/(B*B+1);

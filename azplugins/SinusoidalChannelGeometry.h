@@ -139,7 +139,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
             */
             const unsigned int max_iteration = 6;
             const Scalar target_presicion = 1e-5;
-            unsigned int counter = 0;
+
             Scalar x0 = pos.x - 0.5*dt*vel.x;
             Scalar y0;
             Scalar z0;
@@ -169,6 +169,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
 
                 Scalar n,n2;
                 Scalar s,c;
+                unsigned int counter = 0;
 
                 while( delta > target_presicion && counter < max_iteration)
                     {
@@ -243,9 +244,8 @@ class __attribute__((visibility("default"))) SinusoidalChannel
              *
              * A upwards normal of the surface is given by (-df/dx,-df/dy,1) with f = (A*cos(x*2*pi*p/L) +/- sign*h), so
              * normal  = (A*2*pi*p/L*sin(x*2*pi*p/L),0,1)/|length|
-             * We define B = A*2*pi*p/L*sin(x*2*pi*p/L), so then the normal is given by (B,0,1)/|length|
+             * We define B = A*2*pi*p/L*sin(x*2*pi*p/L), so then the normal is given by (B,0,1)/sqrt(B^2+1)
              * The direction of the normal is not important for the reflection.
-             * Calculate components by hand to avoid sqrt in normalization of the normal of the surface.
              */
             Scalar3 vel_new;
             if (m_bc ==  mpcd::detail::boundary::no_slip) // No-slip requires reflection of both tangential and normal components:
@@ -255,7 +255,8 @@ class __attribute__((visibility("default"))) SinusoidalChannel
             else // Slip conditions require only tangential components to be reflected:
                 {
                 Scalar B = m_Amplitude*m_pi_period_div_L*fast::sin(x0*m_pi_period_div_L);
-
+                // The reflected vector is given by v_reflected = -2*(v_normal*v_incoming)*v_normal + v_incoming
+                // Calculate components by hand to avoid sqrt in normalization of the normal of the surface.
                 vel_new.x = vel.x - 2*B*(B*vel.x + vel.z)/(B*B+1);
                 vel_new.y = vel.y;
                 vel_new.z = vel.z - 2*(B*vel.x + vel.z)/(B*B+1);
