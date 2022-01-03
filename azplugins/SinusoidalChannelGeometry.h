@@ -17,6 +17,7 @@
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
 
+#include <iostream>
 
 #ifdef NVCC
 #define HOSTDEVICE __host__ __device__ inline
@@ -199,21 +200,20 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                 // do bisection to find intersection - slower but more robust than Newton's method
                 if (x0 < lower_x || x0 > upper_x)
                     {
-                    Scalar3 point1 = pos;  // final position at t+dt
-                    Scalar3 point2 = pos-dt*vel; // initial position
+                    unsigned int counter = 0;
+                    Scalar3 point1 = pos;  // final position at t+dt, outside of channel
+                    Scalar3 point2 = pos-dt*vel; // initial position, inside of channel
                     Scalar3 point3 = 0.5*(point1+point2); // halfway point
-                    Scalar fpoint1,fpoint3;
-                    //Note: technically, the presicion of Newton's method and bisection is slightly different.
-                    while ((point1.x-point2.x) > target_presicion && counter < max_iteration)
+                    Scalar fpoint3 = ((m_Amplitude*fast::cos(point3.x*m_pi_period_div_L)+ sign*m_h) - point3.z); // value at halfway point, f(x)
+                    // Note: technically, the presicion of Newton's method and bisection is slightly different, with
+                    // bisection being less precise and has slower convergence.
+                    while (abs(fpoint3)  > target_presicion && counter < max_iteration)
                         {
-                        fpoint1 = ((m_Amplitude*fast::cos(point1.x*m_pi_period_div_L)+ sign*m_h) - point1.z);
+                        counter++;
                         fpoint3 = ((m_Amplitude*fast::cos(point3.x*m_pi_period_div_L)+ sign*m_h) - point3.z);
-
-                        if (abs(fpoint3) == 0) // found exact solution
-                            {
-                            break;
-                            }
-                        else if (fpoint3*fpoint1 < 0)
+                        // because we know that point1 outside of the channel and point2 is inside of the channel, we
+                        // only need to check the halfway point3 - if it is inside, replace point2, if it is outside, replace point1
+                        if (isOutside(point3) == false)
                             {
                             point2 = point3;
                             }
@@ -223,7 +223,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                             }
                         point3 = 0.5*(point1+point2);
                         }
-                    // point3 == intersection
+                    // final point3 == intersection
                     x0 =  point3.x;
                     z0 = (m_Amplitude*fast::cos(x0*m_pi_period_div_L)+sign*m_h);
                     y0 = -(pos.x-dt*vel.x - x0)*vel.y/vel.x + (pos.y-dt*vel.y);
@@ -233,17 +233,17 @@ class __attribute__((visibility("default"))) SinusoidalChannel
 
 
             // Remaining integration time dt is amount of time spent traveling distance out of bounds.
-            dt = fast::sqrt(((pos.x - x0)*(pos.x - x0) + (pos.y - y0)*(pos.y -y0) + (pos.z - z0)*(pos.z - z0))/(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z));
+            Scalar3 pos_new = make_scalar3(x0,y0,z0);
+            dt = fast::sqrt(dot((pos - pos_new),(pos - pos_new))/dot(vel,vel));
 
             // positions are updated
-            pos.x = x0;
-            pos.y = y0;
-            pos.z = z0;
+            pos = pos_new;
 
             /* update velocity according to boundary conditions.
              *
              * A upwards normal of the surface is given by (-df/dx,-df/dy,1) with f = (A*cos(x*2*pi*p/L) +/- sign*h), so
              * normal  = (A*2*pi*p/L*sin(x*2*pi*p/L),0,1)/|length|
+             * We define B = A*2*pi*p/L*sin(x*2*pi*p/L), so then the normal is given by (B,0,1)/|length|
              * The direction of the normal is not important for the reflection.
              * Calculate components by hand to avoid sqrt in normalization of the normal of the surface.
              */
