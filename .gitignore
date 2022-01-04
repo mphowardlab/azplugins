@@ -5,3 +5,4 @@ __pycache__
 build*
 doc/build
 doc/source/reference/api
+**-checkpoint.ipynb
