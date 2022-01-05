@@ -52,18 +52,17 @@ html_static_path = []
 # -- Options for autodoc & autosummary ---------------------------------------
 
 autodoc_default_options = {
-    'inherited-members': True,
-    'show-inheritance': True
+    'inherited-members': False
 }
 
-autodoc_mock_imports = ['hoomd']
+autodoc_mock_imports = ['azplugins._azplugins']
 
-autosummary_generate = True
+autosummary_generate = False
 
 # -- Options for intersphinx -------------------------------------------------
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'numpy': ('https://numpy.org/doc/stable', None),
     'hoomd': ('https://hoomd-blue.readthedocs.io/en/stable', None)
 }

@@ -1,0 +1,8 @@
+version: 2
+
+sphinx:
+  configuration: doc/source/conf.py
+  fail_on_warning: true
+
+conda:
+  environment: doc/environment.yml

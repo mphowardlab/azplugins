@@ -1,7 +1,34 @@
 # Copyright (c) 2018-2020, Michael P. Howard
 # Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
+"""
+Pair potentials
+===============
 
+.. autosummary::
+    :nosignatures:
+
+    ashbaugh
+    ashbaugh24
+    colloid
+    hertz
+    lj124
+    lj96
+    slj
+    spline
+    two_patch_morse
+
+.. autoclass:: ashbaugh
+.. autoclass:: ashbaugh24
+.. autoclass:: colloid
+.. autoclass:: hertz
+.. autoclass:: lj124
+.. autoclass:: lj96
+.. autoclass:: slj
+.. autoclass:: spline
+.. autoclass:: two_patch_morse
+
+"""
 import math
 
 import hoomd
