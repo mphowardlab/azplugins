@@ -125,7 +125,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                 dt = Scalar(0);
                 return false;
                 }
-
+            std::cout<< " in collision "<<std::endl;
             /* Calculate position (x0,y0,z0) of collision with wall:
             *  Because there is no analythical solution for equations like f(x) = cos(x)-x = 0, we use Newtons's method
             *  or Bisection (if Newton fails) to nummerically estimate the
@@ -166,19 +166,19 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                 }
             else // not horizontal or vertical collision - do Newthon's method
                 {
+
                 delta = abs(0 - (sign*(A*fast::cos(x0*m_pi_period_div_L)+ A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
 
                 unsigned int counter = 0;
                 while( delta > target_presicion && counter < max_iteration)
                 {
+
                     fast::sincos(x0*m_pi_period_div_L,s,c);
                     n  =  sign*(A*c + A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
                     n2 = -sign*m_pi_period_div_L*A*s - vel.z/vel.x;                        // df
                     x0 = x0 - n/n2;                                                        // x = x - f/df
                     delta = abs(0-(sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
                     counter +=1;
-
-
                 }
                 /* The new z position is calculated from the wall equation to guarantee that the new particle positon is exactly at the wall
                  * and not accidentally slightly inside of the wall because of nummerical presicion.
@@ -206,9 +206,8 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                     Scalar fpoint3 = (sign*(A*fast::cos(point3.x*m_pi_period_div_L)+ A + m_H_narrow) - point3.z); // value at halfway point, f(x)
                     // Note: technically, the presicion of Newton's method and bisection is slightly different, with
                     // bisection being less precise and slower convergence.
-                    while (abs(fpoint3)  > target_presicion && counter < max_iteration)
+                    while (abs(fpoint3) > target_presicion && counter < max_iteration)
                         {
-                        counter++;
                         fpoint3 = (sign*(A*fast::cos(point3.x*m_pi_period_div_L)+ A + m_H_narrow) - point3.z);
                         // because we know that point1 outside of the channel and point2 is inside of the channel, we
                         // only need to check the halfway point3 - if it is inside, replace point2, if it is outside, replace point1
@@ -221,6 +220,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                             point1 = point3;
                             }
                         point3 = 0.5*(point1+point2);
+                        counter+=1;
                         }
                     // final point3 == intersection
                     x0 =  point3.x;
@@ -229,7 +229,6 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                     }
 
                 }
-
 
             // Remaining integration time dt is amount of time spent traveling distance out of bounds.
             Scalar3 pos_new = make_scalar3(x0,y0,z0);
@@ -248,7 +247,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
             Scalar3 vel_new;
             if (m_bc ==  mpcd::detail::boundary::no_slip) // No-slip requires reflection of both tangential and normal components:
                 {
-                vel_new -vel;
+                vel_new = -vel;
                 }
             else // Slip conditions require only tangential components to be reflected:
                 {

@@ -205,13 +205,12 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                     Scalar3 point1 = pos;  // final position at t+dt, outside of channel
                     Scalar3 point2 = pos-dt*vel; // initial position, inside of channel
                     Scalar3 point3 = 0.5*(point1+point2); // halfway point
-                    Scalar fpoint3 = ((m_Amplitude*fast::cos(point3.x*m_pi_period_div_L)+ sign*m_h) - point3.z); // value at halfway point, f(x)
+                    Scalar fpoint3 = (m_Amplitude*fast::cos(point3.x*m_pi_period_div_L) + sign*m_h) - point3.z; // value at halfway point, f(x)
                     // Note: technically, the presicion of Newton's method and bisection is slightly different, with
                     // bisection being less precise and slower convergence.
-                    while (abs(fpoint3)  > target_presicion && counter < max_iteration)
+                    while (abs(fpoint3) > target_presicion && counter < max_iteration)
                         {
-                        counter++;
-                        fpoint3 = ((m_Amplitude*fast::cos(point3.x*m_pi_period_div_L)+ sign*m_h) - point3.z);
+                        fpoint3 = (m_Amplitude*fast::cos(point3.x*m_pi_period_div_L) + sign*m_h) - point3.z;
                         // because we know that point1 outside of the channel and point2 is inside of the channel, we
                         // only need to check the halfway point3 - if it is inside, replace point2, if it is outside, replace point1
                         if (isOutside(point3) == false)
@@ -223,6 +222,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                             point1 = point3;
                             }
                         point3 = 0.5*(point1+point2);
+                        counter+=1;
                         }
                     // final point3 == intersection
                     x0 =  point3.x;
