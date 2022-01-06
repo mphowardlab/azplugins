@@ -10,8 +10,12 @@ Bounce-back integrators
 .. autosummary::
     :nosignatures:
 
+    sinusoidal_channel
+    sinusoidal_expansion_constriction
     slit
 
+.. autoclass:: sinusoidal_channel
+.. autoclass:: sinusoidal_expansion_constriction
 .. autoclass:: slit
 
 """

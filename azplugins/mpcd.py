@@ -9,8 +9,12 @@ MPCD methods
     :nosignatures:
 
     reverse_perturbation
+    sinusoidal_channel
+    sinusoidal_expansion_constriction
 
 .. autoclass:: reverse_perturbation
+.. autoclass:: sinusoidal_channel
+.. autoclass:: sinusoidal_expansion_constriction
 
 """
 
