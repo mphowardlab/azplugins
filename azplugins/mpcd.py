@@ -334,7 +334,7 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
 
     The symmetric cosine geometry represents a fluid confined between two walls
     described by a sinusoidal profile with equations
-     :math: `+/-(A cos(2*pi*p*x/Lx) + A + h)`,
+    :math:`+/-(A cos(2*pi*p*x/Lx) + A + h)`,
     where A = 0.5*(H-h) is the amplitude, :math:`Lx` is the BoxDim in *x*
     direction, and :math: `p` is the
     period of the wall cosine. The channel is axis-symmetric around the origin in
@@ -350,7 +350,6 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
 
         stream.sinusoidal_expansion_constriction(H=30.,h=1.5, p=1)
         stream.sinusoidal_expansion_constriction(H=25.,h=2,p=2, boundary="no_slip", period=10)
-
 
     """
     def __init__(self, H,h,p,boundary="no_slip", period=1):
