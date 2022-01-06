@@ -1,0 +1,13 @@
+version: 2
+
+sphinx:
+  configuration: doc/source/conf.py
+  fail_on_warning: true
+
+build:
+  os: "ubuntu-20.04"
+  tools:
+    python: "mambaforge-4.10"
+
+conda:
+  environment: doc/environment.yml

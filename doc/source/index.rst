@@ -6,15 +6,26 @@ azplugins
     :caption: Getting started
 
     installation
-    reference/index
     tutorial/index
-    example/index
+
+.. toctree::
+    :maxdepth: 1
+    :caption: API
+
+    api/analyze
+    api/evaporate
+    api/flow
+    api/integrate
+    api/mpcd
+    api/potentials/index
+    api/restrain
+    api/update
+    api/variant
 
 .. toctree::
     :maxdepth: 1
     :caption: Reference
 
-    develop/index
     release
     license
     credits

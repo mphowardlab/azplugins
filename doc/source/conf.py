@@ -2,12 +2,6 @@
 # Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
 # -- Path setup --------------------------------------------------------------
 
 import os
@@ -52,18 +46,17 @@ html_static_path = []
 # -- Options for autodoc & autosummary ---------------------------------------
 
 autodoc_default_options = {
-    'inherited-members': True,
-    'show-inheritance': True
+    'inherited-members': False
 }
 
-autodoc_mock_imports = ['hoomd']
+autodoc_mock_imports = ['azplugins._azplugins']
 
-autosummary_generate = True
+autosummary_generate = False
 
 # -- Options for intersphinx -------------------------------------------------
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'numpy': ('https://numpy.org/doc/stable', None),
     'hoomd': ('https://hoomd-blue.readthedocs.io/en/stable', None)
 }

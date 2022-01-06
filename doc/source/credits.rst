@@ -4,55 +4,15 @@ Credits
 Maintainers
 -----------
 
-**Michael P. Howard** (`@mphoward <https://github.com/mphoward>`_)
-
-- Original software design and plugin frameworks.
-- ``analyze.rdf``: Radial distribution function calculator.
-- ``dpd.general``: Generalized DPD pair potential.
-- ``evaporate.implicit``: Moving harmonic potential to simulate drying in films and droplets.
-- ``evaporate.particles``: Particle type changer to simulate explicit drying.
-- ``flow.brownian`` / ``flow.langevin`` and imposed flow framework.
-- ``flow.constant``, ``flow.parabolic``, and ``flow.quiescent`` flows fields.
-- ``integrate.slit`` and bounce-back integrator framework.
-- ``pair.ashbaugh``: Ashbaugh-Hatch pair potential.
-- ``pair.colloid``: Integrated Lennard-Jones pair potential.
-- ``pair.slj``: Modified core-shifted Lennard-Jones pair potential.
-- ``restrain.plane``, ``restrain.cylinder``, and ``restrain.sphere`` : Harmonic restraints
-  to planes, cylinders, and spheres.
-- ``update.types``: Type changer by region.
-- ``wall.colloid``: Integrated Lennard-Jones wall potential.
-- ``wall.lj93``: 9-3 Lennard-Jones wall potential.
-
-
-**Antonia Statt** (`@astatt <https://github.com/astatt>`_)
-
-- ``bond.double_well``: two-well bond potential.
-- ``bond.fene``: modified FENE bond evaluator.
-- ``bond.fene24``: FENE bond evaluator with Ashbaugh-Hatch 48-24 pair potential.
-- ``flow.FlowProfiler``: 1d density / velocity averaging.
-- ``flow.reverse_perturbation``: reverse perturbation shear flow.
-- ``mpcd.reverse_perturbation``: reverse perturbation shear flow for MPCD.
-- ``pair.ashbaugh24``: 48-24 Ashbaugh-Hatch pair potential.
-- ``pair.spline``: Spline polynomial pair potential.
+* Michael P. Howard (`@mphoward <https://github.com/mphoward>`_)
+* Antonia Statt (`@astatt <https://github.com/astatt>`_)
 
 Contributors
 ------------
 
-**Arjun Goswami** (`@arjungoswami <https://github.com/arjungoswami>`_)
-
-- ``pair.hertz``: Hertz pair potential.
-
-**Sally Jiao**
-
-- ``pair.lj124``: 12-4 Lennard-Jones pair potential.
-- ``pair.lj96``: 9-6 Lennard-Jones pair potential.
-- ``SpecialPairEvaluator``: Template class for special pair evaluators.
-
-**Wes Reinhart** (`@wfreinhart <https://github.com/wfreinhart>`_)
-
-- ``pair.two_patch_morse``: Anisotropic two-patch Morse potential.
-- ``restrain.position``: Harmonic position restraints.
-- ``restrain.orientation``: Harmonic orientation restraints.
+* Arjun Goswami (`@arjungoswami <https://github.com/arjungoswami>`_)
+* Sally Jiao
+* Wes Reinhart (`@wfreinhart <https://github.com/wfreinhart>`_)
 
 Source code
 -----------
