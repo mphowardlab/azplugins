@@ -1,6 +1,20 @@
 # Copyright (c) 2018-2020, Michael P. Howard
 # Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
+"""
+Integrators
+===========
+
+Bounce-back integrators
+
+.. autosummary::
+    :nosignatures:
+
+    slit
+
+.. autoclass:: slit
+
+"""
 
 import hoomd
 from hoomd.mpcd import _mpcd

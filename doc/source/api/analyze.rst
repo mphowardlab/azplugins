@@ -1,0 +1,1 @@
+.. automodule:: azplugins.analyze

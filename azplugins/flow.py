@@ -1,6 +1,38 @@
 # Copyright (c) 2018-2020, Michael P. Howard
 # Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
+"""
+Flow
+====
+
+Flow fields and profilers
+
+.. autosummary::
+    :nosignatures:
+
+    quiescent
+    constant
+    parabolic
+    reverse_perturbation
+    FlowProfiler
+
+Flow integrators
+
+.. autosummary::
+    :nosignatures:
+
+    brownian
+    langevin
+
+.. autoclass:: quiescent
+.. autoclass:: constant
+.. autoclass:: parabolic
+.. autoclass:: reverse_perturbation
+.. autoclass:: FlowProfiler
+.. autoclass:: brownian
+.. autoclass:: langevin
+
+"""
 
 import numpy as np
 import hoomd

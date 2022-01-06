@@ -1,8 +1,8 @@
 Release notes
 =============
 
-Unreleased
-----------
+Upcoming
+--------
 *Other changes*
 
   * Add a code of conduct for contributors.
@@ -11,14 +11,18 @@ Unreleased
   * The default git branch is renamed ``main``. More
     `information <https://sfconservancy.org/news/2020/jun/23/gitbranchname>`_ is available.
 
-v0.10.1 (12 Jan 2021)
----------------------
+v0.10.1
+-------
+Released 12 Jan 2021
+
 *Bug fixes*
 
   * Fix normalization of velocity in ``flow.FlowProfiler``.
 
-v0.10.0 (27 Jul 2020)
----------------------
+v0.10.0
+-------
+Released 27 Jul 2020
+
 This is the first release of azplugins to include compilable documentation. The
 ``docs`` can be built using sphinx. Currently, only the APIs are thoroughly documented,
 but we will be expanding the rest of the documentation in future releases with examples
@@ -38,8 +42,10 @@ and tutorials.
 
   * The python unit tests have been updated to remove ``import *``.
 
-v0.9.2 (3 Mar 2020)
--------------------
+v0.9.2
+------
+Released 3 Mar 2020
+
 *Bug fixes*
 
   * Fix a compilation error on MacOS clang builds.
@@ -48,14 +54,18 @@ v0.9.2 (3 Mar 2020)
 
   * Update copyright to 2020.
 
-v0.9.1 (18 Dec 2019)
---------------------
+v0.9.1
+------
+Released 18 Dec 2019
+
 *Bug fixes*
 
   * Fix a compilation error in CUDA-enabled builds.
 
-v0.9.0 (15 Dec 2019)
---------------------
+v0.9.0
+------
+Released 15 Dec 2019
+
 *New features*
 
   * ``flow.constant`` implements a constant flow along a vector.
@@ -71,8 +81,10 @@ v0.9.0 (15 Dec 2019)
     New pair potential evaluators should derive from one of the convenience base classes.
   * CI testing has been added for HOOMD 2.8.0 in addition to 2.6.0.
 
-v0.8.0 (5 Nov 2019)
--------------------
+v0.8.0
+------
+Released 5 Nov 2019
+
 *New features*
 
   * ``evaporate.implicit`` now supports evaporation in both film and droplet
@@ -80,15 +92,19 @@ v0.8.0 (5 Nov 2019)
   * ``restrain.plane`` allows particles to be harmonically restrained by their
     distance relative to a plane.
 
-v0.7.1 (20 Aug 2019)
---------------------
+v0.7.1
+------
+Released 20 Aug 2019
+
 *Bug fixes*
 
   * Silence a warning in CMake >= 3.12.
   * Fix a link error in compiled unit tests.
 
-v0.7.0 (24 Jun 2019)
---------------------
+v0.7.0
+------
+Released 24 Jun 2019
+
 This version of the plugin **requires** HOOMD-blue v2.6.0 for compatibility
 with the new streaming geometries in its MPCD component. HOOMD-blue **must**
 be built with the MPCD component.
@@ -104,8 +120,10 @@ be built with the MPCD component.
     numbers drawn for a given seed will change. New features using random
     numbers should add a unique 32-bit identifier to ``RNGIdentifiers.h``.
 
-v0.6.2 (25 Apr 2019)
---------------------
+v0.6.2
+------
+Released 25 Apr 2019
+
 All commits and pull requests are now automatically tested against HOOMD 2.5.1
 on CircleCI. Unit tests are run for CPU-only build configurations. CUDA-enabled
 builds are tested for compilation, but their unit tests cannot be run on CircleCI.
@@ -118,14 +136,18 @@ and tests for new code should be run locally on a GPU.
   * Fix HOOMD version parsing in CMake for external builds.
   * Fix CMake errors in testing for certain build configurations.
 
-v0.6.1 (28 Mar 2019)
---------------------
+v0.6.1
+------
+Released 28 Mar 2019
+
 *Bug fixes*
 
   * Fix thrust template parameters in ``mpcd.reverse_perturbation`` for CUDA 9 & 10.
 
-v0.6.0 (25 Feb 2019)
---------------------
+v0.6.0
+------
+Released 25 Feb 2019
+
 This version of the plugin **requires** HOOMD-blue v2.3.0 for compatibility
 with the embedded pybind11 library. Be sure to update your git submodules
 when recompiling and installing HOOMD-blue.
@@ -145,8 +167,10 @@ GitHub (https://github.com/mphoward/azplugins).
   * ``FindHOOMD.cmake`` has been improved to support ``find_package`` and detect
     the installed version of HOOOMD.
 
-v0.5.0 (11 Jun 2018)
---------------------
+v0.5.0
+------
+Released 11 Jun 2018
+
 This version of the plugin **requires** HOOMD-blue v2.2.2 in order to
 ensure all necessary header files are available.
 
@@ -164,8 +188,10 @@ ensure all necessary header files are available.
     external flow fields. Currently, the supported fields are ``flow.quiescent``
     and ``flow.parabolic``, but additional fields can be included by templating.
 
-v0.4.0 (16 Nov 2017)
---------------------
+v0.4.0
+------
+Released 16 Nov 2017
+
 This version of the plugin **requires** HOOMD-blue v2.2.1 in order
 to ensure all necessary header files are available.
 
@@ -194,8 +220,10 @@ to ensure all necessary header files are available.
   * CMake exits gracefully when the MD component is not available from hoomd.
   * Plugins now compile with debug flags.
 
-v0.3.0 (22 Aug 2017)
---------------------
+v0.3.0
+------
+Released 22 Aug 2017
+
 This version of the plugin is now tested against HOOMD-blue v2.1.9.
 Users running older versions of HOOMD-blue are recommended to upgrade
 their installations in order to ensure compatibility and the latest
@@ -218,8 +246,10 @@ bug fixes on the main code paths.
     compilation errors with newer versions of hoomd where the header
     was removed.
 
-v0.2.0 (28 Feb 2017)
---------------------
+v0.2.0
+------
+Released 28 Feb 2017
+
 *New features*
 
   * ``analyze.rdf`` implements a radial distribution function calculator
@@ -234,8 +264,10 @@ v0.2.0 (28 Feb 2017)
 * Source code guidelines and a pull request checklist are discussed in a
   new ``CONTRIBUTING.md``.
 
-v0.1.0 (9 Feb 2017)
--------------------
+v0.1.0
+------
+Released 9 Feb 2017
+
 *New features*
 
   * A framework is configured for developing pair potentials.

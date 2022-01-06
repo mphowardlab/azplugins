@@ -1,6 +1,19 @@
 # Copyright (c) 2018-2020, Michael P. Howard
 # Copyright (c) 2021, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
+"""
+MPCD methods
+============
+
+.. autosummary::
+    :nosignatures:
+
+    reverse_perturbation
+
+.. autoclass:: reverse_perturbation
+
+"""
+
 
 import hoomd
 
