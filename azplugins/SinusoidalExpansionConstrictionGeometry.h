@@ -17,9 +17,6 @@
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
 
-#include <cstdio>
-#include <iostream>
-
 #ifdef NVCC
 #define HOSTDEVICE __host__ __device__ inline
 #else
@@ -125,7 +122,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                 dt = Scalar(0);
                 return false;
                 }
-            std::cout<< " in collision "<<std::endl;
+
             /* Calculate position (x0,y0,z0) of collision with wall:
             *  Because there is no analythical solution for equations like f(x) = cos(x)-x = 0, we use Newtons's method
             *  or Bisection (if Newton fails) to nummerically estimate the
