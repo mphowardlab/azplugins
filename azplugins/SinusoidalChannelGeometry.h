@@ -157,7 +157,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                 }
             else
                 {
-                Scalar delta = abs(0-((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+ sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
+                Scalar delta = fabs(0-((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+ sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
 
                 Scalar n,n2;
                 Scalar s,c;
@@ -168,7 +168,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                     n = (m_Amplitude*c + sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
                     n2 = -m_pi_period_div_L*m_Amplitude*s - vel.z/vel.x;                // df
                     x0 = x0 - n/n2;                                                     // x = x - f/df
-                    delta = abs(0-((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
+                    delta = fabs(0-((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
                     ++counter;
                     }
 
@@ -184,8 +184,8 @@ class __attribute__((visibility("default"))) SinusoidalChannel
 
                 // Newton's method sometimes failes to converge (close to saddle points, df'==0, bad initial guess,overshoot,..)
                 // catch all of them here and do bisection if Newthon's method didn't work
-                Scalar lower_x = min(pos.x - dt*vel.x,pos.x);
-                Scalar upper_x = max(pos.x - dt*vel.x,pos.x);
+                Scalar lower_x = fmin(pos.x - dt*vel.x,pos.x);
+                Scalar upper_x = fmax(pos.x - dt*vel.x,pos.x);
 
                 // found intersection is NOT in between old and new point, ie intersection is wrong/inaccurate.
                 // do bisection to find intersection - slower but more robust than Newton's method
@@ -198,7 +198,7 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                     Scalar fpoint3 = (m_Amplitude*fast::cos(point3.x*m_pi_period_div_L) + sign*m_h) - point3.z; // value at halfway point, f(x)
                     // Note: technically, the presicion of Newton's method and bisection is slightly different, with
                     // bisection being less precise and slower convergence.
-                    while (abs(fpoint3) > target_precision && counter < max_iteration)
+                    while (fabs(fpoint3) > target_precision && counter < max_iteration)
                         {
                         fpoint3 = (m_Amplitude*fast::cos(point3.x*m_pi_period_div_L) + sign*m_h) - point3.z;
                         // because we know that point1 outside of the channel and point2 is inside of the channel, we

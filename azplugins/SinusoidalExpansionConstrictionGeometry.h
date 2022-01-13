@@ -162,7 +162,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                 }
             else // not horizontal or vertical collision - do Newthon's method
                 {
-                delta = abs(0 - (sign*(A*fast::cos(x0*m_pi_period_div_L)+ A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
+                delta = fabs(0 - (sign*(A*fast::cos(x0*m_pi_period_div_L)+ A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
 
                 unsigned int counter = 0;
                 while( delta > target_precision && counter < max_iteration)
@@ -171,7 +171,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                     n = sign*(A*c + A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
                     n2 = -sign*m_pi_period_div_L*A*s - vel.z/vel.x;                      // df
                     x0 = x0 - n/n2;                                                      // x = x - f/df
-                    delta = abs(0-(sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
+                    delta = fabs(0-(sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
                     ++counter;
                     }
                 /* The new z position is calculated from the wall equation to guarantee that the new particle positon is exactly at the wall
@@ -186,8 +186,8 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
 
                 // Newton's method sometimes failes to converge (close to saddle points, df'==0, overshoot, bad initial guess,..)
                 // catch all of them here and do bisection if Newthon's method didn't work
-                Scalar lower_x = min(pos.x - dt*vel.x,pos.x);
-                Scalar upper_x = max(pos.x - dt*vel.x,pos.x);
+                Scalar lower_x = fmin(pos.x - dt*vel.x,pos.x);
+                Scalar upper_x = fmax(pos.x - dt*vel.x,pos.x);
 
                 // found intersection is NOT in between old and new point, ie intersection is wrong/inaccurate.
                 // do bisection to find intersection - slower but more robust than Newton's method
@@ -200,7 +200,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                     Scalar fpoint3 = (sign*(A*fast::cos(point3.x*m_pi_period_div_L)+ A + m_H_narrow) - point3.z); // value at halfway point, f(x)
                     // Note: technically, the presicion of Newton's method and bisection is slightly different, with
                     // bisection being less precise and slower convergence.
-                    while (abs(fpoint3) > target_precision && counter < max_iteration)
+                    while (fabs(fpoint3) > target_precision && counter < max_iteration)
                         {
                         fpoint3 = (sign*(A*fast::cos(point3.x*m_pi_period_div_L)+ A + m_H_narrow) - point3.z);
                         // because we know that point1 outside of the channel and point2 is inside of the channel, we
