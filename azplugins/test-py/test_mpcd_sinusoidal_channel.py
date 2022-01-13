@@ -18,6 +18,10 @@ except ImportError:
     import azplugins.mpcd
 import unittest
 
+# compute MPI ranks for skipping some tests
+hoomd.context.initialize()
+num_ranks = hoomd.comm.get_num_ranks()
+
 # unit tests for sinusoidal_channel geometry
 class mpcd_sinusoidal_channel_test(unittest.TestCase):
     def setUp(self):
@@ -167,7 +171,7 @@ class mpcd_sinusoidal_channel_test(unittest.TestCase):
             np.testing.assert_array_almost_equal(snap.particles.velocity[2], [-1.150016, -1.,0.823081])
 
     # test that virtual particle filler can be attached, removed, and updated
-    @unittest.skipIf(hoomd.comm.get_num_ranks() > 1,"MPI not supported")
+    @unittest.skipIf(num_ranks > 1,"MPI not supported")
     def test_filler(self):
       # initialization of a filler
       channel = azplugins.mpcd.sinusoidal_channel(A=4.,h=2. ,p=1)
