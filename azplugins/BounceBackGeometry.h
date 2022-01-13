@@ -18,6 +18,7 @@
 #include "hoomd/mpcd/SlitGeometry.h"
 #include "SinusoidalChannelGeometry.h"
 #include "SinusoidalExpansionConstrictionGeometry.h"
+
 #ifndef NVCC
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 

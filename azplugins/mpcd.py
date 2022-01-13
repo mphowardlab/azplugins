@@ -119,7 +119,7 @@ class reverse_perturbation(hoomd.update._updater):
 
 
     def set_params(self, Nswap=None, width=None, target_momentum=None,H=None):
-        R""" Set the reverse pertubation flow updater parameters.
+        R"""Set the reverse pertubation flow updater parameters.
 
         Args:
             Nswap (int): maximum number of particle pairs to swap velocities of
@@ -167,7 +167,7 @@ class reverse_perturbation(hoomd.update._updater):
 
 
 class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
-    r""" Anti-symmetric Sinusoidal channel streaming geometry.
+    r"""Anti-symmetric Sinusoidal channel streaming geometry.
 
     Args:
         A (float): Amplitude of Cosine wall
@@ -185,14 +185,13 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
     bottom are running in parallel and create a "wavy" cannel with :math: `p`
     repetitions.
 
-    The "inside" of the :py:class:`anti_sim_cos` is the space where
+    The "inside" of the :py:class:`sinusoidal_channel` is the space where
     :math:`|z- cos(2*pi*p*x/Lx)| < h`.
 
     Examples::
 
         stream.sinusoidal_channel(A=30.,h=1.5, p=1)
         stream.sinusoidal_channel(A=25.,h=2,p=2, boundary="no_slip", period=10)
-
 
     """
     def __init__(self, A,h,p, V=0.0, boundary="no_slip", period=1):
@@ -214,8 +213,9 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
         if not hoomd.context.exec_conf.isCUDAEnabled():
             stream_class = _azplugins.ConfinedStreamingMethodSinusoidalChannel
         else:
-            hoomd.context.msg.error('mpcd.stream.sinusoidal_channel: no GPU support implemented!\n')
             stream_class = _azplugins.ConfinedStreamingMethodGPUSinusoidalChannel
+            hoomd.context.msg.error('mpcd.sinusoidal_channel: no GPU support implemented!\n')
+            raise RuntimeError('GPU support not implemented')
 
         self._cpp = stream_class(hoomd.context.current.mpcd.data,
                                  hoomd.context.current.system.getCurrentTimeStep(),
@@ -224,7 +224,7 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
                                  _azplugins.SinusoidalChannel(Lx,A,h,p,bc))
 
     def set_filler(self, density, kT, seed, type='A'):
-        r""" Add virtual particles to symmetric cosine channel.
+        r"""Add virtual particles to symmetric cosine channel.
 
         Args:
             density (float): Density of virtual particles.
@@ -236,8 +236,8 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
         wavy walls that could be overlapped by any cell that is partially *inside*
         the channel. The particles are drawn from the velocity distribution
         consistent with *kT* and with the given *density*.
-        The mean of the distribution is zero in *y* and *z*, but is equal to the wall
-        speed in *x*. Typically, the virtual particle density and temperature are set
+        The mean of the distribution is zero in *x*, *y*, and *z*. Typically, the
+        virtual particle density and temperature are set
         to the same conditions as the solvent.
 
         The virtual particles will act as a weak thermostat on the fluid, and so energy
@@ -249,6 +249,10 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
 
         """
         hoomd.util.print_status_line()
+
+        if hoomd.comm.get_num_ranks() > 1:
+            hoomd.context.msg.error('MPI support for filler not implemented\n')
+            raise RuntimeError('MPI support not implemented')
 
         type_id = hoomd.context.current.mpcd.particles.getTypeByName(type)
         T = hoomd.variant._setup_variant_input(kT)
@@ -271,7 +275,7 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
             self._filler.setSeed(seed)
 
     def remove_filler(self):
-        """ Remove the virtual particle filler.
+        """Remove the virtual particle filler.
 
         Example::
 
@@ -283,12 +287,12 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
         self._filler = None
 
     def set_params(self, A=None, h=None, p=None, boundary=None):
-        """ Set parameters for the symmetric cosine geometry.
+        """Set parameters for the symmetric cosine geometry.
 
         Args:
             A (float): channel Amplitude
             h (float): channel half-width
-            p (int):   channel periodicity
+            p (int): channel periodicity
             boundary (str): boundary condition at wall ("slip" or "no_slip"", default "no_slip")
 
         Changing any of these parameters will require the geometry to be
@@ -323,12 +327,12 @@ class sinusoidal_channel(hoomd.mpcd.stream._streaming_method):
             self._filler.setGeometry(self._cpp.geometry)
 
 class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
-    r""" Symmetric Sinusoidal  streaming geometry, i.e a constriction expansion channel.
+    r"""Symmetric Sinusoidal streaming geometry, i.e a constriction expansion channel.
 
     Args:
         H (float): channel half-width at its widest point
         h (float): channel half-width at its narrowest point
-        p (int):   channel periodicity
+        p (int): channel periodicity
         boundary (str): boundary condition at wall ("slip" or "no_slip"", default "no_slip")
         period (int): Number of integration steps between collisions
 
@@ -343,7 +347,7 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
     channel half-width at its widest and :math: `h` is the channel half-width at
     its narrowest point.
 
-    The "inside" of the :py:class:`sim_cos` is the space where
+    The "inside" of the :py:class:`sinusoidal_expansion_constriction` is the space where
     :math:`|z| < (A cos(2pi*p*x/Lx) + A + h)`.
 
     Examples::
@@ -371,8 +375,9 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
         if not hoomd.context.exec_conf.isCUDAEnabled():
             stream_class = _azplugins.ConfinedStreamingMethodSinusoidalExpansionConstriction
         else:
-            hoomd.context.msg.error('mpcd.stream.sinusoidal_expansion_constriction: no GPU support implemented!\n')
             stream_class = _azplugins.ConfinedStreamingMethodGPUSinusoidalExpansionConstriction
+            hoomd.context.msg.error('mpcd.stream.sinusoidal_expansion_constriction: no GPU support implemented!\n')
+            raise RuntimeError('GPU support not implemented')
 
         self._cpp = stream_class(hoomd.context.current.mpcd.data,
                                  hoomd.context.current.system.getCurrentTimeStep(),
@@ -381,7 +386,7 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
                                  _azplugins.SinusoidalExpansionConstriction(Lx,H,h,p,bc))
 
     def set_filler(self, density, kT, seed, type='A'):
-        r""" Add virtual particles to symmetric cosine channel.
+        r"""Add virtual particles to symmetric cosine channel.
 
         Args:
             density (float): Density of virtual particles.
@@ -393,8 +398,8 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
         cosine walls that could be overlapped by any cell that is partially *inside*
         the channel. The particles are drawn from
         the velocity distribution consistent with *kT* and with the given *density*.
-        The mean of the distribution is zero in *y* and *z*, but is equal to the wall
-        speed in *x*. Typically, the virtual particle density and temperature are set
+        The mean of the distribution is zero in *x*, *y*, and *z*. Typically, the
+        virtual particle density and temperature are set
         to the same conditions as the solvent.
 
         The virtual particles will act as a weak thermostat on the fluid, and so energy
@@ -406,6 +411,10 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
 
         """
         hoomd.util.print_status_line()
+
+        if hoomd.comm.get_num_ranks() > 1:
+            hoomd.context.msg.error('MPI support for filler not implemented\n')
+            raise RuntimeError('MPI support not implemented')
 
         type_id = hoomd.context.current.mpcd.particles.getTypeByName(type)
         T = hoomd.variant._setup_variant_input(kT)
@@ -428,7 +437,7 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
             self._filler.setSeed(seed)
 
     def remove_filler(self):
-        """ Remove the virtual particle filler.
+        """Remove the virtual particle filler.
 
         Example::
 
@@ -440,13 +449,13 @@ class sinusoidal_expansion_constriction(hoomd.mpcd.stream._streaming_method):
         self._filler = None
 
     def set_params(self, H=None, h=None, p=None,boundary=None):
-        """ Set parameters for the symmetric cosine geometry.
+        """Set parameters for the symmetric cosine geometry.
 
         Args:
             H (float): channel half-width at its widest point
             h (float): channel half-width at its narrowest point
             p (int):   channel periodicity
-            boundary (str): boundary condition at wall ("slip" or "no_slip"", defaul "no_slip")
+            boundary (str): boundary condition at wall ("slip" or "no_slip"", default "no_slip")
 
         Changing any of these parameters will require the geometry to be
         constructed and validated, so do not change these too often.

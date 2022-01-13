@@ -71,10 +71,8 @@ void SinusoidalChannelFiller::computeNumFill()
      * It will fail when A=0 (but then the slit geometry should be used anyway). This creates a filler that is at least
      * cell_size+max_shift wide everywhere.
      */
-    const Scalar filler_thickness = cell_size +  m_Amplitude*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
-    m_thickness = filler_thickness;
-    // total number of fill particles
-    m_N_fill = m_density*Area*filler_thickness*2;
+    m_thickness = cell_size +  m_Amplitude*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
+    m_N_fill = 2*m_density*Area*m_thickness;
     }
 
 /*!
@@ -94,7 +92,6 @@ void SinusoidalChannelFiller::drawParticles(unsigned int timestep)
 
     // index to start filling from
     const unsigned int first_idx = m_mpcd_pdata->getN() + m_mpcd_pdata->getNVirtual() - m_N_fill;
-
     for (unsigned int i=0; i < m_N_fill; ++i)
         {
         const unsigned int tag = m_first_tag + i;
@@ -104,15 +101,10 @@ void SinusoidalChannelFiller::drawParticles(unsigned int timestep)
         Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
         Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
         Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
-
-        z = m_Amplitude*fast::cos(x*m_pi_period_div_L)+sign*m_H_narrow + z;
+        z += m_Amplitude*fast::cos(x*m_pi_period_div_L)+sign*m_H_narrow;
 
         const unsigned int pidx = first_idx + i;
-        h_pos.data[pidx] = make_scalar4(x,
-                                        y,
-                                        z,
-                                        __int_as_scalar(m_type));
-
+        h_pos.data[pidx] = make_scalar4(x, y, z, __int_as_scalar(m_type));
 
         hoomd::NormalDistribution<Scalar> gen(vel_factor, 0.0);
         Scalar3 vel;

@@ -25,7 +25,7 @@ from hoomd.mpcd import _mpcd
 from . import _azplugins
 
 class _bounce_back(hoomd.md.integrate._integration_method):
-    """ NVE integration with bounce-back rules.
+    """NVE integration with bounce-back rules.
 
     Args:
         group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
@@ -179,14 +179,14 @@ class slit(_bounce_back):
 
 
 class sinusoidal_channel(_bounce_back):
-    """ NVE integration with bounce-back rules in an sinusoidal channel.
+    """NVE integration with bounce-back rules in an sinusoidal channel.
 
     Args:
         group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
         A (float): channel cosine amplitude
         h (float): channel half-width
-        p (int):   channel periodicity
-        boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
+        p (int): channel periodicity
+        boundary (str): 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
     This integration method applies to particles in *group* in the sine channel geometry.
 
@@ -263,13 +263,13 @@ class sinusoidal_channel(_bounce_back):
         self.cpp_method.validateGroup()
 
     def set_params(self, A=None, h=None, p=None, boundary=None):
-        """ Set parameters for the sinusoidal channel geometry.
+        """Set parameters for the sinusoidal channel geometry.
 
         Args:
             A (float): channel cosine amplitude
             h (float): channel half-width
-            p (int):   channel periodicity
-            boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
+            p (int): channel periodicity
+            boundary (str): 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
         Examples::
 
@@ -299,14 +299,14 @@ class sinusoidal_channel(_bounce_back):
         self.cpp_method.geometry = _azplugins.SinusoidalChannel(self.L,self.A,self.h,self.p,bc)
 
 class sinusoidal_expansion_constriction(_bounce_back):
-    """ NVE integration with bounce-back rules in a sinusoidal expansion-constriction channel.
+    """NVE integration with bounce-back rules in a sinusoidal expansion-constriction channel.
 
     Args:
         group (:py:mod:`hoomd.group`): Group of particles on which to apply this method.
         H (float): channel half-width at its widest point
         h (float): channel half-width at its narrowest point
-        p (int):   channel periodicity
-        boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
+        p (int): channel periodicity
+        boundary (str): 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
     This integration method applies to particles in *group* in the expansion constriction
     channel geometry.
@@ -384,13 +384,13 @@ class sinusoidal_expansion_constriction(_bounce_back):
         self.cpp_method.validateGroup()
 
     def set_params(self, H=None, h=None, p=None, boundary=None):
-        """ Set parameters for the expansion constriction geometry.
+        """Set parameters for the expansion constriction geometry.
 
         Args:
             H (float): channel half-width at its widest point
             h (float): channel half-width at its narrowest point
-            p (int):   channel periodicity
-            boundary : 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
+            p (int): channel periodicity
+            boundary (str): 'slip' or 'no_slip' boundary condition at wall (default: 'no_slip')
 
         Examples::
 

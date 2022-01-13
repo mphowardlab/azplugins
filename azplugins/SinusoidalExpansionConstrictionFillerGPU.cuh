@@ -5,8 +5,8 @@
 // Maintainer: astatt
 
 
-#ifndef AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_FILLER_GPU_CUH_
-#define AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_FILLER_GPU_CUH_
+#ifndef AZPLUGINS_SINUSOIDAL_EXPANSION_CONSTRICTION_FILLER_GPU_CUH_
+#define AZPLUGINS_SINUSOIDAL_EXPANSION_CONSTRICTION_FILLER_GPU_CUH_
 
 /*!
  * \file SinusoidalExpansionConstrictionFillerGPU.cuh
@@ -18,7 +18,6 @@
 #include "SinusoidalExpansionConstrictionGeometry.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
-
 
 namespace azplugins
 {
@@ -48,4 +47,4 @@ cudaError_t sin_expansion_constriction_draw_particles(Scalar4 *d_pos,
 } // end namespace gpu
 } // end namespace azplugins
 
-#endif // AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_FILLER_GPU_CUH_
+#endif // AZPLUGINS_SINUSOIDAL_EXPANSION_CONSTRICTION_FILLER_GPU_CUH_

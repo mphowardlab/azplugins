@@ -70,7 +70,6 @@ __global__ void sin_channel_draw_particles(Scalar4 *d_pos,
     Scalar3 hi = box.getHi();
     const unsigned int N_half = N_fill/2;
 
-
     // particle tag and index
     const unsigned int tag = first_tag + idx;
     const unsigned int pidx = first_idx + idx;
@@ -83,15 +82,9 @@ __global__ void sin_channel_draw_particles(Scalar4 *d_pos,
     Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
     Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
     Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
+    z += m_amplitude*fast::cos(x*m_pi_period_div_L)+ sign*m_h;
 
-
-    z = m_amplitude*fast::cos(x*m_pi_period_div_L)+ sign*m_h + z;
-
-
-    d_pos[pidx] = make_scalar4(x,
-                               y,
-                               z,
-                               __int_as_scalar(type));
+    d_pos[pidx] = make_scalar4(x, y, z, __int_as_scalar(type));
 
     hoomd::NormalDistribution<Scalar> gen(vel_factor, 0.0);
     Scalar3 vel;

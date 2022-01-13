@@ -5,12 +5,12 @@
 // Maintainer: astatt
 
 
-#ifndef AZPLUGINS_SINE_CHANNEL_GEOMETRY_FILLER_GPU_CUH_
-#define AZPLUGINS_SINE_CHANNEL_GEOMETRY_FILLER_GPU_CUH_
+#ifndef AZPLUGINS_SINUSOIDAL_CHANNEL_FILLER_GPU_CUH_
+#define AZPLUGINS_SINUSOIDAL_CHANNEL_FILLER_GPU_CUH_
 
 /*!
- * \file SinusoidalExpansionConstrictionFillerGPU.cuh
- * \brief Declaration of CUDA kernels for mpcd::SinusoidalExpansionConstrictionFillerGPU
+ * \file SinusoidalChannelFillerGPU.cuh
+ * \brief Declaration of CUDA kernels for mpcd::SinusoidalChannelFillerGPU
  */
 
 #include <cuda_runtime.h>
@@ -48,4 +48,4 @@ cudaError_t sin_channel_draw_particles(Scalar4 *d_pos,
 } // end namespace gpu
 } // end namespace azplugins
 
-#endif // AZPLUGINS_SINE_CHANNEL_GEOMETRY_FILLER_GPU_CUH_
+#endif // AZPLUGINS_SINUSOIDAL_CHANNEL_FILLER_GPU_CUH_

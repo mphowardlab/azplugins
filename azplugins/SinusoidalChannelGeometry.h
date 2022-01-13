@@ -4,20 +4,17 @@
 
 // Maintainer: astatt
 
-
 /*!
- * \file SinusoidalExpansionConstriction.h
+ * \file SinusoidalChannelGeometry.h
  * \brief Definition of the MPCD symmetric cosine channel geometry
  */
 
-#ifndef AZPLUGINS_SINE_CHANNEL_GEOMETRY_H_
-#define AZPLUGINS_SINE_CHANNEL_GEOMETRY_H_
+#ifndef AZPLUGINS_SINUSOIDAL_CHANNEL_GEOMETRY_H_
+#define AZPLUGINS_SINUSOIDAL_CHANNEL_GEOMETRY_H_
 
 #include "hoomd/mpcd/BoundaryCondition.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/BoxDim.h"
-
-#include <iostream>
 
 #ifdef NVCC
 #define HOSTDEVICE __host__ __device__ inline
@@ -106,7 +103,6 @@ class __attribute__((visibility("default"))) SinusoidalChannel
          */
         HOSTDEVICE bool detectCollision(Scalar3& pos, Scalar3& vel, Scalar& dt) const
             {
-
             /*
              * Detect if particle has left the box. The sign used
              * in calculations is +1 if the particle is out-of-bounds at the top wall, -1 if the particle is
@@ -120,7 +116,6 @@ class __attribute__((visibility("default"))) SinusoidalChannel
 
             Scalar a = pos.z - m_Amplitude*fast::cos(pos.x*m_pi_period_div_L);
             const signed char sign = (a > m_h) - (a < -m_h);
-
             // exit immediately if no collision is found
             if (sign == 0)
                 {
@@ -128,27 +123,26 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                 return false;
                 }
 
-
             /* Calculate position (x0,y0,z0) of collision with wall:
-            *  Because there is no analythical solution for f(x) = cos(x)-x = 0, we use Newtons's method to nummerically estimate the
+            *  Because there is no analytical solution for f(x) = cos(x)-x = 0, we use Newton's method to numerically estimate the
             *  x positon of the intersection first. It is convinient to use the halfway point between the last particle
             *  position outside the wall (at time t-dt) and the current position inside the wall (at time t) as initial
             *  guess for the intersection.
             *
-            *  We limit the number of iterations (max_iteration) and the desired presicion (target_presicion) for performance reasons.
+            *  We limit the number of iterations (max_iteration) and the desired presicion (target_precision) for performance reasons.
             */
             const unsigned int max_iteration = 6;
-            const Scalar target_presicion = 1e-5;
+            const Scalar target_precision = 1e-5;
 
             Scalar x0 = pos.x - 0.5*dt*vel.x;
             Scalar y0;
             Scalar z0;
 
 
-            /* chatch the case where a particle collides exactly vertically (v_x=0 -> old x pos = new x pos)
+            /* catch the case where a particle collides exactly vertically (v_x=0 -> old x pos = new x pos)
              * In this case, y0 = -(0)*0/0 + (y-dt*v_y) == nan, should be y0 =(y-dt*v_y)
              */
-            if (vel.x==0) // exactly vertical x-collision
+            if (vel.x == 0) // exactly vertical x-collision
                 {
                 x0 = pos.x;
                 y0 = (pos.y-dt*vel.y);
@@ -160,27 +154,23 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                 x0 = 1/m_pi_period_div_L*fast::acos((pos.z-sign*m_h)/m_Amplitude);
                 y0 = -(pos.x-dt*vel.x - x0)*vel.y/vel.x + (pos.y-dt*vel.y);
                 z0 = pos.z;
-
                 }
             else
                 {
-
-                Scalar delta = abs(0 - ((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+ sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
+                Scalar delta = abs(0-((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+ sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
 
                 Scalar n,n2;
                 Scalar s,c;
                 unsigned int counter = 0;
-
-                while( delta > target_presicion && counter < max_iteration)
+                while(delta > target_precision && counter < max_iteration)
                     {
                     fast::sincos(x0*m_pi_period_div_L,s,c);
-                    n  =  (m_Amplitude*c + sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
-                    n2 = -m_pi_period_div_L*m_Amplitude*s - vel.z/vel.x;                  // df
-                    x0 = x0 - n/n2;                                                       // x = x - f/df
+                    n = (m_Amplitude*c + sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
+                    n2 = -m_pi_period_div_L*m_Amplitude*s - vel.z/vel.x;                // df
+                    x0 = x0 - n/n2;                                                     // x = x - f/df
                     delta = abs(0-((m_Amplitude*fast::cos(x0*m_pi_period_div_L)+sign*m_h) - vel.z/vel.x*(x0 - pos.x) - pos.z));
-                    counter +=1;
+                    ++counter;
                     }
-
 
                 /* The new z position is calculated from the wall equation to guarantee that the new particle positon is exactly at the wall
                  * and not accidentally slightly inside of the wall because of nummerical presicion.
@@ -194,21 +184,21 @@ class __attribute__((visibility("default"))) SinusoidalChannel
 
                 // Newton's method sometimes failes to converge (close to saddle points, df'==0, bad initial guess,overshoot,..)
                 // catch all of them here and do bisection if Newthon's method didn't work
-                Scalar lower_x = fmin(pos.x - dt*vel.x,pos.x);
-                Scalar upper_x = fmax(pos.x - dt*vel.x,pos.x);
+                Scalar lower_x = min(pos.x - dt*vel.x,pos.x);
+                Scalar upper_x = max(pos.x - dt*vel.x,pos.x);
 
                 // found intersection is NOT in between old and new point, ie intersection is wrong/inaccurate.
                 // do bisection to find intersection - slower but more robust than Newton's method
                 if (x0 < lower_x || x0 > upper_x)
                     {
-                    unsigned int counter = 0;
+                    counter = 0;
                     Scalar3 point1 = pos;  // final position at t+dt, outside of channel
                     Scalar3 point2 = pos-dt*vel; // initial position, inside of channel
                     Scalar3 point3 = 0.5*(point1+point2); // halfway point
                     Scalar fpoint3 = (m_Amplitude*fast::cos(point3.x*m_pi_period_div_L) + sign*m_h) - point3.z; // value at halfway point, f(x)
                     // Note: technically, the presicion of Newton's method and bisection is slightly different, with
                     // bisection being less precise and slower convergence.
-                    while (abs(fpoint3) > target_presicion && counter < max_iteration)
+                    while (abs(fpoint3) > target_precision && counter < max_iteration)
                         {
                         fpoint3 = (m_Amplitude*fast::cos(point3.x*m_pi_period_div_L) + sign*m_h) - point3.z;
                         // because we know that point1 outside of the channel and point2 is inside of the channel, we
@@ -222,22 +212,19 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                             point1 = point3;
                             }
                         point3 = 0.5*(point1+point2);
-                        counter+=1;
+                        ++counter;
                         }
                     // final point3 == intersection
                     x0 =  point3.x;
                     z0 = (m_Amplitude*fast::cos(x0*m_pi_period_div_L)+sign*m_h);
                     y0 = -(pos.x-dt*vel.x - x0)*vel.y/vel.x + (pos.y-dt*vel.y);
                     }
-
-            }
+                }
 
 
             // Remaining integration time dt is amount of time spent traveling distance out of bounds.
             Scalar3 pos_new = make_scalar3(x0,y0,z0);
-            dt = fast::sqrt(dot((pos - pos_new),(pos - pos_new))/dot(vel,vel));
-
-            // positions are updated
+            dt = fast::sqrt(dot((pos-pos_new),(pos-pos_new))/dot(vel,vel));
             pos = pos_new;
 
             /* update velocity according to boundary conditions.
@@ -261,7 +248,6 @@ class __attribute__((visibility("default"))) SinusoidalChannel
                 vel_new.y = vel.y;
                 vel_new.z = vel.z - 2*(B*vel.x + vel.z)/(B*B+1);
                 }
-
             vel = vel_new;
 
             return true;
@@ -284,30 +270,25 @@ class __attribute__((visibility("default"))) SinusoidalChannel
          * \param cell_size Size of MPCD cell
          *
          * The box is large enough for the cosine if it is padded along the z direction so that
-         * the cells just outside the highest point of the cosine + the filler thinckness
-         * would not interact with each other through the boundary.
-         *
+         * the cells just outside the highest point of the cosine would not interact with each
+         * other through the boundary.
          */
         HOSTDEVICE bool validateBox(const BoxDim& box, Scalar cell_size) const
             {
             const Scalar hi = box.getHi().z;
             const Scalar lo = box.getLo().z;
-            // TO DO: get max_shift from  mpcd , can't use function argument because hoomd/mpcd/ConfinedStreamingMethod.h complains
-            // if arguments of validateBox() change
-            const Scalar max_shift = 0.5*cell_size;
-
-            const Scalar filler_thickness = cell_size +  m_Amplitude*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
-            return (hi >= m_Amplitude+m_h+filler_thickness && lo <= -m_Amplitude-m_h-filler_thickness );
+            return ((hi-m_Amplitude) >= cell_size && (-m_Amplitude-lo) >= cell_size);
             }
 
-        //! Get channel half width at widest point
+        //! Get channel amplitude
         /*!
-         * \returns Channel half width at widest point
+         * \returns Channel amplitude
          */
         HOSTDEVICE Scalar getAmplitude() const
             {
             return m_Amplitude;
             }
+
         //! Get channel half width at narrowest point
         /*!
          * \returns Channel half width at narrowest point
@@ -355,4 +336,4 @@ class __attribute__((visibility("default"))) SinusoidalChannel
 } // end namespace azplugins
 #undef HOSTDEVICE
 
-#endif // AZPLUGINS_SINE_CHANNEL_GEOMETRY_H_
+#endif // AZPLUGINS_SINUSOIDAL_CHANNEL_GEOMETRY_H_

@@ -14,7 +14,6 @@
 #include "RNGIdentifiers.h"
 #include "hoomd/mpcd/ParticleDataUtilities.h"
 
-
 namespace azplugins
 {
 
@@ -71,7 +70,6 @@ __global__ void sin_expansion_constriction_draw_particles(Scalar4 *d_pos,
     Scalar3 hi = box.getHi();
     const unsigned int N_half = 0.5*N_fill;
 
-
     // particle tag and index
     const unsigned int tag = first_tag + idx;
     const unsigned int pidx = first_idx + idx;
@@ -84,15 +82,9 @@ __global__ void sin_expansion_constriction_draw_particles(Scalar4 *d_pos,
     Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
     Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
     Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
+    z += sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+m_amplitude + m_H_narrow );
 
-
-    z = sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+m_amplitude + m_H_narrow ) + z;
-
-
-    d_pos[pidx] = make_scalar4(x,
-                               y,
-                               z,
-                               __int_as_scalar(type));
+    d_pos[pidx] = make_scalar4(x, y, z, __int_as_scalar(type));
 
     hoomd::NormalDistribution<Scalar> gen(vel_factor, 0.0);
     Scalar3 vel;

@@ -6,12 +6,12 @@
 
 
 /*!
- * \file SinusoidalExpansionConstriction.h
+ * \file SinusoidalExpansionConstrictionGeometry.h
  * \brief Definition of the MPCD symmetric cosine channel geometry
  */
 
-#ifndef AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
-#define AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
+#ifndef AZPLUGINS_SINUSOIDAL_EXPANSION_CONSTRICTION_GEOMETRY_H_
+#define AZPLUGINS_SINUSOIDAL_EXPANSION_CONSTRICTION_GEOMETRY_H_
 
 #include "hoomd/mpcd/BoundaryCondition.h"
 #include "hoomd/HOOMDMath.h"
@@ -130,15 +130,14 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
             *  position outside the wall (at time t-dt) and the current position inside the wall (at time t) as initial
             *  guess for the intersection.
             *
-            *  We limit the number of iterations (max_iteration) and the desired presicion (target_presicion) for
+            *  We limit the number of iterations (max_iteration) and the desired presicion (target_precision) for
             *  performance reasons. These values have been tested in python code seperately and gave satisfactory results.
             *
             */
             const unsigned int max_iteration = 6;
-            const Scalar target_presicion = 1e-5;
+            const Scalar target_precision = 1e-5;
 
             Scalar x0 = pos.x - 0.5*dt*vel.x;
-
             Scalar y0;
             Scalar z0;
             Scalar n,n2;
@@ -146,7 +145,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
             Scalar delta;
 
             // excatly horizontal z-collision, has a solution:
-            if ( vel.z == 0 )
+            if (vel.z == 0)
                 {
                 x0 = 1/m_pi_period_div_L*fast::acos((pos.z-A-m_H_narrow)/sign*A);
                 z0 = pos.z;
@@ -155,7 +154,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
             /* chatch the case where a particle collides exactly vertically (v_x=0 -> old x pos = new x pos)
             * In this case in Newton's method one would get: y0 = -(0)*0/0 + (y-dt*v_y) == nan, should be y0 =(y-dt*v_y)
             */
-            else if ( vel.x == 0 )
+            else if (vel.x == 0)
                 {
                 x0 = pos.x;
                 y0 = (pos.y-dt*vel.y);
@@ -163,20 +162,18 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                 }
             else // not horizontal or vertical collision - do Newthon's method
                 {
-
                 delta = abs(0 - (sign*(A*fast::cos(x0*m_pi_period_div_L)+ A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
 
                 unsigned int counter = 0;
-                while( delta > target_presicion && counter < max_iteration)
-                {
-
+                while( delta > target_precision && counter < max_iteration)
+                    {
                     fast::sincos(x0*m_pi_period_div_L,s,c);
-                    n  =  sign*(A*c + A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
-                    n2 = -sign*m_pi_period_div_L*A*s - vel.z/vel.x;                        // df
-                    x0 = x0 - n/n2;                                                        // x = x - f/df
+                    n = sign*(A*c + A + m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z;  // f
+                    n2 = -sign*m_pi_period_div_L*A*s - vel.z/vel.x;                      // df
+                    x0 = x0 - n/n2;                                                      // x = x - f/df
                     delta = abs(0-(sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow) - vel.z/vel.x*(x0 - pos.x) - pos.z));
-                    counter +=1;
-                }
+                    ++counter;
+                    }
                 /* The new z position is calculated from the wall equation to guarantee that the new particle positon is exactly at the wall
                  * and not accidentally slightly inside of the wall because of nummerical presicion.
                  */
@@ -189,21 +186,21 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
 
                 // Newton's method sometimes failes to converge (close to saddle points, df'==0, overshoot, bad initial guess,..)
                 // catch all of them here and do bisection if Newthon's method didn't work
-                Scalar lower_x = fmin(pos.x - dt*vel.x,pos.x);
-                Scalar upper_x = fmax(pos.x - dt*vel.x,pos.x);
+                Scalar lower_x = min(pos.x - dt*vel.x,pos.x);
+                Scalar upper_x = max(pos.x - dt*vel.x,pos.x);
 
                 // found intersection is NOT in between old and new point, ie intersection is wrong/inaccurate.
                 // do bisection to find intersection - slower but more robust than Newton's method
                 if (x0 < lower_x || x0 > upper_x)
                     {
-                    unsigned int counter = 0;
+                    counter = 0;
                     Scalar3 point1 = pos;  // final position at t+dt
                     Scalar3 point2 = pos-dt*vel; // initial position
                     Scalar3 point3 = 0.5*(point1+point2); // halfway point
                     Scalar fpoint3 = (sign*(A*fast::cos(point3.x*m_pi_period_div_L)+ A + m_H_narrow) - point3.z); // value at halfway point, f(x)
                     // Note: technically, the presicion of Newton's method and bisection is slightly different, with
                     // bisection being less precise and slower convergence.
-                    while (abs(fpoint3) > target_presicion && counter < max_iteration)
+                    while (abs(fpoint3) > target_precision && counter < max_iteration)
                         {
                         fpoint3 = (sign*(A*fast::cos(point3.x*m_pi_period_div_L)+ A + m_H_narrow) - point3.z);
                         // because we know that point1 outside of the channel and point2 is inside of the channel, we
@@ -217,21 +214,18 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                             point1 = point3;
                             }
                         point3 = 0.5*(point1+point2);
-                        counter+=1;
+                        ++counter;
                         }
                     // final point3 == intersection
-                    x0 =  point3.x;
+                    x0 = point3.x;
                     z0 = sign*(A*fast::cos(x0*m_pi_period_div_L)+A+m_H_narrow);
                     y0 = -(pos.x-dt*vel.x - x0)*vel.y/vel.x + (pos.y-dt*vel.y);
                     }
-
                 }
 
             // Remaining integration time dt is amount of time spent traveling distance out of bounds.
             Scalar3 pos_new = make_scalar3(x0,y0,z0);
             dt = fast::sqrt(dot((pos - pos_new),(pos - pos_new))/dot(vel,vel));
-
-            // positions are updated
             pos = pos_new;
 
             /* update velocity according to boundary conditions.
@@ -253,10 +247,10 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
                 // Calculate components by hand to avoid sqrt in normalization of the normal of the surface.
                 vel_new.x = vel.x - 2*B*(B*vel.x + vel.z)/(B*B+1);
                 vel_new.y = vel.y;
-                vel_new.z = vel.z -   2*(B*vel.x + vel.z)/(B*B+1);
+                vel_new.z = vel.z - 2*(B*vel.x + vel.z)/(B*B+1);
                 }
-
             vel = vel_new;
+
             return true;
             }
 
@@ -267,8 +261,7 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
          */
         HOSTDEVICE bool isOutside(const Scalar3& pos) const
             {
-            Scalar a = 0.5*(m_H_wide-m_H_narrow)*fast::cos(pos.x*m_pi_period_div_L)+0.5*(m_H_wide-m_H_narrow)+m_H_narrow;
-
+            const Scalar a = 0.5*(m_H_wide-m_H_narrow)*fast::cos(pos.x*m_pi_period_div_L)+0.5*(m_H_wide-m_H_narrow)+m_H_narrow;
             return (pos.z > a || pos.z < -a);
             }
 
@@ -278,20 +271,14 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
          * \param cell_size Size of MPCD cell
          *
          * The box is large enough for the cosine if it is padded along the z direction so that
-         * the cells just outside the highest point of the cosine + the filler thinckness
-         * would not interact with each other through the boundary.
-         *
+         * the cells just outside the highest point of the cosine would not interact with each
+         * other through the boundary.
          */
         HOSTDEVICE bool validateBox(const BoxDim& box, Scalar cell_size) const
             {
             const Scalar hi = box.getHi().z;
             const Scalar lo = box.getLo().z;
-            // TO DO: get max_shift from  mpcd , can't use function argument because hoomd/mpcd/ConfinedStreamingMethod.h complains
-            // if arguments of validateBox() change
-            const Scalar max_shift = 0.5*cell_size;
-
-            const Scalar filler_thickness = cell_size +  0.5*(m_H_wide-m_H_narrow)*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
-            return (hi >= m_H_wide+filler_thickness && lo <= -m_H_wide-filler_thickness );
+            return ((hi-m_H_wide) >= cell_size && (-m_H_wide-lo) >= cell_size);
             }
 
         //! Get channel half width at widest point
@@ -349,4 +336,4 @@ class __attribute__((visibility("default"))) SinusoidalExpansionConstriction
 } // end namespace azplugins
 #undef HOSTDEVICE
 
-#endif // AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_H_
+#endif // AZPLUGINS_SINUSOIDAL_EXPANSION_CONSTRICTION_GEOMETRY_H_

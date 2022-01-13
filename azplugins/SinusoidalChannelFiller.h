@@ -9,8 +9,8 @@
  * \brief Definition of virtual particle filler for mpcd::detail::SinusoidalChannel.
  */
 
-#ifndef AZPLUGINS_SINE_CHANNEL_GEOMETRY_FILLER_H_
-#define AZPLUGINS_SINE_CHANNEL_GEOMETRY_FILLER_H_
+#ifndef AZPLUGINS_SINUSOIDAL_CHANNEL_FILLER_H_
+#define AZPLUGINS_SINUSOIDAL_CHANNEL_FILLER_H_
 
 #ifdef NVCC
 #error This header cannot be compiled by nvcc
@@ -67,4 +67,4 @@ void export_SinusoidalChannelFiller(pybind11::module& m);
 } // end namespace detail
 } // end namespace azplugins
 
-#endif // AZPLUGINS_SINE_CHANNEL_GEOMETRY_FILLER_H_
+#endif // AZPLUGINS_SINUSOIDAL_CHANNEL_FILLER_H_

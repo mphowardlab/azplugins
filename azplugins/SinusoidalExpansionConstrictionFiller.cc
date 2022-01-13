@@ -41,7 +41,7 @@ void SinusoidalExpansionConstrictionFiller::computeNumFill()
         {
         m_exec_conf->msg->error() << "Invalid cosine geometry for global box, cannot fill virtual particles." << std::endl;
         m_exec_conf->msg->error() << "Filler thickness is given by cell_size +  0.5*(H-h)*sin((cell_size+max_shift)*2*pi*p/L); " << std::endl;
-        throw std::runtime_error("Invalid SymCos geometry for global box");
+        throw std::runtime_error("Invalid SinsuodialExpansionConstriction geometry for global box");
         }
 
     // default is not to fill anything
@@ -71,10 +71,8 @@ void SinusoidalExpansionConstrictionFiller::computeNumFill()
      * It will fail when A=0 (but then the slit geometry should be used anyway). This creates a filler that is at least
      * cell_size+max_shift wide everywhere.
      */
-    const Scalar filler_thickness = cell_size +  m_amplitude*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
-    m_thickness = filler_thickness;
-    // total number of fill particles
-    m_N_fill = m_density*Area*filler_thickness*2;
+    m_thickness = cell_size +  m_amplitude*fast::sin((cell_size+max_shift)*m_pi_period_div_L);
+    m_N_fill = 2*m_density*Area*m_thickness;
     }
 
 /*!
@@ -104,14 +102,10 @@ void SinusoidalExpansionConstrictionFiller::drawParticles(unsigned int timestep)
         Scalar x = hoomd::UniformDistribution<Scalar>(lo.x, hi.x)(rng);
         Scalar y = hoomd::UniformDistribution<Scalar>(lo.y, hi.y)(rng);
         Scalar z = hoomd::UniformDistribution<Scalar>(0, sign*m_thickness)(rng);
-
-        z = sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+m_amplitude + m_H_narrow ) + z;
+        z += sign*(m_amplitude*fast::cos(x*m_pi_period_div_L)+m_amplitude + m_H_narrow);
 
         const unsigned int pidx = first_idx + i;
-        h_pos.data[pidx] = make_scalar4(x,
-                                        y,
-                                        z,
-                                        __int_as_scalar(m_type));
+        h_pos.data[pidx] = make_scalar4(x, y, z, __int_as_scalar(m_type));
 
         hoomd::NormalDistribution<Scalar> gen(vel_factor, 0.0);
         Scalar3 vel;

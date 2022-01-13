@@ -4,14 +4,13 @@
 
 // Maintainer: astatt
 
-
 /*!
  * \file SinusoidalExpansionConstrictionFillerGPU.h
  * \brief Definition of virtual particle filler for azplugins::detail::SinusoidalExpansionConstriction on the GPU.
  */
 
-#ifndef AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_FILLER_GPU_H_
-#define AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_FILLER_GPU_H_
+#ifndef AZPLUGINS_SINUSOIDAL_EXPANSION_CONSTRICTION_FILLER_GPU_H_
+#define AZPLUGINS_SINUSOIDAL_EXPANSION_CONSTRICTION_FILLER_GPU_H_
 
 #ifdef NVCC
 #error This header cannot be compiled by nvcc
@@ -20,7 +19,6 @@
 #include "SinusoidalExpansionConstrictionFiller.h"
 #include "hoomd/Autotuner.h"
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
-
 
 namespace azplugins
 {
@@ -63,4 +61,4 @@ namespace detail
 void export_SinusoidalExpansionConstrictionFillerGPU(pybind11::module& m);
 } // end namespace detail
 } // end namespace azplugins
-#endif // AZPLUGINS_SINE_EXPANSION_CONSTRICTION_GEOMETRY_FILLER_GPU_H_
+#endif // AZPLUGINS_SINUSOIDAL_EXPANSION_CONSTRICTION_FILLER_GPU_H_

@@ -223,6 +223,7 @@ class mpcd_sinusoidal_expansion_constriction_test(unittest.TestCase):
 
 
     # test that virtual particle filler can be attached, removed, and updated
+    @unittest.skipIf(hoomd.comm.get_num_ranks() > 1, "MPI not supported")
     def test_filler(self):
         # initialization of a filler
         expansion_constriction = azplugins.mpcd.sinusoidal_expansion_constriction(H=5.,h=2., p=1)
