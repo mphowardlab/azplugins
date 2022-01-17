@@ -76,6 +76,8 @@ set(TEST_LIST_GPU
 
 set(MPCD_ONLY
     test_mpcd_reverse_perturbation
+    test_mpcd_sinusoidal_channel
+    test_mpcd_sinusoidal_expansion_constriction
     )
 
 set(MPI_ONLY

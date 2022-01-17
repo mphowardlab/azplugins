@@ -31,8 +31,14 @@ namespace py = pybind11;
 /* MPCD */
 #ifdef ENABLE_MPCD
 #include "MPCDReversePerturbationFlow.h"
+#include "SinusoidalChannelFiller.h"
+#include "SinusoidalExpansionConstrictionFiller.h"
+#include "hoomd/mpcd/ConfinedStreamingMethod.h"
 #ifdef ENABLE_CUDA
 #include "MPCDReversePerturbationFlowGPU.h"
+#include "SinusoidalChannelFillerGPU.h"
+#include "SinusoidalExpansionConstrictionFillerGPU.h"
+#include "hoomd/mpcd/ConfinedStreamingMethodGPU.h"
 #endif // ENABLE_CUDA
 #endif // ENABLE_MPCD
 
@@ -57,6 +63,10 @@ namespace py = pybind11;
 #ifdef ENABLE_CUDA
 #include "RDFAnalyzerGPU.h"
 #endif // ENABLE_CUDA
+
+/* Streaming Geometries */
+#include "SinusoidalChannelGeometry.h"
+#include "SinusoidalExpansionConstrictionGeometry.h"
 
 /* Integrators */
 #include "BounceBackGeometry.h"
@@ -226,10 +236,22 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_PositionRestraintComputeGPU(m);
     #endif // ENABLE_CUDA
 
-    /* MPCD */
+
+    /* MPCD components */
     #ifdef ENABLE_MPCD
+    azplugins::detail::export_SinusoidalChannel(m);
+    azplugins::detail::export_SinusoidalExpansionConstriction(m);
+    azplugins::detail::export_SinusoidalChannelFiller(m);
+    azplugins::detail::export_SinusoidalExpansionConstrictionFiller(m);
+    mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::SinusoidalChannel>(m);
+    mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::SinusoidalExpansionConstriction>(m);
     azplugins::detail::export_MPCDReversePerturbationFlow(m);
     #ifdef ENABLE_CUDA
+    azplugins::detail::export_SinusoidalChannelFillerGPU(m);
+    azplugins::detail::export_SinusoidalExpansionConstrictionFillerGPU(m);
+    // TODO: Currently these streaming methods are not working on the because of issues with polymorphism on the GPU
+    // mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SinusoidalChannel>(m);
+    // mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SinusoidalExpansionConstriction>(m);
     azplugins::detail::export_MPCDReversePerturbationFlowGPU(m);
     #endif // ENABLE_CUDA
     #endif // ENABLE_MPCD
@@ -259,8 +281,12 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluidGPU");
     #endif // ENABLE_CUDA
     azplugins::detail::export_BounceBackNVE<mpcd::detail::SlitGeometry>(m);
+    azplugins::detail::export_BounceBackNVE<azplugins::detail::SinusoidalChannel>(m);
+    azplugins::detail::export_BounceBackNVE<azplugins::detail::SinusoidalExpansionConstriction>(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_BounceBackNVEGPU<mpcd::detail::SlitGeometry>(m);
+    azplugins::detail::export_BounceBackNVEGPU<azplugins::detail::SinusoidalChannel>(m);
+    azplugins::detail::export_BounceBackNVEGPU<azplugins::detail::SinusoidalExpansionConstriction>(m);
     #endif // ENABLE_CUDA
 
     /* Variants */
