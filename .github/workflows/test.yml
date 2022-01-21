@@ -31,7 +31,13 @@ jobs:
     strategy:
       matrix:
         include:
+          - config: [clang12_py310, mpi]
+            hoomd-version: v2.9.7
           - config: [gcc11_py310]
+            hoomd-version: v2.9.7
+          - config: [cuda115_gcc9_py38, mpi]
+            hoomd-version: v2.9.7
+          - config: [cuda115_gcc9_py38]
             hoomd-version: v2.9.7
 
     steps:
