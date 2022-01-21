@@ -1,0 +1,80 @@
+name: test
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+
+  push:
+    branches:
+      - main
+      - develop
+
+  workflow_dispatch:
+
+env:
+  MPIEXEC_TIMEOUT: 3000
+  OMPI_ALLOW_RUN_AS_ROOT: 1
+  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+  OMPI_MCA_rmaps_base_oversubscribe: 1
+  OMPI_MCA_btl: "vader,self"
+  PYTHONPATH: ${{ github.workspace }}/install
+
+jobs:
+  test:
+    name: Unit test [${{ join(matrix.config, '_') }}]
+    runs-on: ubuntu-latest
+    container:
+      image: glotzerlab/ci:2022.01-${{ matrix.config[0] }}
+    strategy:
+      matrix:
+        include:
+          - config: [gcc11_py310]
+            hoomd-version: v2.9.7
+
+    steps:
+      - name: Checkout HOOMD-blue
+        uses: actions/checkout@v2
+        with:
+          repository: glotzerlab/hoomd-blue
+          ref: ${{ matrix.hoomd-version }}
+          path: code/hoomd
+          submodules: true
+      - name: Checkout azplugins
+        uses: actions/checkout@v2
+        with:
+          path: code/azplugins
+      - name: Build HOOMD-blue
+        run: |
+          mkdir -p build/hoomd
+          cd build/hoomd
+          cmake ../../code/hoomd -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/install
+            -DBUILD_CGCMM=OFF \
+            -DBUILD_DEM=OFF \
+            -DBUILD_DEPRECATED=OFF \
+            -DBUILD_HPMC=OFF \
+            -DBUILD_JIT=OFF \
+            -DBUILD_METAL=OFF \
+            -DBUILD_TESTING=OFF \
+            -DENABLE_CUDA=${ENABLE_CUDA:-"OFF"} \
+            -DENABLE_MPI=${ENABLE_MPI:-"OFF"} \
+            -DENABLE_TBB=OFF
+          ninja install -j 2
+        env:
+          ENABLE_GPU: ${{ contains(matrix.config[0], 'cuda') }}
+          ENABLE_MPI: ${{ contains(matrix.config, 'mpi') }}
+      - name: Build azplugins
+        run: |
+          mkdir -p build/azplugins
+          cd build/azplugins
+          cmake ../../code/azplugins -GNinja \
+             -DBUILD_TESTING=ON
+          ninja -j 2
+      - name: Run azplugins unit tests
+        if: ${{ !contains(matrix.config[0], 'cuda') }}
+        run: ctest -T test --output-on-failure -R azplugins
+        working-directory: build/azplugins
