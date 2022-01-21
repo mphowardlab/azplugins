@@ -52,7 +52,7 @@ jobs:
           cd build/hoomd
           cmake ../../code/hoomd -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/install
+            -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/install \
             -DBUILD_CGCMM=OFF \
             -DBUILD_DEM=OFF \
             -DBUILD_DEPRECATED=OFF \
