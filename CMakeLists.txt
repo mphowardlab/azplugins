@@ -36,6 +36,9 @@ set(PYTHON_MODULE_BASE_DIR ${CMAKE_INSTALL_PREFIX})
 # setup unit tests
 enable_testing()
 option(BUILD_TESTING "Build unit tests" ON)
+if (BUILD_TESTING)
+    add_custom_target(test_all ALL)
+endif()
 
 # add subdirectories
 add_subdirectory(${PROJECT_NAME})
