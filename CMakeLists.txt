@@ -38,8 +38,6 @@ enable_testing()
 option(BUILD_TESTING "Build unit tests" ON)
 if (BUILD_TESTING)
     add_custom_target(test_all ALL)
-    add_test(NAME azplugins-format
-             COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/check_format.sh ${CMAKE_CURRENT_SOURCE_DIR}/azplugins)
 endif()
 
 # add subdirectories
