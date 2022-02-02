@@ -26,6 +26,7 @@ azplugins
     :maxdepth: 1
     :caption: Reference
 
+    developer
     release
     license
     credits
