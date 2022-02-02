@@ -30,7 +30,7 @@ will automatically run on GitHub Actions once you open a pull request. These tes
 inside the HOOMD-blue Docker images. Note that these configurations give pretty good
 coverage of typical builds, but are not exhuastive to keep the testing requirements from
 getting too burdensome. Also, GitHub Actions does not have GPU runners, so GPU code is
-tested for _compilation_ but not _execution_. If you add new GPU code, it is your job to
+tested for *compilation* but not *execution*. If you add new GPU code, it is your job to
 run the unit tests on your local GPU. A code maintainer will ask you to confirm that you
 have performed this test in your pull request.
 
