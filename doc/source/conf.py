@@ -1,5 +1,5 @@
 # Copyright (c) 2018-2020, Michael P. Howard
-# Copyright (c) 2021, Auburn University
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 # -- Path setup --------------------------------------------------------------
@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'azplugins'
-copyright = '2018-2021, Auburn University'
+copyright = '2018-2022, Auburn University'
 author = 'Michael P. Howard'
 version = '0.10.2'
 release = '0.10.2'
