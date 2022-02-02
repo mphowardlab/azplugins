@@ -1,8 +1,26 @@
 Release notes
 =============
 
-Upcoming
+v0.11.0
 --------
+Unreleased
+
+This will be the final minor release of azplugins to support HOOMD-blue v2.x. The next planned
+release of azplugins will be a major release to support HOOMD v3.x. This will be a breaking
+change because of the significant rewrite of HOOMD-blue's API. We plan to support bug fixes
+until this major release is ready, and we may support bug fixes targeted toward HOOMD-blue v2.x
+during a transition period.
+
+*New features*
+
+  * ``flow.FlowProfiler`` is generalized to support multiple velocity components,
+    mass averaged velocities, and to compute temperature.
+  * The documentation has been reorganized, and some tutorials have been added. The
+    docs are now hosted on `ReadTheDocs <https://azplugins.readthedocs.io>`_.
+  * Support is added for sinusoidal channels and expansion--constriction channels
+    in ``integrate.sinusoidal_channel`` and ``integration.sinusoidal_expansion_constriction``.
+    Similar support is also available for the MPCD solvent.
+
 *Other changes*
 
   * Add a code of conduct for contributors.
@@ -10,6 +28,7 @@ Upcoming
     Auburn University.
   * The default git branch is renamed ``main``. More
     `information <https://sfconservancy.org/news/2020/jun/23/gitbranchname>`_ is available.
+  * CI testing has been moved to GitHub Actions.
 
 v0.10.1
 -------
