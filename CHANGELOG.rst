@@ -3,7 +3,7 @@ Release notes
 
 v0.11.0
 --------
-Unreleased
+Released 1 Feb 2022
 
 This will be the final minor release of azplugins to support HOOMD-blue v2.x. The next planned
 release of azplugins will be a major release to support HOOMD v3.x. This will be a breaking
