@@ -210,6 +210,7 @@ PYBIND11_MODULE(_azplugins, m)
     /* Bond potentials */
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorDoubleWell>(m, "BondPotentialDoubleWell");
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENE>(m, "BondPotentialFENE");
+    azplugins::detail::export_fene_bond_params(m);
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENEAsh24>(m, "BondPotentialFENEAsh24");
     azplugins::detail::export_ashbaugh_bond_params(m);
 
