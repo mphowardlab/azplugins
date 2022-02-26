@@ -148,13 +148,14 @@ class fene(hoomd.md.bond._bond):
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
 
         # setup the coefficient options
-        self.required_coeffs = ['k','r0','epsilon','sigma']
+        self.required_coeffs = ['k','r0','epsilon','sigma','delta']
 
     def process_coeff(self, coeff):
         k = coeff['k']
         r0 = coeff['r0']
         epsilon = coeff['epsilon']
         sigma = coeff['sigma']
+        delta = coeff['delta']
         lj1 = 4.0 * epsilon * math.pow(sigma, 12.0)
         lj2 = 4.0 * epsilon * math.pow(sigma, 6.0)
 
@@ -171,7 +172,8 @@ class fene(hoomd.md.bond._bond):
             hoomd.context.msg.error("azplugins.bond.fene(): r0 must be non-zero.\n")
             raise ValueError('r0 must be non-zero')
 
-        return _hoomd.make_scalar4(k, r0, lj1, lj2)
+        #return _hoomd.make_scalar4(k, r0, lj1, lj2)
+        return _azplugins.make_fene_bond_params(lj1, lj2,k,r0,delta)
 
 
 class fene24(hoomd.md.bond._bond):
