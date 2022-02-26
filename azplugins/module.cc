@@ -113,6 +113,23 @@ void export_ashbaugh_bond_params(py::module& m)
     m.def("make_ashbaugh_bond_params", &make_ashbaugh_bond_params);
     }
 
+//! Helper function export the FENE-LJ bond potential parameters
+/*!
+* \sa fene_lj_bond_params
+*/
+void export_fene_bond_params(py::module& m)
+    {
+    py::class_<fene_bond_params>(m, "fene_bond_params")
+    .def(py::init<>())
+    .def_readwrite("lj1", &fene_bond_params::lj1)
+    .def_readwrite("lj2", &fene_bond_params::lj2)
+    .def_readwrite("K", &fene_bond_params::K)
+    .def_readwrite("r0", &fene_bond_params::r_0)
+    .def_readwrite("delta", &fene_bond_params::delta)
+    ;
+    m.def("make_fene_bond_params", &make_fene_bond_params);
+    }
+
 //! Helper function export the Ashbaugh-Hatch pair potential parameters
 /*!
 * \sa ashbaugh_params
