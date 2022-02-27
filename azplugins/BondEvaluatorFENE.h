@@ -130,14 +130,16 @@ class BondEvaluatorFENE
             // Check if delta is non -zero,if non-zero sqrt of rsq is calculated
             if (delta!=Scalar(0))
                 {
-                const Scalar rsqrt = fast::sqrt(rsq)
-                force_divr += -K*(rsqrt-delta) / (Scalar(1.0) - (rsqrt-delta)*(rsqrt-delta)/(r_0*r_0))/rsqrt;
-                bond_eng += -Scalar(0.5)*K*(r_0*r_0)*log(Scalar(1.0) - (rsqrt-delta)*(rsqrt-delta)/(r_0*r_0));
+                const Scalar r = fast::sqrt(rsq);
+                const Scalar r_red = r - delta;
+
+                force_divr += -K*r_red / (Scalar(1.0) - r_red*r_red/(r_0*r_0))/r;
+                bond_eng += -Scalar(0.5)*K*(r_0*r_0)*fast::log(Scalar(1.0) - r_red*r_red/(r_0*r_0));
                 }
             else
                 {
                 force_divr += -K / (Scalar(1.0) -rsq/(r_0*r_0));
-                bond_eng += -Scalar(0.5)*K*(r_0*r_0)*log(Scalar(1.0) - rsq/(r_0*r_0));
+                bond_eng += -Scalar(0.5)*K*(r_0*r_0)*fast::log(Scalar(1.0) - rsq/(r_0*r_0));
                 }
             return true;
             }
