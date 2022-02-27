@@ -101,7 +101,7 @@ class fene(hoomd.md.bond._bond):
 
     .. math::
 
-        V(r) = - \frac{1}{2} k r_0^2 \ln \left( 1 - \left( \frac{r}{r_0} \right)^2 \right) + V_{\rm WCA}(r)
+        V(r) = - \frac{1}{2} k r_0^2 \ln \left( 1 - \left( \frac{r-\delta}{r_0} \right)^2 \right) + V_{\rm WCA}(r)
 
     where :math:`\vec{r}` is the vector pointing from one particle to the other in the bond.
     The potential :math:`V_{\rm WCA}(r)` is given by:
@@ -120,12 +120,12 @@ class fene(hoomd.md.bond._bond):
     - :math:`r_0` - size parameter ``r0`` (in distance units)
     - :math:`\varepsilon` - repulsive force strength ``epsilon`` (in energy units)
     - :math:`\sigma` - repulsive force interaction distance ``sigma`` (in distance units)
-
+    - :math:`\delta` - extra shift parameter for FENE bonds ``delta`` (in distance units)
     Examples::
 
         fene = azplugins.bond.fene()
-        fene.bond_coeff.set('polymer', k=30.0, r0=1.5, sigma=1.0, epsilon=2.0)
-        fene.bond_coeff.set('backbone', k=100.0, r0=1.0, sigma=1.0, epsilon= 2.0)
+        fene.bond_coeff.set('polymer', k=30.0, r0=1.5, sigma=1.0, epsilon=2.0, delta=2.8)
+        fene.bond_coeff.set('backbone', k=100.0, r0=1.0, sigma=1.0, epsilon= 2.0, delta=0.0)
 
     """
     def __init__(self, name=None):
@@ -149,6 +149,7 @@ class fene(hoomd.md.bond._bond):
 
         # setup the coefficient options
         self.required_coeffs = ['k','r0','epsilon','sigma','delta']
+        self.bond_coeff.set_default_coeff('delta', 0.0)
 
     def process_coeff(self, coeff):
         k = coeff['k']
@@ -159,9 +160,9 @@ class fene(hoomd.md.bond._bond):
         lj1 = 4.0 * epsilon * math.pow(sigma, 12.0)
         lj2 = 4.0 * epsilon * math.pow(sigma, 6.0)
 
-        if epsilon==0:
-            hoomd.context.msg.error("azplugins.bond.fene(): epsilon must be non-zero.\n")
-            raise ValueError('epsilon must be non-zero')
+        #if epsilon==0:
+        #    hoomd.context.msg.error("azplugins.bond.fene(): epsilon must be non-zero.\n")
+        #    raise ValueError('epsilon must be non-zero')
         if sigma==0:
             hoomd.context.msg.error("azplugins.bond.fene(): sigma must be non-zero.\n")
             raise ValueError('sigma must be non-zero')
