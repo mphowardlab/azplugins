@@ -124,7 +124,7 @@ class fene(hoomd.md.bond._bond):
     Examples::
 
         fene = azplugins.bond.fene()
-        fene.bond_coeff.set('polymer', k=30.0, r0=1.5, sigma=1.0, epsilon=2.0, delta=2.8)
+        fene.bond_coeff.set('polymer', k=30.0, r0=1.5, sigma=1.0, epsilon=2.0, delta=1.8)
         fene.bond_coeff.set('backbone', k=100.0, r0=1.0, sigma=1.0, epsilon= 2.0, delta=0.0)
 
     """
