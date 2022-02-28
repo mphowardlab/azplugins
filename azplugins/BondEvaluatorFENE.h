@@ -75,7 +75,7 @@ class BondEvaluatorFENE
          * \param _params Per type bond parameters of this potential as given above
          */
         DEVICE BondEvaluatorFENE(Scalar _rsq, const param_type& _params)
-            : rsq(_rsq), K(_params.K), r_0(_params.r0), lj1(_params.lj1), lj2(_params.lj2),
+            : rsq(_rsq), K(_params.K), r_0(_params.r_0), lj1(_params.lj1), lj2(_params.lj2),
               delta(_params.delta)
             {
             }
