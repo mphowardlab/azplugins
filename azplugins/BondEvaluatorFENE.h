@@ -17,8 +17,10 @@
 
 #ifdef NVCC
 #define DEVICE __device__
+#define HOSTDEVICE __host__ __device__
 #else
 #define DEVICE
+#define HOSTDEVICE
 #endif
 
 namespace azplugins
@@ -165,5 +167,5 @@ class BondEvaluatorFENE
 } // end namespace azplugins
 
 #undef DEVICE
-
+#undef HOSTDEVICE
 #endif // AZPLUGINS_BOND_EVALUATOR_FENE_H_
