@@ -120,7 +120,8 @@ class fene(hoomd.md.bond._bond):
     - :math:`r_0` - size parameter ``r0`` (in distance units)
     - :math:`\varepsilon` - repulsive force strength ``epsilon`` (in energy units)
     - :math:`\sigma` - repulsive force interaction distance ``sigma`` (in distance units)
-    - :math:`\delta` - extra shift parameter for FENE bonds ``delta`` (in distance units)
+    - :math:`\delta` - extra shift parameter for FENE bonds ``delta`` (in distance units),default value of ``delta` is zero
+
     Examples::
 
         fene = azplugins.bond.fene()
@@ -160,9 +161,9 @@ class fene(hoomd.md.bond._bond):
         lj1 = 4.0 * epsilon * math.pow(sigma, 12.0)
         lj2 = 4.0 * epsilon * math.pow(sigma, 6.0)
 
-        #if epsilon==0:
-        #    hoomd.context.msg.error("azplugins.bond.fene(): epsilon must be non-zero.\n")
-        #    raise ValueError('epsilon must be non-zero')
+        if epsilon==0:
+            hoomd.context.msg.error("azplugins.bond.fene(): epsilon must be non-zero.\n")
+            raise ValueError('epsilon must be non-zero')
         if sigma==0:
             hoomd.context.msg.error("azplugins.bond.fene(): sigma must be non-zero.\n")
             raise ValueError('sigma must be non-zero')
@@ -173,7 +174,6 @@ class fene(hoomd.md.bond._bond):
             hoomd.context.msg.error("azplugins.bond.fene(): r0 must be non-zero.\n")
             raise ValueError('r0 must be non-zero')
 
-        #return _hoomd.make_scalar4(k, r0, lj1, lj2)
         return _azplugins.make_fene_bond_params(lj1, lj2,k,r0,delta)
 
 
