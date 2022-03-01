@@ -92,8 +92,7 @@ class potential_bond_fene_tests(unittest.TestCase):
 
     # test the calculation of force and potential
     def test_potential(self):
-        #fene = azplugins.bond.fene()
-        fene = md.bond.fene()
+        fene = azplugins.bond.fene()
         fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, k=30,r0=1.5)
 
         md.integrate.mode_standard(dt=0)
