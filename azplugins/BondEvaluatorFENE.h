@@ -36,10 +36,10 @@ namespace detail
 
   //! Convenience function for makingfene_bond_params in python
   HOSTDEVICE inline fene_bond_params make_fene_bond_params(Scalar lj1,
-                                                         Scalar lj2,
-                                                         Scalar K,
-                                                         Scalar r_0,
-                                                         Scalar delta)
+                                                           Scalar lj2,
+                                                           Scalar K,
+                                                           Scalar r_0,
+                                                           Scalar delta)
       {
       fene_bond_params p;
       p.lj1 = lj1;
@@ -49,10 +49,6 @@ namespace detail
       p.delta = delta;
       return p;
       }
-
-
-
-
 //! Class for evaluating the FENE bond potential
 /*! The parameters are:
     - \a K (params.x) Stiffness parameter for the force computation
@@ -128,7 +124,7 @@ class BondEvaluatorFENE
                 bond_eng = r6inv * (lj1*r6inv - lj2) + epsilon;
                 }
             // Check if delta is non -zero,if non-zero sqrt of rsq is calculated
-            if (delta!=Scalar(0))
+            if (delta != Scalar(0))
                 {
                 const Scalar r = fast::sqrt(rsq);
                 const Scalar r_red = r - delta;
@@ -163,7 +159,6 @@ class BondEvaluatorFENE
         Scalar lj1;        //!< lj1 parameter
         Scalar lj2;        //!< lj2 parameter
         Scalar delta;      //!< delta parameter in FENE bond
-
     };
 
 } // end namespace detail
