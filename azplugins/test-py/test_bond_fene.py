@@ -126,7 +126,7 @@ class potential_bond_fene_tests(unittest.TestCase):
         hoomd.run(1)
         #values of F and  U are caluclated using a calculator, by substituting
         #r0=1.5,delta=1.8,sigma=1.0,epsilon=1.0, with r=1.0
-        F = 57.5403726708
+        F = -57.5403726708
         U = 12.2959912562
         f0 = fene.forces[0].force
         f1 = fene.forces[1].force
@@ -136,11 +136,11 @@ class potential_bond_fene_tests(unittest.TestCase):
         self.assertAlmostEqual(e0,0.5*U,3)
         self.assertAlmostEqual(e1,0.5*U,3)
 
-        self.assertAlmostEqual(f0[0],F,3)
+        self.assertAlmostEqual(f0[0],-F,3)
         self.assertAlmostEqual(f0[1],0)
         self.assertAlmostEqual(f0[2],0)
 
-        self.assertAlmostEqual(f1[0],-F,3)
+        self.assertAlmostEqual(f1[0],F,3)
         self.assertAlmostEqual(f1[1],0)
         self.assertAlmostEqual(f1[2],0)
 
