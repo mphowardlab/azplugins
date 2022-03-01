@@ -49,6 +49,7 @@ namespace detail
       p.delta = delta;
       return p;
       }
+
 //! Class for evaluating the FENE bond potential
 /*! The parameters are:
     - \a K (params.x) Stiffness parameter for the force computation
@@ -63,7 +64,6 @@ class BondEvaluatorFENE
     public:
         //! Define the parameter type used by this bond potential evaluator
         typedef fene_bond_params param_type;
-
 
         //! Constructs the pair potential evaluator
         /*!
