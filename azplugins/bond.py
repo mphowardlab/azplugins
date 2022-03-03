@@ -101,7 +101,7 @@ class fene(hoomd.md.bond._bond):
 
     .. math::
 
-        V(r) = - \frac{1}{2} k r_0^2 \ln \left( 1 - \left( \frac{r}{r_0} \right)^2 \right) + V_{\rm WCA}(r)
+        V(r) = - \frac{1}{2} k r_0^2 \ln \left( 1 - \left( \frac{r-\delta}{r_0} \right)^2 \right) + V_{\rm WCA}(r)
 
     where :math:`\vec{r}` is the vector pointing from one particle to the other in the bond.
     The potential :math:`V_{\rm WCA}(r)` is given by:
@@ -120,11 +120,12 @@ class fene(hoomd.md.bond._bond):
     - :math:`r_0` - size parameter ``r0`` (in distance units)
     - :math:`\varepsilon` - repulsive force strength ``epsilon`` (in energy units)
     - :math:`\sigma` - repulsive force interaction distance ``sigma`` (in distance units)
+    - :math:`\delta` - extra shift parameter for FENE bonds ``delta`` (in distance units),default value of  is ``delta`` zero
 
     Examples::
 
         fene = azplugins.bond.fene()
-        fene.bond_coeff.set('polymer', k=30.0, r0=1.5, sigma=1.0, epsilon=2.0)
+        fene.bond_coeff.set('polymer', k=30.0, r0=1.5, sigma=1.0, epsilon=2.0, delta=1.8)
         fene.bond_coeff.set('backbone', k=100.0, r0=1.0, sigma=1.0, epsilon= 2.0)
 
     """
@@ -148,13 +149,15 @@ class fene(hoomd.md.bond._bond):
         hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
 
         # setup the coefficient options
-        self.required_coeffs = ['k','r0','epsilon','sigma']
+        self.required_coeffs = ['k','r0','epsilon','sigma','delta']
+        self.bond_coeff.set_default_coeff('delta', 0.0)
 
     def process_coeff(self, coeff):
         k = coeff['k']
         r0 = coeff['r0']
         epsilon = coeff['epsilon']
         sigma = coeff['sigma']
+        delta = coeff['delta']
         lj1 = 4.0 * epsilon * math.pow(sigma, 12.0)
         lj2 = 4.0 * epsilon * math.pow(sigma, 6.0)
 
@@ -171,7 +174,7 @@ class fene(hoomd.md.bond._bond):
             hoomd.context.msg.error("azplugins.bond.fene(): r0 must be non-zero.\n")
             raise ValueError('r0 must be non-zero')
 
-        return _hoomd.make_scalar4(k, r0, lj1, lj2)
+        return _azplugins.make_fene_bond_params(lj1, lj2,k,r0,delta)
 
 
 class fene24(hoomd.md.bond._bond):

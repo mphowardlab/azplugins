@@ -17,14 +17,40 @@
 
 #ifdef NVCC
 #define DEVICE __device__
+#define HOSTDEVICE __host__ __device__
 #else
 #define DEVICE
+#define HOSTDEVICE
 #endif
 
 namespace azplugins
 {
 namespace detail
 {
+  struct fene_bond_params
+      {
+      Scalar lj1;      //!< The coefficient for 1/r^12
+      Scalar lj2;      //!< The coefficient for 1/r^6
+      Scalar K;        //!< Stiffness parameter for the bond
+      Scalar r_0;      //!< maximum bond length
+      Scalar delta;    //!< extra shift parameter
+      };
+
+  //! Convenience function for makingfene_bond_params in python
+  HOSTDEVICE inline fene_bond_params make_fene_bond_params(Scalar lj1,
+                                                           Scalar lj2,
+                                                           Scalar K,
+                                                           Scalar r_0,
+                                                           Scalar delta)
+      {
+      fene_bond_params p;
+      p.lj1 = lj1;
+      p.lj2 = lj2;
+      p.K = K;
+      p.r_0 = r_0;
+      p.delta = delta;
+      return p;
+      }
 
 //! Class for evaluating the FENE bond potential
 /*! The parameters are:
@@ -39,7 +65,7 @@ class BondEvaluatorFENE
     {
     public:
         //! Define the parameter type used by this bond potential evaluator
-        typedef Scalar4 param_type;
+        typedef fene_bond_params param_type;
 
         //! Constructs the pair potential evaluator
         /*!
@@ -47,7 +73,8 @@ class BondEvaluatorFENE
          * \param _params Per type bond parameters of this potential as given above
          */
         DEVICE BondEvaluatorFENE(Scalar _rsq, const param_type& _params)
-            : rsq(_rsq), K(_params.x), r_0(_params.y), lj1(_params.z), lj2(_params.w)
+            : rsq(_rsq), K(_params.K), r_0(_params.r_0), lj1(_params.lj1), lj2(_params.lj2),
+              delta(_params.delta)
             {
             }
 
@@ -98,10 +125,20 @@ class BondEvaluatorFENE
                 force_divr = r2inv * r6inv * (Scalar(12.0)*lj1*r6inv - Scalar(6.0)*lj2);
                 bond_eng = r6inv * (lj1*r6inv - lj2) + epsilon;
                 }
+            // Check if delta is non -zero,if non-zero sqrt of rsq is calculated
+            if (delta != Scalar(0))
+                {
+                const Scalar r = fast::sqrt(rsq);
+                const Scalar r_red = r - delta;
 
-            force_divr += -K / (Scalar(1.0) - rsq/(r_0*r_0));
-            bond_eng += -Scalar(0.5)*K*(r_0*r_0)*log(Scalar(1.0) - rsq/(r_0*r_0));
-
+                force_divr += -K*r_red / (Scalar(1.0) - r_red*r_red/(r_0*r_0))/r;
+                bond_eng += -Scalar(0.5)*K*(r_0*r_0)*fast::log(Scalar(1.0) - r_red*r_red/(r_0*r_0));
+                }
+            else
+                {
+                force_divr += -K / (Scalar(1.0) -rsq/(r_0*r_0));
+                bond_eng += -Scalar(0.5)*K*(r_0*r_0)*fast::log(Scalar(1.0) - rsq/(r_0*r_0));
+                }
             return true;
             }
 
@@ -123,11 +160,12 @@ class BondEvaluatorFENE
         Scalar r_0;        //!< r_0 parameter
         Scalar lj1;        //!< lj1 parameter
         Scalar lj2;        //!< lj2 parameter
+        Scalar delta;      //!< delta parameter in FENE bond
     };
 
 } // end namespace detail
 } // end namespace azplugins
 
 #undef DEVICE
-
+#undef HOSTDEVICE
 #endif // AZPLUGINS_BOND_EVALUATOR_FENE_H_
