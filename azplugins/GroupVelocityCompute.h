@@ -35,7 +35,7 @@ class PYBIND11_EXPORT GroupVelocityCompute : public Compute
                              const std::string& suffix);
 
         //! Destructor
-        ~GroupVelocityCompute();
+        virtual ~GroupVelocityCompute();
 
         //! Compute center-of-mass velocity of group
         void compute(unsigned int timestep) override;

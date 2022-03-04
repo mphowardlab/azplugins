@@ -23,7 +23,11 @@ GroupVelocityCompute::GroupVelocityCompute(std::shared_ptr<SystemDefinition> sys
     : Compute(sysdef),
       m_group(group),
       m_lognames{"vx"+suffix,"vy"+suffix,"vz"+suffix},
-      m_velocity(0,0,0)
+      m_velocity(make_scalar3(0,0,0))
+    {
+    }
+
+GroupVelocityCompute::~GroupVelocityCompute()
     {
     }
 
@@ -50,30 +54,34 @@ void GroupVelocityCompute::compute(unsigned int timestep)
     const unsigned int N = m_group->getNumMembers();
     ArrayHandle<unsigned int> h_index(m_group->getIndexArray(), access_location::host, access_mode::read);
     ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(), access_location::host, access_mode::read);
-    Scalar4 mom_mass(0,0,0,0);
+    Scalar3 momentum = make_scalar3(0.,0.,0.);
+    Scalar mass(0);
     for (unsigned int i=0; i < N; ++i)
         {
         const Scalar4 vel_mass = h_vel.data[h_index.data[i]];
-        const Scalar mass = vel_mass.w;
-        mom_mass += make_scalar4(mass*vel_mass.x,mass*vel_mass.y,mass*vel_mass.z,mass);
+        const Scalar3 vel = make_scalar3(vel_mass.x,vel_mass.y,vel_mass.z);
+        const Scalar m = vel_mass.w;
+        momentum += m*vel;
+        mass += m;
         }
     #ifdef ENABLE_MPI
     if (m_comm)
         {
-        Scalar buffer[4] = {mom_mass.x, mom_mass.y, mom_mass.z, mom_mass.w};
+        Scalar buffer[4] = {momentum.x, momentum.y, momentum.z, mass};
         MPI_Allreduce(MPI_IN_PLACE, &buffer[0], 4, MPI_HOOMD_SCALAR, MPI_SUM, m_exec_conf->getMPICommunicator());
-        mom_mass = make_scalar4(buffer[0],buffer[1],buffer[2],buffer[3]);
+        momentum = make_scalar3(buffer[0],buffer[1],buffer[2]);
+        mass = buffer[3];
         }
     #endif // ENABLE_MPI
 
     // reduce total momentum by mass to get center-of-mass
-    m_velocity = make_scalar3(mom_mass.x,mom_mass.y,mom_mass.z)/mom_mass.w;
+    m_velocity = momentum/mass;
     }
 
 std::vector<std::string> GroupVelocityCompute::getProvidedLogQuantities()
-	{
-	return m_lognames;
-	}
+    {
+    return m_lognames;
+    }
 
 Scalar GroupVelocityCompute::getLogValue(const std::string& quantity, unsigned int timestep)
     {
@@ -92,17 +100,17 @@ Scalar GroupVelocityCompute::getLogValue(const std::string& quantity, unsigned i
         }
     else
         {
-        m_exec_conf->msg->error() << "GroupVelocityCompute: " << quantity << " is not a valid log quantity" << endl;
-        throw runtime_error("Unknown log quantity");
+        m_exec_conf->msg->error() << "GroupVelocityCompute: " << quantity << " is not a valid log quantity" << std::endl;
+        throw std::runtime_error("Unknown log quantity");
         }
     }
-    
+
 namespace detail
 {
 void export_GroupVelocityCompute(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<GroupVelocityCompute,std::shared_ptr<GroupVelocityCompute>,Compute>(m, "GroupVelocityCompute")
+    py::class_<GroupVelocityCompute,std::shared_ptr<GroupVelocityCompute>>(m, "GroupVelocityCompute", py::base<Compute>())
         .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<ParticleGroup>,const std::string&>())
         ;
     }
