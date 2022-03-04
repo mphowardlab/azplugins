@@ -47,6 +47,12 @@ class analyze_group_velocity_tests(unittest.TestCase):
         v = [log.query('vx_foo'), log.query('vy_foo'), log.query('vz_foo')]
         np.testing.assert_allclose(v, [-2,4,-6])
 
+    def test_unique_suffix(self):
+        all_ = hoomd.group.all()
+        azplugins.analyze.group_velocity(group=all_,suffix='_1')
+        with self.assertRaises(ValueError):
+            azplugins.analyze.group_velocity(group=all_,suffix='_1')
+
     def tearDown(self):
         del self.s
         hoomd.context.initialize()
