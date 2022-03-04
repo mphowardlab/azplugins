@@ -191,7 +191,7 @@ class potential_bond_fene_tests(unittest.TestCase):
         self.assertAlmostEqual(f1[2],0)
 
     # test the calculation of foce and potential when sigma=0 and epsilon=nonzero
-    def test_potential_sigma_nonzero_epsilon_zero(self):
+    def test_potential_sigma_zero_epsilon_nonzero(self):
         fene = azplugins.bond.fene()
         fene.bond_coeff.set('bond', epsilon=1.0, sigma=0.0, k=30,r0=1.5,delta=1.8)
 
