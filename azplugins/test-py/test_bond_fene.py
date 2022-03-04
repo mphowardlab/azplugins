@@ -52,16 +52,6 @@ class bond_fene_tests(unittest.TestCase):
         self.assertRaises(RuntimeError, fene.update_coeffs)
 
      # test coefficients = 0
-    def test_set_zero_epsilon(self):
-        fene = azplugins.bond.fene()
-        fene.bond_coeff.set('bond', epsilon=0, sigma=1.0, k=30,r0=1.5)
-        self.assertRaises(ValueError, fene.update_coeffs)
-
-    def test_set_zero_sigma(self):
-        fene = azplugins.bond.fene()
-        fene.bond_coeff.set('bond', epsilon=1.0, sigma=0.0, k=30, r0=1.5)
-        self.assertRaises(ValueError, fene.update_coeffs)
-
     def test_set_zero_k(self):
         fene = azplugins.bond.fene()
         fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, k=0, r0=1.5)
