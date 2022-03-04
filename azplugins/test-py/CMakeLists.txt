@@ -3,6 +3,7 @@
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 set(TEST_LIST_CPU
+    test_analyze_group_velocity
     test_analyze_rdf
     test_bond_double_well
     test_bond_fene
