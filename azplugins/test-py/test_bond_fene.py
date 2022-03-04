@@ -201,7 +201,7 @@ class potential_bond_fene_tests(unittest.TestCase):
         #values of F and  U are caluclated using a calculator, by substituting
         #r0=1.5,delta=1.8,sigma=0.0,epsilon=1.0, with r=1.0
         F = 33.540372671
-        U = 12.29599912562
+        U = 11.29599912562 #no contribution from WCA as 2^1/6 sigma < r
         f0 = fene.forces[0].force
         f1 = fene.forces[1].force
         e0 = fene.forces[0].energy
