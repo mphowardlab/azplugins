@@ -108,7 +108,7 @@ class BondEvaluatorFENE
         DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& bond_eng)
             {
             // check for invalid parameters
-            if (r_0 == Scalar(0.0) ) return false;
+            if (r_0 == Scalar(0.0)) return false;
 
             // Check if bond length restriction is violated
             if (rsq >= r_0*r_0) return false;
@@ -118,7 +118,7 @@ class BondEvaluatorFENE
             Scalar sigma6inv = lj2/lj1;
 
             // wca cutoff: r < 2^(1/6)*sigma
-            //If epsion or sigma is zero or beyond cutoff force and energy are zero
+            // if epsilon or sigma is zero OR r is beyond cutoff, the force and energy are zero
             if (lj1 != Scalar(0) && r6inv > sigma6inv/Scalar(2.0))
                 {
                 Scalar epsilon = lj2*lj2/Scalar(4.0)/lj1;
@@ -127,8 +127,8 @@ class BondEvaluatorFENE
                 }
             else
                 {
-                force_divr=0;
-                bond_eng=0;
+                force_divr = 0;
+                bond_eng = 0;
                 }
             // Check if delta is non -zero,if non-zero sqrt of rsq is calculated
             if (delta != Scalar(0))

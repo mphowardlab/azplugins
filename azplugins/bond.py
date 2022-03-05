@@ -120,7 +120,7 @@ class fene(hoomd.md.bond._bond):
     - :math:`r_0` - size parameter ``r0`` (in distance units)
     - :math:`\varepsilon` - repulsive force strength ``epsilon`` (in energy units)
     - :math:`\sigma` - repulsive force interaction distance ``sigma`` (in distance units)
-    - :math:`\delta` - extra shift parameter for FENE bonds ``delta`` (in distance units),default value of ``delta`` is  zero
+    - :math:`\delta` - bond-length shift ``delta`` (in distance units), default value is  zero
 
     Examples::
 
