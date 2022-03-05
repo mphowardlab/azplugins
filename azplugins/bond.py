@@ -161,9 +161,6 @@ class fene(hoomd.md.bond._bond):
         lj1 = 4.0 * epsilon * math.pow(sigma, 12.0)
         lj2 = 4.0 * epsilon * math.pow(sigma, 6.0)
 
-        if k==0:
-            hoomd.context.msg.error("azplugins.bond.fene(): k must be non-zero.\n")
-            raise ValueError('k must be non-zero')
         if r0==0:
             hoomd.context.msg.error("azplugins.bond.fene(): r0 must be non-zero.\n")
             raise ValueError('r0 must be non-zero')
