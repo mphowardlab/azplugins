@@ -297,6 +297,34 @@ class potential_bond_fene_tests(unittest.TestCase):
         self.assertAlmostEqual(f1[1],0)
         self.assertAlmostEqual(f1[2],0)
 
+    # test the calculation of foce and potential when k=0 and epsilon=zero sigma=zero
+    def test_potential_k_zero_epsilon_nonzero_sigma_zero(self):
+        fene = azplugins.bond.fene()
+        fene.bond_coeff.set('bond', epsilon=0.0, sigma=0.0, k=0,r0=1.5,delta=1.8)
+
+        md.integrate.mode_standard(dt=0)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
+        #values of F and  U are caluclated using a calculator, by substituting
+        #k=0,r0=1.5,delta=1.8,sigma=0.0,epsilon=0.0, with r=1.0
+        F = 0
+        U = 0
+        f0 = fene.forces[0].force
+        f1 = fene.forces[1].force
+        e0 = fene.forces[0].energy
+        e1 = fene.forces[1].energy
+
+        self.assertAlmostEqual(e0,0.5*U,3)
+        self.assertAlmostEqual(e1,0.5*U,3)
+
+        self.assertAlmostEqual(f0[0],-F,3)
+        self.assertAlmostEqual(f0[1],0)
+        self.assertAlmostEqual(f0[2],0)
+
+        self.assertAlmostEqual(f1[0],F,3)
+        self.assertAlmostEqual(f1[1],0)
+        self.assertAlmostEqual(f1[2],0)
+
     # test streching beyond maximal bond length of r0
     def test_potential_strech_beyond_r0(self):
         fene = azplugins.bond.fene()
