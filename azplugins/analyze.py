@@ -25,7 +25,7 @@ class group_velocity(hoomd.compute._compute):
     r"""Group center-of-mass velocity compute
 
     Args:
-        group (:py:mod:`hoomd.group.group`): Group to compute velocity of.
+        group (:py:mod:`hoomd.group`): Group to compute velocity of.
         suffix (str): Suffix to attach to logged quantities.
 
     This computes the center-of-mass velocity of a group:
@@ -38,9 +38,16 @@ class group_velocity(hoomd.compute._compute):
     of particle *i* in the group.
 
     The components of the result are exposed as loggable quantities ``vx``,
-    ``vy``, and ``vz`` with ``suffix`` appended. By default, ``suffix`` is the
-    name of the ``group``, but a custom suffix may be specified. You can save
-    these results using :py:class:`hoomd.analyze.log`.
+    ``vy``, and ``vz`` with ``suffix`` appended. By default, ``suffix`` is
+    ``_name`` where ``name`` is the name of the ``group``, like ``_all`` for
+    :py:class:`hoomd.group.all`. However, a custom suffix may be specified; the
+    only requirement is that the same suffix cannot be used more than once. You
+    can save these results using :py:class:`hoomd.analyze.log`.
+
+    Example::
+
+        azplugins.analyze.group_velocity(hoomd.group.all())
+        hoomd.analze.log(filename='velocity.dat', quantities=['vx_all'], period=10)
 
     """
     def __init__(self, group, suffix=None):
