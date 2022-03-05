@@ -52,11 +52,6 @@ class bond_fene_tests(unittest.TestCase):
         self.assertRaises(RuntimeError, fene.update_coeffs)
 
      # test coefficients = 0
-    def test_set_zero_k(self):
-        fene = azplugins.bond.fene()
-        fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, k=0, r0=1.5)
-        self.assertRaises(ValueError, fene.update_coeffs)
-
     def test_set_zero_r0(self):
         fene = azplugins.bond.fene()
         fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, k=30, r0=0)
@@ -202,6 +197,90 @@ class potential_bond_fene_tests(unittest.TestCase):
         #r0=1.5,delta=1.8,sigma=0.0,epsilon=1.0, with r=1.0
         F = 33.540372671
         U = 11.29599912562 #no contribution from WCA as 2^1/6 sigma < r
+        f0 = fene.forces[0].force
+        f1 = fene.forces[1].force
+        e0 = fene.forces[0].energy
+        e1 = fene.forces[1].energy
+
+        self.assertAlmostEqual(e0,0.5*U,3)
+        self.assertAlmostEqual(e1,0.5*U,3)
+
+        self.assertAlmostEqual(f0[0],-F,3)
+        self.assertAlmostEqual(f0[1],0)
+        self.assertAlmostEqual(f0[2],0)
+
+        self.assertAlmostEqual(f1[0],F,3)
+        self.assertAlmostEqual(f1[1],0)
+        self.assertAlmostEqual(f1[2],0)
+
+    # test the calculation of foce and potential when k=0 and epsilon=nonzero sigma=nonzero
+    def test_potential_k_zero_epsilon_nonzero_sigma_nonzero(self):
+        fene = azplugins.bond.fene()
+        fene.bond_coeff.set('bond', epsilon=1.0, sigma=1.0, k=0,r0=1.5,delta=1.8)
+
+        md.integrate.mode_standard(dt=0)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
+        #values of F and  U are caluclated using a calculator, by substituting
+        #k=0,r0=1.5,delta=1.8,sigma=1.0,epsilon=1.0, with r=1.0
+        F = 24
+        U = 1               #no contribution from FENE bonds as k=0
+        f0 = fene.forces[0].force
+        f1 = fene.forces[1].force
+        e0 = fene.forces[0].energy
+        e1 = fene.forces[1].energy
+
+        self.assertAlmostEqual(e0,0.5*U,3)
+        self.assertAlmostEqual(e1,0.5*U,3)
+
+        self.assertAlmostEqual(f0[0],-F,3)
+        self.assertAlmostEqual(f0[1],0)
+        self.assertAlmostEqual(f0[2],0)
+
+        self.assertAlmostEqual(f1[0],F,3)
+        self.assertAlmostEqual(f1[1],0)
+        self.assertAlmostEqual(f1[2],0)
+
+    # test the calculation of foce and potential when k=0 and epsilon=zero sigma=nonzero
+    def test_potential_k_zero_epsilon_zero_sigma_nonzero(self):
+        fene = azplugins.bond.fene()
+        fene.bond_coeff.set('bond', epsilon=0.0, sigma=1.0, k=0,r0=1.5,delta=1.8)
+
+        md.integrate.mode_standard(dt=0)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
+        #values of F and  U are caluclated using a calculator, by substituting
+        #r0=1.5,delta=1.8,sigma=1.0,epsilon=0.0, with r=1.0
+        F = 0
+        U = 0
+        f0 = fene.forces[0].force
+        f1 = fene.forces[1].force
+        e0 = fene.forces[0].energy
+        e1 = fene.forces[1].energy
+
+        self.assertAlmostEqual(e0,0.5*U,3)
+        self.assertAlmostEqual(e1,0.5*U,3)
+
+        self.assertAlmostEqual(f0[0],-F,3)
+        self.assertAlmostEqual(f0[1],0)
+        self.assertAlmostEqual(f0[2],0)
+
+        self.assertAlmostEqual(f1[0],F,3)
+        self.assertAlmostEqual(f1[1],0)
+        self.assertAlmostEqual(f1[2],0)
+
+    # test the calculation of foce and potential when k=0 and epsilon=nonzero sigma=zero
+    def test_potential_k_zero_epsilon_nonzero_sigma_zero(self):
+        fene = azplugins.bond.fene()
+        fene.bond_coeff.set('bond', epsilon=1.0, sigma=0.0, k=0,r0=1.5,delta=1.8)
+
+        md.integrate.mode_standard(dt=0)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
+        #values of F and  U are caluclated using a calculator, by substituting
+        #k=0,r0=1.5,delta=1.8,sigma=0.0,epsilon=1.0, with r=1.0
+        F = 0
+        U = 0
         f0 = fene.forces[0].force
         f1 = fene.forces[1].force
         e0 = fene.forces[0].energy
