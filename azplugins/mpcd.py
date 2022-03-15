@@ -51,12 +51,9 @@ class compute_velocity(hoomd.compute._compute):
         hoomd.analyze.log(filename='velocity.dat', quantities=['mpcd_vx'], period=10)
 
     """
-    def __init__(self, group, suffix=None):
+    def __init__(self, suffix=None):
         hoomd.util.print_status_line()
         super().__init__()
-
-        # group object
-        self.group = group
 
         # create suffix for logged quantity
         if suffix is None:

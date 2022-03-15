@@ -19,9 +19,13 @@ namespace azplugins
 MPCDVelocityCompute::MPCDVelocityCompute(std::shared_ptr<mpcd::SystemData> sysdata,
                                          const std::string& suffix)
     : Compute(sysdata->getSystemDefinition()),
-      m_mpcd_pdata(sysdata->getParticleData())
+      m_mpcd_pdata(sysdata->getParticleData()),
       m_lognames{"mpcd_vx"+suffix,"mpcd_vy"+suffix,"mpcd_vz"+suffix},
-      m_velocity(0,0,0)
+      m_velocity(make_scalar3(0,0,0))
+    {
+    }
+
+MPCDVelocityCompute::~MPCDVelocityCompute()
     {
     }
 
@@ -49,30 +53,34 @@ void MPCDVelocityCompute::compute(unsigned int timestep)
     // case particles can have different masses in future, carrying out the explicit calculation
     const unsigned int N = m_mpcd_pdata->getN();
     ArrayHandle<Scalar4> h_vel(m_mpcd_pdata->getVelocities(), access_location::host, access_mode::read);
-    const Scalar mass = m_mpcd_pdata->getMass();
-    Scalar3 mom_mass(0,0,0,0);
+    const Scalar m = m_mpcd_pdata->getMass();
+    Scalar3 momentum = make_scalar3(0.,0.,0.);
+    Scalar mass(0);
     for (unsigned int i=0; i < N; ++i)
         {
         const Scalar4 vel_cell = h_vel.data[i];
-        mom_mass += make_scalar4(mass*vel_cell.x,mass*vel_cell.y,mass*vel_cell.z,mass);
+        const Scalar3 vel = make_scalar3(vel_cell.x,vel_cell.y,vel_cell.z);
+        momentum += m*vel;
+        mass += m;
         }
     #ifdef ENABLE_MPI
     if (m_comm)
         {
         Scalar buffer[4] = {mom_mass.x, mom_mass.y, mom_mass.z, mom_mass.w};
         MPI_Allreduce(MPI_IN_PLACE, &buffer[0], 4, MPI_HOOMD_SCALAR, MPI_SUM, m_exec_conf->getMPICommunicator());
-        mom_mass = make_scalar4(buffer[0],buffer[1],buffer[2],buffer[3]);
+        momentum = make_scalar3(buffer[0],buffer[1],buffer[2]);
+        mass = buffer[3];
         }
     #endif // ENABLE_MPI
 
     // reduce total momentum by mass to get center-of-mass
-    m_velocity = make_scalar3(mom_mass.x,mom_mass.y,mom_mass.z)/mom_mass.w;
+    m_velocity = momentum/mass;
     }
 
 std::vector<std::string> MPCDVelocityCompute::getProvidedLogQuantities()
-	{
-	return m_lognames;
-	}
+    {
+    return m_lognames;
+    }
 
 Scalar MPCDVelocityCompute::getLogValue(const std::string& quantity, unsigned int timestep)
     {
@@ -91,17 +99,17 @@ Scalar MPCDVelocityCompute::getLogValue(const std::string& quantity, unsigned in
         }
     else
         {
-        m_exec_conf->msg->error() << "MPCDVelocityCompute: " << quantity << " is not a valid log quantity" << endl;
-        throw runtime_error("Unknown log quantity");
+        m_exec_conf->msg->error() << "MPCDVelocityCompute: " << quantity << " is not a valid log quantity" << std::endl;
+        throw std::runtime_error("Unknown log quantity");
         }
     }
-    
+
 namespace detail
 {
 void export_MPCDVelocityCompute(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<MPCDVelocityCompute,std::shared_ptr<MPCDVelocityCompute>,Compute>(m, "MPCDVelocityCompute")
+    py::class_<MPCDVelocityCompute,std::shared_ptr<MPCDVelocityCompute>>(m, "MPCDVelocityCompute", py::base<Compute>())
         .def(py::init<std::shared_ptr<mpcd::SystemData>,const std::string&>())
         ;
     }

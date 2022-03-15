@@ -21,24 +21,24 @@ class analyze_group_velocity_tests(unittest.TestCase):
         hoomd.init.read_snapshot(md_snap)
 
         # MPCD system
-        snap = azplugins.mpcd.data.make_snapshot(N=2)
+        snap = mpcd.data.make_snapshot(N=2)
         if hoomd.comm.get_rank() == 0:
             snap.particles.position[:] = [[0,0,-5],[0,0,5]]
-            snap.particles.velocity[:] = [[1,-2,3],[-2,4,-6]]
-        self.s = azplugins.mpcd.init.read_snapshot(snap)
+            snap.particles.velocity[:] = [[1,-2,3],[-3,6,-9]]
+        self.s = mpcd.init.read_snapshot(snap)
 
     def test_compute(self):
         azplugins.mpcd.compute_velocity()
         log = hoomd.analyze.log(
             filename=None,
-            quantities=['mpcd_vx_all','mpcd_vy_all','mpcd_vz_all'],
+            quantities=['mpcd_vx','mpcd_vy','mpcd_vz'],
             period=1
             )
         hoomd.run(1)
         v = [
-            log.query('mpcd_vx_all'),
-            log.query('mpcd_vy_all'),
-            log.query('mpcd_vz_all')
+            log.query('mpcd_vx'),
+            log.query('mpcd_vy'),
+            log.query('mpcd_vz')
             ]
         np.testing.assert_allclose(v, [-1,2,-3])
 
@@ -60,7 +60,7 @@ class analyze_group_velocity_tests(unittest.TestCase):
     def test_unique_suffix(self):
         azplugins.mpcd.compute_velocity(suffix='_1')
         with self.assertRaises(ValueError):
-            azplugins.mpcd.compute_velocity(group=all_,suffix='_1')
+            azplugins.mpcd.compute_velocity(suffix='_1')
 
     def tearDown(self):
         del self.s
