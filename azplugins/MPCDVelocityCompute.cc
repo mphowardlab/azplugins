@@ -66,7 +66,7 @@ void MPCDVelocityCompute::compute(unsigned int timestep)
     #ifdef ENABLE_MPI
     if (m_comm)
         {
-        Scalar buffer[4] = {mom_mass.x, mom_mass.y, mom_mass.z, mom_mass.w};
+        Scalar buffer[4] = {momentum.x, momentum.y, momentum.z, mass};
         MPI_Allreduce(MPI_IN_PLACE, &buffer[0], 4, MPI_HOOMD_SCALAR, MPI_SUM, m_exec_conf->getMPICommunicator());
         momentum = make_scalar3(buffer[0],buffer[1],buffer[2]);
         mass = buffer[3];
