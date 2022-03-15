@@ -121,6 +121,7 @@ list(APPEND py_files
 # mpcd c++ files
 list(APPEND _${COMPONENT_NAME}_sources
     MPCDReversePerturbationFlow.cc
+    MPCDVelocityCompute.cc
     SinusoidalChannelFiller.cc
     SinusoidalExpansionConstrictionFiller.cc
     )

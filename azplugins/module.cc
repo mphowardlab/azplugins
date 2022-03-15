@@ -31,6 +31,7 @@ namespace py = pybind11;
 /* MPCD */
 #ifdef ENABLE_MPCD
 #include "MPCDReversePerturbationFlow.h"
+#include "MPCDVelocityCompute.h"
 #include "SinusoidalChannelFiller.h"
 #include "SinusoidalExpansionConstrictionFiller.h"
 #include "hoomd/mpcd/ConfinedStreamingMethod.h"
@@ -265,6 +266,7 @@ PYBIND11_MODULE(_azplugins, m)
     mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::SinusoidalChannel>(m);
     mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::SinusoidalExpansionConstriction>(m);
     azplugins::detail::export_MPCDReversePerturbationFlow(m);
+    azplugins::detail::export_MPCDVelocityCompute(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_SinusoidalChannelFillerGPU(m);
     azplugins::detail::export_SinusoidalExpansionConstrictionFillerGPU(m);
