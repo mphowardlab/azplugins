@@ -54,7 +54,7 @@ void MPCDVelocityCompute::compute(unsigned int timestep)
     const unsigned int N = m_mpcd_pdata->getN();
     ArrayHandle<Scalar4> h_vel(m_mpcd_pdata->getVelocities(), access_location::host, access_mode::read);
     const Scalar m = m_mpcd_pdata->getMass();
-    Scalar3 momentum = make_scalar3(0.,0.,0.);
+    Scalar3 momentum = make_scalar3(0,0,0);
     Scalar mass(0);
     for (unsigned int i=0; i < N; ++i)
         {

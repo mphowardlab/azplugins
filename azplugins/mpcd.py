@@ -49,8 +49,13 @@ class compute_velocity(hoomd.compute._compute):
 
     Example::
 
+        # without suffix
         azplugins.mpcd.compute_velocity()
         hoomd.analyze.log(filename='velocity.dat', quantities=['mpcd_vx'], period=10)
+
+        # with suffix
+        azplugins.mpcd.compute_velocity(suffix='-srd')
+        hoomd.analyze.log(filename='velocity_srd.dat', quantities=['mpcd_vx-srd'], period=100)
 
     """
     def __init__(self, suffix=None):
