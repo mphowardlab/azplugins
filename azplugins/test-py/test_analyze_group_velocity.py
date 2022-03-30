@@ -39,6 +39,14 @@ class analyze_group_velocity_tests(unittest.TestCase):
         v = [log.query('vx_A'), log.query('vy_A'), log.query('vz_A')]
         np.testing.assert_allclose(v, [1,-2,3])
 
+    def test_compute_empty_group(self):
+        notatype = hoomd.group.type('C')
+        azplugins.analyze.group_velocity(group=notatype)
+        log = hoomd.analyze.log(filename=None, quantities=['vx_C','vy_C','vz_C'], period=1)
+        hoomd.run(1)
+        v = [log.query('vx_C'), log.query('vy_C'), log.query('vz_C')]
+        np.testing.assert_allclose(v, [0,0,0])
+
     def test_compute_suffix(self):
         typeB = hoomd.group.type('B',name='B')
         azplugins.analyze.group_velocity(group=typeB,suffix='_foo')
