@@ -46,8 +46,17 @@ class group_velocity(hoomd.compute._compute):
 
     Example::
 
+        # all particles
         azplugins.analyze.group_velocity(hoomd.group.all())
-        hoomd.analze.log(filename='velocity.dat', quantities=['vx_all'], period=10)
+        hoomd.analyze.log(filename='velocity.dat', quantities=['vx_all'], period=10)
+
+        # suffix comes from group name
+        azplugins.analyze.group_velocity(hoomd.group.type('A',name='A'))
+        hoomd.analyze.log(filename='velocity_A.dat', quantities=['vx_A'], period=50)
+
+        # suffix is manually set
+        azplugins.analyze.group_velocity(hoomd.group.type('B'), suffix='-big')
+        hoomd.analyze.log(filename='velocity_big.dat', quantities=['vx-big'], period=100)
 
     """
     def __init__(self, group, suffix=None):

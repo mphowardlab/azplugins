@@ -54,7 +54,7 @@ void GroupVelocityCompute::compute(unsigned int timestep)
     const unsigned int N = m_group->getNumMembers();
     ArrayHandle<unsigned int> h_index(m_group->getIndexArray(), access_location::host, access_mode::read);
     ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(), access_location::host, access_mode::read);
-    Scalar3 momentum = make_scalar3(0.,0.,0.);
+    Scalar3 momentum = make_scalar3(0,0,0);
     Scalar mass(0);
     for (unsigned int i=0; i < N; ++i)
         {
