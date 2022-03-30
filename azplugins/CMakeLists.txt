@@ -34,6 +34,7 @@ endif(NOT HOOMD_EXTERNAL_BUILD)
 set(_${COMPONENT_NAME}_sources
     module.cc
     BounceBackGeometry.cc
+    GroupVelocityCompute.cc
     ImplicitEvaporator.cc
     ImplicitDropletEvaporator.cc
     ImplicitPlaneEvaporator.cc
