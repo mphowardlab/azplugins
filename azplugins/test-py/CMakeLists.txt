@@ -79,6 +79,7 @@ set(MPCD_ONLY
     test_mpcd_reverse_perturbation
     test_mpcd_sinusoidal_channel
     test_mpcd_sinusoidal_expansion_constriction
+    test_mpcd_velocity_compute
     )
 
 set(MPI_ONLY
