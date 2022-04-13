@@ -1,10 +1,9 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: mphoward
-
-from hoomd import *
-context.initialize()
+import hoomd
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:

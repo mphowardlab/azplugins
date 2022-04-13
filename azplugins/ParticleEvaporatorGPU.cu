@@ -1,7 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021-2022, Auburn University
 // This file is part of the azplugins project, released under the Modified BSD License.
-
-// Maintainer: mphoward
 
 /*!
  * \file ParticleEvaporatorGPU.cu
@@ -9,7 +8,12 @@
  */
 
 #include "ParticleEvaporatorGPU.cuh"
+
+#if __CUDACC_VER_MAJOR__ >= 11
+#include <cub/cub.cuh>
+#else
 #include "hoomd/extern/cub/cub/cub.cuh"
+#endif
 
 namespace azplugins
 {

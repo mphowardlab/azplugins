@@ -1,7 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021-2022, Auburn University
 // This file is part of the azplugins project, released under the Modified BSD License.
-
-// Maintainer: mphoward / Everyone is free to add additional objects
 
 /*!
  * \file module.cc
@@ -34,8 +33,15 @@ namespace py = pybind11;
 /* MPCD */
 #ifdef ENABLE_MPCD
 #include "MPCDReversePerturbationFlow.h"
+#include "MPCDVelocityCompute.h"
+#include "SinusoidalChannelFiller.h"
+#include "SinusoidalExpansionConstrictionFiller.h"
+#include "hoomd/mpcd/ConfinedStreamingMethod.h"
 #ifdef ENABLE_CUDA
 #include "MPCDReversePerturbationFlowGPU.h"
+#include "SinusoidalChannelFillerGPU.h"
+#include "SinusoidalExpansionConstrictionFillerGPU.h"
+#include "hoomd/mpcd/ConfinedStreamingMethodGPU.h"
 #endif // ENABLE_CUDA
 #endif // ENABLE_MPCD
 
@@ -56,10 +62,15 @@ namespace py = pybind11;
 #endif // ENABLE_CUDA
 
 /* Analyzers */
+#include "GroupVelocityCompute.h"
 #include "RDFAnalyzer.h"
 #ifdef ENABLE_CUDA
 #include "RDFAnalyzerGPU.h"
 #endif // ENABLE_CUDA
+
+/* Streaming Geometries */
+#include "SinusoidalChannelGeometry.h"
+#include "SinusoidalExpansionConstrictionGeometry.h"
 
 /* Integrators */
 #include "BounceBackGeometry.h"
@@ -104,6 +115,23 @@ void export_ashbaugh_bond_params(py::module& m)
     .def_readwrite("r0", &ashbaugh_bond_params::r_0)
     ;
     m.def("make_ashbaugh_bond_params", &make_ashbaugh_bond_params);
+    }
+
+//! Helper function export the FENE-LJ bond potential parameters
+/*!
+* \sa fene_lj_bond_params
+*/
+void export_fene_bond_params(py::module& m)
+    {
+    py::class_<fene_bond_params>(m, "fene_bond_params")
+    .def(py::init<>())
+    .def_readwrite("lj1", &fene_bond_params::lj1)
+    .def_readwrite("lj2", &fene_bond_params::lj2)
+    .def_readwrite("K", &fene_bond_params::K)
+    .def_readwrite("r0", &fene_bond_params::r_0)
+    .def_readwrite("delta", &fene_bond_params::delta)
+    ;
+    m.def("make_fene_bond_params", &make_fene_bond_params);
     }
 
 //! Helper function export the Ashbaugh-Hatch pair potential parameters
@@ -170,6 +198,7 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorAshbaugh24>(m, "PairPotentialAshbaugh24");
     azplugins::detail::export_ashbaugh_params(m);
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorColloid>(m, "PairPotentialColloid");
+    azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorHertz>(m, "PairPotentialHertz");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorLJ124>(m, "PairPotentialLJ124");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorLJ96>(m,"PairPotentialLJ96");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorShiftedLJ>(m, "PairPotentialShiftedLJ");
@@ -185,6 +214,7 @@ PYBIND11_MODULE(_azplugins, m)
     /* Bond potentials */
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorDoubleWell>(m, "BondPotentialDoubleWell");
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENE>(m, "BondPotentialFENE");
+    azplugins::detail::export_fene_bond_params(m);
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENEAsh24>(m, "BondPotentialFENEAsh24");
     azplugins::detail::export_ashbaugh_bond_params(m);
 
@@ -230,15 +260,29 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_PositionRestraintComputeGPU(m);
     #endif // ENABLE_CUDA
 
-    /* MPCD */
+
+    /* MPCD components */
     #ifdef ENABLE_MPCD
+    azplugins::detail::export_SinusoidalChannel(m);
+    azplugins::detail::export_SinusoidalExpansionConstriction(m);
+    azplugins::detail::export_SinusoidalChannelFiller(m);
+    azplugins::detail::export_SinusoidalExpansionConstrictionFiller(m);
+    mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::SinusoidalChannel>(m);
+    mpcd::detail::export_ConfinedStreamingMethod<azplugins::detail::SinusoidalExpansionConstriction>(m);
     azplugins::detail::export_MPCDReversePerturbationFlow(m);
+    azplugins::detail::export_MPCDVelocityCompute(m);
     #ifdef ENABLE_CUDA
+    azplugins::detail::export_SinusoidalChannelFillerGPU(m);
+    azplugins::detail::export_SinusoidalExpansionConstrictionFillerGPU(m);
+    // TODO: Currently these streaming methods are not working on the because of issues with polymorphism on the GPU
+    // mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SinusoidalChannel>(m);
+    // mpcd::detail::export_ConfinedStreamingMethodGPU<azplugins::detail::SinusoidalExpansionConstriction>(m);
     azplugins::detail::export_MPCDReversePerturbationFlowGPU(m);
     #endif // ENABLE_CUDA
     #endif // ENABLE_MPCD
 
     /* Analyzers */
+    azplugins::detail::export_GroupVelocityCompute(m);
     azplugins::detail::export_RDFAnalyzer(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_RDFAnalyzerGPU(m);
@@ -263,8 +307,12 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_TwoStepLangevinFlowGPU<azplugins::QuiescentFluid>(m, "LangevinQuiescentFluidGPU");
     #endif // ENABLE_CUDA
     azplugins::detail::export_BounceBackNVE<mpcd::detail::SlitGeometry>(m);
+    azplugins::detail::export_BounceBackNVE<azplugins::detail::SinusoidalChannel>(m);
+    azplugins::detail::export_BounceBackNVE<azplugins::detail::SinusoidalExpansionConstriction>(m);
     #ifdef ENABLE_CUDA
     azplugins::detail::export_BounceBackNVEGPU<mpcd::detail::SlitGeometry>(m);
+    azplugins::detail::export_BounceBackNVEGPU<azplugins::detail::SinusoidalChannel>(m);
+    azplugins::detail::export_BounceBackNVEGPU<azplugins::detail::SinusoidalExpansionConstriction>(m);
     #endif // ENABLE_CUDA
 
     /* Variants */

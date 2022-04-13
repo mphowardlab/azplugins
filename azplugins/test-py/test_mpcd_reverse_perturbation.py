@@ -1,14 +1,12 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: astatt
-
 import hoomd
-from hoomd import *
 from hoomd import md
 from hoomd import mpcd
 
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
     import hoomd.azplugins.mpcd
@@ -20,7 +18,7 @@ import unittest
 # tests for azplugins.flow.reverse_pertubation
 class updater_reverse_perturbation(unittest.TestCase):
     def setUp(self):
-        snapshot = hoomd.data.make_snapshot(N=1, particle_types=['A'],box=data.boxdim(L=20))
+        snapshot = hoomd.data.make_snapshot(N=1, particle_types=['A'],box=hoomd.data.boxdim(L=20))
         system1 = hoomd.init.read_snapshot(snapshot)
         snap = mpcd.data.make_snapshot(N=1)
         snap.particles.types = ['A']
@@ -40,7 +38,7 @@ class updater_reverse_perturbation(unittest.TestCase):
         # cannot set a width > L/2
         with self.assertRaises(RuntimeError):
             field.set_params(width=22.0)
-            run(1)
+            hoomd.run(1)
         # cannot set a Nswap < 0
         with self.assertRaises(ValueError):
             field.set_params(Nswap=-5)
@@ -55,11 +53,11 @@ class updater_reverse_perturbation(unittest.TestCase):
             field.set_params(H=-1)
 
     def tearDown(self):
-        context.initialize()
+        hoomd.context.initialize()
 
 class updater_reverse_perturbation_swap(unittest.TestCase):
     def setUp(self):
-        snapshot =  hoomd.data.make_snapshot(N=1, particle_types=['A'],box=data.boxdim(L=20))
+        snapshot =  hoomd.data.make_snapshot(N=1, particle_types=['A'],box=hoomd.data.boxdim(L=20))
         system1 = hoomd.init.read_snapshot(snapshot)
         snap = mpcd.data.make_snapshot(N=5)
         snap.particles.types = ['A']
@@ -79,21 +77,21 @@ class updater_reverse_perturbation_swap(unittest.TestCase):
 
     def test_resize_Nswap(self):
         field = azplugins.mpcd.reverse_perturbation(width=0.2,Nswap=1,period=1,target_momentum=2)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(field.Nswap,1)
         field = azplugins.mpcd.reverse_perturbation(width=0.2,Nswap=356,period=1,target_momentum=2)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(field.Nswap,356)
 
     def test_set_slab_distance(self):
         field = azplugins.mpcd.reverse_perturbation(width=0.2,Nswap=1,period=1,target_momentum=2,H=3)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(field.distance,3)
 
     def test_simple_swap(self):
         # swap velocities of particle 1/3. Don't swap 0/2 - Nswap is too small
         field = azplugins.mpcd.reverse_perturbation(width=1.0,Nswap=1,period=1,phase=0,target_momentum=0.8)
-        run(1)
+        hoomd.run(1)
         snap_out = self.s.take_snapshot()
         self.assertAlmostEqual(snap_out.particles.velocity[0][0],0.1)
         self.assertAlmostEqual(snap_out.particles.velocity[2][0],-0.1)
@@ -103,7 +101,7 @@ class updater_reverse_perturbation_swap(unittest.TestCase):
     def test_swap_outside_slab(self):
         # swap no velocities because slab distance is changed - no particles are in slab at +/- 3
         field = azplugins.mpcd.reverse_perturbation(H=3,width=1.0,Nswap=1,period=1,phase=0,target_momentum=0.8)
-        run(1)
+        hoomd.run(1)
         snap_out = self.s.take_snapshot()
         self.assertAlmostEqual(snap_out.particles.velocity[0][0],0.1)
         self.assertAlmostEqual(snap_out.particles.velocity[2][0],-0.1)
@@ -119,7 +117,7 @@ class updater_reverse_perturbation_swap(unittest.TestCase):
         snap_in.particles.velocity[3]=(-0.5,0,0)
         self.s.restore_snapshot(snap_in)
         field = azplugins.mpcd.reverse_perturbation(H=2,width=1.0,Nswap=1,period=1,phase=0,target_momentum=0.8)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(field.distance,2)
         snap_out = self.s.take_snapshot()
         self.assertAlmostEqual(snap_out.particles.position[1][2],-2.0)
@@ -134,7 +132,7 @@ class updater_reverse_perturbation_swap(unittest.TestCase):
         snap_in.particles.position[4]=(2,-2,-1.0)
         self.s.restore_snapshot(snap_in)
         field = azplugins.mpcd.reverse_perturbation(width=1.0,Nswap=10,period=1,target_momentum=2)
-        run(1)
+        hoomd.run(1)
         snap_out = self.s.take_snapshot()
         self.assertAlmostEqual(snap_out.particles.velocity[0][0],0.1)
         self.assertAlmostEqual(snap_out.particles.velocity[1][0],0.8)
@@ -148,7 +146,7 @@ class updater_reverse_perturbation_swap(unittest.TestCase):
         self.s.restore_snapshot(snap_in)
 
         field = azplugins.mpcd.reverse_perturbation(width=1.0,Nswap=10,period=1,target_momentum=2)
-        run(1)
+        hoomd.run(1)
         snap_out = self.s.take_snapshot()
         self.assertAlmostEqual(snap_out.particles.velocity[0][0],0.1)
         self.assertAlmostEqual(snap_out.particles.velocity[1][0],0.8)
@@ -158,7 +156,7 @@ class updater_reverse_perturbation_swap(unittest.TestCase):
     def test_simple_swap_outside_slab(self):
         # don't swap anything - all particles are outside of slabs
         field = azplugins.mpcd.reverse_perturbation(width=0.2,Nswap=100,period=1,target_momentum=2)
-        run(1)
+        hoomd.run(1)
         snap_out = self.s.take_snapshot()
         self.assertAlmostEqual(snap_out.particles.velocity[0][0],0.1)
         self.assertAlmostEqual(snap_out.particles.velocity[1][0],0.8)
@@ -168,7 +166,7 @@ class updater_reverse_perturbation_swap(unittest.TestCase):
     def test_simple_swap_all(self):
         # swap velocities of particle 1/3, and 0/2
         field = azplugins.mpcd.reverse_perturbation(width=1.0,Nswap=100,period=1,target_momentum=2)
-        run(1)
+        hoomd.run(1)
         snap_out = self.s.take_snapshot()
         self.assertAlmostEqual(snap_out.particles.velocity[0][0],-0.1)
         self.assertAlmostEqual(snap_out.particles.velocity[1][0],-0.5)
@@ -178,7 +176,7 @@ class updater_reverse_perturbation_swap(unittest.TestCase):
     def test_swap_target_momentum(self):
         # swap velocities of particle 0/2 (closer to V) and not 1/3
         field = azplugins.mpcd.reverse_perturbation(width=1.0,Nswap=1,period=1,target_momentum=0.1)
-        run(1)
+        hoomd.run(1)
         snap_out = self.s.take_snapshot()
         self.assertAlmostEqual(snap_out.particles.velocity[0][0],-0.1)
         self.assertAlmostEqual(snap_out.particles.velocity[1][0],0.8)
@@ -186,7 +184,7 @@ class updater_reverse_perturbation_swap(unittest.TestCase):
         self.assertAlmostEqual(snap_out.particles.velocity[3][0],-0.5)
 
     def tearDown(self):
-        context.initialize()
+        hoomd.context.initialize()
 
 
 if __name__ == '__main__':

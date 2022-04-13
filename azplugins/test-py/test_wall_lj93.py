@@ -1,11 +1,10 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: mphoward
-
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -15,8 +14,8 @@ import unittest
 # azplugins.wall.lj93
 class wall_lj93_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
-        self.s = init.read_snapshot(snap)
+        snap = hoomd.data.make_snapshot(N=100, box=hoomd.data.boxdim(L=20), particle_types=['A'])
+        self.s = hoomd.init.read_snapshot(snap)
         self.walls = md.wall.group()
         self.walls.add_plane((0,0,-5),(0,0,1))
 
@@ -67,15 +66,15 @@ class wall_lj93_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s, self.walls
-        context.initialize()
+        hoomd.context.initialize()
 
 # test the validity of the pair potential
 class potential_wall_lj93_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=1, box=data.boxdim(L=20),particle_types=['A'])
-        if comm.get_rank() == 0:
+        snap = hoomd.data.make_snapshot(N=1, box=hoomd.data.boxdim(L=20),particle_types=['A'])
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[0] = (1,1,-3.95)
-        init.read_snapshot(snap)
+        hoomd.init.read_snapshot(snap)
 
         # planar wall
         self.walls = md.wall.group()
@@ -83,7 +82,7 @@ class potential_wall_lj93_tests(unittest.TestCase):
 
         # integrator with zero timestep to compute forces
         md.integrate.mode_standard(dt=0)
-        md.integrate.nve(group = group.all())
+        md.integrate.nve(group = hoomd.group.all())
 
     # test the calculation of force and potential
     def test_potential(self):
@@ -91,7 +90,7 @@ class potential_wall_lj93_tests(unittest.TestCase):
 
         # by default, cutoff is 0 so there should be no interaction
         lj93.force_coeff.set('A', epsilon=2.0, sigma=1.05)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(lj93.forces[0].energy, 0)
         f0 = lj93.forces[0].force
         self.assertAlmostEqual(f0[0], 0)
@@ -101,7 +100,7 @@ class potential_wall_lj93_tests(unittest.TestCase):
         # set the cutoff and evaluate the energy and force
         # need to shift the energy since this is the default mode
         lj93.force_coeff.set('A', r_cut=3.0)
-        run(1)
+        hoomd.run(1)
         U = -1.7333333333333334 - (-0.08572898249635419)
         F = -3.4285714285714284
         self.assertAlmostEqual(lj93.forces[0].energy, U, 5)
@@ -109,19 +108,19 @@ class potential_wall_lj93_tests(unittest.TestCase):
 
         # check epsilon = 0 is zero
         lj93.force_coeff.set('A', epsilon=0.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(lj93.forces[0].energy, 0)
         self.assertAlmostEqual(lj93.forces[0].force[2], 0)
 
         # check outside the cutoff is zero
         lj93.force_coeff.set('A', epsilon=2.0, r_cut=0.8)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(lj93.forces[0].energy, 0)
         self.assertAlmostEqual(lj93.forces[0].force[2], 0)
 
     def tearDown(self):
         del self.walls
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

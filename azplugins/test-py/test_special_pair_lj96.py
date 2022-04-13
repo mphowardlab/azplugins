@@ -1,11 +1,10 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: sjiao
-
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -16,16 +15,16 @@ import unittest
 class special_pair_lj96_tests(unittest.TestCase):
     def setUp(self):
         # raw snapshot is fine, just needs to have the types
-        snap = data.make_snapshot(N=100,
-                                  box=data.boxdim(L=20),
+        snap = hoomd.data.make_snapshot(N=100,
+                                  box=hoomd.data.boxdim(L=20),
                                   particle_types=['A'],
                                   pair_types=['A-A'])
         snap.pairs.resize(50)
         for particle in range(50):
             snap.pairs.group[particle] = [particle*2, particle*2+1]
             snap.pairs.typeid[:] = 0
-        self.s = init.read_snapshot(snap)
-        context.current.sorter.set_params(grid=8)
+        self.s = hoomd.init.read_snapshot(snap)
+        hoomd.context.current.sorter.set_params(grid=8)
 
     # basic test of creation
     def test(self):
@@ -70,22 +69,22 @@ class special_pair_lj96_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s
-        context.initialize()
+        hoomd.context.initialize()
 
 # test the validity of the pair potential
 class potential_lj96_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2,
-                                  box=data.boxdim(L=20),
+        snap = hoomd.data.make_snapshot(N=2,
+                                  box=hoomd.data.boxdim(L=20),
                                   particle_types=['A'],
                                   pair_types=['A-A'])
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.particles.position[0] = (0,0,0)
             snap.particles.position[1] = (1.05,0,0)
             snap.pairs.resize(1)
             snap.pairs.group[0] = [0,1]
             snap.pairs.typeid[0] = 0
-        init.read_snapshot(snap)
+        hoomd.init.read_snapshot(snap)
 
     # test the calculation of force and potential
     def test_potential(self):
@@ -93,8 +92,8 @@ class potential_lj96_tests(unittest.TestCase):
         lj96.pair_coeff.set('A-A', epsilon=2.0, sigma=1.05, r_cut=3, mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         U = 0.0
         F = -38.5714
         f0 = lj96.forces[0].force
@@ -115,7 +114,7 @@ class potential_lj96_tests(unittest.TestCase):
 
         # test energy shift mode
         lj96.pair_coeff.set('A-A', mode="shift")
-        run(1)
+        hoomd.run(1)
         U = 0.0238
         F = -38.5714
         self.assertAlmostEqual(lj96.forces[0].energy, 0.5*U, 3)
@@ -124,7 +123,7 @@ class potential_lj96_tests(unittest.TestCase):
         self.assertAlmostEqual(lj96.forces[1].force[0], -F, 3)
 
         lj96.pair_coeff.set('A-A', sigma=0.85, mode="shift")
-        run(1)
+        hoomd.run(1)
         U = -1.7770
         F = 4.4343
         self.assertAlmostEqual(lj96.forces[0].energy, 0.5*U, 3)
@@ -139,8 +138,8 @@ class potential_lj96_tests(unittest.TestCase):
         lj96.pair_coeff.set('A-A', epsilon=2.0, sigma=1.05, r_cut=2.5, alpha=0.5, mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
 
         U = 6.75
         F = -77.1429
@@ -150,7 +149,7 @@ class potential_lj96_tests(unittest.TestCase):
         self.assertAlmostEqual(lj96.forces[1].force[0], -F, 3)
 
         lj96.pair_coeff.set('A-A', sigma=0.5)
-        run(1)
+        hoomd.run(1)
         U = -0.06171
         F = 0.3040
         self.assertAlmostEqual(lj96.forces[0].energy,0.5*U,3)
@@ -166,8 +165,8 @@ class potential_lj96_tests(unittest.TestCase):
         lj96.pair_coeff.set('A-A', epsilon=1.0, sigma=1.0, r_cut=1.0, mode="no_shift")
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         self.assertAlmostEqual(lj96.forces[0].energy, 0)
         self.assertAlmostEqual(lj96.forces[1].energy, 0)
         self.assertAlmostEqual(lj96.forces[0].force[0], 0)
@@ -175,14 +174,14 @@ class potential_lj96_tests(unittest.TestCase):
 
         # inside cutoff but epsilon = 0
         lj96.pair_coeff.set('A-A', epsilon=0.0, sigma=1.0, r_cut=3.0)
-        run(1)
+        hoomd.run(1)
         self.assertAlmostEqual(lj96.forces[0].energy, 0)
         self.assertAlmostEqual(lj96.forces[1].energy, 0)
         self.assertAlmostEqual(lj96.forces[0].force[0], 0)
         self.assertAlmostEqual(lj96.forces[1].force[0], 0)
 
     def tearDown(self):
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

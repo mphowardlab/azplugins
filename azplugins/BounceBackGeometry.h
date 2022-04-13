@@ -1,7 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021-2022, Auburn University
 // This file is part of the azplugins project, released under the Modified BSD License.
-
-// Maintainer: mphoward
 
 /*!
  * \file BounceBackGeometry.h
@@ -17,6 +16,8 @@
 
 #include "hoomd/mpcd/BoundaryCondition.h"
 #include "hoomd/mpcd/SlitGeometry.h"
+#include "SinusoidalChannelGeometry.h"
+#include "SinusoidalExpansionConstrictionGeometry.h"
 
 #ifndef NVCC
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
@@ -26,6 +27,11 @@ namespace azplugins
 namespace detail
 {
 
+//! Export SinusoidalChannel to python
+void export_SinusoidalChannel(pybind11::module& m);
+
+//! Export SinusoidalExpansionConstriction to python
+void export_SinusoidalExpansionConstriction(pybind11::module& m);
 
 } // end namespace detail
 } // end namespace azplugins

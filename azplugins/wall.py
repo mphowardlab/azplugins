@@ -1,8 +1,20 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
+"""
+Wall potentials
+===============
 
-# Maintainer: mphoward / Everyone is free to add additional potentials
+.. autosummary::
+    :nosignatures:
 
+    colloid
+    lj93
+
+.. autoclass:: colloid
+.. autoclass:: lj93
+
+"""
 import hoomd
 from hoomd import _hoomd
 
@@ -24,7 +36,7 @@ class colloid(hoomd.md.wall.wallpotential):
 
         \begin{eqnarray*}
         V(r) = & \frac{\varepsilon \sigma^6}{7560} \left( \frac{7a-z}{(z-a)^7} + \frac{7a+z}{(z+a)^7} \right)
-             - \frac{\varepsilon}{6} \left( \frac{2 a z}{z^2-a^2} + \ln\left(\frac{z-a}{z+a}\right) \right) & r < r_{\rm cut}
+             - \frac{\varepsilon}{6} \left( \frac{2 a z}{z^2-a^2} + \ln\left(\frac{z-a}{z+a}\right) \right) & r < r_{\rm cut} \\
               = & 0 & r \ge r_{\mathrm{cut}}
         \end{eqnarray*}
 
@@ -39,9 +51,9 @@ class colloid(hoomd.md.wall.wallpotential):
 
     - :math:`\varepsilon` - *epsilon* (in energy units)
     - :math:`\sigma` - *sigma* (in distance units)
-    - :math:`r_{\rm cut}` - *r_cut* (in distance units)
-        - *optional*: defaults to the global *r_cut* specified in the pair command
-    - :math:`r_{\rm extrap}` - *r_extrap* (in distance units)
+    - :math:`r_{\rm cut}` - `r_cut` (in distance units)
+        - *optional*: defaults to the global `r_cut` specified in the pair command
+    - :math:`r_{\rm extrap}` - `r_extrap` (in distance units)
         - *optional*: defaults to 0.0
 
     .. warning::
@@ -50,7 +62,6 @@ class colloid(hoomd.md.wall.wallpotential):
 
     Example::
 
-        import numpy as np
         walls=hoomd.md.wall.group()
         walls.add_plane((0,0,0), (0,0,1))
 

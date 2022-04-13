@@ -1,11 +1,10 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: astatt
-
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -15,19 +14,19 @@ import unittest
 # azplugins.bond.fene24
 class bond_fene24_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2,
-                                  box=data.boxdim(L=100),
+        snap = hoomd.data.make_snapshot(N=2,
+                                  box=hoomd.data.boxdim(L=100),
                                   particle_types = ['A','B'],
                                   bond_types = ['bond_1'])
 
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.bonds.resize(1)
             snap.particles.position[0] = (0,0,0)
             snap.particles.position[1] = (0,0,1.5)
             snap.bonds.group[0] = [0,1]
             snap.bonds.typeid[0] = 0
 
-        self.s = init.read_snapshot(snap)
+        self.s = hoomd.init.read_snapshot(snap)
 
     # basic test of creation
     def test(self):
@@ -84,17 +83,17 @@ class bond_fene24_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s
-        context.initialize()
+        hoomd.context.initialize()
 
 # test the validity of the bond potential
 class potential_bond_fene24_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=2,
-                                  box=data.boxdim(L=100),
+        snap = hoomd.data.make_snapshot(N=2,
+                                  box=hoomd.data.boxdim(L=100),
                                   particle_types = ['A','B'],
                                   bond_types = ['bond_1'])
 
-        if comm.get_rank() == 0:
+        if hoomd.comm.get_rank() == 0:
             snap.bonds.resize(1)
             snap.particles.position[0] = (0,0,0)
             snap.particles.position[1] = (0.0,0,1.0)
@@ -102,7 +101,7 @@ class potential_bond_fene24_tests(unittest.TestCase):
             snap.particles.typeid[1] = 1
             snap.bonds.group[0] = [0,1]
             snap.bonds.typeid[0] = 0
-        self.s = init.read_snapshot(snap)
+        self.s = hoomd.init.read_snapshot(snap)
 
 
     # test the calculation of force and potential at minimum
@@ -112,8 +111,8 @@ class potential_bond_fene24_tests(unittest.TestCase):
         fene24.update_coeffs()
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
         U = 19.8377999404
         F = -42.0
         f0 = fene24.forces[0].force
@@ -141,8 +140,8 @@ class potential_bond_fene24_tests(unittest.TestCase):
         fene24.update_coeffs()
 
         md.integrate.mode_standard(dt=0)
-        nve = md.integrate.nve(group = group.all())
-        run(1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        hoomd.run(1)
 
         U = 21.207765657
         F = -133.652880656
@@ -165,18 +164,18 @@ class potential_bond_fene24_tests(unittest.TestCase):
 
 
     # test streching beyond maximal bond length of r0
-    @unittest.skipIf(comm.get_num_ranks() > 1, 'in mpi throwing an error does not end the simulation correctly')
+    @unittest.skipIf(hoomd.comm.get_num_ranks() > 1, 'in mpi throwing an error does not end the simulation correctly')
     def test_potential_strech_beyond_r0(self):
         fene24 = azplugins.bond.fene24()
         fene24.bond_coeff.set('bond_1', epsilon=1.0, sigma=1.0, lam=1.0, k=30,r0=0.9)
         fene24.update_coeffs()
         md.integrate.mode_standard(dt=0.01)
-        nve = md.integrate.nve(group = group.all())
-        self.assertRaises(RuntimeError,run,1)
+        nve = md.integrate.nve(group = hoomd.group.all())
+        self.assertRaises(RuntimeError,hoomd.run,1)
 
     def tearDown(self):
         del self.s
-        context.initialize()
+        hoomd.context.initialize()
 
 
 if __name__ == '__main__':

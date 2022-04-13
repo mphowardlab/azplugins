@@ -1,12 +1,11 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: wes_reinhart
-
 import hoomd
-from hoomd import *
+import hoomd
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -18,32 +17,32 @@ import numpy as np
 # azplugins.restrain.position
 class restrain_position_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
-        self.s = init.read_snapshot(snap)
+        snap = hoomd.data.make_snapshot(N=100, box=hoomd.data.boxdim(L=20), particle_types=['A'])
+        self.s = hoomd.init.read_snapshot(snap)
 
     # basic test of creation
     def test_basic(self):
-        springs = azplugins.restrain.position(group.all(),k=1)
-        springs = azplugins.restrain.position(group.all(),k=1.)
-        springs = azplugins.restrain.position(group.all(),k=(1,2,3))
-        springs = azplugins.restrain.position(group.all(),k=(1.,2.,3.))
+        springs = azplugins.restrain.position(hoomd.group.all(),k=1)
+        springs = azplugins.restrain.position(hoomd.group.all(),k=1.)
+        springs = azplugins.restrain.position(hoomd.group.all(),k=(1,2,3))
+        springs = azplugins.restrain.position(hoomd.group.all(),k=(1.,2.,3.))
 
     # test creation with bad inputs
     def test_bad_args(self):
-        self.assertRaises(ValueError, azplugins.restrain.position, group.all(), k="one")
-        self.assertRaises(ValueError, azplugins.restrain.position, group.all(), k=(1.,2,"three"))
+        self.assertRaises(ValueError, azplugins.restrain.position, hoomd.group.all(), k="one")
+        self.assertRaises(ValueError, azplugins.restrain.position, hoomd.group.all(), k=(1.,2,"three"))
 
     # test potential calculation
     def test_potential(self):
         k = 1.
         for i in range(10):
             self.s.particles[i].position = [0.,0.,0.]
-        springs = azplugins.restrain.position(group.all(),k=k)
+        springs = azplugins.restrain.position(hoomd.group.all(),k=k)
         for i in range(10):
             self.s.particles[i].position = [i,i,i]
         # integrator with zero timestep to compute forces
         md.integrate.mode_standard(dt=0)
-        md.integrate.nve(group = group.all())
+        md.integrate.nve(group = hoomd.group.all())
         hoomd.run(0)
         for i in range(10):
             expected_energy = 3.0*i*i*0.5*k
@@ -56,7 +55,7 @@ class restrain_position_tests(unittest.TestCase):
         k = (1., 2., 3.)
         for i in range(10):
             self.s.particles[i].position = [0.,0.,0.]
-        springs = azplugins.restrain.position(group.all(),k=k)
+        springs = azplugins.restrain.position(hoomd.group.all(),k=k)
         for i in range(10):
             x = i
             y = int(i/2)
@@ -64,7 +63,7 @@ class restrain_position_tests(unittest.TestCase):
             self.s.particles[i].position = [x,y,z]
         # integrator with zero timestep to compute forces
         md.integrate.mode_standard(dt=0)
-        md.integrate.nve(group = group.all())
+        md.integrate.nve(group = hoomd.group.all())
         hoomd.run(0)
         for i in range(10):
             x = i
@@ -77,7 +76,7 @@ class restrain_position_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

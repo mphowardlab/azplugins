@@ -2,7 +2,7 @@
 
 azplugins is a component (plugin) for [HOOMD-blue](http://glotzerlab.engin.umich.edu/hoomd-blue)
 which expands its functionality for tackling a variety of problems in soft matter physics.
-Currently, azplugins is tested against v2.6.0 of HOOMD-blue. See [ChangeLog.md](ChangeLog.md) for
+Currently, azplugins is tested against v2.6.0 of HOOMD-blue. See [CHANGELOG.rst](CHANGELOG.rst) for
 a list of recent development. If you are interested in adding new code, please refer to the
 [guidelines](SourceConventions.md).
 

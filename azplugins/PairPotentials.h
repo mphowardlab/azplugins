@@ -1,7 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021-2022, Auburn University
 // This file is part of the azplugins project, released under the Modified BSD License.
-
-// Maintainer: mphoward / Everyone is free to add additional potentials
 
 /*!
  * \file PairPotentials.h
@@ -34,6 +33,7 @@
 #include "PairEvaluatorAshbaugh.h"
 #include "PairEvaluatorAshbaugh24.h"
 #include "PairEvaluatorColloid.h"
+#include "PairEvaluatorHertz.h"
 #include "PairEvaluatorLJ124.h"
 #include "PairEvaluatorLJ96.h"
 #include "PairEvaluatorShiftedLJ.h"

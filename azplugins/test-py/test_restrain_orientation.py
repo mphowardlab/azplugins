@@ -1,12 +1,10 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: wes_reinhart
-
 import hoomd
-from hoomd import *
 from hoomd import md
-context.initialize()
+hoomd.context.initialize()
 try:
     from hoomd import azplugins
 except ImportError:
@@ -53,19 +51,19 @@ def axisangle_to_q(v, theta):
 # azplugins.restrain.orientation
 class restrain_orientation_tests(unittest.TestCase):
     def setUp(self):
-        snap = data.make_snapshot(N=100, box=data.boxdim(L=20), particle_types=['A'])
+        snap = hoomd.data.make_snapshot(N=100, box=hoomd.data.boxdim(L=20), particle_types=['A'])
         snap.particles.moment_inertia[:] = (0.1,0.1,0.1) # 2/5 m r^2 = 2/20 m sigma^2
         snap.particles.angmom[:] = 0
-        self.s = init.read_snapshot(snap)
+        self.s = hoomd.init.read_snapshot(snap)
 
     # basic test of creation
     def test_basic(self):
-        field = azplugins.restrain.orientation(group.all(),k=1)
-        field = azplugins.restrain.orientation(group.all(),k=1.)
+        field = azplugins.restrain.orientation(hoomd.group.all(),k=1)
+        field = azplugins.restrain.orientation(hoomd.group.all(),k=1.)
 
     # test creation with bad inputs
     def test_bad_args(self):
-        self.assertRaises(ValueError, azplugins.restrain.orientation, group.all(), k="one")
+        self.assertRaises(ValueError, azplugins.restrain.orientation, hoomd.group.all(), k="one")
 
     # test potential calculation
     def test_potential(self):
@@ -73,14 +71,14 @@ class restrain_orientation_tests(unittest.TestCase):
         r = axisangle_to_q((0,0,1),0)
         for i in range(len(self.s.particles)):
             self.s.particles[i].orientation = r
-        field = azplugins.restrain.orientation(group.all(),k=k)
+        field = azplugins.restrain.orientation(hoomd.group.all(),k=k)
         for i in range(10):
             rads = (i * 10.)/180.*np.pi
             p = axisangle_to_q((0,0,1),rads)
             self.s.particles[i].orientation = p
         # integrator with zero timestep to compute forces
         md.integrate.mode_standard(dt=0)
-        md.integrate.nve(group = group.all())
+        md.integrate.nve(group = hoomd.group.all())
         hoomd.run(0)
         for i in range(10):
             rads = (i * 10.)/180.*np.pi
@@ -95,7 +93,7 @@ class restrain_orientation_tests(unittest.TestCase):
 
     def tearDown(self):
         del self.s
-        context.initialize()
+        hoomd.context.initialize()
 
 if __name__ == '__main__':
     unittest.main(argv = ['test.py', '-v'])

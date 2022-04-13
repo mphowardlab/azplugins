@@ -1,8 +1,40 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
+"""
+Flow
+====
 
-# Maintainer: astatt / mphoward
+Flow fields and profilers
 
+.. autosummary::
+    :nosignatures:
+
+    quiescent
+    constant
+    parabolic
+    reverse_perturbation
+    FlowProfiler
+
+Flow integrators
+
+.. autosummary::
+    :nosignatures:
+
+    brownian
+    langevin
+
+.. autoclass:: quiescent
+.. autoclass:: constant
+.. autoclass:: parabolic
+.. autoclass:: reverse_perturbation
+.. autoclass:: FlowProfiler
+.. autoclass:: brownian
+.. autoclass:: langevin
+
+"""
+
+import numpy as np
 import hoomd
 from hoomd import _hoomd
 
@@ -532,13 +564,13 @@ class langevin(hoomd.md.integrate._integration_method):
                 self.cpp_method.setGamma(i,gamma)
 
 class reverse_perturbation(hoomd.update._updater):
-    R""" Updater class for a shear flow according to the algorithm
-    published by Mueller-Plathe.:
+    R"""Reverse nonequilibrium shear flow in MD simulations.
 
-    "Florian Mueller-Plathe. Reversing the perturbation innonequilibrium
+    Implements an algorithm to generate shear flow, originally published by Mueller-Plathe:
+
+    Florian Mueller-Plathe. "Reversing the perturbation in nonequilibrium
     molecular dynamics:  An easy way to calculate the shear viscosity of
-    fluids. Phys. Rev. E, 59:4894-4898, May 1999."
-    <http://dx.doi.org/10.1103/PhysRevE.59.4894>_
+    fluids." `Phys. Rev. E, 59:4894-4898, May 1999 <https://doi.org/10.1103/PhysRevE.59.4894>`_.
 
     The method swaps up to `Nswap` particle velocities every `period`
     timesteps to introduce a momentum flow.  While the swapping is
@@ -653,3 +685,163 @@ class reverse_perturbation(hoomd.update._updater):
                 raise ValueError('reverse_perturbation.flow: target_momentum negative')
             self.target_momentum = target_momentum
             self.cpp_updater.target_momentum =target_momentum
+
+class FlowProfiler:
+    R"""Measure average profiles along a spatial dimension.
+
+    The average density, velocity, and temperature profiles are computed along
+    a given spatial dimension. Both number and mass densities and velocities are
+    available.
+
+    Args:
+        system: :py:mod:`hoomd` or :py:mod:`hoomd.mpcd` system (e.g., returned by :py:func:`hoomd.init.read_gsd`).
+        axis (int): direction for binning (0=*x*, 1=*y*, 2=*z*).
+        bins (int): Number of bins to use along ``axis``.
+        range (tuple): Lower and upper spatial bounds to use along ``axis`` like ``(lo,hi)``.
+        area (float): Cross-sectional area of bins to normalize density  (default: 1.0).
+
+    Examples::
+
+        f = azplugins.flow.FlowProfiler(system=system, axis=2, bins=20, range=(-10,10), area=20**2)
+        hoomd.analyze.callback(f, period=1e3)
+        hoomd.run(1e4)
+        if hoomd.comm.get_rank() == 0:
+            np.savetxt('profiles.dat', np.column_stack((f.centers, f.number_density, f.number_velocity[:,2], f.kT)))
+
+    .. note::
+
+        In MPI simulations, the profiles are **only** valid on the root rank. Accessing them on
+        other ranks will give ``None``.
+
+    .. note::
+
+        If ``range`` is smaller than the box, paritcles outside of  ``range`` will be ignored.
+        If ``range`` is larger than the box, the bins outside of the box will be filled with zeros.
+
+    """
+    def __init__(self, system, axis, bins, range, area=1.):
+        self.system = system
+        self.axis = axis
+
+        # setup bins with edges that span the range
+        self.edges = np.linspace(range[0], range[1], bins+1)
+        self.centers = 0.5*(self.edges[:-1]+self.edges[1:])
+        self._dx = self.edges[1:]-self.edges[:-1]
+        self.area = area
+        self.range = range
+        self.bins = bins
+
+        # profiles are initially empty
+        self.reset()
+
+        if self.axis not in (0,1,2):
+            hoomd.context.msg.error('flow.FlowProfiler: axis needs to be 0, 1, or 2.\n')
+            raise ValueError('Axis not recognized.')
+
+    def __call__(self, timestep):
+        r"""Evaluate the profiles at the current step.
+
+        The profiles are computed for the current system. This call signature is
+        intended for compatibility with `hoomd.analyze.callback`.
+
+        Args:
+            timestep (int): Current timestep.
+
+        """
+        hoomd.util.quiet_status()
+        snap = self.system.take_snapshot()
+        hoomd.util.unquiet_status()
+
+        if hoomd.comm.get_rank() == 0:
+            x = snap.particles.position[:,self.axis]
+            v = snap.particles.velocity
+            m = snap.particles.mass
+
+            # bin particles, shifting by -1 due to numpy binning convention
+            binids = np.digitize(x, self.edges)-1
+
+            # filter particles outside of range
+            flags = np.logical_and(binids > -1, binids < self.bins)
+            binids = binids[flags]
+            x = x[flags]
+            v = v[flags]
+            m = m[flags]
+
+            # number density (counts)
+            counts = np.bincount(binids,minlength=self.bins)
+            self._counts += counts
+
+            # mass density (mass)
+            mass = np.bincount(binids,weights=m,minlength=self.bins)
+            self._bin_mass += mass
+
+            # velocity profiles
+            # need to do each dimension separeately because of how bincount works
+            num_vel = np.zeros((self.bins,3))
+            mass_vel = np.zeros((self.bins,3))
+            for dim in range(3):
+               num_vel[:,dim] = np.bincount(binids,v[:,dim],minlength=self.bins)
+               mass_vel[:,dim] = np.bincount(binids,m*v[:,dim],minlength=self.bins)
+            np.divide(num_vel, counts[:,None], out=num_vel, where=counts[:,None]  > 0)
+            np.divide(mass_vel, mass[:,None], out=mass_vel, where=mass[:,None] > 0)
+            self._number_velocity += num_vel
+            self._mass_velocity += mass_vel
+
+            # temperature
+            ke = np.bincount(binids, weights=0.5*m*np.sum(v**2,axis=1), minlength=self.bins)
+            ke_cm = 0.5*mass*np.sum(mass_vel**2,axis=1)
+            kT = np.zeros(self.bins)
+            np.divide(2*(ke-ke_cm), 3*(counts-1), out=kT, where=counts > 1)
+            self._kT += kT
+            self.samples += 1
+
+    def reset(self):
+        r"""Reset the internal averaging counters."""
+        self.samples = 0
+        self._counts = np.zeros(self.bins)
+        self._bin_mass = np.zeros(self.bins)
+        self._number_density = np.zeros(self.bins)
+        self._mass_density = np.zeros(self.bins)
+        self._number_velocity = np.zeros((self.bins,3))
+        self._mass_velocity = np.zeros((self.bins,3))
+        self._kT = np.zeros(self.bins)
+
+    @property
+    def number_density(self):
+        r"""The current average number density profile."""
+        if hoomd.comm.get_rank() == 0 and self.samples > 0:
+            return self._counts/(self._dx*self.area*self.samples)
+        else:
+            return None
+
+    @property
+    def mass_density(self):
+        r"""The current mass-averaged density profile."""
+        if hoomd.comm.get_rank() == 0 and self.samples > 0:
+            return self._bin_mass/(self._dx*self.area*self.samples)
+        else:
+            return None
+
+    @property
+    def number_velocity(self):
+        r"""The current number-averaged velocity profile."""
+        if hoomd.comm.get_rank() == 0 and self.samples > 0:
+            return self._number_velocity / self.samples
+        else:
+            return None
+
+    @property
+    def mass_velocity(self):
+        r"""The current mass-averaged velocity profile."""
+        if hoomd.comm.get_rank() == 0 and self.samples > 0:
+            return self._mass_velocity / self.samples
+        else:
+            return None
+
+    @property
+    def kT(self):
+        r"""The current average temperature profile."""
+        if hoomd.comm.get_rank() == 0 and self.samples > 0:
+            return self._kT / self.samples
+        else:
+            return None
