@@ -184,9 +184,9 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
     if (m_prof) m_prof->pop();
 
 
-// at this point, the sub-array: d_all_possible_bonds[0,m_num_all_possible_bonds]
-// should contain only unique entries of possible bonds which are not yet formed.
-  }
+    // at this point, the sub-array: d_all_possible_bonds[0,m_num_all_possible_bonds]
+    // should contain only unique entries of possible bonds which are not yet formed.
+    }
 
 
 /*!
@@ -257,9 +257,9 @@ namespace detail
      {
      namespace py = pybind11;
      py::class_< DynamicBondUpdaterGPU, std::shared_ptr<DynamicBondUpdaterGPU> >(m, "DynamicBondUpdaterGPU", py::base<DynamicBondUpdater>())
-       .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<ParticleGroup>,std::shared_ptr<ParticleGroup>>())
+       .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<ParticleGroup>,std::shared_ptr<ParticleGroup>,unsigned int>())
        .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, std::shared_ptr<ParticleGroup>,
-              std::shared_ptr<ParticleGroup>, Scalar, unsigned int, unsigned int, unsigned int>());
+              std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int, unsigned int>());
      }
 
 } // end namespace detail

@@ -17,6 +17,7 @@ struct RNGIdentifier
     {
     // hoomd's identifiers, changed by +/- 1
     static const uint32_t DPDEvaluatorGeneralWeight = 0x4a84f5d1;
+    static const uint32_t DynamicBondUpdater = 0x2a84f5d1;
     static const uint32_t TwoStepBrownianFlow = 0x431287fe;
     static const uint32_t TwoStepLangevinFlow = 0x89abcdee;
     static const uint32_t SinusoidalChannelFiller = 0x231b87d1;

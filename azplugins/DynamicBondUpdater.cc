@@ -9,7 +9,8 @@
  */
 
 #include "DynamicBondUpdater.h"
-
+#include "hoomd/RandomNumbers.h"
+#include "RNGIdentifiers.h"
 
 namespace azplugins
 {
@@ -22,10 +23,11 @@ namespace azplugins
  */
 DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                                        std::shared_ptr<ParticleGroup> group_1,
-                                       std::shared_ptr<ParticleGroup> group_2)
+                                       std::shared_ptr<ParticleGroup> group_2,
+                                       unsigned int seed)
           : Updater(sysdef),
-           m_group_1(group_1),  m_group_2(group_2),  m_groups_identical(false),
-           m_r_cut(0), m_bond_type(0xffffffff),
+           m_group_1(group_1),  m_group_2(group_2), m_seed(seed), m_groups_identical(false),
+           m_r_cut(0), m_probability(0), m_bond_type(0xffffffff),
            m_max_bonds_group_1(0),m_max_bonds_group_2(0),
            m_pair_nlist(nullptr), m_pair_nlist_exclusions_set(false),
            m_box_changed(true), m_max_N_changed(true)
@@ -49,14 +51,16 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                          std::shared_ptr<ParticleGroup> group_1,
                          std::shared_ptr<ParticleGroup> group_2,
                          const Scalar r_cut,
+                         const Scalar probability,
                          unsigned int bond_type,
                          unsigned int max_bonds_group_1,
-                         unsigned int max_bonds_group_2)
+                         unsigned int max_bonds_group_2,
+                         unsigned int seed)
         : Updater(sysdef),
          m_group_1(group_1),  m_group_2(group_2),  m_groups_identical(false),
-         m_r_cut(r_cut), m_bond_type(bond_type),
+         m_r_cut(r_cut), m_probability(probability), m_bond_type(bond_type),
          m_max_bonds_group_1(max_bonds_group_1),m_max_bonds_group_2(max_bonds_group_2),
-         m_pair_nlist(pair_nlist), m_pair_nlist_exclusions_set(true),
+         m_seed(seed),m_pair_nlist(pair_nlist), m_pair_nlist_exclusions_set(true),
          m_box_changed(true), m_max_N_changed(true)
     {
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdater" << std::endl;
@@ -127,7 +131,7 @@ void DynamicBondUpdater::update(unsigned int timestep)
 
       filterPossibleBonds();
       // this function is not easily implemented on the GPU, uses addBondedGroup()
-      makeBonds();
+      makeBonds(timestep);
       if (m_prof) m_prof->pop();
 
     }
@@ -468,7 +472,7 @@ void DynamicBondUpdater::traverseTree()
 
 /*! This function takes the information about neighbors between group_2 and group_1 saved in m_nlist and
 * m_n_neigh and copies pairs within the m_r_cut cutoff distance into the m_all_possible_bonds array.
-* Then, all invalid (0,0,0), dublicate and existing bonds  are removed from m_all_possible_bonds. It
+* Then, all invalid (0,0,0), dublicated, and existing bonds  are removed from m_all_possible_bonds. It
 * is sorted by distance  (shortest to longest) between the two particles in the possible bond.
 */
 void DynamicBondUpdater::filterPossibleBonds()
@@ -543,31 +547,34 @@ void DynamicBondUpdater::filterPossibleBonds()
       // remove a possible bond if it already exists. It also removes zeros, e.g.
       // (0,0,0), which fill the unused spots in the array.
       auto last2 = std::remove_if(h_all_possible_bonds.data,
-        h_all_possible_bonds.data + size,
-        [this](Scalar3 i) {return CheckisExistingLegalBond(i); });
+                   h_all_possible_bonds.data + size,
+                   [this](Scalar3 i) {return CheckisExistingLegalBond(i); });
 
-        m_num_all_possible_bonds = std::distance(h_all_possible_bonds.data,last2);
+      m_num_all_possible_bonds = std::distance(h_all_possible_bonds.data,last2);
 
-        // then sort array by distance between particles in the found possible bond pairs
-        // performance is better if remove_if happens before sort
-        std::sort(h_all_possible_bonds.data, h_all_possible_bonds.data + m_num_all_possible_bonds, SortBonds);
+      // then sort array by distance between particles in the found possible bond pairs
+      // performance is better if remove_if happens before sort
+      std::sort(h_all_possible_bonds.data, h_all_possible_bonds.data + m_num_all_possible_bonds, SortBonds);
 
-        // now make sure each possible bond is in the array only once by comparing tags
-        auto last = std::unique(h_all_possible_bonds.data, h_all_possible_bonds.data + m_num_all_possible_bonds, CompareBonds);
-        m_num_all_possible_bonds = std::distance(h_all_possible_bonds.data,last);
+      // now make sure each possible bond is in the array only once by comparing tags
+      auto last = std::unique(h_all_possible_bonds.data, h_all_possible_bonds.data + m_num_all_possible_bonds, CompareBonds);
+      m_num_all_possible_bonds = std::distance(h_all_possible_bonds.data,last);
 
 
-        // at this point, the sub-array: h_all_possible_bonds[0,m_num_all_possible_bonds]
-        // should contain only unique entries of possible bonds which are not yet formed.
-        if (m_prof) m_prof->pop();
+      // at this point, the sub-array: h_all_possible_bonds[0,m_num_all_possible_bonds]
+      // should contain only unique entries of possible bonds which are not yet formed.
+      if (m_prof) m_prof->pop();
       }
 
 /*! This function actually creates the bonds by looping over the entries in m_all_possible_bonds
 *  and adding them to the system (m_bond_data->addBondedGroup), to the existing bonds, as well as
 *  to the neighbor list used by the rest of the simulation if the exclusions of that neighbor list
 *  should be updated.
+*
+* Note: this function is very hard to parallelize on the GPU since we need to go through the bonds sequentially
+* to prevent forming too many bonds in one step. Have not found a good way of doing this on the GPU.
 */
-void DynamicBondUpdater::makeBonds()
+void DynamicBondUpdater::makeBonds(unsigned int timestep)
   {
 
     if (m_prof) m_prof->push("makeBonds");
@@ -578,7 +585,7 @@ void DynamicBondUpdater::makeBonds()
     // we need to count how many bonds are in the h_all_possible_bonds array for a given tag
     // so that we don't end up forming too many bonds in one step. "AddtoExistingBonds" increases the count in
     // h_n_existing_bonds in the for loop below as we go, so no extra bookkeeping should be needed.
-    // This also makes it very difficult to do on the gpu.
+    // This also makes it very difficult to do on the GPU.
 
     ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
 
@@ -590,10 +597,16 @@ void DynamicBondUpdater::makeBonds()
       unsigned int tag_i = __scalar_as_int(d.x);
       unsigned int tag_j = __scalar_as_int(d.y);
 
-      //todo: put in other external criteria here, e.g. probability of bond formation, max number of bonds possible in one step, etc.
+      //todo: put in other external criteria here, e.g. max number of bonds possible in one step, etc.
       //todo: randomize which bonds are formed or keep them ordered by their distances ?
-      if ( m_max_bonds_group_1 > h_n_existing_bonds.data[tag_i] &&
-        m_max_bonds_group_2 > h_n_existing_bonds.data[tag_j] )
+     //todo: would it be faster/better to create the rng outside of the loop?
+     hoomd::RandomGenerator rng(azplugins::RNGIdentifier::DynamicBondUpdater, m_seed, i, timestep);
+     hoomd::UniformDistribution<Scalar> uniform(0, 1);
+     const Scalar random = uniform(rng);
+
+      if (m_max_bonds_group_1 > h_n_existing_bonds.data[tag_i] &&
+          m_max_bonds_group_2 > h_n_existing_bonds.data[tag_j] &&
+          random < m_probability)
         {
           m_bond_data->addBondedGroup(Bond(m_bond_type,tag_i,tag_j));
           AddtoExistingBonds(tag_i,tag_j);
@@ -758,11 +771,12 @@ void export_DynamicBondUpdater(pybind11::module& m)
     {
     namespace py = pybind11;
     py::class_< DynamicBondUpdater, std::shared_ptr<DynamicBondUpdater> >(m, "DynamicBondUpdater", py::base<Updater>())
-    .def(py::init< std::shared_ptr<SystemDefinition> ,std::shared_ptr<ParticleGroup>, std::shared_ptr<ParticleGroup>>())
+    .def(py::init< std::shared_ptr<SystemDefinition> ,std::shared_ptr<ParticleGroup>, std::shared_ptr<ParticleGroup>, unsigned int>())
     .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, std::shared_ptr<ParticleGroup>,
-      std::shared_ptr<ParticleGroup>, Scalar, unsigned int, unsigned int, unsigned int>())
+      std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int,unsigned int>())
     .def("setNeighbourList", &DynamicBondUpdater::setNeighbourList)
     .def_property("r_cut", &DynamicBondUpdater::getRcut, &DynamicBondUpdater::setRcut)
+    .def_property("probability", &DynamicBondUpdater::getProbability, &DynamicBondUpdater::setProbability)
     .def_property("bond_type", &DynamicBondUpdater::getBondType, &DynamicBondUpdater::setBondType)
     .def_property("max_bonds_group_1", &DynamicBondUpdater::getMaxBondsGroup1, &DynamicBondUpdater::setMaxBondsGroup1)
     .def_property("max_bonds_group_2", &DynamicBondUpdater::getMaxBondsGroup2, &DynamicBondUpdater::setMaxBondsGroup2);

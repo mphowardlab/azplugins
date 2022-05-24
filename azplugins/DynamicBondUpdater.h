@@ -31,7 +31,8 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
       //! Simple constructor
       DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                          std::shared_ptr<ParticleGroup> group_1,
-                         std::shared_ptr<ParticleGroup> group_2);
+                         std::shared_ptr<ParticleGroup> group_2,
+                         unsigned int seed);
 
       //! Constructor with parameters
       DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
@@ -39,9 +40,11 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
                          std::shared_ptr<ParticleGroup> group_1,
                          std::shared_ptr<ParticleGroup> group_2,
                          const Scalar r_cut,
+                         const Scalar probability,
                          unsigned int bond_type,
                          unsigned int max_bonds_group_1,
-                         unsigned int max_bonds_group_2);
+                         unsigned int max_bonds_group_2,
+                         unsigned int seed);
 
       //! Destructor
       virtual ~DynamicBondUpdater();
@@ -103,7 +106,19 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
           {
           return m_max_bonds_group_2;
           }
-
+      //! Set the maximum number of bonds on particles in group_2
+      /*!
+       * \param max_bonds_group_2 max number of bonds formed by particles in group_2
+       */
+      void setProbability(Scalar probability)
+          {
+          m_probability = probability;
+          }
+      //! Get the maximum number of bonds on particles in group_2
+      unsigned int getProbability()
+          {
+          return m_probability;
+          }
       //! Set the hoomd neighbor list
       /*!
        * \param nlist hoomd NeighborList pointer
@@ -122,10 +137,12 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         std::shared_ptr<ParticleGroup> m_group_2;   //!< Second particle group to form bonds with
         bool m_groups_identical;
 
-        Scalar m_r_cut;                              //!< cutoff for the bond forming criterion
+        Scalar m_r_cut;                             //!< cutoff for the bond forming criterion
+        Scalar m_probability;                       //!< probability of bond formation if bond can be formed (i.e. within cutoff)
         unsigned int m_bond_type;                   //!< Type id of the bond to form
         unsigned int m_max_bonds_group_1;           //!< maximum number of bonds which can be formed by the first group
         unsigned int m_max_bonds_group_2;           //!< maximum number of bonds which can be formed by the second group
+        unsigned int m_seed;                        //!< seed for random number generator for bond probability
 
         unsigned int m_max_bonds;                   //!<  maximum number of possible bonds (or neighbors) which can be found
         unsigned int m_max_bonds_overflow;          //!< registers if there is an overflow in  maximum number of possible bonds
@@ -159,7 +176,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
         bool CheckisExistingLegalBond(Scalar3 i); //this acesses info in m_existing_bonds_list_tag. todo: rename to something sensible
         void calculateExistingBonds();
-        void makeBonds();
+        void makeBonds(unsigned int timestep);
 
         void AddtoExistingBonds(unsigned int tag1,unsigned int tag2);
         bool isExistingBond(unsigned int tag1,unsigned int tag2); //this acesses info in m_existing_bonds_list_tag

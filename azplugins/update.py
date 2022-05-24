@@ -155,6 +155,8 @@ class dynamic_bond(hoomd.update._updater):
         group_2 (:py:mod:`hoomd.group`): Second particle group to form bonds between
         max_bonds_1 (int): Maximum number of bonds a particle in group_1 can have
         max_bonds_2 (int): Maximum number of bonds a particle in group_2 can have
+        seed (int): Seed to the pseudo-random number generator
+        probability(float): Probability of bond formation, default = 1
         nlist (:py:mod:`hoomd.md.nlist`): NeighborList (optional) for updating the exclusions
         period (int): Particle types will be updated every *period* time steps
         phase (int): When -1, start on the current time step. Otherwise, execute
@@ -183,11 +185,11 @@ class dynamic_bond(hoomd.update._updater):
 
             azplugins.update.dynamic_bond(nlist=nl,r_cut=1.0,bond_type='bond',
                 group_1=hoomd.group.all(),group_2=hoomd.group.all(), max_bonds_1=3,max_bonds_2=3)
-            azplugins.update.types(r_cut=1.0,bond_type='bond',
+            azplugins.update.types(r_cut=1.0,probability=1.0, bond_type='bond',
                 group_1=hoomd.group.type(type='A'),group_2=hoomd.group.type(type='B'),max_bonds_1=3,max_bonds_2=2)
     """
 
-    def __init__(self,r_cut,bond_type,group_1, group_2, max_bonds_1,max_bonds_2,nlist=None,period=1, phase=0):
+    def __init__(self,r_cut,bond_type,group_1, group_2, max_bonds_1,max_bonds_2,seed,probability=1,nlist=None,period=1, phase=0):
 
         hoomd.util.print_status_line()
         hoomd.update._updater.__init__(self)
@@ -197,21 +199,22 @@ class dynamic_bond(hoomd.update._updater):
         else:
             cpp_class = _azplugins.DynamicBondUpdaterGPU
 
-        self.cpp_updater = cpp_class(hoomd.context.current.system_definition,group_1.cpp_group,group_2.cpp_group)
+        self.cpp_updater = cpp_class(hoomd.context.current.system_definition,group_1.cpp_group,group_2.cpp_group,seed)
 
-        self.metadata_fields = ['r_cut','bond_type','group_1', 'group_2', 'max_bonds_1','max_bonds_2','nlist']
+        self.metadata_fields = ['r_cut','probability','bond_type','group_1', 'group_2', 'max_bonds_1','max_bonds_2','nlist']
         self.setupUpdater(period, phase)
 
         hoomd.util.quiet_status()
-        self.set_params(r_cut,bond_type,max_bonds_1,max_bonds_2,nlist)
+        self.set_params(r_cut,probability,bond_type,max_bonds_1,max_bonds_2,nlist)
         hoomd.util.unquiet_status()
 
 
-    def set_params(self, r_cut=None, bond_type=None, max_bonds_1=None, max_bonds_2=None, nlist=None):
+    def set_params(self, r_cut=None, probability=None, bond_type=None, max_bonds_1=None, max_bonds_2=None, nlist=None):
         R""" Set the dynamic_bond parameters.
 
         Args:
             r_cut (float): Distance cutoff for making bonds between particles
+            probability (float): Probability of bond formation
             bond_type (str): Type of bond to be formed
             max_bonds_1 (int): Maximum number of bonds a particle in group_1 can have
             max_bonds_2 (int): Maximum number of bonds a particle in group_2 can have
@@ -231,6 +234,16 @@ class dynamic_bond(hoomd.update._updater):
                 raise ValueError('update.dynamic_bond: cutoff is smaller or equal to zero.')
             self.r_cut = r_cut
             self.cpp_updater.r_cut = self.r_cut
+
+        if probability is not None:
+            if probability <0:
+                hoomd.context.msg.error('update.dynamic_bond: probability ' + str(probability) + ' <0 .\n')
+                raise ValueError('update.dynamic_bond: probability is smaller than zero.')
+            if probability >1:
+                hoomd.context.msg.error('update.dynamic_bond: probability ' + str(probability) + ' >1 .\n')
+                raise ValueError('update.dynamic_bond: probability is larger than one.')
+            self.probability = probability
+            self.cpp_updater.probability = self.probability
 
         if bond_type is not None:
             # look up the bond id based on the given name - this will throw an error if the bond type does not exist
@@ -255,18 +268,3 @@ class dynamic_bond(hoomd.update._updater):
         if nlist is not None:
             self.nlist = nlist
             self.cpp_updater.setNeighbourList(self.nlist.cpp_nlist)
-
-
-
-
-        #self.nlist = nlist
-        #self.nlist_exclusions = nlist_exclusions
-        #self.cpp_updater = cpp_class(hoomd.context.current.system_definition,
-        #                                     self.nlist.cpp_nlist,
-        #                                     self.nlist_exclusions,
-        #                                     group_1.cpp_group,
-        #                                     group_2.cpp_group,
-        #                                     self.r_cut,
-        #                                     bond_type_id,
-        #                                     max_bonds_1,
-        #                                     max_bonds_2)

@@ -43,7 +43,8 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
                             std::shared_ptr<NeighborList> nlist,
                             std::shared_ptr<ParticleGroup> group_1,
                             std::shared_ptr<ParticleGroup> group_2,
-                            Scalar r_cut,
+                            const Scalar r_cut,
+                            const Scalar probability,
                             unsigned int bond_type,
                             unsigned int max_bonds_group_1,
                             unsigned int max_bonds_group_2);
