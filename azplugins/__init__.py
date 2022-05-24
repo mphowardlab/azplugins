@@ -1,4 +1,5 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 # Maintainer: mphoward / All developers are free to add new modules
@@ -25,4 +26,4 @@ from . import update
 from . import variant
 from . import wall
 
-__version__ = '0.10.0'
+__version__ = '0.11.0'

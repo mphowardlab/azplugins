@@ -1,7 +1,9 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
 set(TEST_LIST_CPU
+    test_analyze_group_velocity
     test_analyze_rdf
     test_bond_double_well
     test_bond_fene
@@ -77,6 +79,9 @@ set(TEST_LIST_GPU
 
 set(MPCD_ONLY
     test_mpcd_reverse_perturbation
+    test_mpcd_sinusoidal_channel
+    test_mpcd_sinusoidal_expansion_constriction
+    test_mpcd_velocity_compute
     )
 
 set(MPI_ONLY

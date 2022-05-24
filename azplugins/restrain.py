@@ -1,9 +1,10 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: wes_reinhart
-
-r""" Restraining forces.
+r"""
+Restraints
+==========
 
 Restraints are harmonic forces that are applied to particle groups with the
 goal of holding them to a region of space. Depending on the type of restraint,
@@ -16,6 +17,21 @@ Restraints are additive forces, and multiple restraints can be used in
 the same simulation. The user **must** ensure that the groups assigned
 to each restraint and the restraint types are initialized properly and
 are compatible.
+
+.. autosummary::
+    :nosignatures:
+
+    cylinder
+    plane
+    sphere
+    position
+    orientation
+
+.. autoclass:: cylinder
+.. autoclass:: plane
+.. autoclass:: sphere
+.. autoclass:: position
+.. autoclass:: orientation
 
 """
 

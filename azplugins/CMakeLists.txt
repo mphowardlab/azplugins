@@ -1,7 +1,6 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
-
-# Maintainer: mphoward / All developers are free to add new source files as needed
 
 set(COMPONENT_NAME azplugins)
 
@@ -36,6 +35,7 @@ set(_${COMPONENT_NAME}_sources
     module.cc
     BounceBackGeometry.cc
     ComputeThermoSLLOD.cc
+    GroupVelocityCompute.cc
     ImplicitEvaporator.cc
     ImplicitDropletEvaporator.cc
     ImplicitPlaneEvaporator.cc
@@ -131,14 +131,21 @@ list(APPEND py_files
 # mpcd c++ files
 list(APPEND _${COMPONENT_NAME}_sources
     MPCDReversePerturbationFlow.cc
+    MPCDVelocityCompute.cc
+    SinusoidalChannelFiller.cc
+    SinusoidalExpansionConstrictionFiller.cc
     )
 # mpcd c++/cu cuda files
 if(ENABLE_CUDA)
 list(APPEND _${COMPONENT_NAME}_sources
     MPCDReversePerturbationFlowGPU.cc
+    SinusoidalChannelFillerGPU.cc
+    SinusoidalExpansionConstrictionFillerGPU.cc
     )
 list(APPEND _${COMPONENT_NAME}_cu_sources
     MPCDReversePerturbationFlowGPU.cu
+    SinusoidalChannelFillerGPU.cu
+    SinusoidalExpansionConstrictionFillerGPU.cu
     )
 endif(ENABLE_CUDA)
 endif(BUILD_MPCD)

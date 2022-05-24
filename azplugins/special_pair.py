@@ -1,7 +1,18 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
+"""
+Special pair potentials
+=======================
 
-# Maintainer: mphoward / Everyone is free to add additional potentials
+.. autosummary::
+    :nosignatures:
+
+    lj96
+
+.. autoclass:: lj96
+
+"""
 
 import math
 

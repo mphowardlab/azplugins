@@ -1,8 +1,6 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+# Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
+# This file is part of the azplugins project, released under the Modified BSD License.
 
 # -- Path setup --------------------------------------------------------------
 
@@ -14,10 +12,10 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'azplugins'
-copyright = '2018-2020, Michael P. Howard'
+copyright = '2018-2022, Auburn University'
 author = 'Michael P. Howard'
-version = '0.10.0'
-release = '0.10.0'
+version = '0.11.0'
+release = '0.11.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -28,13 +26,17 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
-    'sphinx.ext.todo'
+    'sphinx.ext.todo',
+    'nbsphinx'
 ]
 
 templates_path = ['_templates']
 
-exclude_patterns = []
+exclude_patterns = ['_build', '**.ipynb_checkpoints']
 
+# ---Options for jupiter notebooks with nbsphinx -----------------------------
+
+nbsphinx_execute = 'never'
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -44,18 +46,17 @@ html_static_path = []
 # -- Options for autodoc & autosummary ---------------------------------------
 
 autodoc_default_options = {
-    'inherited-members': True,
-    'show-inheritance': True
+    'inherited-members': False
 }
 
-autodoc_mock_imports = ['hoomd']
+autodoc_mock_imports = ['azplugins._azplugins']
 
-autosummary_generate = True
+autosummary_generate = False
 
 # -- Options for intersphinx -------------------------------------------------
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'numpy': ('https://numpy.org/doc/stable', None),
     'hoomd': ('https://hoomd-blue.readthedocs.io/en/stable', None)
 }

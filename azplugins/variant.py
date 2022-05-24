@@ -1,8 +1,18 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
+"""
+Variants
+========
 
-# Maintainer: mphoward / Everyone is free to add additional variants
+.. autosummary::
+    :nosignatures:
 
+    sphere_area
+
+.. autoclass:: sphere_area
+
+"""
 import hoomd
 
 from . import _azplugins

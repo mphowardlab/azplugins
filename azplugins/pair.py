@@ -1,8 +1,34 @@
 # Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
+"""
+Pair potentials
+===============
 
-# Maintainer: mphoward / Everyone is free to add additional potentials
+.. autosummary::
+    :nosignatures:
 
+    ashbaugh
+    ashbaugh24
+    colloid
+    hertz
+    lj124
+    lj96
+    slj
+    spline
+    two_patch_morse
+
+.. autoclass:: ashbaugh
+.. autoclass:: ashbaugh24
+.. autoclass:: colloid
+.. autoclass:: hertz
+.. autoclass:: lj124
+.. autoclass:: lj96
+.. autoclass:: slj
+.. autoclass:: spline
+.. autoclass:: two_patch_morse
+
+"""
 import math
 
 import hoomd
@@ -211,9 +237,12 @@ class hertz(hoomd.md.pair.pair):
     :py:class:`hertz` is the Hertz potential:
 
     .. math::
+        :nowrap:
 
-        V(r)  &= \varepsilon \left(1-\frac{r}{r_{\rm cut}}\right)^{5/2},& r < r_{\rm cut} \\
-              &= 0,& r \ge r_{\mathrm{cut}}
+        \begin{eqnarray*}
+        V(r)  &= \varepsilon ( 1-\frac{ r }{ r_{\rm{cut}} } )^{5/2} ,& r < r_{\rm{cut}} \\
+              &= 0,& r \ge r_{\rm{cut}}
+        \end{eqnarray*}
 
     parameters :math:`\varepsilon`, the energy scale of the pair interaction.
     See :py:class:`hoomd.md.pair.pair` for details on how forces are calculated
