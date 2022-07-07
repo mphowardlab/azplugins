@@ -244,14 +244,14 @@ cudaError_t sort_pair_array(Scalar2 *d_slab_pairs,
     if (Nslab == 0) return cudaSuccess;
 
     // wrapper for pointer needed for thrust
-    thrust::device_ptr<Scalar2> d_pairs_wrap(d_slab_pairs);
+    HOOMD_THRUST::device_ptr<Scalar2> d_pairs_wrap(d_slab_pairs);
     // sort pairs according to their sign and momentum
-    thrust::sort(d_pairs_wrap,d_pairs_wrap+Nslab, detail::ReversePerturbationSorter(p_target));
+    HOOMD_THRUST::sort(d_pairs_wrap,d_pairs_wrap+Nslab, detail::ReversePerturbationSorter(p_target));
     return cudaSuccess;
     }
 
 //! Functor to select elements from a Scalar2 where the x-component is nonzero.
-struct NotZero : public thrust::unary_function<Scalar2, bool>
+struct NotZero : public HOOMD_THRUST::unary_function<Scalar2, bool>
     {
     //! Selection operator
     /*!
@@ -295,7 +295,7 @@ cudaError_t select_particles_in_slabs(unsigned int *d_num_mark,
                                       const unsigned int N)
     {
     if (N == 0) return cudaSuccess;
-    cub::DeviceSelect::If(d_tmp_storage, tmp_storage_bytes, d_slab_pairs, d_slab_pairs, d_num_mark, N,  NotZero());
+    HOOMD_CUB::DeviceSelect::If(d_tmp_storage, tmp_storage_bytes, d_slab_pairs, d_slab_pairs, d_num_mark, N,  NotZero());
     return cudaSuccess;
     }
 
@@ -419,7 +419,7 @@ cudaError_t swap_momentum_pairs(const Scalar2 *d_layer_hi,
     }
 
 //! Transforms a Scalar2 to return the momentum from the y-component
-struct GetMomentum : public thrust::unary_function<Scalar2, Scalar>
+struct GetMomentum : public HOOMD_THRUST::unary_function<Scalar2, Scalar>
     {
     //! Transform operator
     /*!
@@ -440,7 +440,7 @@ struct GetMomentum : public thrust::unary_function<Scalar2, Scalar>
  * \param num_pairs number of swaps
  *
  * Calculate the total momentum exchange for the current set of swaps by
- * performing two thrust::transform_reduce operations on both \a m_layer_hi and
+ * performing two HOOMD_THRUST::transform_reduce operations on both \a m_layer_hi and
  * \a m_layer_lo. The difference is the momentum exchange.
  */
 Scalar calc_momentum_exchange(Scalar2 *d_layer_hi,
@@ -450,20 +450,20 @@ Scalar calc_momentum_exchange(Scalar2 *d_layer_hi,
 
     if (num_pairs == 0) return 0.0;
 
-    thrust::device_ptr<Scalar2> t_layer_hi = thrust::device_pointer_cast(d_layer_hi);
-    thrust::device_ptr<Scalar2> t_layer_lo = thrust::device_pointer_cast(d_layer_lo);
+    HOOMD_THRUST::device_ptr<Scalar2> t_layer_hi = HOOMD_THRUST::device_pointer_cast(d_layer_hi);
+    HOOMD_THRUST::device_ptr<Scalar2> t_layer_lo = HOOMD_THRUST::device_pointer_cast(d_layer_lo);
     // transform the Scalar2 to a Scalar (y-component,momentum) and then
     // sum it up for each layer
-    Scalar momentum_layer_hi = thrust::transform_reduce(t_layer_hi,
+    Scalar momentum_layer_hi = HOOMD_THRUST::transform_reduce(t_layer_hi,
                                                         t_layer_hi + num_pairs,
                                                         GetMomentum(),
                                                         Scalar(0.0),
-                                                        thrust::plus<Scalar>());
-    Scalar momentum_layer_lo = thrust::transform_reduce(t_layer_lo,
+                                                        HOOMD_THRUST::plus<Scalar>());
+    Scalar momentum_layer_lo = HOOMD_THRUST::transform_reduce(t_layer_lo,
                                                         t_layer_lo + num_pairs,
                                                         GetMomentum(),
                                                         Scalar(0.0),
-                                                        thrust::plus<Scalar>());
+                                                        HOOMD_THRUST::plus<Scalar>());
 
     Scalar momentum_exchange = momentum_layer_lo - momentum_layer_hi;
     return momentum_exchange;
