@@ -298,8 +298,8 @@ bool TwoStepSLLODLangevinFlow::deformGlobalBox()
 
   xy += m_shear_rate * m_deltaT;
   bool flipped = false;
-  if (xy > 1){
-      xy = -1;
+  if (xy > 0.5){
+      xy = -0.5;
       flipped = true;
   }
   global_box.setTiltFactors(xy, xz, yz);

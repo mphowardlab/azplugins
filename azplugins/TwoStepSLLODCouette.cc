@@ -84,8 +84,8 @@ TwoStepSLLODCouette::TwoStepSLLODCouette(std::shared_ptr<SystemDefinition> sysde
      const Scalar boundary_shear = y.y * m_gamma_dot;
      xy += m_gamma_dot * m_deltaT;
      bool flipped = false;
-     if (xy > 1){
-         xy = -1;
+     if (xy > 0.5){
+         xy = -0.5;
          flipped = true;
      }
      newBox.setTiltFactors(xy, xz, yz);
