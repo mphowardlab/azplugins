@@ -131,7 +131,9 @@ TwoStepSLLODCouette::TwoStepSLLODCouette(std::shared_ptr<SystemDefinition> sysde
 
          // Wrap back into box
          if (flipped){
-             pos.x *= -1;
+             // TODO check this
+             h_images.data[j].x += h_images.data[j].y;
+            // pos.x *= -1;
          }
          box.wrap(pos,h_image.data[idx]);
 

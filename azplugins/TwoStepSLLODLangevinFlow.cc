@@ -134,7 +134,9 @@ void TwoStepSLLODLangevinFlow::integrateStepOne(unsigned int timestep)
 
         // if box deformation caused a flip, wrap positions back into box
         if (flipped){
-            pos.x *= -1;
+            // TODO: fix/ double check  this
+            h_images.data[j].x += h_images.data[j].y;
+            //pos.x *= -1;
         }
 
         // Periodic boundary correction to velocity:

@@ -65,7 +65,8 @@ __global__ void langevin_sllod_step1(Scalar4 *d_pos,
 
     // if box deformation caused a flip, wrap positions back into box
     if (flipped){
-        pos.x *= -1;
+         image.x += image.y;
+        //pos.x *= -1;
     }
 
     // read in the image flags
