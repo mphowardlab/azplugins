@@ -71,7 +71,7 @@ TwoStepSLLODCouette::TwoStepSLLODCouette(std::shared_ptr<SystemDefinition> sysde
      if (m_prof) m_prof->push("SLLOD-Couette step 1");
 
      ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::readwrite);
-     ArrayHandle<int3> h_image(m_pdata->getImages(), access_location::host, access_mode::readwrite);
+     ArrayHandle<int3> h_images(m_pdata->getImages(), access_location::host, access_mode::readwrite);
      ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(), access_location::host, access_mode::readwrite);
      ArrayHandle<Scalar3> h_accel(m_pdata->getAccelerations(), access_location::host, access_mode::read);
 
@@ -132,10 +132,10 @@ TwoStepSLLODCouette::TwoStepSLLODCouette(std::shared_ptr<SystemDefinition> sysde
          // Wrap back into box
          if (flipped){
              // TODO check this
-             h_images.data[j].x += h_images.data[j].y;
+             h_images.data[idx].x += h_images.data[idx].y;
             // pos.x *= -1;
          }
-         box.wrap(pos,h_image.data[idx]);
+         box.wrap(pos,h_images.data[idx]);
 
          h_pos.data[idx] = make_scalar4(pos.x, pos.y, pos.z, __int_as_scalar(type));
          h_vel.data[idx] = make_scalar4(vel.x, vel.y, vel.z, mass);

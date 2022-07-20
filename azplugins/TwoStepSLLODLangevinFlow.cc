@@ -92,7 +92,7 @@ void TwoStepSLLODLangevinFlow::integrateStepOne(unsigned int timestep)
     ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(), access_location::host, access_mode::readwrite);
     ArrayHandle<Scalar3> h_accel(m_pdata->getAccelerations(), access_location::host, access_mode::readwrite);
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::readwrite);
-    ArrayHandle<int3> h_image(m_pdata->getImages(), access_location::host, access_mode::readwrite);
+    ArrayHandle<int3> h_images(m_pdata->getImages(), access_location::host, access_mode::readwrite);
 
     ArrayHandle<Scalar3> h_gamma_r(m_gamma_r, access_location::host, access_mode::read);
 
@@ -163,7 +163,7 @@ void TwoStepSLLODLangevinFlow::integrateStepOne(unsigned int timestep)
         h_pos.data[j].z = pos.z;
 
         // particles may have been moved slightly outside the box by the above steps, wrap them back into place
-        box.wrap(h_pos.data[j], h_image.data[j]);
+        box.wrap(h_pos.data[j], h_images.data[j]);
 
         }
 
