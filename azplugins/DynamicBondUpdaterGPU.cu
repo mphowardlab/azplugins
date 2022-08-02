@@ -10,12 +10,12 @@
 
 #include "hoomd/HOOMDMath.h"
 #include "DynamicBondUpdaterGPU.cuh"
-#include <thrust/sort.h>
+//#include <thrust/sort.h>
 #include <thrust/device_vector.h>
 // todo: should azplugins have its own "extern"?
 #include "hoomd/extern/neighbor/neighbor/LBVH.cuh"
 #include "hoomd/extern/neighbor/neighbor/LBVHTraverser.cuh"
-#include "hoomd/extern/cub/cub/cub.cuh"
+//#include "hoomd/extern/cub/cub/cub.cuh"
 
 
 namespace azplugins
@@ -249,20 +249,20 @@ cudaError_t remove_zeros_and_sort_possible_bond_array(Scalar3 *d_all_possible_bo
     {
     if (size == 0) return cudaSuccess;
     // wrapper for pointer needed for thrust
-    thrust::device_ptr<Scalar3> d_all_possible_bonds_wrap(d_all_possible_bonds);
+    HOOMD_THRUST::device_ptr<Scalar3> d_all_possible_bonds_wrap(d_all_possible_bonds);
 
     isZeroBondGPU zero;
-    thrust::device_ptr<Scalar3> last0 = thrust::remove_if(d_all_possible_bonds_wrap,d_all_possible_bonds_wrap + size, zero);
-    unsigned int l0 = thrust::distance(d_all_possible_bonds_wrap, last0);
+    HOOMD_THRUST::device_ptr<Scalar3> last0 = HOOMD_THRUST::remove_if(d_all_possible_bonds_wrap,d_all_possible_bonds_wrap + size, zero);
+    unsigned int l0 = HOOMD_THRUST::distance(d_all_possible_bonds_wrap, last0);
 
     // sort remainder by distance, should make all identical bonds consequtive
     SortBondsGPU sort;
-    thrust::sort(d_all_possible_bonds_wrap,d_all_possible_bonds_wrap+l0, sort);
+    HOOMD_THRUST::sort(d_all_possible_bonds_wrap,d_all_possible_bonds_wrap+l0, sort);
 
     // thrust::unique only removes identical consequtive elements, so sort above is needed.
     CompareBondsGPU comp;
-    thrust::device_ptr<Scalar3> last1 = thrust::unique(d_all_possible_bonds_wrap, d_all_possible_bonds_wrap + l0,comp);
-    unsigned int l1 = thrust::distance(d_all_possible_bonds_wrap, last1);
+    HOOMD_THRUST::device_ptr<Scalar3> last1 = HOOMD_THRUST::unique(d_all_possible_bonds_wrap, d_all_possible_bonds_wrap + l0,comp);
+    unsigned int l1 = HOOMD_THRUST::distance(d_all_possible_bonds_wrap, last1);
 
     *d_max_non_zero_bonds=l1;
 
