@@ -23,8 +23,9 @@ namespace azplugins
  */
 DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
                                             std::shared_ptr<ParticleGroup> group_1,
-                                            std::shared_ptr<ParticleGroup> group_2)
-        : DynamicBondUpdater(sysdef,group_1,group_2),  m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf),
+                                            std::shared_ptr<ParticleGroup> group_2,
+                                            unsigned int seed)
+        : DynamicBondUpdater(sysdef, group_1, group_2, seed),  m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf),
           m_lbvh(m_exec_conf), m_traverser(m_exec_conf)
     {
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdaterGPU" << std::endl;
@@ -42,9 +43,10 @@ DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> s
                                               const Scalar probability,
                                               unsigned int bond_type,
                                               unsigned int max_bonds_group_1,
-                                              unsigned int max_bonds_group_2)
+                                              unsigned int max_bonds_group_2,
+                                              unsigned int seed)
         : DynamicBondUpdater(sysdef, pair_nlist, group_1, group_2,
-                            r_cut,probability,bond_type, max_bonds_group_1, max_bonds_group_2),
+                            r_cut,probability, bond_type, max_bonds_group_1, max_bonds_group_2),
         m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf),
         m_lbvh(m_exec_conf), m_traverser(m_exec_conf)
     {

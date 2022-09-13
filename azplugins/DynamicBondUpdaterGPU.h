@@ -36,7 +36,8 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
       //! Simple constructor
       DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
                             std::shared_ptr<ParticleGroup> group_1,
-                            std::shared_ptr<ParticleGroup> group_2);
+                            std::shared_ptr<ParticleGroup> group_2,
+                            unsigned int seed);
 
       //! Constructor with parameters
       DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
@@ -47,7 +48,8 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
                             const Scalar probability,
                             unsigned int bond_type,
                             unsigned int max_bonds_group_1,
-                            unsigned int max_bonds_group_2);
+                            unsigned int max_bonds_group_2,
+                            unsigned int seed);
 
       //! Destructor
       virtual ~DynamicBondUpdaterGPU();
