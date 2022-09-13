@@ -161,7 +161,7 @@ cudaError_t evaporate_select_mark(unsigned int *d_mark,
     {
     if (N == 0) return cudaSuccess;
 
-    cub::DeviceSelect::Flagged(d_tmp_storage, tmp_storage_bytes, d_mark, d_select_flags, d_mark, d_num_mark, N);
+    HOOMD_CUB::DeviceSelect::Flagged(d_tmp_storage, tmp_storage_bytes, d_mark, d_select_flags, d_mark, d_num_mark, N);
 
     return cudaSuccess;
     }

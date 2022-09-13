@@ -150,6 +150,18 @@ add_definitions(-DENABLE_MPCD)
 endif(BUILD_MPCD)
 
 if (ENABLE_CUDA)
+# thrust wrap hack, coming from NVIDIA
+if (${CUDA_VERSION} VERSION_EQUAL "11.4")
+    message(WARNING "CUDA 11.4 has a known bug that may result in the error: `__global__ function call is not configure`")
+elseif (${CUDA_VERSION} VERSION_GREATER "11.4")
+    message(STATUS "Applying the CUDA 11.5 Thrust fix")
+    list(APPEND CUDA_NVCC_FLAGS "-DTHRUST_CUB_WRAPPED_NAMESPACE=THRUST_CUB_AZPLUGINS")
+    list(APPEND CUDA_NVCC_FLAGS "-DHOOMD_THRUST=THRUST_CUB_AZPLUGINS::thrust")
+    list(APPEND CUDA_NVCC_FLAGS "-DHOOMD_CUB=THRUST_CUB_AZPLUGINS::cub")
+else()
+    list(APPEND CUDA_NVCC_FLAGS "-DHOOMD_THRUST=thrust")
+    list(APPEND CUDA_NVCC_FLAGS "-DHOOMD_CUB=cub")
+endif()
 CUDA_COMPILE(_CUDA_GENERATED_FILES ${_${COMPONENT_NAME}_cu_sources} OPTIONS ${CUDA_ADDITIONAL_OPTIONS} SHARED)
 endif (ENABLE_CUDA)
 
