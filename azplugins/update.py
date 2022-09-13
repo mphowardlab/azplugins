@@ -9,9 +9,10 @@ Updaters
     :nosignatures:
 
     types
+    dynamic_bond
 
 .. autoclass:: types
-
+.. autoclass:: dynamic_bond
 """
 import hoomd
 from hoomd import _hoomd
@@ -150,13 +151,13 @@ class dynamic_bond(hoomd.update._updater):
 
     Args:
         r_cut (float): Distance cutoff for making bonds between particles
+        probability (float): Probability of bond formation, between 0 and 1, default = 1
         bond_type (str): Type of bond to be formed
         group_1 (:py:mod:`hoomd.group`): First particle group to form bonds between
         group_2 (:py:mod:`hoomd.group`): Second particle group to form bonds between
         max_bonds_1 (int): Maximum number of bonds a particle in group_1 can have
         max_bonds_2 (int): Maximum number of bonds a particle in group_2 can have
         seed (int): Seed to the pseudo-random number generator
-        probability(float): Probability of bond formation, default = 1
         nlist (:py:mod:`hoomd.md.nlist`): NeighborList (optional) for updating the exclusions
         period (int): Particle types will be updated every *period* time steps
         phase (int): When -1, start on the current time step. Otherwise, execute
@@ -236,8 +237,8 @@ class dynamic_bond(hoomd.update._updater):
             self.cpp_updater.r_cut = self.r_cut
 
         if probability is not None:
-            if probability <0:
-                hoomd.context.msg.error('update.dynamic_bond: probability ' + str(probability) + ' <0 .\n')
+            if probability <=0:
+                hoomd.context.msg.error('update.dynamic_bond: probability ' + str(probability) + ' <=0 .\n')
                 raise ValueError('update.dynamic_bond: probability is smaller than zero.')
             if probability >1:
                 hoomd.context.msg.error('update.dynamic_bond: probability ' + str(probability) + ' >1 .\n')

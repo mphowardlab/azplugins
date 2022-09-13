@@ -604,9 +604,9 @@ void DynamicBondUpdater::makeBonds(unsigned int timestep)
      hoomd::UniformDistribution<Scalar> uniform(0, 1);
      const Scalar random = uniform(rng);
 
-      if (m_max_bonds_group_1 > h_n_existing_bonds.data[tag_i] &&
-          m_max_bonds_group_2 > h_n_existing_bonds.data[tag_j] &&
-          random < m_probability)
+      if ((m_max_bonds_group_1 > h_n_existing_bonds.data[tag_i]) &&
+          (m_max_bonds_group_2 > h_n_existing_bonds.data[tag_j]) &&
+          (random < m_probability))
         {
           m_bond_data->addBondedGroup(Bond(m_bond_type,tag_i,tag_j));
           AddtoExistingBonds(tag_i,tag_j);
@@ -773,7 +773,7 @@ void export_DynamicBondUpdater(pybind11::module& m)
     py::class_< DynamicBondUpdater, std::shared_ptr<DynamicBondUpdater> >(m, "DynamicBondUpdater", py::base<Updater>())
     .def(py::init< std::shared_ptr<SystemDefinition> ,std::shared_ptr<ParticleGroup>, std::shared_ptr<ParticleGroup>, unsigned int>())
     .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, std::shared_ptr<ParticleGroup>,
-      std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int,unsigned int>())
+      std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int, unsigned int>())
     .def("setNeighbourList", &DynamicBondUpdater::setNeighbourList)
     .def_property("r_cut", &DynamicBondUpdater::getRcut, &DynamicBondUpdater::setRcut)
     .def_property("probability", &DynamicBondUpdater::getProbability, &DynamicBondUpdater::setProbability)

@@ -39,11 +39,12 @@ DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> s
                                               std::shared_ptr<ParticleGroup> group_1,
                                               std::shared_ptr<ParticleGroup> group_2,
                                               const Scalar r_cut,
+                                              const Scalar probability,
                                               unsigned int bond_type,
                                               unsigned int max_bonds_group_1,
                                               unsigned int max_bonds_group_2)
         : DynamicBondUpdater(sysdef, pair_nlist, group_1, group_2,
-                            r_cut,bond_type, max_bonds_group_1, max_bonds_group_2),
+                            r_cut,probability,bond_type, max_bonds_group_1, max_bonds_group_2),
         m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf),
         m_lbvh(m_exec_conf), m_traverser(m_exec_conf)
     {
@@ -256,6 +257,7 @@ namespace detail
  void export_DynamicBondUpdaterGPU(pybind11::module& m)
      {
      namespace py = pybind11;
+
      py::class_< DynamicBondUpdaterGPU, std::shared_ptr<DynamicBondUpdaterGPU> >(m, "DynamicBondUpdaterGPU", py::base<DynamicBondUpdater>())
        .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<ParticleGroup>,std::shared_ptr<ParticleGroup>,unsigned int>())
        .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, std::shared_ptr<ParticleGroup>,
