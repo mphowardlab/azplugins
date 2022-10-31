@@ -95,7 +95,7 @@ void sllod_nvt_step_one(Scalar4 *d_pos,
 
         // if box deformation caused a flip, wrap pos back into box
         if (flipped){
-          image.x += image.y;
+          d_image[idx].x += d_image[idx].y;
         //    pos.x *= -1;
         }
 
