@@ -26,4 +26,4 @@ from . import update
 from . import variant
 from . import wall
 
-__version__ = '0.11.0'
+__version__ = '0.12.0'

@@ -1,15 +1,29 @@
 Release notes
 =============
 
-v0.11.0
---------
-Released 1 Feb 2022
+v0.12.0
+-------
+Released 1 Nov 2022
 
 This will be the final minor release of azplugins to support HOOMD-blue v2.x. The next planned
 release of azplugins will be a major release to support HOOMD v3.x. This will be a breaking
 change because of the significant rewrite of HOOMD-blue's API. We plan to support bug fixes
 until this major release is ready, and we may support bug fixes targeted toward HOOMD-blue v2.x
 during a transition period.
+
+*New features*
+
+  * Add shift parameter and allow sigma & epsilon to be zero in ``bond.fene``.
+  * Add ``analyze.group_velocity`` to compute the center-of-mass velocity of a group.
+
+*Bug fixes*
+
+  * Apply CUDA 11.5 thrust / CUB namespace wrap fix.
+
+
+v0.11.0
+--------
+Released 1 Feb 2022
 
 *New features*
 
