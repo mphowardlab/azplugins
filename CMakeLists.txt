@@ -2,44 +2,24 @@
 # Copyright (c) 2021-2022, Auburn University
 # This file is part of the azplugins project, released under the Modified BSD License.
 
-# Maintainer: mphoward
+CMAKE_MINIMUM_REQUIRED(VERSION 3.9 FATAL_ERROR)
 
-project(azplugins)
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0 FATAL_ERROR)
+# Name the plugin project.
+# TODO: Set the project title to the name of your Python package.
+project(azplugins LANGUAGES C CXX)
 
-# set the cmake policy to enable finding LOCATION in testing, per hoomd usage
-if (CMAKE_MAJOR_VERSION VERSION_GREATER 2)
-if(COMMAND cmake_policy)
-    cmake_policy(SET CMP0003 NEW)
-    cmake_policy(SET CMP0042 NEW)
-    if (CMAKE_VERSION VERSION_GREATER 3.11)
-        cmake_policy(SET CMP0074 OLD)
-    endif (CMAKE_VERSION VERSION_GREATER 3.11)
-endif(COMMAND cmake_policy)
+# Find the installed HOOMD.
+find_package(HOOMD 4.0.0 REQUIRED)
+
+message(STATUS "Found HOOMD ${HOOMD_VERSION}: ${HOOMD_INSTALL_PREFIX}/${PYTHON_SITE_INSTALL_DIR}")
+
+# Force installation to the HOOMD installation location.
+set(CMAKE_INSTALL_PREFIX ${HOOMD_INSTALL_PREFIX} CACHE PATH "Installation prefix" FORCE)
+
+# Enable compiler warnings on gcc and clang.
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wconversion -Wno-sign-conversion -Wno-unknown-pragmas -Wno-deprecated-declarations -Wno-unused-result")
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake ${CMAKE_MODULE_PATH})
-find_package(HOOMD 2.6.0 REQUIRED)
-include_directories(${HOOMD_INCLUDE_DIRS})
-set(HOOMD_EXTERNAL_BUILD ON)
-
-# plugins must be built as shared libraries
-if (ENABLE_STATIC)
-    message(SEND_ERROR "Plugins cannot be built against a statically compiled hoomd")
-endif (ENABLE_STATIC)
-set(BUILD_SHARED_LIBS on)
-
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX ${HOOMD_ROOT} CACHE PATH "Installation prefix" FORCE)
-endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-set(PYTHON_MODULE_BASE_DIR ${CMAKE_INSTALL_PREFIX})
-
-# setup unit tests
-enable_testing()
-option(BUILD_TESTING "Build unit tests" ON)
-if (BUILD_TESTING)
-    add_custom_target(test_all ALL)
-endif()
-
-# add subdirectories
-add_subdirectory(${PROJECT_NAME})
+# Add the component's source directory.
+add_subdirectory(src)
