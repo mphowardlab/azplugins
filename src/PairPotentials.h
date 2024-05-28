@@ -33,7 +33,6 @@
 #include "PairEvaluatorAshbaugh.h"
 #include "PairEvaluatorColloid.h"
 #include "PairEvaluatorHertz.h"
-#include "PairEvaluatorShiftedLJ.h"
 #include "PairEvaluatorSpline.h"
 
 /*
