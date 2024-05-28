@@ -9,11 +9,8 @@ Analyzers
     :nosignatures:
 
     group_velocity
-    rdf
 
 .. autoclass:: group_velocity
-
-.. autoclass:: rdf
 
 """
 import numpy
