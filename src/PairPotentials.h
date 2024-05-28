@@ -33,7 +33,6 @@
 #include "PairEvaluatorAshbaugh.h"
 #include "PairEvaluatorColloid.h"
 #include "PairEvaluatorHertz.h"
-#include "PairEvaluatorSpline.h"
 
 /*
  * The code below handles python exports using a templated function, and so

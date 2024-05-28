@@ -11,13 +11,11 @@ Pair potentials
     ashbaugh
     colloid
     hertz
-    spline
     two_patch_morse
 
 .. autoclass:: ashbaugh
 .. autoclass:: colloid
 .. autoclass:: hertz
-.. autoclass:: spline
 .. autoclass:: two_patch_morse
 
 """
@@ -276,78 +274,6 @@ class hertz(hoomd.md.pair.pair):
 
     def process_coeff(self, coeff):
         return coeff['epsilon']
-
-class spline(hoomd.md.pair.pair):
-    R""" Spline potential
-
-    Args:
-        r_cut (float): Default cutoff radius (in distance units).
-        nlist (:py:mod:`hoomd.md.nlist`): Neighbor list
-        name (str): Name of the force instance.
-
-    :py:class:`spline` is a spline potential of the form:
-
-    .. math::
-        :nowrap:
-
-        \begin{eqnarray*}
-        V(r) = & a &, r < r_{\rm s}\\
-        = & \frac{a(r_{\rm s}^2-r^2)^m (r_{\rm cut}^2 + m r^2 - (m+1) r_{\rm s}^2)}{(r_{\rm cut}^2-r_{\rm s}^2)^{m+1}} &, r_{\rm s} < r < r_{\rm cut} \\
-              = & 0 &, r \ge r_{\rm cut}
-        \end{eqnarray*}
-
-    Here, :math:`a` is the amplitude :math:`m`, the exponent,  :math:`r_{\rm s}` and :math: `r_{\rm cut}` are the cutoff distances. The potential goes smoothly from a value of `a` at `r_{\rm s}` to zero at
-    `r_{\rm cut}`. The slope is determined by the exponent `m`, which needs to be greater or equal to 2.
-    The force goes to zero at both the cutoff value `r_{\rm cut}` and `r_{\rm s}`.
-
-    The following coefficients must be set per unique pair of particle types:
-
-    - :math:`a` - *amp* - value of the plateau (in energy units)
-    - :math:`m` - *exponent*
-    - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
-      - *optional*: defaults to the global r_cut specified in the pair command
-    - :math:`r_{\mathrm{s}}`- *r_start* (in distance units) value where the potential reaches its plateau value
-
-    Example::
-
-        nl = hoomd.md.nlist.cell()
-        s = azplugins.pair.spline(r_cut=3.0, nlist=nl)
-        s.pair_coeff.set('A', 'A', amp=1.0, r_start=1.0, m=2.0)
-        s.pair_coeff.set(['A','B'], 'B',  amp=1.0, r_start=1.0, m=2.0, r_cut=3.0)
-
-    """
-    def __init__(self, r_cut, nlist, name=None):
-        hoomd.util.print_status_line()
-
-        # initialize the base class
-        hoomd.md.pair.pair.__init__(self, r_cut, nlist, name)
-
-        # create the c++ mirror class
-        if not hoomd.context.exec_conf.isCUDAEnabled():
-            self.cpp_class = _azplugins.PairPotentialSpline
-        else:
-            self.cpp_class = _azplugins.PairPotentialSplineGPU
-            self.nlist.cpp_nlist.setStorageMode(_md.NeighborList.storageMode.full)
-        self.cpp_force = self.cpp_class(hoomd.context.current.system_definition, self.nlist.cpp_nlist, self.name)
-
-        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
-
-        # setup the coefficent options
-        self.required_coeffs = ['amp', 'm', 'r_start']
-        self.r_cut=r_cut
-
-    def process_coeff(self, coeff):
-        amplitude = coeff['amp']
-        exponent = coeff['m']
-        r_start = coeff['r_start']
-        r_start_sq = r_start*r_start
-        if exponent<2.0:
-            hoomd.context.msg.error('azplugins.pair.spline: Exponent for spline needs to be >= 2.\n')
-            raise ValueError('Exponent for spline needs to be >= 2')
-        if r_start>=self.r_cut:
-            hoomd.context.msg.error('azplugins.pair.spline: r_start needs to be smaller than r_cut.\n')
-            raise ValueError('r_start needs to be smaller than r_cut')
-        return _hoomd.make_scalar3(amplitude, exponent,r_start_sq)
 
 class two_patch_morse(hoomd.md.pair.ai_pair):
     R""" Two patches with Morse potential

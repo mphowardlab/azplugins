@@ -192,7 +192,6 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_ashbaugh_params(m);
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorColloid>(m, "PairPotentialColloid");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorHertz>(m, "PairPotentialHertz");
-    azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorSpline>(m, "PairPotentialSpline");
 
     /* Anisotropic pair potentials */
     azplugins::detail::export_aniso_pair_potential<azplugins::detail::AnisoPairEvaluatorTwoPatchMorse>(m, "AnisoPairPotentialTwoPatchMorse");
