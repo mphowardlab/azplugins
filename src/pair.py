@@ -11,7 +11,6 @@ Pair potentials
     ashbaugh
     colloid
     hertz
-    lj124
     lj96
     slj
     spline
@@ -20,7 +19,6 @@ Pair potentials
 .. autoclass:: ashbaugh
 .. autoclass:: colloid
 .. autoclass:: hertz
-.. autoclass:: lj124
 .. autoclass:: lj96
 .. autoclass:: slj
 .. autoclass:: spline
@@ -282,74 +280,6 @@ class hertz(hoomd.md.pair.pair):
 
     def process_coeff(self, coeff):
         return coeff['epsilon']
-
-class lj124(hoomd.md.pair.pair):
-    R""" LJ 12-4 potential
-
-    Args:
-        r_cut (float): Default cutoff radius (in distance units).
-        nlist (:py:mod:`hoomd.md.nlist`): Neighbor list
-        name (str): Name of the force instance.
-
-    :py:class:`lj124` is a Lennard-Jones potential
-
-    .. math::
-        :nowrap:
-
-        \begin{eqnarray*}
-        V(r)  = & \frac{3 \sqrt{3}}{2} \varepsilon \left(\left(\frac{\sigma}{r}\right)^{12} - \alpha \left(\frac{\sigma}{r}\right)^4\right) &, r < r_{\mathrm{cut}} \\
-              = & 0 &, r \ge r_{\mathrm{cut}}
-        \end{eqnarray*}
-
-    parameters :math:`\varepsilon`, :math:`\sigma`, and :math:`\alpha`. See :py:class:`hoomd.md.pair.pair`
-    for details on how forces are calculated and the available energy shifting and smoothing modes.
-    Use :py:meth:`pair_coeff.set <coeff.set>` to set potential coefficients.
-
-    The following coefficients must be set per unique pair of particle types:
-
-    - :math:`\varepsilon` - *epsilon* (in energy units)
-    - :math:`\sigma` - *sigma* (in distance units)
-    - :math:`\alpha` - *alpha* (unitless) - *optional*: defaults to 1.0
-    - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
-      - *optional*: defaults to the global r_cut specified in the pair command
-
-    Example::
-
-        nl = hoomd.md.nlist.cell()
-        lj124 = azplugins.pair.lj124(r_cut=3.0, nlist=nl)
-        lj124.pair_coeff.set('A', 'A', epsilon=1.0, sigma=1.0)
-        lj124.pair_coeff.set(['A','B'], 'B', epsilon=2.0, sigma=1.0, alpha=0.5)
-
-    """
-    def __init__(self, r_cut, nlist, name=None):
-        hoomd.util.print_status_line()
-
-        # initialize the base class
-        hoomd.md.pair.pair.__init__(self, r_cut, nlist, name)
-
-        # create the c++ mirror class
-        if not hoomd.context.exec_conf.isCUDAEnabled():
-            self.cpp_class = _azplugins.PairPotentialLJ124
-        else:
-            self.cpp_class = _azplugins.PairPotentialLJ124GPU
-            self.nlist.cpp_nlist.setStorageMode(_md.NeighborList.storageMode.full)
-        self.cpp_force = self.cpp_class(hoomd.context.current.system_definition, self.nlist.cpp_nlist, self.name)
-
-        hoomd.context.current.system.addCompute(self.cpp_force, self.force_name)
-
-        # setup the coefficent options
-        self.required_coeffs = ['epsilon', 'sigma', 'alpha']
-        self.pair_coeff.set_default_coeff('alpha', 1.0)
-
-    def process_coeff(self, coeff):
-        epsilon = coeff['epsilon']
-        sigma = coeff['sigma']
-        alpha = coeff['alpha']
-
-        lj1 = 1.5 * math.sqrt(3.0) * epsilon * math.pow(sigma, 12.0)
-        lj2 = alpha * 1.5 * math.sqrt(3.0) * epsilon * math.pow(sigma, 4.0)
-
-        return _hoomd.make_scalar2(lj1, lj2)
 
 class lj96(hoomd.md.pair.pair):
     R""" LJ 9-6 potential
