@@ -19,22 +19,16 @@ namespace py = pybind11;
 #include "WallPotentials.h"
 
 /* Updaters */
-#include "ReversePerturbationFlow.h"
 #include "TypeUpdater.h"
 #include "ParticleEvaporator.h"
 #ifdef ENABLE_CUDA
-#include "ReversePerturbationFlowGPU.h"
 #include "TypeUpdaterGPU.h"
 #include "ParticleEvaporatorGPU.h"
 #endif // ENABLE_CUDA
 
 /* MPCD */
 #ifdef ENABLE_MPCD
-#include "MPCDReversePerturbationFlow.h"
 #include "MPCDVelocityCompute.h"
-#ifdef ENABLE_CUDA
-#include "MPCDReversePerturbationFlowGPU.h"
-#endif // ENABLE_CUDA
 #endif // ENABLE_MPCD
 
 /* Force computes */
@@ -185,11 +179,9 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_ashbaugh_bond_params(m);
 
     /* Updaters */
-    azplugins::detail::export_ReversePerturbationFlow(m);
     azplugins::detail::export_TypeUpdater(m);
     azplugins::detail::export_ParticleEvaporator(m); // this must follow TypeUpdater because TypeUpdater is the python base class
 #ifdef ENABLE_CUDA
-    azplugins::detail::export_ReversePerturbationFlowGPU(m);
     azplugins::detail::export_TypeUpdaterGPU(m);
     azplugins::detail::export_ParticleEvaporatorGPU(m);
 #endif // ENABLE_CUDA
@@ -213,11 +205,7 @@ PYBIND11_MODULE(_azplugins, m)
 
 /* MPCD components */
 #ifdef ENABLE_MPCD
-    azplugins::detail::export_MPCDReversePerturbationFlow(m);
     azplugins::detail::export_MPCDVelocityCompute(m);
-#ifdef ENABLE_CUDA
-    azplugins::detail::export_MPCDReversePerturbationFlowGPU(m);
-#endif // ENABLE_CUDA
 #endif // ENABLE_MPCD
 
     /* Analyzers */
