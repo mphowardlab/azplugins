@@ -31,10 +31,8 @@
 
 // All pair potential evaluators must be included here
 #include "PairEvaluatorAshbaugh.h"
-#include "PairEvaluatorAshbaugh24.h"
 #include "PairEvaluatorColloid.h"
 #include "PairEvaluatorHertz.h"
-#include "PairEvaluatorLJ124.h"
 #include "PairEvaluatorLJ96.h"
 #include "PairEvaluatorShiftedLJ.h"
 #include "PairEvaluatorSpline.h"
@@ -54,21 +52,21 @@
 
 namespace azplugins
 {
-namespace detail
-{
-//! Exports the pair potential to the python module
-template<class evaluator>
-void export_pair_potential(pybind11::module& m, const std::string& name)
+    namespace detail
     {
-    typedef ::PotentialPair<evaluator> pair_potential_cpu;
-    export_PotentialPair<pair_potential_cpu>(m, name);
+        //! Exports the pair potential to the python module
+        template <class evaluator>
+        void export_pair_potential(pybind11::module &m, const std::string &name)
+        {
+            typedef ::PotentialPair<evaluator> pair_potential_cpu;
+            export_PotentialPair<pair_potential_cpu>(m, name);
 
-    #ifdef ENABLE_CUDA
-    typedef ::PotentialPairGPU<evaluator, azplugins::gpu::compute_pair_potential<evaluator> > pair_potential_gpu;
-    export_PotentialPairGPU<pair_potential_gpu, pair_potential_cpu>(m, name + "GPU");
-    #endif // ENABLE_CUDA
-    }
-} // end namespace detail
+#ifdef ENABLE_CUDA
+            typedef ::PotentialPairGPU<evaluator, azplugins::gpu::compute_pair_potential<evaluator>> pair_potential_gpu;
+            export_PotentialPairGPU<pair_potential_gpu, pair_potential_cpu>(m, name + "GPU");
+#endif // ENABLE_CUDA
+        }
+    } // end namespace detail
 } // end namespace azplugins
 #endif // NVCC
 
