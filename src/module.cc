@@ -49,10 +49,6 @@ namespace py = pybind11;
 
 /* Analyzers */
 #include "GroupVelocityCompute.h"
-#include "RDFAnalyzer.h"
-#ifdef ENABLE_CUDA
-#include "RDFAnalyzerGPU.h"
-#endif // ENABLE_CUDA
 
 /* Integrators */
 #include "FlowFields.h"
@@ -226,10 +222,6 @@ PYBIND11_MODULE(_azplugins, m)
 
     /* Analyzers */
     azplugins::detail::export_GroupVelocityCompute(m);
-    azplugins::detail::export_RDFAnalyzer(m);
-#ifdef ENABLE_CUDA
-    azplugins::detail::export_RDFAnalyzerGPU(m);
-#endif // ENABLE_CUDA
 
     /* Integrators */
     azplugins::detail::export_ConstantFlow(m);
