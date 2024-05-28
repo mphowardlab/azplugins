@@ -15,7 +15,6 @@ namespace py = pybind11;
 #include "BondPotentials.h"
 #include "DPDPotentials.h"
 #include "PairPotentials.h"
-#include "SpecialPairPotentials.h"
 #include "WallPotentials.h"
 
 /* Updaters */
@@ -67,40 +66,6 @@ namespace azplugins
      */
     namespace detail
     {
-        //! Helper function export the Ashbaugh-Hatch-24-48 bond potential parameters
-        /*!
-         * \sa ashbaugh_params
-         */
-        void export_ashbaugh_bond_params(py::module &m)
-        {
-            py::class_<ashbaugh_bond_params>(m, "ashbaugh_bond_params")
-                .def(py::init<>())
-                .def_readwrite("lj1", &ashbaugh_bond_params::lj1)
-                .def_readwrite("lj2", &ashbaugh_bond_params::lj2)
-                .def_readwrite("lam", &ashbaugh_bond_params::lambda)
-                .def_readwrite("rwcasq", &ashbaugh_bond_params::rwcasq)
-                .def_readwrite("wca_shift", &ashbaugh_bond_params::wca_shift)
-                .def_readwrite("K", &ashbaugh_bond_params::K)
-                .def_readwrite("r0", &ashbaugh_bond_params::r_0);
-            m.def("make_ashbaugh_bond_params", &make_ashbaugh_bond_params);
-        }
-
-        //! Helper function export the FENE-LJ bond potential parameters
-        /*!
-         * \sa fene_lj_bond_params
-         */
-        void export_fene_bond_params(py::module &m)
-        {
-            py::class_<fene_bond_params>(m, "fene_bond_params")
-                .def(py::init<>())
-                .def_readwrite("lj1", &fene_bond_params::lj1)
-                .def_readwrite("lj2", &fene_bond_params::lj2)
-                .def_readwrite("K", &fene_bond_params::K)
-                .def_readwrite("r0", &fene_bond_params::r_0)
-                .def_readwrite("delta", &fene_bond_params::delta);
-            m.def("make_fene_bond_params", &make_fene_bond_params);
-        }
-
         //! Helper function export the Ashbaugh-Hatch pair potential parameters
         /*!
          * \sa ashbaugh_params
@@ -173,10 +138,6 @@ PYBIND11_MODULE(_azplugins, m)
 
     /* Bond potentials */
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorDoubleWell>(m, "BondPotentialDoubleWell");
-    azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENE>(m, "BondPotentialFENE");
-    azplugins::detail::export_fene_bond_params(m);
-    azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENEAsh24>(m, "BondPotentialFENEAsh24");
-    azplugins::detail::export_ashbaugh_bond_params(m);
 
     /* Updaters */
     azplugins::detail::export_TypeUpdater(m);

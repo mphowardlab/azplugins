@@ -29,8 +29,6 @@
 
 // All bonded potential evaluators must be included here
 #include "BondEvaluatorDoubleWell.h"
-#include "BondEvaluatorFENE.h"
-#include "BondEvaluatorFENEAsh24.h"
 
 /*
  * The code below handles python exports using a templated function, and so
@@ -48,21 +46,21 @@ namespace py = pybind11;
 
 namespace azplugins
 {
-namespace detail
-{
-//! Exports the bonded potential to the python module
-template<class evaluator>
-void export_bond_potential(py::module& m, const std::string& name)
+    namespace detail
     {
-    typedef ::PotentialBond<evaluator> bond_potential_cpu;
-    export_PotentialBond<bond_potential_cpu>(m, name);
+        //! Exports the bonded potential to the python module
+        template <class evaluator>
+        void export_bond_potential(py::module &m, const std::string &name)
+        {
+            typedef ::PotentialBond<evaluator> bond_potential_cpu;
+            export_PotentialBond<bond_potential_cpu>(m, name);
 
-    #ifdef ENABLE_CUDA
-    typedef ::PotentialBondGPU<evaluator, azplugins::gpu::compute_bond_potential<evaluator> > bond_potential_gpu;
-    export_PotentialBondGPU<bond_potential_gpu, bond_potential_cpu>(m, name + "GPU");
-    #endif // ENABLE_CUDA
-    }
-} // end namespace detail
+#ifdef ENABLE_CUDA
+            typedef ::PotentialBondGPU<evaluator, azplugins::gpu::compute_bond_potential<evaluator>> bond_potential_gpu;
+            export_PotentialBondGPU<bond_potential_gpu, bond_potential_cpu>(m, name + "GPU");
+#endif // ENABLE_CUDA
+        }
+    } // end namespace detail
 } // end namespace azplugins
 #endif // NVCC
 
