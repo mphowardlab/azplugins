@@ -192,7 +192,6 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_ashbaugh_params(m);
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorColloid>(m, "PairPotentialColloid");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorHertz>(m, "PairPotentialHertz");
-    azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorLJ96>(m, "PairPotentialLJ96");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorShiftedLJ>(m, "PairPotentialShiftedLJ");
     azplugins::detail::export_pair_potential<azplugins::detail::PairEvaluatorSpline>(m, "PairPotentialSpline");
 
@@ -209,9 +208,6 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_fene_bond_params(m);
     azplugins::detail::export_bond_potential<azplugins::detail::BondEvaluatorFENEAsh24>(m, "BondPotentialFENEAsh24");
     azplugins::detail::export_ashbaugh_bond_params(m);
-
-    /* Special pair potentials */
-    azplugins::detail::export_special_pair_potential<azplugins::detail::PairEvaluatorLJ96>(m, "SpecialPairPotentialLJ96");
 
     /* Updaters */
     azplugins::detail::export_ReversePerturbationFlow(m);
