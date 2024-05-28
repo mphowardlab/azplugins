@@ -47,16 +47,10 @@ namespace py = pybind11;
 #include "ImplicitEvaporator.h"
 #include "ImplicitDropletEvaporator.h"
 #include "ImplicitPlaneEvaporator.h"
-#include "OrientationRestraintCompute.h"
-#include "PositionRestraintCompute.h"
-#include "WallRestraintCompute.h"
 #ifdef ENABLE_CUDA
 #include "ImplicitEvaporatorGPU.h"
 #include "ImplicitDropletEvaporatorGPU.h"
 #include "ImplicitPlaneEvaporatorGPU.h"
-#include "OrientationRestraintComputeGPU.h"
-#include "PositionRestraintComputeGPU.h"
-#include "WallRestraintComputeGPU.h"
 #endif // ENABLE_CUDA
 
 /* Analyzers */
@@ -228,20 +222,10 @@ PYBIND11_MODULE(_azplugins, m)
     azplugins::detail::export_ImplicitEvaporator(m);
     azplugins::detail::export_ImplicitDropletEvaporator(m);
     azplugins::detail::export_ImplicitPlaneEvaporator(m);
-    azplugins::detail::export_OrientationRestraintCompute(m);
-    azplugins::detail::export_WallRestraintCompute<PlaneWall>(m, "PlaneRestraintCompute");
-    azplugins::detail::export_WallRestraintCompute<CylinderWall>(m, "CylinderRestraintCompute");
-    azplugins::detail::export_WallRestraintCompute<SphereWall>(m, "SphereRestraintCompute");
-    azplugins::detail::export_PositionRestraintCompute(m);
 #ifdef ENABLE_CUDA
     azplugins::detail::export_ImplicitEvaporatorGPU(m);
     azplugins::detail::export_ImplicitDropletEvaporatorGPU(m);
     azplugins::detail::export_ImplicitPlaneEvaporatorGPU(m);
-    azplugins::detail::export_OrientationRestraintComputeGPU(m);
-    azplugins::detail::export_WallRestraintComputeGPU<PlaneWall>(m, "PlaneRestraintComputeGPU");
-    azplugins::detail::export_WallRestraintComputeGPU<CylinderWall>(m, "CylinderRestraintComputeGPU");
-    azplugins::detail::export_WallRestraintComputeGPU<SphereWall>(m, "SphereRestraintComputeGPU");
-    azplugins::detail::export_PositionRestraintComputeGPU(m);
 #endif // ENABLE_CUDA
 
 /* MPCD components */
