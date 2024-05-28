@@ -19,8 +19,6 @@ struct RNGIdentifier
     static const uint32_t DPDEvaluatorGeneralWeight = 0x4a84f5d1;
     static const uint32_t TwoStepBrownianFlow = 0x431287fe;
     static const uint32_t TwoStepLangevinFlow = 0x89abcdee;
-    static const uint32_t SinusoidalChannelFiller = 0x231b87d1;
-    static const uint32_t SinusoidalExpansionConstrictionFiller = 0x731287d0;
     static const uint32_t ParticleEvaporator = 0x3eb8536f;
     };
 
