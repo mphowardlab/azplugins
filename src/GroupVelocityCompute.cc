@@ -9,6 +9,8 @@
 
 #include "GroupVelocityCompute.h"
 
+namespace hoomd
+{
 namespace azplugins
 {
 
@@ -25,6 +27,14 @@ GroupVelocityCompute::GroupVelocityCompute(std::shared_ptr<SystemDefinition> sys
       m_lognames{"vx"+suffix,"vy"+suffix,"vz"+suffix},
       m_velocity(make_scalar3(0,0,0))
     {
+    #ifdef ENABLE_MPI
+    if (m_sysdef->isDomainDecomposed())
+        {
+        auto comm_weak = m_sysdef->getCommunicator();
+        assert(comm_weak.lock());
+        m_comm = comm_weak.lock();
+        }
+    #endif
     }
 
 GroupVelocityCompute::~GroupVelocityCompute()
@@ -38,7 +48,7 @@ GroupVelocityCompute::~GroupVelocityCompute()
  * momentum and mass of all particles, then dividing momentum by mass. This
  * compute supports MPI decomposition, and the result is available on all ranks.
  */
-void GroupVelocityCompute::compute(unsigned int timestep)
+void GroupVelocityCompute::compute(uint64_t timestep)
     {
     if (!shouldCompute(timestep))
         return;
@@ -83,7 +93,7 @@ std::vector<std::string> GroupVelocityCompute::getProvidedLogQuantities()
     return m_lognames;
     }
 
-Scalar GroupVelocityCompute::getLogValue(const std::string& quantity, unsigned int timestep)
+Scalar GroupVelocityCompute::getLogValue(const std::string& quantity, uint64_t timestep)
     {
     compute(timestep);
     if (quantity == m_lognames[0])
@@ -116,3 +126,4 @@ void export_GroupVelocityCompute(pybind11::module& m)
     }
 } // end namespace detail
 } // end namespace azplugins
+} // end namespace hoomd
