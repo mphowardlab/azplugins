@@ -1,7 +1,3 @@
-# Copyright (c) 2018-2020, Michael P. Howard
-# Copyright (c) 2021-2022, Auburn University
-# This file is part of the azplugins project, released under the Modified BSD License.
-
 # TODO: Set COMPONENT_NAME to the name of your Python package.
 set(COMPONENT_NAME azplugins)
 
