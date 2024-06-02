@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ImplicitEvaporatorGPU.h
@@ -19,7 +19,7 @@
 #include "hoomd/Autotuner.h"
 
 namespace azplugins
-{
+    {
 
 //! Implicit solvent evaporator on the GPU
 /*!
@@ -30,32 +30,32 @@ namespace azplugins
 class PYBIND11_EXPORT ImplicitEvaporatorGPU : public ImplicitEvaporator
     {
     public:
-        //! Constructor
-        ImplicitEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
-                              std::shared_ptr<Variant> interf);
+    //! Constructor
+    ImplicitEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
+                          std::shared_ptr<Variant> interf);
 
-        //! Set autotuner parameters
-        /*!
-         * \param enable Enable/disable autotuning
-         * \param period period (approximate) in time steps when returning occurs
-         */
-        virtual void setAutotunerParams(bool enable, unsigned int period)
-            {
-            ImplicitEvaporator::setAutotunerParams(enable, period);
-            m_tuner->setPeriod(period);
-            m_tuner->setEnabled(enable);
-            }
+    //! Set autotuner parameters
+    /*!
+     * \param enable Enable/disable autotuning
+     * \param period period (approximate) in time steps when returning occurs
+     */
+    virtual void setAutotunerParams(bool enable, unsigned int period)
+        {
+        ImplicitEvaporator::setAutotunerParams(enable, period);
+        m_tuner->setPeriod(period);
+        m_tuner->setEnabled(enable);
+        }
 
     protected:
-        std::unique_ptr<Autotuner> m_tuner;   //!< Autotuner for block size
+    std::unique_ptr<Autotuner> m_tuner; //!< Autotuner for block size
     };
 
 namespace detail
-{
+    {
 //! Exports the ImplicitEvaporatorGPU to python
 void export_ImplicitEvaporatorGPU(pybind11::module& m);
-} // end namespace detail
+    } // end namespace detail
 
-} // end namespace azplugins
+    } // end namespace azplugins
 
 #endif // AZPLUGINS_IMPLICIT_EVAPORATOR_GPU_H_

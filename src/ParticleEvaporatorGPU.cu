@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ParticleEvaporatorGPU.cu
@@ -16,11 +16,11 @@
 #endif
 
 namespace azplugins
-{
+    {
 namespace gpu
-{
+    {
 namespace kernel
-{
+    {
 /*!
  * \param d_select_flags Flags identifying which particles to select (1 = select)
  * \param d_mark Array of particle indexes
@@ -36,16 +36,17 @@ namespace kernel
  * The \a d_mark array is filled up with the particle indexes so that evaporate_select_mark
  * can later select these particle indexes based on \a d_select_flags.
  */
-__global__ void evaporate_setup_mark(unsigned char *d_select_flags,
-                                     unsigned int *d_mark,
-                                     const Scalar4 *d_pos,
+__global__ void evaporate_setup_mark(unsigned char* d_select_flags,
+                                     unsigned int* d_mark,
+                                     const Scalar4* d_pos,
                                      unsigned int solvent_type,
                                      Scalar z_lo,
                                      Scalar z_hi,
                                      unsigned int N)
     {
     const unsigned int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (idx >= N) return;
+    if (idx >= N)
+        return;
 
     const Scalar4 postype = d_pos[idx];
     const Scalar3 pos = make_scalar3(postype.x, postype.y, postype.z);
@@ -70,21 +71,22 @@ __global__ void evaporate_setup_mark(unsigned char *d_select_flags,
  * to \a evaporated_type. See kernel::evaporate_setup_mark for details of how
  * particles are marked as candidates for evaporation.
  */
-__global__ void evaporate_apply_picks(Scalar4 *d_pos,
-                                      const unsigned int *d_picks,
-                                      const unsigned int *d_mark,
+__global__ void evaporate_apply_picks(Scalar4* d_pos,
+                                      const unsigned int* d_picks,
+                                      const unsigned int* d_mark,
                                       unsigned int evaporated_type,
                                       unsigned int N_pick)
     {
     const unsigned int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (idx >= N_pick) return;
+    if (idx >= N_pick)
+        return;
 
     const unsigned int pick = d_picks[idx];
     const unsigned int pidx = d_mark[pick];
 
     d_pos[pidx].w = __int_as_scalar(evaporated_type);
     }
-}
+    } // namespace kernel
 
 /*!
  * \param d_select_flags Flags identifying which particles to select (1 = select)
@@ -98,16 +100,17 @@ __global__ void evaporate_apply_picks(Scalar4 *d_pos,
  *
  * \sa kernel::evaporate_setup_mark
  */
-cudaError_t evaporate_setup_mark(unsigned char *d_select_flags,
-                                 unsigned int *d_mark,
-                                 const Scalar4 *d_pos,
+cudaError_t evaporate_setup_mark(unsigned char* d_select_flags,
+                                 unsigned int* d_mark,
+                                 const Scalar4* d_pos,
                                  unsigned int solvent_type,
                                  Scalar z_lo,
                                  Scalar z_hi,
                                  unsigned int N,
                                  unsigned int block_size)
     {
-    if (N == 0) return cudaSuccess;
+    if (N == 0)
+        return cudaSuccess;
 
     static unsigned int max_block_size = UINT_MAX;
     if (max_block_size == UINT_MAX)
@@ -118,13 +121,13 @@ cudaError_t evaporate_setup_mark(unsigned char *d_select_flags,
         }
 
     const int run_block_size = min(block_size, max_block_size);
-    kernel::evaporate_setup_mark<<<N/run_block_size + 1, run_block_size>>>(d_select_flags,
-                                                                           d_mark,
-                                                                           d_pos,
-                                                                           solvent_type,
-                                                                           z_lo,
-                                                                           z_hi,
-                                                                           N);
+    kernel::evaporate_setup_mark<<<N / run_block_size + 1, run_block_size>>>(d_select_flags,
+                                                                             d_mark,
+                                                                             d_pos,
+                                                                             solvent_type,
+                                                                             z_lo,
+                                                                             z_hi,
+                                                                             N);
 
     return cudaSuccess;
     }
@@ -152,16 +155,23 @@ cudaError_t evaporate_setup_mark(unsigned char *d_select_flags,
  * See kernel::evaporate_setup_mark for details of how particles are marked as candidates
  * for evaporation.
  */
-cudaError_t evaporate_select_mark(unsigned int *d_mark,
-                                  unsigned int *d_num_mark,
-                                  void *d_tmp_storage,
-                                  size_t &tmp_storage_bytes,
-                                  const unsigned char *d_select_flags,
+cudaError_t evaporate_select_mark(unsigned int* d_mark,
+                                  unsigned int* d_num_mark,
+                                  void* d_tmp_storage,
+                                  size_t& tmp_storage_bytes,
+                                  const unsigned char* d_select_flags,
                                   unsigned int N)
     {
-    if (N == 0) return cudaSuccess;
+    if (N == 0)
+        return cudaSuccess;
 
-    HOOMD_CUB::DeviceSelect::Flagged(d_tmp_storage, tmp_storage_bytes, d_mark, d_select_flags, d_mark, d_num_mark, N);
+    HOOMD_CUB::DeviceSelect::Flagged(d_tmp_storage,
+                                     tmp_storage_bytes,
+                                     d_mark,
+                                     d_select_flags,
+                                     d_mark,
+                                     d_num_mark,
+                                     N);
 
     return cudaSuccess;
     }
@@ -176,14 +186,15 @@ cudaError_t evaporate_select_mark(unsigned int *d_mark,
  *
  * \sa kernel::evaporate_apply_picks
  */
-cudaError_t evaporate_apply_picks(Scalar4 *d_pos,
-                                  const unsigned int *d_picks,
-                                  const unsigned int *d_mark,
+cudaError_t evaporate_apply_picks(Scalar4* d_pos,
+                                  const unsigned int* d_picks,
+                                  const unsigned int* d_mark,
                                   unsigned int evaporated_type,
                                   unsigned int N_pick,
                                   unsigned int block_size)
     {
-    if (N_pick == 0) return cudaSuccess;
+    if (N_pick == 0)
+        return cudaSuccess;
 
     static unsigned int max_block_size = UINT_MAX;
     if (max_block_size == UINT_MAX)
@@ -194,13 +205,13 @@ cudaError_t evaporate_apply_picks(Scalar4 *d_pos,
         }
 
     const int run_block_size = min(block_size, max_block_size);
-    kernel::evaporate_apply_picks<<<N_pick/run_block_size+1, run_block_size>>>(d_pos,
-                                                                               d_picks,
-                                                                               d_mark,
-                                                                               evaporated_type,
-                                                                               N_pick);
+    kernel::evaporate_apply_picks<<<N_pick / run_block_size + 1, run_block_size>>>(d_pos,
+                                                                                   d_picks,
+                                                                                   d_mark,
+                                                                                   evaporated_type,
+                                                                                   N_pick);
 
     return cudaSuccess;
     }
-} // end namespace gpu
-} // end namespace azplugins
+    } // end namespace gpu
+    } // end namespace azplugins

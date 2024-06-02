@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ImplicitDropletEvaporator.h
@@ -19,7 +19,7 @@
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 
 namespace azplugins
-{
+    {
 
 //! Implicit solvent evaporator in a spherical (droplet) geometry
 /*
@@ -28,23 +28,23 @@ namespace azplugins
 class PYBIND11_EXPORT ImplicitDropletEvaporator : public ImplicitEvaporator
     {
     public:
-        //! Constructor
-        ImplicitDropletEvaporator(std::shared_ptr<SystemDefinition> sysdef,
-                                  std::shared_ptr<Variant> interf);
+    //! Constructor
+    ImplicitDropletEvaporator(std::shared_ptr<SystemDefinition> sysdef,
+                              std::shared_ptr<Variant> interf);
 
-        virtual ~ImplicitDropletEvaporator();
+    virtual ~ImplicitDropletEvaporator();
 
     protected:
-        //! Implements the force calculation
-        virtual void computeForces(unsigned int timestep);
+    //! Implements the force calculation
+    virtual void computeForces(unsigned int timestep);
     };
 
 namespace detail
-{
+    {
 //! Exports the ImplicitDropletEvaporator to python
 void export_ImplicitDropletEvaporator(pybind11::module& m);
-} // end namespace detail
+    } // end namespace detail
 
-} // end namespace azplugins
+    } // end namespace azplugins
 
 #endif // AZPLUGINS_IMPLICIT_DROPLET_EVAPORATOR_H_

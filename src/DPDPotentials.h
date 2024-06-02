@@ -1,14 +1,15 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file DPDPotentials.h
  * \brief Convenience inclusion of all DPD potential evaluators.
  *
- * In HOOMD-blue, DPD potentials are templated on a base class ForceCompute called PotentialPairDPDThermo,
- * which uses an evaluator functor to compute the actual details of the DPD potential.
- * This avoids code duplication of calling the neighbor list, computing pair distances, etc.
+ * In HOOMD-blue, DPD potentials are templated on a base class ForceCompute called
+ * PotentialPairDPDThermo, which uses an evaluator functor to compute the actual details of the DPD
+ * potential. This avoids code duplication of calling the neighbor list, computing pair distances,
+ * etc.
  *
  * To add a new DPD potential, take the following steps:
  *  1. Create an evaluator functor for your potential, for example DPDEvaluatorMyGreatPotential.h.
@@ -39,17 +40,16 @@ namespace py = pybind11;
 
 #include "hoomd/md/PotentialPairDPDThermo.h"
 #ifdef ENABLE_CUDA
-#include "hoomd/md/PotentialPairDPDThermoGPU.h"
 #include "DPDPotentials.cuh"
+#include "hoomd/md/PotentialPairDPDThermoGPU.h"
 #endif
 
 namespace azplugins
-{
+    {
 namespace detail
-{
+    {
 //! Exports the DPD potential to the python module
-template<class evaluator>
-void export_dpd_potential(py::module& m, const std::string& name)
+template<class evaluator> void export_dpd_potential(py::module& m, const std::string& name)
     {
     typedef ::PotentialPair<evaluator> base_cpu;
     export_PotentialPair<base_cpu>(m, name + "Base");
@@ -57,13 +57,14 @@ void export_dpd_potential(py::module& m, const std::string& name)
     typedef ::PotentialPairDPDThermo<evaluator> dpd_cpu;
     export_PotentialPairDPDThermo<dpd_cpu, base_cpu>(m, name);
 
-    #ifdef ENABLE_CUDA
-    typedef ::PotentialPairDPDThermoGPU<evaluator, azplugins::gpu::compute_dpd_potential<evaluator>> dpd_gpu;
+#ifdef ENABLE_CUDA
+    typedef ::PotentialPairDPDThermoGPU<evaluator, azplugins::gpu::compute_dpd_potential<evaluator>>
+        dpd_gpu;
     export_PotentialPairDPDThermoGPU<dpd_gpu, dpd_cpu>(m, name + "GPU");
-    #endif // ENABLE_CUDA
+#endif // ENABLE_CUDA
     }
-} // end namespace detail
-} // end namespace azplugins
+    }  // end namespace detail
+    }  // end namespace azplugins
 #endif // NVCC
 
 #endif // AZPLUGINS_DPD_POTENTIALS_H_

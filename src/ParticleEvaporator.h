@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ParticleEvaporator.h
@@ -17,7 +17,7 @@
 #include "TypeUpdater.h"
 
 namespace azplugins
-{
+    {
 
 //! Solvent-particle evaporator
 /*!
@@ -44,61 +44,61 @@ namespace azplugins
 class PYBIND11_EXPORT ParticleEvaporator : public TypeUpdater
     {
     public:
-        //! Simple constructor
-        ParticleEvaporator(std::shared_ptr<SystemDefinition> sysdef, unsigned int seed);
+    //! Simple constructor
+    ParticleEvaporator(std::shared_ptr<SystemDefinition> sysdef, unsigned int seed);
 
-        //! Constructor with parameters
-        ParticleEvaporator(std::shared_ptr<SystemDefinition> sysdef,
-                           unsigned int evap_type,
-                           unsigned int solvent_type,
-                           Scalar z_lo,
-                           Scalar z_hi,
-                           unsigned int seed);
+    //! Constructor with parameters
+    ParticleEvaporator(std::shared_ptr<SystemDefinition> sysdef,
+                       unsigned int evap_type,
+                       unsigned int solvent_type,
+                       Scalar z_lo,
+                       Scalar z_hi,
+                       unsigned int seed);
 
-        //! Destructor
-        virtual ~ParticleEvaporator() { };
+    //! Destructor
+    virtual ~ParticleEvaporator() {};
 
-        //! Get the maximum number of particles to evaporate
-        unsigned int getNEvapMax() const
-            {
-            return m_Nevap_max;
-            }
+    //! Get the maximum number of particles to evaporate
+    unsigned int getNEvapMax() const
+        {
+        return m_Nevap_max;
+        }
 
-        //! Set the maximum number of particles to evaporate
-        void setNEvapMax(unsigned int Nevap_max)
-            {
-            m_Nevap_max = Nevap_max;
-            }
+    //! Set the maximum number of particles to evaporate
+    void setNEvapMax(unsigned int Nevap_max)
+        {
+        m_Nevap_max = Nevap_max;
+        }
 
     protected:
-        unsigned int m_seed;                //!< Seed to evaporator pseudo-random number generator
-        unsigned int m_Nevap_max;           //!< Maximum number of particles to evaporate
-        unsigned int m_Npick;               //!< Number of particles picked for evaporation on this rank
-        GPUVector<unsigned int> m_picks;    //!< Particles picked for evaporation on this rank
-        GPUVector<unsigned int> m_mark;     //!< Indexes of atoms that can be deleted
+    unsigned int m_seed;             //!< Seed to evaporator pseudo-random number generator
+    unsigned int m_Nevap_max;        //!< Maximum number of particles to evaporate
+    unsigned int m_Npick;            //!< Number of particles picked for evaporation on this rank
+    GPUVector<unsigned int> m_picks; //!< Particles picked for evaporation on this rank
+    GPUVector<unsigned int> m_mark;  //!< Indexes of atoms that can be deleted
 
-        //! Changes the particle types according to an update rule on the GPU
-        virtual void changeTypes(unsigned int timestep);
+    //! Changes the particle types according to an update rule on the GPU
+    virtual void changeTypes(unsigned int timestep);
 
-        //! Mark particles as candidates for evaporation
-        virtual unsigned int markParticles();
+    //! Mark particles as candidates for evaporation
+    virtual unsigned int markParticles();
 
-        //! Apply evaporation to picks
-        virtual void applyPicks();
+    //! Apply evaporation to picks
+    virtual void applyPicks();
 
     private:
-        std::vector<unsigned int> m_all_picks;  //!< All picked particles
+    std::vector<unsigned int> m_all_picks; //!< All picked particles
 
-        //! Make a random pick of particles across all ranks
-        void makeAllPicks(unsigned int timestep, unsigned int N_pick, unsigned N_mark_total);
+    //! Make a random pick of particles across all ranks
+    void makeAllPicks(unsigned int timestep, unsigned int N_pick, unsigned N_mark_total);
     };
 
 namespace detail
-{
+    {
 //! Export ParticleEvaporator to python
 void export_ParticleEvaporator(pybind11::module& m);
-} // end namespace detail
+    } // end namespace detail
 
-} // end namespace azplugins
+    } // end namespace azplugins
 
 #endif // AZPLUGINS_PARTICLE_EVAPORATOR_H_

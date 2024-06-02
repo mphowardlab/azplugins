@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file TwoStepLangevinFlowGPU.cuh
@@ -10,23 +10,23 @@
 #ifndef AZPLUGINS_TWO_STEP_LANGEVIN_FLOW_GPU_CUH_
 #define AZPLUGINS_TWO_STEP_LANGEVIN_FLOW_GPU_CUH_
 
-#include <cuda_runtime.h>
+#include "RNGIdentifiers.h"
 #include "hoomd/BoxDim.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/RandomNumbers.h"
-#include "RNGIdentifiers.h"
+#include <cuda_runtime.h>
 
 namespace azplugins
-{
+    {
 namespace gpu
-{
+    {
 
 //! Step one of the langevin dynamics algorithm (NVE step)
-cudaError_t langevin_flow_step1(Scalar4 *d_pos,
-                                int3 *d_image,
-                                Scalar4 *d_vel,
-                                const Scalar3 *d_accel,
-                                const unsigned int *d_group,
+cudaError_t langevin_flow_step1(Scalar4* d_pos,
+                                int3* d_image,
+                                Scalar4* d_vel,
+                                const Scalar3* d_accel,
+                                const unsigned int* d_group,
                                 const BoxDim& box,
                                 const unsigned int N,
                                 const Scalar dt,
@@ -34,15 +34,15 @@ cudaError_t langevin_flow_step1(Scalar4 *d_pos,
 
 //! Step two of the langevin dynamics step (drag and velocity update)
 template<class FlowField>
-cudaError_t langevin_flow_step2(Scalar4 *d_vel,
-                                Scalar3 *d_accel,
-                                const Scalar4 *d_pos,
-                                const Scalar4 *d_net_force,
-                                const unsigned int *d_tag,
-                                const unsigned int *d_group,
-                                const Scalar *d_diameter,
+cudaError_t langevin_flow_step2(Scalar4* d_vel,
+                                Scalar3* d_accel,
+                                const Scalar4* d_pos,
+                                const Scalar4* d_net_force,
+                                const unsigned int* d_tag,
+                                const unsigned int* d_group,
+                                const Scalar* d_diameter,
                                 const Scalar lambda,
-                                const Scalar *d_gamma,
+                                const Scalar* d_gamma,
                                 const unsigned int ntypes,
                                 const FlowField& flow_field,
                                 const unsigned int N,
@@ -56,17 +56,17 @@ cudaError_t langevin_flow_step2(Scalar4 *d_vel,
 
 #ifdef NVCC
 namespace kernel
-{
+    {
 template<class FlowField>
-__global__ void langevin_flow_step2(Scalar4 *d_vel,
-                                    Scalar3 *d_accel,
-                                    const Scalar4 *d_pos,
-                                    const Scalar4 *d_net_force,
-                                    const unsigned int *d_tag,
-                                    const unsigned int *d_group,
-                                    const Scalar *d_diameter,
+__global__ void langevin_flow_step2(Scalar4* d_vel,
+                                    Scalar3* d_accel,
+                                    const Scalar4* d_pos,
+                                    const Scalar4* d_net_force,
+                                    const unsigned int* d_tag,
+                                    const unsigned int* d_group,
+                                    const Scalar* d_diameter,
                                     const Scalar lambda,
-                                    const Scalar *d_gamma,
+                                    const Scalar* d_gamma,
                                     const unsigned int ntypes,
                                     const FlowField flow_field,
                                     const unsigned int N,
@@ -91,7 +91,8 @@ __global__ void langevin_flow_step2(Scalar4 *d_vel,
 
     // one thread per particle in group
     const unsigned int grp_idx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (grp_idx >= N) return;
+    if (grp_idx >= N)
+        return;
     const unsigned int idx = d_group[grp_idx];
 
     // get the friction coefficient
@@ -99,7 +100,7 @@ __global__ void langevin_flow_step2(Scalar4 *d_vel,
     Scalar gamma;
     if (use_lambda)
         {
-        gamma = lambda*d_diameter[idx];
+        gamma = lambda * d_diameter[idx];
         }
     else
         {
@@ -114,7 +115,10 @@ __global__ void langevin_flow_step2(Scalar4 *d_vel,
     Scalar coeff = fast::sqrt(Scalar(6.0) * gamma * T / dt);
     if (noiseless)
         coeff = Scalar(0.0);
-    hoomd::RandomGenerator rng(azplugins::RNGIdentifier::TwoStepLangevinFlow, seed, d_tag[idx], timestep);
+    hoomd::RandomGenerator rng(azplugins::RNGIdentifier::TwoStepLangevinFlow,
+                               seed,
+                               d_tag[idx],
+                               timestep);
     hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
     const Scalar3 random = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 
@@ -127,7 +131,7 @@ __global__ void langevin_flow_step2(Scalar4 *d_vel,
 
     // compute the new acceleration
     const Scalar4 net_force = d_net_force[idx];
-    Scalar3 accel = make_scalar3(net_force.x,net_force.y,net_force.z);
+    Scalar3 accel = make_scalar3(net_force.x, net_force.y, net_force.z);
     accel += bd_force;
     const Scalar minv = Scalar(1.0) / mass;
     accel.x *= minv;
@@ -141,18 +145,18 @@ __global__ void langevin_flow_step2(Scalar4 *d_vel,
     d_vel[idx] = make_scalar4(vel.x, vel.y, vel.z, mass);
     d_accel[idx] = accel;
     }
-} // end namespace kernel
+    } // end namespace kernel
 
 template<class FlowField>
-cudaError_t langevin_flow_step2(Scalar4 *d_vel,
-                                Scalar3 *d_accel,
-                                const Scalar4 *d_pos,
-                                const Scalar4 *d_net_force,
-                                const unsigned int *d_tag,
-                                const unsigned int *d_group,
-                                const Scalar *d_diameter,
+cudaError_t langevin_flow_step2(Scalar4* d_vel,
+                                Scalar3* d_accel,
+                                const Scalar4* d_pos,
+                                const Scalar4* d_net_force,
+                                const unsigned int* d_tag,
+                                const unsigned int* d_group,
+                                const Scalar* d_diameter,
                                 const Scalar lambda,
-                                const Scalar *d_gamma,
+                                const Scalar* d_gamma,
                                 const unsigned int ntypes,
                                 const FlowField& flow_field,
                                 const unsigned int N,
@@ -164,7 +168,8 @@ cudaError_t langevin_flow_step2(Scalar4 *d_vel,
                                 bool use_lambda,
                                 const unsigned int block_size)
     {
-    if (N == 0) return cudaSuccess;
+    if (N == 0)
+        return cudaSuccess;
 
     static unsigned int max_block_size = UINT_MAX;
     if (max_block_size == UINT_MAX)
@@ -178,29 +183,29 @@ cudaError_t langevin_flow_step2(Scalar4 *d_vel,
     const size_t shared_bytes = sizeof(Scalar) * ntypes;
 
     kernel::langevin_flow_step2<FlowField>
-        <<<N/run_block_size+1, run_block_size, shared_bytes>>>(d_vel,
-                                                               d_accel,
-                                                               d_pos,
-                                                               d_net_force,
-                                                               d_tag,
-                                                               d_group,
-                                                               d_diameter,
-                                                               lambda,
-                                                               d_gamma,
-                                                               ntypes,
-                                                               flow_field,
-                                                               N,
-                                                               dt,
-                                                               T,
-                                                               timestep,
-                                                               seed,
-                                                               noiseless,
-                                                               use_lambda);
+        <<<N / run_block_size + 1, run_block_size, shared_bytes>>>(d_vel,
+                                                                   d_accel,
+                                                                   d_pos,
+                                                                   d_net_force,
+                                                                   d_tag,
+                                                                   d_group,
+                                                                   d_diameter,
+                                                                   lambda,
+                                                                   d_gamma,
+                                                                   ntypes,
+                                                                   flow_field,
+                                                                   N,
+                                                                   dt,
+                                                                   T,
+                                                                   timestep,
+                                                                   seed,
+                                                                   noiseless,
+                                                                   use_lambda);
     return cudaSuccess;
     }
 #endif // NVCC
 
-} // end namespace gpu
-} // end namespace azplugins
+    } // end namespace gpu
+    } // end namespace azplugins
 
 #endif // AZPLUGINS_TWO_STEP_LANGEVIN_FLOW_GPU_CUH_

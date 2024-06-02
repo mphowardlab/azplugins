@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ImplicitDropletEvaporatorGPU.cc
@@ -11,7 +11,7 @@
 #include "ImplicitDropletEvaporatorGPU.cuh"
 
 namespace azplugins
-{
+    {
 
 /*!
  * \param sysdef System definition
@@ -19,7 +19,7 @@ namespace azplugins
  */
 ImplicitDropletEvaporatorGPU::ImplicitDropletEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
                                                            std::shared_ptr<Variant> interf)
-        : ImplicitEvaporatorGPU(sysdef, interf)
+    : ImplicitEvaporatorGPU(sysdef, interf)
     {
     m_exec_conf->msg->notice(5) << "Constructing ImplicitDropletEvaporatorGPU" << std::endl;
     }
@@ -42,12 +42,14 @@ void ImplicitDropletEvaporatorGPU::computeForces(unsigned int timestep)
         const BoxDim& box = m_pdata->getGlobalBox();
         const Scalar3 hi = box.getHi();
         const Scalar3 lo = box.getLo();
-        if (interf_origin > hi.x || interf_origin < lo.x ||
-            interf_origin > hi.y || interf_origin < lo.y ||
-            interf_origin > hi.z || interf_origin < lo.z)
+        if (interf_origin > hi.x || interf_origin < lo.x || interf_origin > hi.y
+            || interf_origin < lo.y || interf_origin > hi.z || interf_origin < lo.z)
             {
-            m_exec_conf->msg->error() << "ImplicitDropletEvaporator interface must be inside the simulation box" << std::endl;
-            throw std::runtime_error("ImplicitDropletEvaporator interface must be inside the simulation box");
+            m_exec_conf->msg->error()
+                << "ImplicitDropletEvaporator interface must be inside the simulation box"
+                << std::endl;
+            throw std::runtime_error(
+                "ImplicitDropletEvaporator interface must be inside the simulation box");
             }
         }
 
@@ -65,22 +67,25 @@ void ImplicitDropletEvaporatorGPU::computeForces(unsigned int timestep)
                                              m_pdata->getN(),
                                              m_pdata->getNTypes(),
                                              m_tuner->getParam());
-    if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
+    if (m_exec_conf->isCUDAErrorCheckingEnabled())
+        CHECK_CUDA_ERROR();
     m_tuner->end();
     }
 
 namespace detail
-{
+    {
 /*!
  * \param m Python module to export to
  */
 void export_ImplicitDropletEvaporatorGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ImplicitDropletEvaporatorGPU,std::shared_ptr<ImplicitDropletEvaporatorGPU> >(m, "ImplicitDropletEvaporatorGPU", py::base<ImplicitEvaporatorGPU>())
-        .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<Variant>>())
-    ;
+    py::class_<ImplicitDropletEvaporatorGPU, std::shared_ptr<ImplicitDropletEvaporatorGPU>>(
+        m,
+        "ImplicitDropletEvaporatorGPU",
+        py::base<ImplicitEvaporatorGPU>())
+        .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     }
-} // end namespace detail
+    } // end namespace detail
 
-} // end namespace azplugins
+    } // end namespace azplugins

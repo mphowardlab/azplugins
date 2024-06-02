@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ParabolicFlow.h
@@ -18,50 +18,48 @@
 #endif
 
 namespace azplugins
-{
+    {
 
 //! Quiescent (motionless) fluid flow field
 class QuiescentFluid
     {
     public:
-        //! Construct quiescent fluid
-        QuiescentFluid() { }
+    //! Construct quiescent fluid
+    QuiescentFluid() { }
 
-        //! Evaluate the flow field
-        /*!
-         * \param r position to evaluate flow
-         */
-        HOSTDEVICE Scalar3 operator()(const Scalar3& r) const
-            {
-            return make_scalar3(0.0, 0.0, 0.0);
-            }
+    //! Evaluate the flow field
+    /*!
+     * \param r position to evaluate flow
+     */
+    HOSTDEVICE Scalar3 operator()(const Scalar3& r) const
+        {
+        return make_scalar3(0.0, 0.0, 0.0);
+        }
     };
 
 //! Position-independent flow along a vector
 class ConstantFlow
     {
     public:
-        //! Constructor
-        /*!
-         *\param U_ Flow field
-         */
-        ConstantFlow(Scalar3 U_)
-            : U(U_)
-            {}
+    //! Constructor
+    /*!
+     *\param U_ Flow field
+     */
+    ConstantFlow(Scalar3 U_) : U(U_) { }
 
-        //! Evaluate the flow field
-        /*!
-         * \param r position to evaluate flow
-         *
-         * This is just a constant, independent of \a r.
-         */
-        HOSTDEVICE Scalar3 operator()(const Scalar3& r) const
-            {
-            return U;
-            }
+    //! Evaluate the flow field
+    /*!
+     * \param r position to evaluate flow
+     *
+     * This is just a constant, independent of \a r.
+     */
+    HOSTDEVICE Scalar3 operator()(const Scalar3& r) const
+        {
+        return U;
+        }
 
     private:
-        Scalar3 U;  //!< Flow field
+    Scalar3 U; //!< Flow field
     };
 
 //! Unidirectional parabolic flow field
@@ -84,33 +82,32 @@ class ConstantFlow
 class ParabolicFlow
     {
     public:
-        //! Construct parabolic flow profile
-        /*!
-         * \param U_ Mean velocity
-         * \param L_ Channel half width
-         */
-        ParabolicFlow(Scalar U_, Scalar L_)
-            : Umax(Scalar(1.5)*U_), L(L_) { }
+    //! Construct parabolic flow profile
+    /*!
+     * \param U_ Mean velocity
+     * \param L_ Channel half width
+     */
+    ParabolicFlow(Scalar U_, Scalar L_) : Umax(Scalar(1.5) * U_), L(L_) { }
 
-        //! Evaluate the flow field
-        /*!
-         * \param r position to evaluate flow
-         */
-        HOSTDEVICE Scalar3 operator()(const Scalar3& r) const
-            {
-            const Scalar zr = (r.z / L);
-            return make_scalar3(Umax * (1. - zr*zr), 0.0, 0.0);
-            }
+    //! Evaluate the flow field
+    /*!
+     * \param r position to evaluate flow
+     */
+    HOSTDEVICE Scalar3 operator()(const Scalar3& r) const
+        {
+        const Scalar zr = (r.z / L);
+        return make_scalar3(Umax * (1. - zr * zr), 0.0, 0.0);
+        }
 
     private:
-        Scalar Umax;    //<! Mean velocity
-        Scalar L;       //!< Half width
+    Scalar Umax; //<! Mean velocity
+    Scalar L;    //!< Half width
     };
 
 #ifndef NVCC
 
 namespace detail
-{
+    {
 //! Export QuiescentFluid to python
 /*!
  * \param m Python module to export to
@@ -118,7 +115,7 @@ namespace detail
 void export_QuiescentFluid(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<QuiescentFluid, std::shared_ptr<QuiescentFluid> >(m, "QuiescentFluid")
+    py::class_<QuiescentFluid, std::shared_ptr<QuiescentFluid>>(m, "QuiescentFluid")
         .def(py::init<>())
         .def("__call__", &QuiescentFluid::operator());
     }
@@ -130,7 +127,7 @@ void export_QuiescentFluid(pybind11::module& m)
 void export_ConstantFlow(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ConstantFlow, std::shared_ptr<ConstantFlow> >(m, "ConstantFlow")
+    py::class_<ConstantFlow, std::shared_ptr<ConstantFlow>>(m, "ConstantFlow")
         .def(py::init<Scalar3>())
         .def("__call__", &ConstantFlow::operator());
     }
@@ -142,14 +139,14 @@ void export_ConstantFlow(pybind11::module& m)
 void export_ParabolicFlow(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ParabolicFlow, std::shared_ptr<ParabolicFlow> >(m, "ParabolicFlow")
-        .def(py::init<Scalar,Scalar>())
+    py::class_<ParabolicFlow, std::shared_ptr<ParabolicFlow>>(m, "ParabolicFlow")
+        .def(py::init<Scalar, Scalar>())
         .def("__call__", &ParabolicFlow::operator());
     }
-} // end namespace detail
+    }  // end namespace detail
 #endif // NVCC
 
-} // end namespace azplugins
+    } // end namespace azplugins
 
 #undef HOSTDEVICE
 

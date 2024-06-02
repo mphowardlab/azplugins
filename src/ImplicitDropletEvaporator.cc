@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ImplicitDropletEvaporator.cc
@@ -10,14 +10,14 @@
 #include "ImplicitDropletEvaporator.h"
 
 namespace azplugins
-{
+    {
 /*!
  * \param sysdef System definition
  * \param interf Position of the interface
  */
 ImplicitDropletEvaporator::ImplicitDropletEvaporator(std::shared_ptr<SystemDefinition> sysdef,
                                                      std::shared_ptr<Variant> interf)
-        : ImplicitEvaporator(sysdef, interf)
+    : ImplicitEvaporator(sysdef, interf)
     {
     m_exec_conf->msg->notice(5) << "Constructing ImplicitDropletEvaporator" << std::endl;
     }
@@ -40,12 +40,14 @@ void ImplicitDropletEvaporator::computeForces(unsigned int timestep)
         const BoxDim& box = m_pdata->getGlobalBox();
         const Scalar3 hi = box.getHi();
         const Scalar3 lo = box.getLo();
-        if (interf_origin > hi.x || interf_origin < lo.x ||
-            interf_origin > hi.y || interf_origin < lo.y ||
-            interf_origin > hi.z || interf_origin < lo.z)
+        if (interf_origin > hi.x || interf_origin < lo.x || interf_origin > hi.y
+            || interf_origin < lo.y || interf_origin > hi.z || interf_origin < lo.z)
             {
-            m_exec_conf->msg->error() << "ImplicitDropletEvaporator interface must be inside the simulation box" << std::endl;
-            throw std::runtime_error("ImplicitDropletEvaporator interface must be inside the simulation box");
+            m_exec_conf->msg->error()
+                << "ImplicitDropletEvaporator interface must be inside the simulation box"
+                << std::endl;
+            throw std::runtime_error(
+                "ImplicitDropletEvaporator interface must be inside the simulation box");
             }
         }
 
@@ -68,13 +70,15 @@ void ImplicitDropletEvaporator::computeForces(unsigned int timestep)
         const Scalar g = params.z;
         const Scalar cutoff = params.w;
         // continue if interaction is off
-        if (cutoff < Scalar(0.0)) continue;
+        if (cutoff < Scalar(0.0))
+            continue;
 
         // get distances and direction of force
-        const Scalar r_i = fast::sqrt(dot(pos_i,pos_i));
+        const Scalar r_i = fast::sqrt(dot(pos_i, pos_i));
         const Scalar dr = r_i - (interf_origin + offset);
-        if (!(r_i > Scalar(0.0)) || dr < Scalar(0.0)) continue;
-        const Scalar3 rhat = pos_i/r_i;
+        if (!(r_i > Scalar(0.0)) || dr < Scalar(0.0))
+            continue;
+        const Scalar3 rhat = pos_i / r_i;
 
         Scalar3 f;
         Scalar e;
@@ -94,17 +98,20 @@ void ImplicitDropletEvaporator::computeForces(unsigned int timestep)
     }
 
 namespace detail
-{
+    {
 /*!
  * \param m Python module to export to
  */
 void export_ImplicitDropletEvaporator(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ImplicitDropletEvaporator,std::shared_ptr<ImplicitDropletEvaporator>>(m, "ImplicitDropletEvaporator", py::base<ImplicitEvaporator>())
-        .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<Variant>>());
+    py::class_<ImplicitDropletEvaporator, std::shared_ptr<ImplicitDropletEvaporator>>(
+        m,
+        "ImplicitDropletEvaporator",
+        py::base<ImplicitEvaporator>())
+        .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     ;
     }
-} // end namespace detail
+    } // end namespace detail
 
-} // end namespace azplugins
+    } // end namespace azplugins

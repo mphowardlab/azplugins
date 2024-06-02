@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file BondPotentials.cuh
@@ -13,13 +13,13 @@
 #ifndef AZPLUGINS_BOND_POTENTIAL_DRIVERS_CUH_
 #define AZPLUGINS_BOND_POTENTIAL_DRIVERS_CUH_
 
-#include "hoomd/md/PotentialBondGPU.cuh"
 #include "BondPotentials.h"
+#include "hoomd/md/PotentialBondGPU.cuh"
 
 namespace azplugins
-{
+    {
 namespace gpu
-{
+    {
 //! Bond potential compute kernel driver
 /*!
  * \param bond_args Standard bond potential arguments
@@ -29,8 +29,8 @@ namespace gpu
  */
 template<class evaluator>
 cudaError_t compute_bond_potential(const bond_args_t& bond_args,
-                                   const typename evaluator::param_type *d_params,
-                                   unsigned int *d_flags);
+                                   const typename evaluator::param_type* d_params,
+                                   unsigned int* d_flags);
 
 #ifdef NVCC
 /*!
@@ -39,13 +39,13 @@ cudaError_t compute_bond_potential(const bond_args_t& bond_args,
  */
 template<class evaluator>
 cudaError_t compute_bond_potential(const bond_args_t& bond_args,
-                                   const typename evaluator::param_type *d_params,
-                                   unsigned int *d_flags)
+                                   const typename evaluator::param_type* d_params,
+                                   unsigned int* d_flags)
     {
     return ::gpu_compute_bond_forces<evaluator>(bond_args, d_params, d_flags);
     }
 #endif
-} // end namespace gpu
-} // end namespace azplugins
+    } // end namespace gpu
+    } // end namespace azplugins
 
 #endif // AZPLUGINS_BOND_POTENTIAL_DRIVERS_CUH_

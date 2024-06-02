@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ParticleEvaporator.h
@@ -8,12 +8,12 @@
  */
 
 #include "ParticleEvaporator.h"
-#include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
+#include "hoomd/RandomNumbers.h"
 #include <algorithm>
 
 namespace azplugins
-{
+    {
 
 /*!
  * \param sysdef System definition
@@ -24,8 +24,10 @@ namespace azplugins
  * properly initialize the system via setters.
  */
 ParticleEvaporator::ParticleEvaporator(std::shared_ptr<SystemDefinition> sysdef, unsigned int seed)
-    : TypeUpdater(sysdef), m_seed(seed), m_Nevap_max(0xffffffff), m_Npick(0), m_picks(m_exec_conf), m_mark(m_exec_conf)
-    {}
+    : TypeUpdater(sysdef), m_seed(seed), m_Nevap_max(0xffffffff), m_Npick(0), m_picks(m_exec_conf),
+      m_mark(m_exec_conf)
+    {
+    }
 
 /*!
  * \param sysdef System definition
@@ -41,9 +43,10 @@ ParticleEvaporator::ParticleEvaporator(std::shared_ptr<SystemDefinition> sysdef,
                                        Scalar z_lo,
                                        Scalar z_hi,
                                        unsigned int seed)
-        : TypeUpdater(sysdef, inside_type, outside_type, z_lo, z_hi),
-          m_seed(seed), m_Nevap_max(0xffffffff), m_Npick(0), m_picks(m_exec_conf), m_mark(m_exec_conf)
-    {}
+    : TypeUpdater(sysdef, inside_type, outside_type, z_lo, z_hi), m_seed(seed),
+      m_Nevap_max(0xffffffff), m_Npick(0), m_picks(m_exec_conf), m_mark(m_exec_conf)
+    {
+    }
 
 /*!
  * \param timestep Timestep update is called
@@ -51,11 +54,11 @@ ParticleEvaporator::ParticleEvaporator(std::shared_ptr<SystemDefinition> sysdef,
  * Particle evaporation proceeds in four steps:
  *  1. Mark all possible particles for evaporation on the local rank, and compact their particle
  *     indexes into an array running from 0 to \a N_mark.
- *  2. Perform an MPI exclusive scan and reduction to determine the total number of marked particles on all
- *     ranks and the global marked indexes that the rank owns.
- *  3. Randomly choose up to m_Nevap_max particles from the global list. Each rank performs this task
- *     independently using the same PRNG with the same seed. This guarantees the selection of the same
- *     particles, and avoids any extra communication.
+ *  2. Perform an MPI exclusive scan and reduction to determine the total number of marked particles
+ * on all ranks and the global marked indexes that the rank owns.
+ *  3. Randomly choose up to m_Nevap_max particles from the global list. Each rank performs this
+ * task independently using the same PRNG with the same seed. This guarantees the selection of the
+ * same particles, and avoids any extra communication.
  *  4. The random picks are applied by flipping the types of the particles.
  */
 void ParticleEvaporator::changeTypes(unsigned int timestep)
@@ -85,18 +88,23 @@ void ParticleEvaporator::changeTypes(unsigned int timestep)
             {
             m_mark.resize(N_mark);
             }
-        } while(overflowed);
+        } while (overflowed);
 
     // reduce / scan the number of particles that are marked on all ranks
     unsigned int N_mark_total = N_mark;
     unsigned int N_before = 0;
-    #ifdef ENABLE_MPI
+#ifdef ENABLE_MPI
     if (m_exec_conf->getNRanks() > 1)
         {
-        MPI_Allreduce(&N_mark, &N_mark_total, 1, MPI_UNSIGNED, MPI_SUM, m_exec_conf->getMPICommunicator());
+        MPI_Allreduce(&N_mark,
+                      &N_mark_total,
+                      1,
+                      MPI_UNSIGNED,
+                      MPI_SUM,
+                      m_exec_conf->getMPICommunicator());
         MPI_Exscan(&N_mark, &N_before, 1, MPI_UNSIGNED, MPI_SUM, m_exec_conf->getMPICommunicator());
         }
-    #endif // ENABLE_MPI
+#endif // ENABLE_MPI
 
     // pick which particles will be evaporated
     if (N_mark_total < m_Nevap_max) // bypass any picking logic, and take all particles
@@ -123,8 +131,10 @@ void ParticleEvaporator::changeTypes(unsigned int timestep)
             const unsigned int max_Npick = m_picks.size();
 
                 {
-                ArrayHandle<unsigned int> h_picks(m_picks, access_location::host, access_mode::overwrite);
-                for (unsigned int i=0; i < m_Nevap_max; ++i)
+                ArrayHandle<unsigned int> h_picks(m_picks,
+                                                  access_location::host,
+                                                  access_mode::overwrite);
+                for (unsigned int i = 0; i < m_Nevap_max; ++i)
                     {
                     const unsigned int pick = m_all_picks[i];
                     if (pick >= N_before && pick < max_pick_idx)
@@ -170,7 +180,7 @@ unsigned int ParticleEvaporator::markParticles()
 
     unsigned int N_mark = 0;
     const unsigned int N_mark_max = m_mark.size();
-    for (unsigned int i=0; i < m_pdata->getN(); ++i)
+    for (unsigned int i = 0; i < m_pdata->getN(); ++i)
         {
         const Scalar4 postype = h_pos.data[i];
         const Scalar3 pos = make_scalar3(postype.x, postype.y, postype.z);
@@ -183,7 +193,8 @@ unsigned int ParticleEvaporator::markParticles()
             bool inside = !(pos.z > m_z_hi || pos.z < m_z_lo);
             if (inside)
                 {
-                if (N_mark < N_mark_max) h_mark.data[N_mark] = i;
+                if (N_mark < N_mark_max)
+                    h_mark.data[N_mark] = i;
                 ++N_mark;
                 }
             }
@@ -193,11 +204,13 @@ unsigned int ParticleEvaporator::markParticles()
 
 void ParticleEvaporator::applyPicks()
     {
-    ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::readwrite);
+    ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(),
+                               access_location::host,
+                               access_mode::readwrite);
     ArrayHandle<unsigned int> h_picks(m_picks, access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_mark(m_mark, access_location::host, access_mode::read);
 
-    for (unsigned int i=0; i < m_Npick; ++i)
+    for (unsigned int i = 0; i < m_Npick; ++i)
         {
         const unsigned int pidx = h_mark.data[h_picks.data[i]];
         h_pos.data[pidx].w = __int_as_scalar(m_inside_type);
@@ -213,7 +226,9 @@ void ParticleEvaporator::applyPicks()
  * out of the possible particles across all ranks. The result is stored in
  * \a m_all_picks.
  */
-void ParticleEvaporator::makeAllPicks(unsigned int timestep, unsigned int N_pick, unsigned int N_mark_total)
+void ParticleEvaporator::makeAllPicks(unsigned int timestep,
+                                      unsigned int N_pick,
+                                      unsigned int N_mark_total)
     {
     assert(N_pick <= N_mark_total);
 
@@ -226,11 +241,11 @@ void ParticleEvaporator::makeAllPicks(unsigned int timestep, unsigned int N_pick
     // random shuffle (fisher-yates) to get picks, seeded the same across all ranks
     auto begin = m_all_picks.begin();
     auto end = m_all_picks.end();
-    size_t left = std::distance(begin,end);
+    size_t left = std::distance(begin, end);
     unsigned int N_choose = N_pick;
     while (N_choose-- && left > 1)
         {
-        hoomd::UniformIntDistribution rand_shift(left-1);
+        hoomd::UniformIntDistribution rand_shift(left - 1);
 
         auto r = begin;
         std::advance(r, rand_shift(rng));
@@ -244,18 +259,25 @@ void ParticleEvaporator::makeAllPicks(unsigned int timestep, unsigned int N_pick
     }
 
 namespace detail
-{
+    {
 /*!
  * \param m Python module to export to
  */
 void export_ParticleEvaporator(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_< ParticleEvaporator, std::shared_ptr<ParticleEvaporator> >(m, "ParticleEvaporator", py::base<TypeUpdater>())
+    py::class_<ParticleEvaporator, std::shared_ptr<ParticleEvaporator>>(m,
+                                                                        "ParticleEvaporator",
+                                                                        py::base<TypeUpdater>())
         .def(py::init<std::shared_ptr<SystemDefinition>, unsigned int>())
-        .def(py::init<std::shared_ptr<SystemDefinition>, unsigned int, unsigned int, Scalar, Scalar, unsigned int>())
+        .def(py::init<std::shared_ptr<SystemDefinition>,
+                      unsigned int,
+                      unsigned int,
+                      Scalar,
+                      Scalar,
+                      unsigned int>())
         .def_property("Nmax", &ParticleEvaporator::getNEvapMax, &ParticleEvaporator::setNEvapMax);
     }
-} // end namespace detail
+    } // end namespace detail
 
-} // end namespace azplugins
+    } // end namespace azplugins

@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file TypeUpdater.h
@@ -18,7 +18,7 @@
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 
 namespace azplugins
-{
+    {
 
 //! Particle type updater
 /*!
@@ -33,110 +33,110 @@ namespace azplugins
 class PYBIND11_EXPORT TypeUpdater : public Updater
     {
     public:
-        //! Simple constructor
-        TypeUpdater(std::shared_ptr<SystemDefinition> sysdef);
+    //! Simple constructor
+    TypeUpdater(std::shared_ptr<SystemDefinition> sysdef);
 
-        //! Constructor with parameters
-        TypeUpdater(std::shared_ptr<SystemDefinition> sysdef,
-                    unsigned int inside_type,
-                    unsigned int outside_type,
-                    Scalar z_lo,
-                    Scalar z_hi);
+    //! Constructor with parameters
+    TypeUpdater(std::shared_ptr<SystemDefinition> sysdef,
+                unsigned int inside_type,
+                unsigned int outside_type,
+                Scalar z_lo,
+                Scalar z_hi);
 
-        //! Destructor
-        virtual ~TypeUpdater();
+    //! Destructor
+    virtual ~TypeUpdater();
 
-        //! Evaporate particles
-        virtual void update(unsigned int timestep);
+    //! Evaporate particles
+    virtual void update(unsigned int timestep);
 
-        //! Get the inside particle type
-        unsigned int getInsideType() const
-            {
-            return m_inside_type;
-            }
+    //! Get the inside particle type
+    unsigned int getInsideType() const
+        {
+        return m_inside_type;
+        }
 
-        //! Set the inside particle type
-        void setInsideType(unsigned int inside_type)
-            {
-            m_inside_type = inside_type;
-            requestCheckTypes();
-            }
+    //! Set the inside particle type
+    void setInsideType(unsigned int inside_type)
+        {
+        m_inside_type = inside_type;
+        requestCheckTypes();
+        }
 
-        //! Get the outside particle type
-        unsigned int getOutsideType() const
-            {
-            return m_outside_type;
-            }
+    //! Get the outside particle type
+    unsigned int getOutsideType() const
+        {
+        return m_outside_type;
+        }
 
-        //! Set the outside particle type
-        void setOutsideType(unsigned int outside_type)
-            {
-            m_outside_type = outside_type;
-            requestCheckTypes();
-            }
+    //! Set the outside particle type
+    void setOutsideType(unsigned int outside_type)
+        {
+        m_outside_type = outside_type;
+        requestCheckTypes();
+        }
 
-        //! Get region lower bound
-        Scalar getRegionLo() const
-            {
-            return m_z_lo;
-            }
+    //! Get region lower bound
+    Scalar getRegionLo() const
+        {
+        return m_z_lo;
+        }
 
-        //! Get region upper bound
-        Scalar getRegionHi() const
-            {
-            return m_z_hi;
-            }
+    //! Get region upper bound
+    Scalar getRegionHi() const
+        {
+        return m_z_hi;
+        }
 
-        //! Set region lower bound
-        void setRegionLo(Scalar z_lo)
-            {
-            m_z_lo = z_lo;
-            requestCheckRegion();
-            }
+    //! Set region lower bound
+    void setRegionLo(Scalar z_lo)
+        {
+        m_z_lo = z_lo;
+        requestCheckRegion();
+        }
 
-        //! Set region upper bound
-        void setRegionHi(Scalar z_hi)
-            {
-            m_z_hi = z_hi;
-            requestCheckRegion();
-            }
+    //! Set region upper bound
+    void setRegionHi(Scalar z_hi)
+        {
+        m_z_hi = z_hi;
+        requestCheckRegion();
+        }
 
     protected:
-        unsigned int m_inside_type;     //!< Type id of particles in region
-        unsigned int m_outside_type;    //!< Type id of particles outside region
+    unsigned int m_inside_type;  //!< Type id of particles in region
+    unsigned int m_outside_type; //!< Type id of particles outside region
 
-        Scalar m_z_lo;  //!< Minimum bound of region in z
-        Scalar m_z_hi;  //!< Maximum bound of region in z
+    Scalar m_z_lo; //!< Minimum bound of region in z
+    Scalar m_z_hi; //!< Maximum bound of region in z
 
-        //! Changes the particle types according to an update rule
-        virtual void changeTypes(unsigned int timestep);
+    //! Changes the particle types according to an update rule
+    virtual void changeTypes(unsigned int timestep);
 
     private:
-        bool m_check_types; //!< Flag if type check is necessary
-        //! Request to check types on next update
-        void requestCheckTypes()
-            {
-            m_check_types = true;
-            }
-        //! Check that the particle types are valid
-        void checkTypes() const;
+    bool m_check_types; //!< Flag if type check is necessary
+    //! Request to check types on next update
+    void requestCheckTypes()
+        {
+        m_check_types = true;
+        }
+    //! Check that the particle types are valid
+    void checkTypes() const;
 
-        bool m_check_region;    //!< Flag if region check is necessary
-        //! Request to check region on next update
-        void requestCheckRegion()
-            {
-            m_check_region = true;
-            }
-        //! Check that the particle region is valid
-        void checkRegion() const;
+    bool m_check_region; //!< Flag if region check is necessary
+    //! Request to check region on next update
+    void requestCheckRegion()
+        {
+        m_check_region = true;
+        }
+    //! Check that the particle region is valid
+    void checkRegion() const;
     };
 
 namespace detail
-{
+    {
 //! Export the Evaporator to python
 void export_TypeUpdater(pybind11::module& m);
-} // end namespace detail
+    } // end namespace detail
 
-} // end namespace azplugins
+    } // end namespace azplugins
 
 #endif // AZPLUGINS_TYPE_UPDATER_H_

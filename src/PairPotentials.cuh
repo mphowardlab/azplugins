@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file PairPotentials.cuh
@@ -12,13 +12,13 @@
 #ifndef AZPLUGINS_PAIR_POTENTIAL_DRIVERS_CUH_
 #define AZPLUGINS_PAIR_POTENTIAL_DRIVERS_CUH_
 
-#include "hoomd/md/PotentialPairGPU.cuh"
 #include "PairPotentials.h"
+#include "hoomd/md/PotentialPairGPU.cuh"
 
 namespace azplugins
-{
+    {
 namespace gpu
-{
+    {
 //! Pair potential compute kernel driver
 /*!
  * \param pair_args Standard pair potential arguments
@@ -26,7 +26,8 @@ namespace gpu
  * \tparam evaluator Evaluator functor
  */
 template<class evaluator>
-cudaError_t compute_pair_potential(const pair_args_t& pair_args, const typename evaluator::param_type *d_params);
+cudaError_t compute_pair_potential(const pair_args_t& pair_args,
+                                   const typename evaluator::param_type* d_params);
 
 #ifdef NVCC
 /*!
@@ -34,12 +35,13 @@ cudaError_t compute_pair_potential(const pair_args_t& pair_args, const typename 
  * must be specifically instantiated per potential in a cu file.
  */
 template<class evaluator>
-cudaError_t compute_pair_potential(const pair_args_t& pair_args, const typename evaluator::param_type *d_params)
+cudaError_t compute_pair_potential(const pair_args_t& pair_args,
+                                   const typename evaluator::param_type* d_params)
     {
     return ::gpu_compute_pair_forces<evaluator>(pair_args, d_params);
     }
 #endif
-} // end namespace gpu
-} // end namespace azplugins
+    } // end namespace gpu
+    } // end namespace azplugins
 
 #endif // AZPLUGINS_PAIR_POTENTIAL_DRIVERS_CUH_

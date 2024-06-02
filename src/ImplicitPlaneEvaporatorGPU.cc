@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ImplicitPlaneEvaporatorGPU.cc
@@ -11,7 +11,7 @@
 #include "ImplicitPlaneEvaporatorGPU.cuh"
 
 namespace azplugins
-{
+    {
 
 /*!
  * \param sysdef System definition
@@ -19,7 +19,7 @@ namespace azplugins
  */
 ImplicitPlaneEvaporatorGPU::ImplicitPlaneEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
                                                        std::shared_ptr<Variant> interf)
-        : ImplicitEvaporatorGPU(sysdef, interf)
+    : ImplicitEvaporatorGPU(sysdef, interf)
     {
     m_exec_conf->msg->notice(5) << "Constructing ImplicitPlaneEvaporatorGPU" << std::endl;
     }
@@ -40,7 +40,8 @@ void ImplicitPlaneEvaporatorGPU::computeForces(unsigned int timestep)
     const Scalar interf_origin = m_interf->getValue(timestep);
     if (interf_origin > box.getHi().z || interf_origin < box.getLo().z)
         {
-        m_exec_conf->msg->error() << "ImplicitEvaporator interface must be inside the simulation box" << std::endl;
+        m_exec_conf->msg->error()
+            << "ImplicitEvaporator interface must be inside the simulation box" << std::endl;
         throw std::runtime_error("ImplicitEvaporator interface must be inside the simulation box");
         }
 
@@ -51,29 +52,32 @@ void ImplicitPlaneEvaporatorGPU::computeForces(unsigned int timestep)
 
     m_tuner->begin();
     gpu::compute_implicit_evap_force(d_force.data,
-                                       d_virial.data,
-                                       d_pos.data,
-                                       d_params.data,
-                                       interf_origin,
-                                       m_pdata->getN(),
-                                       m_pdata->getNTypes(),
-                                       m_tuner->getParam());
-    if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
+                                     d_virial.data,
+                                     d_pos.data,
+                                     d_params.data,
+                                     interf_origin,
+                                     m_pdata->getN(),
+                                     m_pdata->getNTypes(),
+                                     m_tuner->getParam());
+    if (m_exec_conf->isCUDAErrorCheckingEnabled())
+        CHECK_CUDA_ERROR();
     m_tuner->end();
     }
 
 namespace detail
-{
+    {
 /*!
  * \param m Python module to export to
  */
 void export_ImplicitPlaneEvaporatorGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ImplicitPlaneEvaporatorGPU,std::shared_ptr<ImplicitPlaneEvaporatorGPU> >(m, "ImplicitPlaneEvaporatorGPU", py::base<ImplicitEvaporatorGPU>())
-        .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<Variant>>())
-    ;
+    py::class_<ImplicitPlaneEvaporatorGPU, std::shared_ptr<ImplicitPlaneEvaporatorGPU>>(
+        m,
+        "ImplicitPlaneEvaporatorGPU",
+        py::base<ImplicitEvaporatorGPU>())
+        .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     }
-} // end namespace detail
+    } // end namespace detail
 
-} // end namespace azplugins
+    } // end namespace azplugins

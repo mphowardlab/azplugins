@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ImplicitEvaporatorGPU.cc
@@ -10,7 +10,7 @@
 #include "ImplicitEvaporatorGPU.h"
 
 namespace azplugins
-{
+    {
 
 /*!
  * \param sysdef System definition
@@ -18,23 +18,25 @@ namespace azplugins
  */
 ImplicitEvaporatorGPU::ImplicitEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
                                              std::shared_ptr<Variant> interf)
-        : ImplicitEvaporator(sysdef, interf)
+    : ImplicitEvaporator(sysdef, interf)
     {
     m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "implicit_evap", m_exec_conf));
     }
 
 namespace detail
-{
+    {
 /*!
  * \param m Python module to export to
  */
 void export_ImplicitEvaporatorGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ImplicitEvaporatorGPU,std::shared_ptr<ImplicitEvaporatorGPU>>(m, "ImplicitEvaporatorGPU", py::base<ImplicitEvaporator>())
-        .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<Variant>>())
-    ;
+    py::class_<ImplicitEvaporatorGPU, std::shared_ptr<ImplicitEvaporatorGPU>>(
+        m,
+        "ImplicitEvaporatorGPU",
+        py::base<ImplicitEvaporator>())
+        .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     }
-} // end namespace detail
+    } // end namespace detail
 
-} // end namespace azplugins
+    } // end namespace azplugins

@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ParticleEvaporatorGPU.cc
@@ -11,7 +11,7 @@
 #include "ParticleEvaporatorGPU.cuh"
 
 namespace azplugins
-{
+    {
 
 /*!
  * \param sysdef System definition
@@ -21,8 +21,9 @@ namespace azplugins
  * first check of the types and region. This constructor requires that the user
  * properly initialize the system via setters.
  */
-ParticleEvaporatorGPU::ParticleEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef, unsigned int seed)
-        : ParticleEvaporator(sysdef, seed), m_select_flags(m_exec_conf), m_num_mark(m_exec_conf)
+ParticleEvaporatorGPU::ParticleEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
+                                             unsigned int seed)
+    : ParticleEvaporator(sysdef, seed), m_select_flags(m_exec_conf), m_num_mark(m_exec_conf)
     {
     m_mark_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "evap_mark_particles", m_exec_conf));
     m_pick_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "evap_pick_particles", m_exec_conf));
@@ -37,13 +38,13 @@ ParticleEvaporatorGPU::ParticleEvaporatorGPU(std::shared_ptr<SystemDefinition> s
  * \param seed Seed to the pseudo-random number generator
  */
 ParticleEvaporatorGPU::ParticleEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
-                               unsigned int inside_type,
-                               unsigned int outside_type,
-                               Scalar z_lo,
-                               Scalar z_hi,
-                               unsigned int seed)
-        : ParticleEvaporator(sysdef, inside_type, outside_type, z_lo, z_hi, seed),
-          m_select_flags(m_exec_conf), m_num_mark(m_exec_conf)
+                                             unsigned int inside_type,
+                                             unsigned int outside_type,
+                                             Scalar z_lo,
+                                             Scalar z_hi,
+                                             unsigned int seed)
+    : ParticleEvaporator(sysdef, inside_type, outside_type, z_lo, z_hi, seed),
+      m_select_flags(m_exec_conf), m_num_mark(m_exec_conf)
     {
     m_mark_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "evap_mark_particles", m_exec_conf));
     m_pick_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "evap_pick_particles", m_exec_conf));
@@ -66,27 +67,29 @@ unsigned int ParticleEvaporatorGPU::markParticles()
     m_select_flags.resize(m_pdata->getN());
     m_num_mark.resetFlags(0);
 
-    ArrayHandle<unsigned char> d_select_flags(m_select_flags, access_location::device, access_mode::overwrite);
+    ArrayHandle<unsigned char> d_select_flags(m_select_flags,
+                                              access_location::device,
+                                              access_mode::overwrite);
     ArrayHandle<unsigned int> d_mark(m_mark, access_location::device, access_mode::overwrite);
     ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
 
     // mark candidate particles for evaporation
     m_mark_tuner->begin();
     gpu::evaporate_setup_mark(d_select_flags.data,
-                                   d_mark.data,
-                                   d_pos.data,
-                                   m_outside_type,
-                                   m_z_lo,
-                                   m_z_hi,
-                                   m_pdata->getN(),
-                                   m_mark_tuner->getParam());
+                              d_mark.data,
+                              d_pos.data,
+                              m_outside_type,
+                              m_z_lo,
+                              m_z_hi,
+                              m_pdata->getN(),
+                              m_mark_tuner->getParam());
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
     m_mark_tuner->end();
 
-    // use cub device select to filter out the marked particles
+        // use cub device select to filter out the marked particles
         {
-        void *d_tmp_storage = NULL;
+        void* d_tmp_storage = NULL;
         size_t tmp_storage_bytes = 0;
         gpu::evaporate_select_mark(d_mark.data,
                                    m_num_mark.getDeviceFlags(),
@@ -99,7 +102,7 @@ unsigned int ParticleEvaporatorGPU::markParticles()
 
         size_t alloc_size = (tmp_storage_bytes > 0) ? tmp_storage_bytes : 4;
         ScopedAllocation<unsigned char> d_alloc(m_exec_conf->getCachedAllocator(), alloc_size);
-        d_tmp_storage = (void *)d_alloc();
+        d_tmp_storage = (void*)d_alloc();
 
         gpu::evaporate_select_mark(d_mark.data,
                                    m_num_mark.getDeviceFlags(),
@@ -124,7 +127,9 @@ unsigned int ParticleEvaporatorGPU::markParticles()
  */
 void ParticleEvaporatorGPU::applyPicks()
     {
-    ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::readwrite);
+    ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(),
+                               access_location::device,
+                               access_mode::readwrite);
     ArrayHandle<unsigned int> d_picks(m_picks, access_location::device, access_mode::read);
     ArrayHandle<unsigned int> d_mark(m_mark, access_location::device, access_mode::read);
 
@@ -141,17 +146,25 @@ void ParticleEvaporatorGPU::applyPicks()
     }
 
 namespace detail
-{
+    {
 /*!
  * \param m Python module to export to
  */
 void export_ParticleEvaporatorGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_< ParticleEvaporatorGPU, std::shared_ptr<ParticleEvaporatorGPU> >(m, "ParticleEvaporatorGPU", py::base<ParticleEvaporator>())
+    py::class_<ParticleEvaporatorGPU, std::shared_ptr<ParticleEvaporatorGPU>>(
+        m,
+        "ParticleEvaporatorGPU",
+        py::base<ParticleEvaporator>())
         .def(py::init<std::shared_ptr<SystemDefinition>, unsigned int>())
-        .def(py::init<std::shared_ptr<SystemDefinition>, unsigned int, unsigned int, Scalar, Scalar, unsigned int>());
+        .def(py::init<std::shared_ptr<SystemDefinition>,
+                      unsigned int,
+                      unsigned int,
+                      Scalar,
+                      Scalar,
+                      unsigned int>());
     }
-} // end namespace detail
+    } // end namespace detail
 
-} // end namespace azplugins
+    } // end namespace azplugins

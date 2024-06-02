@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file BondPotentials.cu
@@ -13,14 +13,15 @@
 #include "BondPotentials.cuh"
 
 namespace azplugins
-{
-    namespace gpu
+    {
+namespace gpu
     {
 
-        //! Kernel driver for double well bond potential
-        template cudaError_t compute_bond_potential<azplugins::detail::BondEvaluatorDoubleWell>(const bond_args_t &bond_args,
-                                                                                                const typename azplugins::detail::BondEvaluatorDoubleWell::param_type *d_params,
-                                                                                                unsigned int *d_flags);
+//! Kernel driver for double well bond potential
+template cudaError_t compute_bond_potential<azplugins::detail::BondEvaluatorDoubleWell>(
+    const bond_args_t& bond_args,
+    const typename azplugins::detail::BondEvaluatorDoubleWell::param_type* d_params,
+    unsigned int* d_flags);
 
     } // end namespace gpu
-} // end namespace azplugins
+    } // end namespace azplugins

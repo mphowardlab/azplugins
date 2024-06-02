@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ImplicitDropletEvaporatorGPU.cu
@@ -10,11 +10,11 @@
 #include "ImplicitDropletEvaporatorGPU.cuh"
 
 namespace azplugins
-{
+    {
 namespace gpu
-{
+    {
 namespace kernel
-{
+    {
 
 /*!
  * \param d_force Particle forces
@@ -30,10 +30,10 @@ namespace kernel
  * This method does not compute the virial.
  *
  */
-__global__ void compute_implicit_evap_droplet_force(Scalar4 *d_force,
-                                                    Scalar *d_virial,
-                                                    const Scalar4 *d_pos,
-                                                    const Scalar4 *d_params,
+__global__ void compute_implicit_evap_droplet_force(Scalar4* d_force,
+                                                    Scalar* d_virial,
+                                                    const Scalar4* d_pos,
+                                                    const Scalar4* d_params,
                                                     const Scalar interf_origin,
                                                     const unsigned int N,
                                                     const unsigned int ntypes)
@@ -64,13 +64,15 @@ __global__ void compute_implicit_evap_droplet_force(Scalar4 *d_force,
     const Scalar g = params.z;
     const Scalar cutoff = params.w;
     // exit if interaction is off
-    if (cutoff < Scalar(0.0)) return;
+    if (cutoff < Scalar(0.0))
+        return;
 
     // get distances and direction of force
-    const Scalar r_i = fast::sqrt(dot(pos_i,pos_i));
+    const Scalar r_i = fast::sqrt(dot(pos_i, pos_i));
     const Scalar dr = r_i - (interf_origin + offset);
-    if (!(r_i > Scalar(0.0)) || dr < Scalar(0.0)) return;
-    const Scalar3 rhat = pos_i/r_i;
+    if (!(r_i > Scalar(0.0)) || dr < Scalar(0.0))
+        return;
+    const Scalar3 rhat = pos_i / r_i;
 
     Scalar3 f;
     Scalar e;
@@ -87,7 +89,7 @@ __global__ void compute_implicit_evap_droplet_force(Scalar4 *d_force,
 
     d_force[idx] = make_scalar4(f.x, f.y, f.z, e);
     }
-} // end namespace kernel
+    } // end namespace kernel
 
 /*!
  * \param d_force Particle forces
@@ -102,18 +104,18 @@ __global__ void compute_implicit_evap_droplet_force(Scalar4 *d_force,
  * This kernel driver is a wrapper around kernel::compute_implicit_evap_force.
  * The forces and virial are both set to zero before calculation.
  */
-cudaError_t compute_implicit_evap_droplet_force(Scalar4 *d_force,
-                                                Scalar *d_virial,
-                                                const Scalar4 *d_pos,
-                                                const Scalar4 *d_params,
+cudaError_t compute_implicit_evap_droplet_force(Scalar4* d_force,
+                                                Scalar* d_virial,
+                                                const Scalar4* d_pos,
+                                                const Scalar4* d_params,
                                                 const Scalar interf_origin,
                                                 const unsigned int N,
                                                 const unsigned int ntypes,
                                                 const unsigned int block_size)
     {
     // zero the force and virial datasets before launch
-    cudaMemset(d_force, 0, sizeof(Scalar4)*N);
-    cudaMemset(d_virial, 0, 6*sizeof(Scalar)*N);
+    cudaMemset(d_force, 0, sizeof(Scalar4) * N);
+    cudaMemset(d_virial, 0, 6 * sizeof(Scalar) * N);
 
     static unsigned int max_block_size = UINT_MAX;
     if (max_block_size == UINT_MAX)
@@ -127,15 +129,16 @@ cudaError_t compute_implicit_evap_droplet_force(Scalar4 *d_force,
     unsigned int shared_size = sizeof(Scalar4) * ntypes;
 
     dim3 grid(N / run_block_size + 1);
-    kernel::compute_implicit_evap_droplet_force<<<grid, run_block_size, shared_size>>>(d_force,
-                                                                                       d_virial,
-                                                                                       d_pos,
-                                                                                       d_params,
-                                                                                       interf_origin,
-                                                                                       N,
-                                                                                       ntypes);
+    kernel::compute_implicit_evap_droplet_force<<<grid, run_block_size, shared_size>>>(
+        d_force,
+        d_virial,
+        d_pos,
+        d_params,
+        interf_origin,
+        N,
+        ntypes);
     return cudaSuccess;
     }
 
-} // end namespace gpu
-} // end namespace azplugins
+    } // end namespace gpu
+    } // end namespace azplugins

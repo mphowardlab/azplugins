@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file VariantSphereArea.h
@@ -20,7 +20,7 @@
 #include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 
 namespace azplugins
-{
+    {
 //! Radius of sphere contracting with a constant rate of surface reduction.
 /*!
  * The radius of the sphere is reduced according to the following relationship:
@@ -39,24 +39,24 @@ namespace azplugins
 class PYBIND11_EXPORT VariantSphereArea : public Variant
     {
     public:
-        //! Constructor
-        VariantSphereArea(double R0, double alpha);
+    //! Constructor
+    VariantSphereArea(double R0, double alpha);
 
-        //! Evaluate sphere radius
-        virtual double getValue(unsigned int timestep);
+    //! Evaluate sphere radius
+    virtual double getValue(unsigned int timestep);
 
     private:
-        double m_R0_sq; //!< Initial radius (squared)
-        double m_k;     //!< Rate of change (includes 1/4pi prefactor)
+    double m_R0_sq; //!< Initial radius (squared)
+    double m_k;     //!< Rate of change (includes 1/4pi prefactor)
     };
 
 namespace detail
-{
+    {
 
 //! Export VariantSphereArea to python
 void export_VariantSphereArea(pybind11::module& m);
 
-} // end namespace detail
-} // end namespace azplugins
+    } // end namespace detail
+    } // end namespace azplugins
 
 #endif // AZPLUGINS_VARIANT_SPHERE_AREA_H_

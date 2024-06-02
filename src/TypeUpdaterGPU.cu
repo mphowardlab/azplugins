@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file TypeUpdaterGPU.cu
@@ -10,11 +10,11 @@
 #include "TypeUpdaterGPU.cuh"
 
 namespace azplugins
-{
+    {
 namespace gpu
-{
+    {
 namespace kernel
-{
+    {
 //! Applies the type change in region
 /*!
  * \param d_pos Particle position array
@@ -28,7 +28,7 @@ namespace kernel
  * and \a outside_type based on their position in the slab bounded in *z* between
  * \a z_lo and \a z_hi.
  */
-__global__ void change_types_region(Scalar4 *d_pos,
+__global__ void change_types_region(Scalar4* d_pos,
                                     unsigned int inside_type,
                                     unsigned int outside_type,
                                     Scalar z_lo,
@@ -36,7 +36,8 @@ __global__ void change_types_region(Scalar4 *d_pos,
                                     unsigned int N)
     {
     const unsigned int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (idx >= N) return;
+    if (idx >= N)
+        return;
 
     const Scalar4 postype = d_pos[idx];
     const Scalar3 pos = make_scalar3(postype.x, postype.y, postype.z);
@@ -58,7 +59,7 @@ __global__ void change_types_region(Scalar4 *d_pos,
         }
     d_pos[idx] = make_scalar4(pos.x, pos.y, pos.z, __int_as_scalar(type));
     }
-}
+    } // namespace kernel
 
 /*!
  * \param d_pos Particle position array
@@ -69,7 +70,7 @@ __global__ void change_types_region(Scalar4 *d_pos,
  * \param N Number of particles
  * \param block_size Number of threads per block
  */
-cudaError_t change_types_region(Scalar4 *d_pos,
+cudaError_t change_types_region(Scalar4* d_pos,
                                 unsigned int inside_type,
                                 unsigned int outside_type,
                                 Scalar z_lo,
@@ -77,7 +78,8 @@ cudaError_t change_types_region(Scalar4 *d_pos,
                                 unsigned int N,
                                 unsigned int block_size)
     {
-    if (N == 0) return cudaSuccess;
+    if (N == 0)
+        return cudaSuccess;
 
     static unsigned int max_block_size = UINT_MAX;
     if (max_block_size == UINT_MAX)
@@ -88,15 +90,15 @@ cudaError_t change_types_region(Scalar4 *d_pos,
         }
 
     const int run_block_size = min(block_size, max_block_size);
-    kernel::change_types_region<<<N/run_block_size + 1, run_block_size>>>(d_pos,
-                                                                          inside_type,
-                                                                          outside_type,
-                                                                          z_lo,
-                                                                          z_hi,
-                                                                          N);
+    kernel::change_types_region<<<N / run_block_size + 1, run_block_size>>>(d_pos,
+                                                                            inside_type,
+                                                                            outside_type,
+                                                                            z_lo,
+                                                                            z_hi,
+                                                                            N);
 
     return cudaSuccess;
     }
 
-} // end namespace gpu
-} // end namespace azplugins
+    } // end namespace gpu
+    } // end namespace azplugins

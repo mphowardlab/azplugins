@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file ImplicitPlaneEvaporator.cc
@@ -10,14 +10,14 @@
 #include "ImplicitPlaneEvaporator.h"
 
 namespace azplugins
-{
+    {
 /*!
  * \param sysdef System definition
  * \param interf Position of the interface
  */
 ImplicitPlaneEvaporator::ImplicitPlaneEvaporator(std::shared_ptr<SystemDefinition> sysdef,
                                                  std::shared_ptr<Variant> interf)
-        : ImplicitEvaporator(sysdef, interf)
+    : ImplicitEvaporator(sysdef, interf)
     {
     m_exec_conf->msg->notice(5) << "Constructing ImplicitPlaneEvaporator" << std::endl;
     }
@@ -38,8 +38,10 @@ void ImplicitPlaneEvaporator::computeForces(unsigned int timestep)
     const Scalar interf_origin = m_interf->getValue(timestep);
     if (interf_origin > box.getHi().z || interf_origin < box.getLo().z)
         {
-        m_exec_conf->msg->error() << "ImplicitPlaneEvaporator interface must be inside the simulation box" << std::endl;
-        throw std::runtime_error("ImplicitPlaneEvaporator interface must be inside the simulation box");
+        m_exec_conf->msg->error()
+            << "ImplicitPlaneEvaporator interface must be inside the simulation box" << std::endl;
+        throw std::runtime_error(
+            "ImplicitPlaneEvaporator interface must be inside the simulation box");
         }
 
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
@@ -62,7 +64,8 @@ void ImplicitPlaneEvaporator::computeForces(unsigned int timestep)
         const Scalar cutoff = params.w;
 
         const Scalar dz = z_i - (interf_origin + offset);
-        if (cutoff < Scalar(0.0) || dz < Scalar(0.0)) continue;
+        if (cutoff < Scalar(0.0) || dz < Scalar(0.0))
+            continue;
 
         Scalar fz(0.0), e(0.0);
         if (dz < cutoff) // harmonic
@@ -81,17 +84,20 @@ void ImplicitPlaneEvaporator::computeForces(unsigned int timestep)
     }
 
 namespace detail
-{
+    {
 /*!
  * \param m Python module to export to
  */
 void export_ImplicitPlaneEvaporator(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ImplicitPlaneEvaporator,std::shared_ptr<ImplicitPlaneEvaporator>>(m, "ImplicitPlaneEvaporator", py::base<ImplicitEvaporator>())
-        .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<Variant>>());
+    py::class_<ImplicitPlaneEvaporator, std::shared_ptr<ImplicitPlaneEvaporator>>(
+        m,
+        "ImplicitPlaneEvaporator",
+        py::base<ImplicitEvaporator>())
+        .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     ;
     }
-} // end namespace detail
+    } // end namespace detail
 
-} // end namespace azplugins
+    } // end namespace azplugins

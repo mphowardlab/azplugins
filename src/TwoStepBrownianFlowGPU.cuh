@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2022, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
  * \file TwoStepBrownianFlowGPU.cuh
@@ -10,28 +10,28 @@
 #ifndef AZPLUGINS_TWO_STEP_BROWNIAN_FLOW_GPU_CUH_
 #define AZPLUGINS_TWO_STEP_BROWNIAN_FLOW_GPU_CUH_
 
-#include <cuda_runtime.h>
+#include "RNGIdentifiers.h"
 #include "hoomd/BoxDim.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/RandomNumbers.h"
-#include "RNGIdentifiers.h"
+#include <cuda_runtime.h>
 
 namespace azplugins
-{
+    {
 namespace gpu
-{
+    {
 
 //! Brownian dynamics step in flow
 template<class FlowField>
-cudaError_t brownian_flow(Scalar4 *d_pos,
-                          int3 *d_image,
+cudaError_t brownian_flow(Scalar4* d_pos,
+                          int3* d_image,
                           const BoxDim& box,
-                          const Scalar4 *d_net_force,
-                          const unsigned int *d_tag,
-                          const unsigned int *d_group,
-                          const Scalar *d_diameter,
+                          const Scalar4* d_net_force,
+                          const unsigned int* d_tag,
+                          const unsigned int* d_group,
+                          const Scalar* d_diameter,
                           const Scalar lambda,
-                          const Scalar *d_gamma,
+                          const Scalar* d_gamma,
                           const unsigned int ntypes,
                           const FlowField& flow_field,
                           const unsigned int N,
@@ -45,17 +45,17 @@ cudaError_t brownian_flow(Scalar4 *d_pos,
 
 #ifdef NVCC
 namespace kernel
-{
+    {
 template<class FlowField>
-__global__ void brownian_flow(Scalar4 *d_pos,
-                              int3 *d_image,
+__global__ void brownian_flow(Scalar4* d_pos,
+                              int3* d_image,
                               const BoxDim box,
-                              const Scalar4 *d_net_force,
-                              const unsigned int *d_tag,
-                              const unsigned int *d_group,
-                              const Scalar *d_diameter,
+                              const Scalar4* d_net_force,
+                              const unsigned int* d_tag,
+                              const unsigned int* d_group,
+                              const Scalar* d_diameter,
                               const Scalar lambda,
-                              const Scalar *d_gamma,
+                              const Scalar* d_gamma,
                               const unsigned int ntypes,
                               const FlowField flow_field,
                               const unsigned int N,
@@ -80,7 +80,8 @@ __global__ void brownian_flow(Scalar4 *d_pos,
 
     // one thread per particle in group
     const unsigned int grp_idx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (grp_idx >= N) return;
+    if (grp_idx >= N)
+        return;
     const unsigned int idx = d_group[grp_idx];
 
     // get the friction coefficient
@@ -89,7 +90,7 @@ __global__ void brownian_flow(Scalar4 *d_pos,
     const unsigned int type = __scalar_as_int(postype.w);
     Scalar gamma;
     if (use_lambda)
-        gamma = lambda*d_diameter[idx];
+        gamma = lambda * d_diameter[idx];
     else
         {
         gamma = s_gammas[type];
@@ -99,21 +100,24 @@ __global__ void brownian_flow(Scalar4 *d_pos,
     const Scalar3 flow_vel = flow_field(pos);
 
     // compute the random force
-    Scalar coeff = fast::sqrt(Scalar(6.0)*gamma*T/dt);
+    Scalar coeff = fast::sqrt(Scalar(6.0) * gamma * T / dt);
     if (noiseless)
         coeff = Scalar(0.0);
 
     // draw random force
-    hoomd::RandomGenerator rng(azplugins::RNGIdentifier::TwoStepBrownianFlow, seed, d_tag[idx], timestep);
+    hoomd::RandomGenerator rng(azplugins::RNGIdentifier::TwoStepBrownianFlow,
+                               seed,
+                               d_tag[idx],
+                               timestep);
     hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
     const Scalar3 random_force = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 
     // get the conservative force
     const Scalar4 net_force = d_net_force[idx];
-    Scalar3 cons_force = make_scalar3(net_force.x,net_force.y,net_force.z);
+    Scalar3 cons_force = make_scalar3(net_force.x, net_force.y, net_force.z);
 
     // update position
-    pos += (flow_vel + (cons_force + random_force)/gamma) * dt;
+    pos += (flow_vel + (cons_force + random_force) / gamma) * dt;
     int3 image = d_image[idx];
     box.wrap(pos, image);
 
@@ -121,18 +125,18 @@ __global__ void brownian_flow(Scalar4 *d_pos,
     d_pos[idx] = make_scalar4(pos.x, pos.y, pos.z, type);
     d_image[idx] = image;
     }
-} // end namespace kernel
+    } // end namespace kernel
 
 template<class FlowField>
-cudaError_t brownian_flow(Scalar4 *d_pos,
-                          int3 *d_image,
+cudaError_t brownian_flow(Scalar4* d_pos,
+                          int3* d_image,
                           const BoxDim& box,
-                          const Scalar4 *d_net_force,
-                          const unsigned int *d_tag,
-                          const unsigned int *d_group,
-                          const Scalar *d_diameter,
+                          const Scalar4* d_net_force,
+                          const unsigned int* d_tag,
+                          const unsigned int* d_group,
+                          const Scalar* d_diameter,
                           const Scalar lambda,
-                          const Scalar *d_gamma,
+                          const Scalar* d_gamma,
                           const unsigned int ntypes,
                           const FlowField& flow_field,
                           const unsigned int N,
@@ -144,7 +148,8 @@ cudaError_t brownian_flow(Scalar4 *d_pos,
                           bool use_lambda,
                           const unsigned int block_size)
     {
-    if (N == 0) return cudaSuccess;
+    if (N == 0)
+        return cudaSuccess;
 
     static unsigned int max_block_size = UINT_MAX;
     if (max_block_size == UINT_MAX)
@@ -158,29 +163,29 @@ cudaError_t brownian_flow(Scalar4 *d_pos,
     const size_t shared_bytes = sizeof(Scalar) * ntypes;
 
     kernel::brownian_flow<FlowField>
-        <<<N/run_block_size+1, run_block_size, shared_bytes>>>(d_pos,
-                                                               d_image,
-                                                               box,
-                                                               d_net_force,
-                                                               d_tag,
-                                                               d_group,
-                                                               d_diameter,
-                                                               lambda,
-                                                               d_gamma,
-                                                               ntypes,
-                                                               flow_field,
-                                                               N,
-                                                               dt,
-                                                               T,
-                                                               timestep,
-                                                               seed,
-                                                               noiseless,
-                                                               use_lambda);
+        <<<N / run_block_size + 1, run_block_size, shared_bytes>>>(d_pos,
+                                                                   d_image,
+                                                                   box,
+                                                                   d_net_force,
+                                                                   d_tag,
+                                                                   d_group,
+                                                                   d_diameter,
+                                                                   lambda,
+                                                                   d_gamma,
+                                                                   ntypes,
+                                                                   flow_field,
+                                                                   N,
+                                                                   dt,
+                                                                   T,
+                                                                   timestep,
+                                                                   seed,
+                                                                   noiseless,
+                                                                   use_lambda);
     return cudaSuccess;
     }
 #endif // NVCC
 
-} // end namespace gpu
-} // end namespace azplugins
+    } // end namespace gpu
+    } // end namespace azplugins
 
 #endif // AZPLUGINS_TWO_STEP_BROWNIAN_FLOW_GPU_CUH_
