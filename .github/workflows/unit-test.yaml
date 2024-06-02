@@ -1,0 +1,118 @@
+name: Unit test
+
+env:
+  COMPONENT_NAME: azplugins
+
+  # Most components should not modify the rest of this file. When needed, merge in updates from
+  # https://github.com/glotzerlab/hoomd-component-template/
+
+  #############################################################################################
+  # HOOMD-blue version to build.
+  HOOMD_BLUE_VERSION: 4.7.0
+  # prevent deadlocked MPI tests from causing the job to cancel
+  MPIEXEC_TIMEOUT: 3000
+  # allow mpirun to execute as root in the tests
+  OMPI_ALLOW_RUN_AS_ROOT: 1
+  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+  # allow openmpi to oversubscribe cores
+  OMPI_MCA_rmaps_base_oversubscribe: 1
+  # prevent errors from mis-configured openib systems
+  OMPI_MCA_btl: "vader,self"
+  # import HOOMD out of the build directory
+  PYTHONPATH: ${{ github.workspace }}/install
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build_test:
+    name: Build and test [${{ matrix.name }}]
+    runs-on: ubuntu-latest
+    container:
+      image: glotzerlab/ci:2023.11.27-cuda120_gcc11_py310
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - name: 'CPU'
+          enable_gpu: 'OFF'
+          enable_mpi: 'OFF'
+        - name: 'CPU, MPI'
+          enable_gpu: 'OFF'
+          enable_mpi: 'ON'
+        - name: 'GPU'
+          enable_gpu: 'ON'
+          enable_mpi: 'OFF'
+        - name: 'GPU, MPI'
+          enable_gpu: 'ON'
+          enable_mpi: 'ON'
+
+    steps:
+    - name: Restore cached HOOMD-blue build
+      id: cache
+      uses: actions/cache/restore@v4
+      with:
+        path: install
+        key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-2023.11.27-cuda120_gcc11_py310-mpi-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
+    - name: Checkout HOOMD-blue
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/checkout@v4
+      with:
+        repository: glotzerlab/hoomd-blue
+        path: hoomd-blue
+        submodules: true
+        ref: v${{ env.HOOMD_BLUE_VERSION }}
+    - name: Configure HOOMD-blue
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        cmake -B build-hoomd-blue -S hoomd-blue \
+              -GNinja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DENABLE_GPU=${ENABLE_GPU} \
+              -DENABLE_MPI=${ENABLE_MPI} \
+              -DCUDA_ARCH_LIST="70" \
+              -DBUILD_TESTING=OFF \
+              -DPLUGINS="" \
+              -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/install
+      env:
+        ENABLE_GPU: ${{ matrix.enable_gpu }}
+        ENABLE_MPI: ${{ matrix.enable_mpi }}
+    - name: Build HOOMD-blue
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: ninja install -j $(($(getconf _NPROCESSORS_ONLN) + 2))
+      working-directory: build-hoomd-blue
+    - name: Cache HOOMD-blue build
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: install
+        key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-2023.11.27-cuda120_gcc11_py310-mpi-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
+
+    - name: Checkout component
+      uses: actions/checkout@v4
+      with:
+        path: component
+    - name: Configure component
+      run: CMAKE_PREFIX_PATH=${GITHUB_WORKSPACE}/install cmake -S component -B build-component -GNinja -DCMAKE_BUILD_TYPE=Release
+    - name: Build component
+      run: ninja install -j $(($(getconf _NPROCESSORS_ONLN) + 2))
+      working-directory: build-component
+
+    - name: Run pytest (serial)
+      run: python3 -m pytest --pyargs hoomd.${COMPONENT_NAME} -x -v -ra --durations=0 --durations-min=0.1
+    - name: Run pytest (MPI)
+      if: ${{ matrix.enable_mpi == 'ON' }}
+      run: mpirun -n 2 ${GITHUB_WORKSPACE}/install/hoomd/pytest/pytest-openmpi.sh --pyargs hoomd.${COMPONENT_NAME} -x -v -ra --durations=0 --durations-min=0.1 || (( cat pytest.out.1 && exit 1 ))
