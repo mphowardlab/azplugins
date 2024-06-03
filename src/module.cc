@@ -49,6 +49,13 @@ namespace azplugins
     {
 namespace detail
     {
+
+void export_PotentialPairPerturbedLennardJones(pybind11::module&);
+
+#ifdef ENABLE_HIP
+void export_PotentialPairPerturbedLennardJonesGPU(pybind11::module&);
+#endif // ENABLE_HIP
+
     } // namespace detail
     } // namespace azplugins
     } // namespace hoomd
@@ -57,4 +64,10 @@ namespace detail
 PYBIND11_MODULE(_azplugins, m)
     {
     using namespace hoomd::azplugins::detail;
+
+    export_PotentialPairPerturbedLennardJones(m);
+
+#ifdef ENABLE_HIP
+    export_PotentialPairPerturbedLennardJonesGPU(m);
+#endif // ENABLE_HIP
     }

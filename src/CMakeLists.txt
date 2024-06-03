@@ -17,7 +17,7 @@ set(python_files
     pair.py
     )
 
-set(_pair_evaluators )
+set(_pair_evaluators PerturbedLennardJones)
 
 foreach(_evaluator ${_pair_evaluators})
     configure_file(export_PotentialPair.cc.inc
