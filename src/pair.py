@@ -11,7 +11,48 @@ from hoomd.md import pair
 
 
 class Hertz(pair.Pair):
-    """Hertz potential."""
+    r"""Hertz potential.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list.
+        r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+        mode (str): Energy shifting/smoothing mode.
+
+    :py:class:`hertz` is the Hertz potential:
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray*}
+        V(r)  &= \varepsilon ( 1-\frac{ r }{ r_{\rm{cut}} } )^{5/2} ,
+                & r < r_{\rm{cut}} \\
+              &= 0,& r \ge r_{\rm{cut}}
+        \end{eqnarray*}
+
+    Example::
+
+        nl = hoomd.md.nlist.cell()
+        hertz = azplugins.pair.hertz(r_cut=3.0, nlist=nl)
+        hertz.params[('A', 'A')] = dict(epsilon=1.0)
+        hertz.r_cut[('A', 'B')] = 3.0
+
+    .. py:attribute:: params
+
+        The Hertz potential parameters. The dictonary has the following key:
+
+        * ``epsilon`` (`float`, **required**) - energy parameter
+          :math:`\varepsilon` :math:`[\mathrm{energy}]`
+
+        Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
+        `dict`]
+
+    .. py:attribute:: mode
+
+        Energy shifting/smoothing mode: ``"none"``, ``"shift"``, or ``"xplor"``.
+
+        Type: `str`
+
+    """
 
     _ext_module = _azplugins
     _cpp_class_name = 'PotentialPairHertz'
