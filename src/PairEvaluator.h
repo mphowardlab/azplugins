@@ -2,27 +2,60 @@
 // Copyright (c) 2021-2024, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-/*!
- * \file PairEvaluator.h
- * \brief Base class for pair evaluators.
- */
-
 #ifndef AZPLUGINS_PAIR_EVALUATOR_H_
 #define AZPLUGINS_PAIR_EVALUATOR_H_
 
+#ifndef __HIPCC__
+#include <string>
+#endif // __HIPCC__
+
 #include "hoomd/HOOMDMath.h"
 
-#ifdef NVCC
+#ifdef __HIPCC__
 #define DEVICE __device__
+#define HOSTDEVICE __host__ __device__
 #else
 #define DEVICE
-#include <string>
-#endif
+#define HOSTDEVICE
+#endif // __HIPCC__
 
+namespace hoomd
+    {
 namespace azplugins
     {
 namespace detail
     {
+
+//! Base class for isotropic pair potential parameters
+/*!
+ * This class covers the default case of a simple potential that doesn't do
+ * anything special loading its parameters. This class can then be used as
+ * a \a param_type for the evaluator.
+ *
+ * Deriving classes \b must implement the constructors below. They should also
+ * set the aligned attribute based on the size of the object.
+ */
+struct PairParameters
+    {
+#ifndef __HIPCC__
+    PairParameters() { }
+
+    PairParameters(pybind11::dict v, bool managed = false) { }
+
+    pybind11::dict asDict()
+        {
+        return pybind11::dict();
+        }
+#endif //__HIPCC__
+
+    DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
+
+    HOSTDEVICE void allocate_shared(char*& ptr, unsigned int& available_bytes) const { }
+
+#ifdef ENABLE_HIP
+    void set_memory_hint() const { }
+#endif
+    };
 
 //! Base class for isotropic pair potential evaluator
 /*!
@@ -36,20 +69,9 @@ namespace detail
 class PairEvaluator
     {
     public:
+    typedef PairParameters param_type;
+
     DEVICE PairEvaluator(const Scalar _rsq, const Scalar _rcutsq) : rsq(_rsq), rcutsq(_rcutsq) { }
-
-    //! Base potential does not need diameter
-    DEVICE static bool needsDiameter()
-        {
-        return false;
-        }
-
-    //! Accept the optional diameter values
-    /*!
-     * \param di Diameter of particle i
-     * \param dj Diameter of particle j
-     */
-    DEVICE void setDiameter(Scalar di, Scalar dj) { }
 
     //! Base potential does not need charge
     DEVICE static bool needsCharge()
@@ -80,7 +102,25 @@ class PairEvaluator
         return false;
         }
 
-#ifndef NVCC
+    //! Evaluate the long-ranged correction to the pressure.
+    /*!
+     * \returns Default value of 0 (no correction).
+     */
+    DEVICE Scalar evalPressureLRCIntegral()
+        {
+        return Scalar(0.0);
+        }
+
+    //! Evaluate the long-ranged correction to the energy.
+    /*!
+     * \returns Default value of 0 (no correction).
+     */
+    DEVICE Scalar evalEnergyLRCIntegral()
+        {
+        return Scalar(0.0);
+        }
+
+#ifndef __HIPCC__
     //! Get the name of this potential
     /*!
      * This method must be overridden by deriving classes.
@@ -94,7 +134,7 @@ class PairEvaluator
         {
         throw std::runtime_error("Shape definition not supported for this pair potential.");
         }
-#endif // NVCC
+#endif // __HIPCC__
 
     protected:
     Scalar rsq;    //!< Squared distance between particles
@@ -103,7 +143,9 @@ class PairEvaluator
 
     } // end namespace detail
     } // end namespace azplugins
+    } // end namespace hoomd
 
 #undef DEVICE
+#undef HOSTDEVICE
 
 #endif // AZPLUGINS_PAIR_EVALUATOR_H_

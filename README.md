@@ -13,7 +13,11 @@ listed in the HOOMD-blue documentation to build an external component.
 
 ### Testing
 
-To be added.
+After building and installing azplugins, you can run the tests with pytest:
+
+```
+python -m pytest --pyargs hoomd.azplugins
+```
 
 ## Contributing
 
