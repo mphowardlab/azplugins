@@ -17,9 +17,9 @@ namespace hoomd
     {
 namespace azplugins
     {
-
 namespace detail
     {
+
 struct PairParametersHertz : public PairParameters
     {
 #ifndef __HIPCC__
@@ -37,6 +37,7 @@ struct PairParametersHertz : public PairParameters
         return v;
         }
 #endif // __HIPCC__
+
     Scalar epsilon;
     }
 #if HOOMD_LONGREAL_SIZE == 32
