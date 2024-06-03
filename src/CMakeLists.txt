@@ -20,9 +20,29 @@ set(python_files
 # TODO: Add names of all bond evaluators
 set(_bond_evaluators )
 
-# TODO: Add names of all pair evaluators
+# TODO: Add names of all pair evaluators`
 set(_pair_evaluators Hertz)
 
+# process bond potentials
+foreach(_evaluator ${_bond_evaluators})
+    configure_file(export_PotentialBond.cc.inc
+                   export_PotentialBond${_evaluator}.cc
+                   @ONLY)
+    set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialBond${_evaluator}.cc)
+
+    if (ENABLE_HIP)
+        configure_file(export_PotentialBondGPU.cc.inc
+                       export_PotentialBond${_evaluator}GPU.cc
+                       @ONLY)
+        configure_file(PotentialBondGPUKernel.cu.inc
+                       PotentialBond${_evaluator}GPUKernel.cu
+                       @ONLY)
+        set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialBond${_evaluator}GPU.cc)
+        set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} PotentialBond${_evaluator}GPUKernel.cu)
+    endif()
+endforeach()
+
+# process pair potentials
 foreach(_evaluator ${_pair_evaluators})
     configure_file(export_PotentialPair.cc.inc
                    export_PotentialPair${_evaluator}.cc
