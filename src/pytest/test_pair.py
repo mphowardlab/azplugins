@@ -15,7 +15,8 @@ PotentialTestCase = collections.namedtuple(
     ['potential', 'params', 'r_cut', 'shift', 'distance', 'energy', 'force'],
 )
 
-potential_tests = [
+potential_tests = []
+potential_tests += [
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
         {'epsilon': 2.0, 'sigma': 1.05, 'lam': 0.0},
