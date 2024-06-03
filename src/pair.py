@@ -18,7 +18,7 @@ class Hertz(pair.Pair):
         r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
         mode (str): Energy shifting/smoothing mode.
 
-    :py:class:`hertz` is the Hertz potential:
+    :py:class:`Hertz` is the Hertz potential:
 
     .. math::
         :nowrap:
@@ -32,7 +32,7 @@ class Hertz(pair.Pair):
     Example::
 
         nl = hoomd.md.nlist.cell()
-        hertz = azplugins.pair.hertz(r_cut=3.0, nlist=nl)
+        hertz = azplugins.pair.Hertz(r_cut=3.0, nlist=nl)
         hertz.params[('A', 'A')] = dict(epsilon=1.0)
         hertz.r_cut[('A', 'B')] = 3.0
 
