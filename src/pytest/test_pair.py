@@ -25,7 +25,7 @@ potential_tests += [
         False,
         1.05,
         2.0,
-        -45.7143,
+        45.7143,
     ),
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
@@ -34,7 +34,7 @@ potential_tests += [
         False,
         1.05,
         1.0,
-        -45.7143,
+        45.7143,
     ),
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
@@ -52,7 +52,7 @@ potential_tests += [
         False,
         1.05,
         -0.0460947,
-        0.260291,
+        -0.260291,
     ),
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
@@ -61,7 +61,7 @@ potential_tests += [
         True,
         1.05,
         1.00734,
-        -45.7143,
+        45.7143,
     ),
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
@@ -70,7 +70,7 @@ potential_tests += [
         True,
         1.05,
         -0.806849,
-        2.81197,
+        -2.81197,
     ),
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
@@ -135,5 +135,5 @@ def test_energy_and_force(
     f = potential_test.force
     if sim.device.communicator.rank == 0:
         numpy.testing.assert_array_almost_equal(
-            forces, [[f, 0, 0], [-f, 0, 0]], decimal=4
+            forces, [[-f, 0, 0], [f, 0, 0]], decimal=4
         )
