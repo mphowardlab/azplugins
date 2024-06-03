@@ -17,6 +17,10 @@ set(python_files
     pair.py
     )
 
+# TODO: Add names of all bond evaluators
+set(_bond_evaluators )
+
+# TODO: Add names of all pair evaluators
 set(_pair_evaluators Hertz)
 
 foreach(_evaluator ${_pair_evaluators})
