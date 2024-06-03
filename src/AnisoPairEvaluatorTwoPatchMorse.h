@@ -2,11 +2,6 @@
 // Copyright (c) 2021-2024, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-/*!
- * \file AnisoPairEvaluatorTwoPatchMorse.h
- * \brief Defines the aniostropic pair force evaluator class for Two-patch Morse potential
- */
-
 #ifndef AZPLUGINS_ANISO_PAIR_EVALUATOR_TWO_PATCH_MORSE_H_
 #define AZPLUGINS_ANISO_PAIR_EVALUATOR_TWO_PATCH_MORSE_H_
 
@@ -14,7 +9,7 @@
 
 #include "hoomd/VectorMath.h"
 
-#ifdef NVCC
+#ifdef __HIPCC__
 #define DEVICE __device__
 #define HOSTDEVICE __host__ __device__
 #else
@@ -22,17 +17,44 @@
 #define HOSTDEVICE
 #endif
 
+namespace hoomd
+    {
 namespace azplugins
     {
-
 namespace detail
     {
 //! Two-patch Morse parameters
-/*!
- * \sa AnisoPairEvaluatorTwoPatchMorse
- */
-struct two_patch_morse_params : public AnisoPairParams
+struct AnisoPairParametersTwoPatchMorse : public AnisoPairParameters
     {
+#ifndef __HIPCC__
+    AnisoPairParametersTwoPatchMorse()
+        : Mdeps(0), Mrinv(0), req(0), omega(0), alpha(0), repulsion(false)
+        {
+        }
+
+    AnisoPairParametersTwoPatchMorse(pybind11::dict v, bool managed = false)
+        {
+        Mdeps = v["Mdeps"].cast<Scalar>();
+        Mrinv = Scalar(1.0) / v["Mr"].cast<Scalar>();
+        req = v["req"].cast<Scalar>();
+        omega = v["omega"].cast<Scalar>();
+        alpha = v["alpha"].cast<Scalar>();
+        repulsion = v["repulsion"].cast<bool>();
+        }
+
+    pybind11::dict toPython()
+        {
+        pybind11::dict v;
+        v["Mdeps"] = Mdeps;
+        v["Mr"] = Scalar(1.0) / Mrinv;
+        v["req"] = req;
+        v["omega"] = omega;
+        v["alpha"] = alpha;
+        v["repulsion"] = repulsion;
+        return v;
+        }
+#endif // __HIPCC__
+
     Scalar Mdeps;   //<! Controls the well depth
     Scalar Mrinv;   //<! Controls the well steepness
     Scalar req;     //<! Controls the well position
@@ -40,24 +62,6 @@ struct two_patch_morse_params : public AnisoPairParams
     Scalar alpha;   //<! Controls the patch width (lower is greater coverage)
     bool repulsion; //<! Whether to include Morse repulsion
     };
-
-//! Convenience function for making two_patch_morse_params in python
-HOSTDEVICE inline two_patch_morse_params make_two_patch_morse_params(Scalar Mdeps,
-                                                                     Scalar Mrinv,
-                                                                     Scalar req,
-                                                                     Scalar omega,
-                                                                     Scalar alpha,
-                                                                     bool repulsion)
-    {
-    two_patch_morse_params retval;
-    retval.Mdeps = Mdeps;
-    retval.Mrinv = Mrinv;
-    retval.req = req;
-    retval.omega = omega;
-    retval.alpha = alpha;
-    retval.repulsion = repulsion;
-    return retval;
-    }
 
 //! Class for evaluating the Two-patch Morse anisotropic pair potential
 /*!
@@ -81,22 +85,11 @@ HOSTDEVICE inline two_patch_morse_params make_two_patch_morse_params(Scalar Mdep
  * orientation vector of the particle. The parameters \f$M_d\f$, \f$M_r\f$, and \f$r_{\rm eq}\f$
  * control the depth, width, and position of the potential well. The parameters \f$\alpha\f$ and
  * \f$\omega\f$ control the width and steepness of the orientation dependence.
- *
- * The Two-patch Morse potential does not need diameter or charge. Five parameters are specified and
- * stored in a two_patch_morse_params:
- * - \a Mdeps = epsilon * Md
- * - \a Mrinv = 1 / Mr
- * - \a req
- * - \a omega
- * - \a alpha
- * - \a repulsion
  */
 class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
     {
     public:
-    //! Define the parameter type used by this pair potential evaluator
-    typedef two_patch_morse_params param_type;
-    typedef AnisoPairEvaluator::shape_param_type shape_param_type;
+    typedef AnisoPairParametersTwoPatchMorse param_type;
 
     //! Constructor
     /*!
@@ -120,17 +113,12 @@ class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
         {
         }
 
-    //! Evaluate the force and energy
-    /*! \param force Output parameter to write the computed force.
-     *  \param pair_eng Output parameter to write the computed pair energy.
-     *  \param energy_shift If true, the potential must be shifted so that V(r) is continuous at the
-     * cutoff. \param torque_i The torque exterted on the i^th particle. \param torque_j The torque
-     * exterted on the j^th particle.
-     *
-     *  \returns True if they are evaluated or false if they are not because we are beyond the
-     * cutoff.
-     *
-     */
+    //! Whether the potential implements the energy_shift parameter
+    HOSTDEVICE static bool constexpr implementsEnergyShift()
+        {
+        return true;
+        }
+
     DEVICE bool evaluate(Scalar3& force,
                          Scalar& pair_eng,
                          bool energy_shift,
@@ -222,18 +210,14 @@ class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
         return true;
         }
 
-#ifndef NVCC
-    //! Get the name of the potential
-    /*! \returns The potential name. Must be short and all lowercase, as this is the name energies
-       will be logged as via analyze.log.
-    */
+#ifndef __HIPCC__
     static std::string getName()
         {
-        return std::string("two_patch_morse");
+        return std::string("TwoPatchMorse");
         }
 #endif
 
-    protected:
+    private:
     Scalar Mdeps;   //<! Controls the well depth
     Scalar Mrinv;   //<! Controls the well steepness
     Scalar req;     //<! Controls the well position
@@ -244,6 +228,7 @@ class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
 
     } // end namespace detail
     } // end namespace azplugins
+    } // end namespace hoomd
 
 #undef DEVICE
 #undef HOSTDEVICE

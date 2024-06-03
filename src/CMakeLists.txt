@@ -22,10 +22,14 @@ set(python_files
 set(_bond_evaluators )
 
 # TODO: Add names of all pair evaluators`
-set(_pair_evaluators Hertz)
+set(_pair_evaluators
+    Hertz
+    )
 
 # TODO: Add names of all anisotropic pair evaluators
-set(_aniso_pair_evaluators )
+set(_aniso_pair_evaluators
+    TwoPatchMorse
+    )
 
 # process bond potentials
 foreach(_evaluator ${_bond_evaluators})
