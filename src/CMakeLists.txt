@@ -21,8 +21,8 @@ set(python_files
 # TODO: Add names of all bond evaluators
 set(_bond_evaluators )
 
-# TODO: Add names of all pair evaluators
-set(_pair_evaluators )
+# TODO: Add names of all pair evaluators`
+set(_pair_evaluators Hertz)
 
 # TODO: Add names of all anisotropic pair evaluators
 set(_aniso_pair_evaluators )

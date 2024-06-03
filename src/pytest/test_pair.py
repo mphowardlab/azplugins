@@ -7,6 +7,7 @@
 import collections
 
 import hoomd
+import hoomd.azplugins
 import numpy
 import pytest
 
@@ -16,6 +17,50 @@ PotentialTestCase = collections.namedtuple(
 )
 
 potential_tests = []
+
+# Hertz
+potential_tests += [
+    # test the calculation of force and potential
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {'epsilon': 2.0},
+        1.5,
+        False,
+        1.05,
+        0.0985,
+        0.5477,
+    ),
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {'epsilon': 3.0},
+        2.05,
+        False,
+        1.05,
+        0.4985,
+        1.2464,
+    ),
+    # test the cases where the potential should be zero
+    # outside cutoff
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {'epsilon': 1.0},
+        1.0,
+        False,
+        1.05,
+        0,
+        0,
+    ),
+    # inside cutoff but epsilon = 0
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {'epsilon': 0.0},
+        3.0,
+        False,
+        1.05,
+        0,
+        0,
+    ),
+]
 
 
 @pytest.mark.parametrize(
@@ -60,5 +105,5 @@ def test_energy_and_force(
     f = potential_test.force
     if sim.device.communicator.rank == 0:
         numpy.testing.assert_array_almost_equal(
-            forces, [[f, 0, 0], [-f, 0, 0]], decimal=4
+            forces, [[-f, 0, 0], [f, 0, 0]], decimal=4
         )
