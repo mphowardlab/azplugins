@@ -18,8 +18,9 @@ PotentialTestCase = collections.namedtuple(
 
 potential_tests = []
 
-# pair Hertz
+# Hertz
 potential_tests += [
+    # test the calculation of force and potential
     PotentialTestCase(
         hoomd.azplugins.pair.Hertz,
         {'epsilon': 2.0},
@@ -38,6 +39,8 @@ potential_tests += [
         0.4985,
         1.2464,
     ),
+    # test the cases where the potential should be zero
+    # outside cutoff
     PotentialTestCase(
         hoomd.azplugins.pair.Hertz,
         {'epsilon': 1.0},
@@ -47,6 +50,7 @@ potential_tests += [
         0,
         0,
     ),
+    # inside cutoff but epsilon = 0
     PotentialTestCase(
         hoomd.azplugins.pair.Hertz,
         {'epsilon': 0.0},
