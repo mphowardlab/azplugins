@@ -16,15 +16,45 @@ PotentialTestCase = collections.namedtuple(
     ['potential', 'params', 'r_cut', 'shift', 'distance', 'energy', 'force'],
 )
 
-potential_tests = [
+potential_tests = []
+
+# pair Hertz
+potential_tests += [
     PotentialTestCase(
         hoomd.azplugins.pair.Hertz,
         {'epsilon': 2.0},
+        1.5,
+        False,
+        1.05,
+        0.0985,
+        -0.5477,
+    ),
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {'epsilon': 3.0},
+        2.05,
+        False,
+        1.05,
+        0.4985,
+        -1.2464,
+    ),
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {'epsilon': 1.0},
+        1.0,
+        False,
+        1.05,
+        0,
+        0,
+    ),
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {'epsilon': 0.0},
         3.0,
         False,
         1.05,
-        0.6813,
-        -0.8734,
+        0,
+        0,
     ),
 ]
 
