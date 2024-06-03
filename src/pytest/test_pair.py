@@ -16,6 +16,7 @@ PotentialTestCase = collections.namedtuple(
 )
 
 potential_tests = []
+# tests for PerturbedLennardJones potential
 potential_tests += [
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
