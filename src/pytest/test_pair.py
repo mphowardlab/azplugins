@@ -27,7 +27,7 @@ potential_tests += [
         False,
         1.05,
         0.0985,
-        -0.5477,
+        0.5477,
     ),
     PotentialTestCase(
         hoomd.azplugins.pair.Hertz,
@@ -36,7 +36,7 @@ potential_tests += [
         False,
         1.05,
         0.4985,
-        -1.2464,
+        1.2464,
     ),
     PotentialTestCase(
         hoomd.azplugins.pair.Hertz,
@@ -101,5 +101,5 @@ def test_energy_and_force(
     f = potential_test.force
     if sim.device.communicator.rank == 0:
         numpy.testing.assert_array_almost_equal(
-            forces, [[f, 0, 0], [-f, 0, 0]], decimal=4
+            forces, [[-f, 0, 0], [f, 0, 0]], decimal=4
         )
