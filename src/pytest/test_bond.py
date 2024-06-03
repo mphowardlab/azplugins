@@ -2,8 +2,4 @@
 # Copyright (c) 2021-2024, Auburn University
 # Part of azplugins, released under the BSD 3-Clause License.
 
-"""azplugins."""
-
-from hoomd.azplugins import bond, pair
-
-__version__ = '1.0.0'
+"""Bond potential unit tests."""

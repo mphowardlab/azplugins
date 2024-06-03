@@ -2,8 +2,8 @@
 // Copyright (c) 2021-2024, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-#ifndef AZPLUGINS_PAIR_EVALUATOR_H_
-#define AZPLUGINS_PAIR_EVALUATOR_H_
+#ifndef AZPLUGINS_BOND_EVALUATOR_H_
+#define AZPLUGINS_BOND_EVALUATOR_H_
 
 #ifndef __HIPCC__
 #include <pybind11/pybind11.h>
@@ -14,10 +14,8 @@
 
 #ifdef __HIPCC__
 #define DEVICE __device__
-#define HOSTDEVICE __host__ __device__
 #else
 #define DEVICE
-#define HOSTDEVICE
 #endif // __HIPCC__
 
 namespace hoomd
@@ -36,40 +34,32 @@ namespace detail
  * Deriving classes \b must implement the constructors below. They should also
  * set the aligned attribute based on the size of the object.
  */
-struct PairParameters
+struct BondParameters
     {
 #ifndef __HIPCC__
-    PairParameters() { }
+    BondParameters() { }
 
-    PairParameters(pybind11::dict v, bool managed = false) { }
+    BondParameters(pybind11::dict v) { }
 
     pybind11::dict asDict()
         {
         return pybind11::dict();
         }
 #endif //__HIPCC__
-
-    DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
-
-    HOSTDEVICE void allocate_shared(char*& ptr, unsigned int& available_bytes) const { }
-
-#ifdef ENABLE_HIP
-    void set_memory_hint() const { }
-#endif
     };
 
-//! Base class for isotropic pair potential evaluator
+//! Base class for bond potential evaluator
 /*!
  * This class covers the default case of a simple potential that doesn't require
  * additional data. Deriving classes \b must define a \a param_type . They must
  * also give the potential a name and implement the evalForceAndEnergy() method.
  */
-class PairEvaluator
+class BondEvaluator
     {
     public:
-    typedef PairParameters param_type;
+    typedef BondParameters param_type;
 
-    DEVICE PairEvaluator(const Scalar _rsq, const Scalar _rcutsq) : rsq(_rsq), rcutsq(_rcutsq) { }
+    DEVICE BondEvaluator(const Scalar _rsq) : rsq(_rsq) { }
 
     //! Base potential does not need charge
     DEVICE static bool needsCharge()
@@ -86,36 +76,14 @@ class PairEvaluator
 
     //! Evaluate the force and energy
     /*!
-     * \param force_divr Holds the computed force divided by r
-     * \param pair_eng Holds the computed pair energy
-     * \param energy_shift If true, the potential is shifted to zero at the cutoff
+     * \param force_divr Computed force divided by r
+     * \param bond_eng Computed bond energy
      *
      * \returns True if the energy calculation occurs
-     *
-     * The calculation does not occur if the pair distance is greater than the cutoff
-     * or if the potential is scaled to zero.
      */
-    DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
+    DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& bond_eng)
         {
         return false;
-        }
-
-    //! Evaluate the long-ranged correction to the pressure.
-    /*!
-     * \returns Default value of 0 (no correction).
-     */
-    DEVICE Scalar evalPressureLRCIntegral()
-        {
-        return Scalar(0.0);
-        }
-
-    //! Evaluate the long-ranged correction to the energy.
-    /*!
-     * \returns Default value of 0 (no correction).
-     */
-    DEVICE Scalar evalEnergyLRCIntegral()
-        {
-        return Scalar(0.0);
         }
 
 #ifndef __HIPCC__
@@ -127,16 +95,10 @@ class PairEvaluator
         {
         throw std::runtime_error("Name not defined for this pair potential.");
         }
-
-    std::string getShapeSpec() const
-        {
-        throw std::runtime_error("Shape definition not supported for this pair potential.");
-        }
 #endif // __HIPCC__
 
     protected:
-    Scalar rsq;    //!< Squared distance between particles
-    Scalar rcutsq; //!< Squared cutoff distance
+    Scalar rsq; //!< Squared distance between particles
     };
 
     } // end namespace detail
@@ -144,6 +106,5 @@ class PairEvaluator
     } // end namespace hoomd
 
 #undef DEVICE
-#undef HOSTDEVICE
 
-#endif // AZPLUGINS_PAIR_EVALUATOR_H_
+#endif // AZPLUGINS_BOND_EVALUATOR_H_
