@@ -14,7 +14,7 @@ class Hertz(pair.Pair):
     """Hertz potential."""
 
     _ext_module = _azplugins
-    _cpp_class_name = 'PotentialPairPerturbedLennardJones'
+    _cpp_class_name = 'PotentialPairHertz'
     _accepted_modes = ('none', 'shift', 'xplor')
 
     def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode='none'):

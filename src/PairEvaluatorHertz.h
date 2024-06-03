@@ -25,9 +25,9 @@ struct PairParametersHertz : public PairParameters
 #ifndef __HIPCC__
     PairParametersHertz() : epsilon(0) { }
 
-    PairParametersPerturbedLennardJones(pybind11::dict v, bool managed = false)
+    PairParametersHertz(pybind11::dict v, bool managed = false)
         {
-        auto epsilon(v["epsilon"].cast<Scalar>());
+        epsilon = v["epsilon"].cast<Scalar>();
         }
 
     pybind11::dict asDict()
@@ -74,7 +74,7 @@ class PairEvaluatorHertz : public PairEvaluator
      * The functor initializes its members from \a _params.
      */
     DEVICE PairEvaluatorHertz(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : PairEvaluator(_rsq, _rcutsq), epsilon(_params)
+        : PairEvaluator(_rsq, _rcutsq), epsilon(_params.epsilon)
         {
         }
 
