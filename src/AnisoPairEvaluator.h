@@ -2,68 +2,85 @@
 // Copyright (c) 2021-2024, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-/*!
- * \file AnisoPairEvaluator.h
- * \brief Base class for anisotropic pair evaluators.
- */
-
 #ifndef AZPLUGINS_ANISO_PAIR_EVALUATOR_H_
 #define AZPLUGINS_ANISO_PAIR_EVALUATOR_H_
 
+#ifndef __HIPCC__
+#include <pybind11/pybind11.h>
+#include <string>
+#endif // __HIPCC__
+
 #include "hoomd/HOOMDMath.h"
 
-#ifdef NVCC
+#ifdef __HIPCC__
 #define DEVICE __device__
 #define HOSTDEVICE __host__ __device__
 #else
 #define DEVICE
 #define HOSTDEVICE
-#include <string>
 #endif
 
+namespace hoomd
+    {
 namespace azplugins
     {
 namespace detail
     {
 
-//! Base class for anisotropic pair parameters
+//! Base class for anisotropic pair potential parameters
 /*!
- * These types of parameters do nothing by default.
+ * This class covers the default case of a simple potential that doesn't do
+ * anything special loading its parameters. This class can then be used as
+ * a \a param_type for the evaluator.
+ *
+ * Deriving classes \b must implement the constructors below. They should also
+ * set the aligned attribute based on the size of the object.
  */
-struct AnisoPairParams
+struct AnisoPairParameters
     {
-    HOSTDEVICE AnisoPairParams() { }
+#ifndef __HIPCC__
+    AnisoPairParameters() { }
 
-    //! Load dynamic data members into shared memory and increase pointer
-    /*!
-     * \param ptr Pointer to load data to (will be incremented)
-     * \param available_bytes Size of remaining shared memory allocation
-     *
-     * This does nothing for this struct.
-     */
-    HOSTDEVICE void load_shared(char*& ptr, unsigned int& available_bytes) const { }
+    AnisoPairParameters(pybind11::dict v, bool managed = false) { }
+
+    pybind11::dict toPython()
+        {
+        return pybind11::dict();
+        }
+#endif // __HIPCC__
+
+    DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
+
+    HOSTDEVICE void allocate_shared(char*& ptr, unsigned int& available_bytes) const { }
+
+#ifdef ENABLE_HIP
+    void set_memory_hint() const { }
+#endif
     };
 
-//! Base class for anisotropic shape parameters
+//! Base class for anisotropic pair potential shape parameters
 /*!
  * These types of parameters do nothing by default.
  */
-struct AnisoShapeParams
+struct AnisoPairShapeParameters
     {
-    HOSTDEVICE AnisoShapeParams() { }
+#ifndef __HIPCC__
+    AnisoPairShapeParameters() { }
 
-    //! Load dynamic data members into shared memory and increase pointer
-    /*!
-     * \param ptr Pointer to load data to (will be incremented)
-     * \param available_bytes Size of remaining shared memory allocation
-     *
-     * This does nothing for this struct.
-     */
-    HOSTDEVICE void load_shared(char*& ptr, unsigned int& available_bytes) const { }
+    AnisoPairShapeParameters(pybind11::object shape_params, bool managed) { }
 
-#ifdef ENABLE_CUDA
-    //! Attach managed memory to CUDA stream
-    void attach_to_stream(cudaStream_t stream) const { }
+    pybind11::object toPython()
+        {
+        return pybind11::none();
+        }
+#endif // __HIPCC__
+
+    DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
+
+    HOSTDEVICE void allocate_shared(char*& ptr, unsigned int& available_bytes) const { }
+
+#ifdef ENABLE_HIP
+    void set_memory_hint() const { }
 #endif
     };
 
@@ -80,7 +97,8 @@ struct AnisoShapeParams
 class AnisoPairEvaluator
     {
     public:
-    typedef AnisoShapeParams shape_param_type;
+    typedef AnisoPairParameters param_type;
+    typedef AnisoPairShapeParameters shape_type;
 
     DEVICE AnisoPairEvaluator(const Scalar3& _dr,
                               const Scalar4& _quat_i,
@@ -89,19 +107,6 @@ class AnisoPairEvaluator
         : dr(_dr), rcutsq(_rcutsq), quat_i(_quat_i), quat_j(_quat_j)
         {
         }
-
-    //! Base potential does not need diameter
-    DEVICE static bool needsDiameter()
-        {
-        return false;
-        }
-
-    //! Accept the optional diameter values
-    /*!
-     * \param di Diameter of particle i
-     * \param dj Diameter of particle j
-     */
-    DEVICE void setDiameter(Scalar di, Scalar dj) { }
 
     //! Base potential does not need charge
     DEVICE static bool needsCharge()
@@ -127,7 +132,7 @@ class AnisoPairEvaluator
      * \param shapei Shape of particle i
      * \param shapej Shape of particle j
      */
-    DEVICE void setShape(const shape_param_type* shapei, const shape_param_type* shapej) { }
+    DEVICE void setShape(const shape_type* shapei, const shape_type* shapej) { }
 
     //! Base potential does not need tags
     DEVICE static bool needsTags()
@@ -141,6 +146,12 @@ class AnisoPairEvaluator
      * \param tagj Tag of particle j
      */
     DEVICE void setTags(unsigned int tagi, unsigned int tagj) { }
+
+    //! Whether the potential implements the energy_shift parameter
+    HOSTDEVICE static bool constexpr implementsEnergyShift()
+        {
+        return false;
+        }
 
     //! Evaluate the force and energy
     /*! \param force Output parameter to write the computed force.
@@ -161,7 +172,25 @@ class AnisoPairEvaluator
         return false;
         }
 
-#ifndef NVCC
+    //! Evaluate the long-ranged correction to the pressure.
+    /*!
+     * \returns Default value of 0 (no correction).
+     */
+    DEVICE Scalar evalPressureLRCIntegral()
+        {
+        return Scalar(0.0);
+        }
+
+    //! Evaluate the long-ranged correction to the energy.
+    /*!
+     * \returns Default value of 0 (no correction).
+     */
+    DEVICE Scalar evalEnergyLRCIntegral()
+        {
+        return Scalar(0.0);
+        }
+
+#ifndef __HIPCC__
     static std::string getName()
         {
         throw std::runtime_error("Name not defined for this pair potential.");
@@ -171,7 +200,7 @@ class AnisoPairEvaluator
         {
         throw std::runtime_error("Shape definition not supported for this pair potential.");
         }
-#endif // NVCC
+#endif // __HIPCC__
 
     protected:
     Scalar3 dr;     //!< Stored dr from the constructor
@@ -182,6 +211,7 @@ class AnisoPairEvaluator
 
     } // end namespace detail
     } // end namespace azplugins
+    } // end namespace hoomd
 
 #undef DEVICE
 #undef HOSTDEVICE
