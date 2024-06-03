@@ -7,6 +7,7 @@
 import collections
 
 import hoomd
+import hoomd.azplugins
 import numpy
 import pytest
 
@@ -15,7 +16,17 @@ PotentialTestCase = collections.namedtuple(
     ['potential', 'params', 'r_cut', 'shift', 'distance', 'energy', 'force'],
 )
 
-potential_tests = []
+potential_tests = [
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {'epsilon': 2.0},
+        3.0,
+        False,
+        1.05,
+        0.6813,
+        -0.8734,
+    ),
+]
 
 
 @pytest.mark.parametrize(
