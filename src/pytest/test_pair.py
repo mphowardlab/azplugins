@@ -17,7 +17,50 @@ PotentialTestCase = collections.namedtuple(
 )
 
 potential_tests = []
-# tests for PerturbedLennardJones potential
+# Hertz
+potential_tests += [
+    # test the calculation of force and potential
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {'epsilon': 2.0},
+        1.5,
+        False,
+        1.05,
+        0.0985,
+        0.5477,
+    ),
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {'epsilon': 3.0},
+        2.05,
+        False,
+        1.05,
+        0.4985,
+        1.2464,
+    ),
+    # test the cases where the potential should be zero
+    # outside cutoff
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {'epsilon': 1.0},
+        1.0,
+        False,
+        1.05,
+        0,
+        0,
+    ),
+    # inside cutoff but epsilon = 0
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {'epsilon': 0.0},
+        3.0,
+        False,
+        1.05,
+        0,
+        0,
+    ),
+]
+# PerturbedLennardJones
 potential_tests += [
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
@@ -85,50 +128,6 @@ potential_tests += [
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
         {'epsilon': 0.0, 'sigma': 1.0, 'lam': 0.5},
-        3.0,
-        False,
-        1.05,
-        0,
-        0,
-    ),
-]
-
-# Hertz
-potential_tests += [
-    # test the calculation of force and potential
-    PotentialTestCase(
-        hoomd.azplugins.pair.Hertz,
-        {'epsilon': 2.0},
-        1.5,
-        False,
-        1.05,
-        0.0985,
-        0.5477,
-    ),
-    PotentialTestCase(
-        hoomd.azplugins.pair.Hertz,
-        {'epsilon': 3.0},
-        2.05,
-        False,
-        1.05,
-        0.4985,
-        1.2464,
-    ),
-    # test the cases where the potential should be zero
-    # outside cutoff
-    PotentialTestCase(
-        hoomd.azplugins.pair.Hertz,
-        {'epsilon': 1.0},
-        1.0,
-        False,
-        1.05,
-        0,
-        0,
-    ),
-    # inside cutoff but epsilon = 0
-    PotentialTestCase(
-        hoomd.azplugins.pair.Hertz,
-        {'epsilon': 0.0},
         3.0,
         False,
         1.05,

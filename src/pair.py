@@ -77,15 +77,12 @@ class PerturbedLennardJones(pair.Pair):
         default_r_on (float): Default turn-on radius :math:`[\mathrm{length}]`.
         mode (str): Energy shifting/smoothing mode.
 
-    :py:class:`PerturbedLennardJones` is a Lennard-Jones
-    perturbation potential, implemented as described by
-    `Ashbaugh and Hatch <http://dx.doi.org/10.1021/ja802124e>`_.
-    The potential has a purely repulsive (Weeks-Chandler-Andersen)
-    core, with a parameter :math:`\lambda` setting the strength of
-    the attractive tail. When :math:`\lambda` is 0, the
-    potential is purely repulsive. When :math:`\lambda` is 1,
-    the potential is the standard Lennard-Jones potential
-    (see :py:class:`hoomd.md.pair.lj` for details).
+    :py:class:`PerturbedLennardJones` is a Lennard-Jones perturbation potential.
+    The potential has a purely repulsive (Weeks-Chandler-Andersen) core, with a
+    parameter :math:`\lambda` setting the strength of the attractive tail. When
+    :math:`\lambda` is 0, the potential is purely repulsive. When
+    :math:`\lambda` is 1, the potential is the standard Lennard-Jones potential
+    (see :py:class:`hoomd.md.pair.LJ` for details).
 
     .. math::
         :nowrap:
@@ -104,7 +101,7 @@ class PerturbedLennardJones(pair.Pair):
 
         nl = nlist.Cell()
         perturbed_lj = pair.PerturbedLennardJones(default_r_cut=3.0, nlist=nl)
-        perturbed_lj.params[('A', 'A')] = dict(epsilon=1.0, sigma=1.0, lam:0.5)
+        perturbed_lj.params[('A', 'A')] = dict(epsilon=1.0, sigma=1.0, lam=0.5)
         perturbed_lj.r_cut[('A', 'B')] = 3.0
 
     .. py:attribute:: params
