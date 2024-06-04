@@ -28,22 +28,20 @@ namespace detail
 struct BondParametersDoubleWell : public BondParameters
     {
 #ifndef __HIPCC__
-    BondParametersDoubleWell() : r_0(0), r_1(0), U_1(0), U_tilt(0) { }
+    BondParametersDoubleWell() : r_1(0), r_diff(1.0), U_1(0), U_tilt(0) { }
 
     BondParametersDoubleWell(pybind11::dict v)
         {
-        r_0 = v["r_0"].cast<Scalar>();
         r_1 = v["r_1"].cast<Scalar>();
+        r_diff = r_1 - v["r_0"].cast<Scalar>();
         U_1 = v["U_1"].cast<Scalar>();
         U_tilt = v["U_tilt"].cast<Scalar>();
-
-        const Scalar r_diff = r_1 - r_0;
         }
 
     pybind11::dict asDict()
         {
         pybind11::dict v;
-        v["r_0"] = r_0;
+        v["r_0"] = r_1 - r_diff;
         v["r_1"] = r_1;
         v["U_1"] = U_1;
         v["U_tilt"] = U_tilt;
@@ -51,11 +49,10 @@ struct BondParametersDoubleWell : public BondParameters
         }
 #endif
 
-    Scalar r_0;    //!< Potential difference between the the first minima and maxima
-    Scalar r_1;    //!< Shift for the location of U_1 (to approx. a/2)
-    Scalar U_1;    //!< Scaling for distance of the two minima (to approx. a/2 +/- b)
-    Scalar U_tilt; //!< Potential difference between the two minima
+    Scalar r_1; //!<
     Scalar r_diff;
+    Scalar U_1;    //!<
+    Scalar U_tilt; //!<
     }
 #if HOOMD_LONGREAL_SIZE == 32
     __attribute__((aligned(16)));
@@ -90,7 +87,7 @@ class BondEvaluatorDoubleWell : public BondEvaluator
     typedef BondParametersDoubleWell param_type;
 
     DEVICE BondEvaluatorDoubleWell(Scalar _rsq, const param_type& _params)
-        : BondEvaluator(_rsq), r_0(_params.r_0), r_1(_params.r_1), U_1(_params.U_1),
+        : BondEvaluator(_rsq), r_1(_params.r_1), r_diff(_params.r_diff), U_1(_params.U_1),
           U_tilt(_params.U_tilt)
         {
         }
@@ -99,22 +96,18 @@ class BondEvaluatorDoubleWell : public BondEvaluator
         {
         bond_eng = 0;
         force_divr = 0;
-
         // check for invalid parameters r0 = r1
         if (r_diff == Scalar(0.0))
             return false;
 
-        Scalar r = fast::sqrt(rsq);
-        Scalar x = (r_1 - r) / r_diff;
-        Scalar x2 = x * x;
-        Scalar y = Scalar(1.0) - x2;
-        Scalar y2 = y * y;
-        Scalar w = (x * y) / r_diff;
+        const Scalar r = fast::sqrt(rsq);
+        const Scalar x = (r_1 - r) / r_diff;
+        const Scalar x2 = x * x;
+        const Scalar y = Scalar(1.0) - x2;
+        const Scalar y2 = y * y;
 
         bond_eng = (U_1 * y2 + U_tilt * (Scalar(1.0) - x - y2));
-        force_divr
-            = (-U_1 * x * y / r_diff - U_tilt * (Scalar(1.0) / r_diff - Scalar(4.0) * w / r_diff))
-              / r;
+        force_divr = ((Scalar(4.0) * x * y * (U_tilt - U_1) - U_tilt) / r_diff) / r;
         return true;
         }
 
@@ -126,11 +119,10 @@ class BondEvaluatorDoubleWell : public BondEvaluator
 #endif
 
     private:
-    Scalar r_0;    //!< U_1 parameter
     Scalar r_1;    //!< a parameter
+    Scalar r_diff; //!< U_1 parameter
     Scalar U_1;    //!< b parameter
     Scalar U_tilt; //!< c parameter
-    Scalar r_diff;
     };
 
     } // end namespace detail
