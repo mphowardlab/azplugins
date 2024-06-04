@@ -14,11 +14,42 @@ set(_${COMPONENT_NAME}_cu_sources
 # TODO: List all Python modules in python_files.
 set(python_files
     __init__.py
+    bond.py
     pair.py
     )
 
-set(_pair_evaluators PerturbedLennardJones)
+# TODO: Add names of all bond evaluators
+set(_bond_evaluators )
 
+# TODO: Add names of all pair evaluators`
+set(_pair_evaluators
+    Hertz
+    PerturbedLennardJones
+    )
+
+# TODO: Add names of all anisotropic pair evaluators
+set(_aniso_pair_evaluators )
+
+# process bond potentials
+foreach(_evaluator ${_bond_evaluators})
+    configure_file(export_PotentialBond.cc.inc
+                   export_PotentialBond${_evaluator}.cc
+                   @ONLY)
+    set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialBond${_evaluator}.cc)
+
+    if (ENABLE_HIP)
+        configure_file(export_PotentialBondGPU.cc.inc
+                       export_PotentialBond${_evaluator}GPU.cc
+                       @ONLY)
+        configure_file(PotentialBondGPUKernel.cu.inc
+                       PotentialBond${_evaluator}GPUKernel.cu
+                       @ONLY)
+        set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialBond${_evaluator}GPU.cc)
+        set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} PotentialBond${_evaluator}GPUKernel.cu)
+    endif()
+endforeach()
+
+# process pair potentials
 foreach(_evaluator ${_pair_evaluators})
     configure_file(export_PotentialPair.cc.inc
                    export_PotentialPair${_evaluator}.cc
@@ -34,6 +65,25 @@ foreach(_evaluator ${_pair_evaluators})
                        @ONLY)
         set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialPair${_evaluator}GPU.cc)
         set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} PotentialPair${_evaluator}GPUKernel.cu)
+    endif()
+endforeach()
+
+# process anisotropic pair potentials
+foreach(_evaluator ${_aniso_pair_evaluators})
+    configure_file(export_AnisoPotentialPair.cc.inc
+                   export_AnisoPotentialPair${_evaluator}.cc
+                   @ONLY)
+    set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_AnisoPotentialPair${_evaluator}.cc)
+
+    if (ENABLE_HIP)
+        configure_file(export_AnisoPotentialPairGPU.cc.inc
+                       export_AnisoPotentialPair${_evaluator}GPU.cc
+                       @ONLY)
+        configure_file(AnisoPotentialPairGPUKernel.cu.inc
+                       AnisoPotentialPair${_evaluator}GPUKernel.cu
+                       @ONLY)
+        set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_AnisoPotentialPair${_evaluator}GPU.cc)
+        set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} AnisoPotentialPair${_evaluator}GPUKernel.cu)
     endif()
 endforeach()
 
