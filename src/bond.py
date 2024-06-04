@@ -60,6 +60,8 @@ class DoubleWell(_Bond):
         params = TypeParameter(
             'params',
             'bond_types',
-            TypeParameterDict(V_max=float, a=float, b=float, c=float, len_keys=1),
+            TypeParameterDict(
+                r_0=float, r_1=float, U_1=float, U_tilt=float, len_keys=1
+            ),
         )
         self._add_typeparam(params)

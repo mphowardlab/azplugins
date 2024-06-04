@@ -28,31 +28,34 @@ namespace detail
 struct BondParametersDoubleWell : public BondParameters
     {
 #ifndef __HIPCC__
-    BondParametersDoubleWell() : V_max(0), a(0), b(0), c(0) { }
+    BondParametersDoubleWell() : r_0(0), r_1(0), U_1(0), U_tilt(0) { }
 
     BondParametersDoubleWell(pybind11::dict v)
         {
-        V_max = v["V_max"].cast<Scalar>();
-        a = v["a"].cast<Scalar>();
-        b = v["b"].cast<Scalar>();
-        c = v["c"].cast<Scalar>();
+        r_0 = v["r_0"].cast<Scalar>();
+        r_1 = v["r_1"].cast<Scalar>();
+        U_1 = v["U_1"].cast<Scalar>();
+        U_tilt = v["U_tilt"].cast<Scalar>();
+
+        const Scalar r_diff = r_1 - r_0;
         }
 
     pybind11::dict asDict()
         {
         pybind11::dict v;
-        v["V_max"] = V_max;
-        v["a"] = a;
-        v["b"] = b;
-        v["c"] = c;
+        v["r_0"] = r_0;
+        v["r_1"] = r_1;
+        v["U_1"] = U_1;
+        v["U_tilt"] = U_tilt;
         return v;
         }
 #endif
 
-    Scalar V_max; //!< Potential difference between the the first minima and maxima
-    Scalar a;     //!< Shift for the location of V_max (to approx. a/2)
-    Scalar b;     //!< Scaling for distance of the two minima (to approx. a/2 +/- b)
-    Scalar c;     //!< Potential difference between the two minima
+    Scalar r_0;    //!< Potential difference between the the first minima and maxima
+    Scalar r_1;    //!< Shift for the location of U_1 (to approx. a/2)
+    Scalar U_1;    //!< Scaling for distance of the two minima (to approx. a/2 +/- b)
+    Scalar U_tilt; //!< Potential difference between the two minima
+    Scalar r_diff;
     }
 #if HOOMD_LONGREAL_SIZE == 32
     __attribute__((aligned(16)));
@@ -69,12 +72,12 @@ struct BondParametersDoubleWell : public BondParameters
  * \frac{c}{2b}\left(r-a/2\right)+c/2
  *
  * \f}
- * which has two minima at r = (a/2 +/- b), seperated by a maximum at a/2 of height V_max when c is
+ * which has two minima at r = (a/2 +/- b), seperated by a maximum at a/2 of height U_1 when c is
  * set to zero.
  *
  * The parameter a tunes the location of the maximal value and the parameter b tunes the distance of
  * the two maxima from each other.  This potential is useful to model bonds which can be either
- * mechanically or thermally "activated" into a effectively longer state. The value of V_max can be
+ * mechanically or thermally "activated" into a effectively longer state. The value of U_1 can be
  * used to tune the height of the energy barrier in between the two states.
  *
  * If c is non zero, the relative energy of the minima can be tuned, where c is the energy of the
@@ -87,7 +90,8 @@ class BondEvaluatorDoubleWell : public BondEvaluator
     typedef BondParametersDoubleWell param_type;
 
     DEVICE BondEvaluatorDoubleWell(Scalar _rsq, const param_type& _params)
-        : BondEvaluator(_rsq), V_max(_params.V_max), a(_params.a), b(_params.b), c(_params.c)
+        : BondEvaluator(_rsq), r_0(_params.r_0), r_1(_params.r_1), U_1(_params.U_1),
+          U_tilt(_params.U_tilt)
         {
         }
 
@@ -96,19 +100,19 @@ class BondEvaluatorDoubleWell : public BondEvaluator
         bond_eng = 0;
         force_divr = 0;
 
-        // check for invalid parameters
-        if (b == Scalar(0.0))
+        // check for invalid parameters r0 = r1
+        if (r_diff == Scalar(0.0))
             return false;
 
-        Scalar c_half = Scalar(0.5) * c;
         Scalar r = fast::sqrt(rsq);
-        Scalar r_min_half_a = r - Scalar(0.5) * a;
-        Scalar b_sq = b * b;
-        Scalar d = r_min_half_a * r_min_half_a - b_sq;
+        Scalar x = (r_1 - r) / r_diff;
+        Scalar x2 = x * x;
+        Scalar y = 1 - x2;
+        Scalar y2 = y * y;
+        Scalar w = (x * y) / r_diff;
 
-        bond_eng = ((V_max - c_half) / (b_sq * b_sq)) * d * d + c_half / b * r_min_half_a + c_half;
-        force_divr = -(4 * (V_max - c_half) / (b_sq * b_sq) * d * r_min_half_a + c_half / b) / r;
-
+        bond_eng = (U_1 * y2 + U_tilt * (1 - x - y2));
+        force_divr = (-U_1 * x * y / r_diff - U_tilt * (1 / r_diff - 4 * w / r_diff)) / r;
         return true;
         }
 
@@ -120,10 +124,11 @@ class BondEvaluatorDoubleWell : public BondEvaluator
 #endif
 
     private:
-    Scalar V_max; //!< V_max parameter
-    Scalar a;     //!< a parameter
-    Scalar b;     //!< b parameter
-    Scalar c;     //!< c parameter
+    Scalar r_0;    //!< U_1 parameter
+    Scalar r_1;    //!< a parameter
+    Scalar U_1;    //!< b parameter
+    Scalar U_tilt; //!< c parameter
+    Scalar r_diff;
     };
 
     } // end namespace detail
