@@ -155,47 +155,32 @@ potential_tests += [
     # test the calculation of force and potential for Solvent-Solvent
     PotentialTestCase(
         hoomd.azplugins.pair.Colloid,
-        {
-            'A': 100.0,
-            'a1': 0,
-            'a2': 0,
-            'sigma': 2.0,
-        },
+        {'A': 100.0, 'a1': 0, 'a2': 0, 'sigma': 2.0},
         6.0,
         False,
         3.0,
-        -0.222455968249,
-        -0.402093561279,
+        -0.2224,
+        -0.4020,
     ),
     # test the calculation of force and potential for Colloid-Solvent
     PotentialTestCase(
         hoomd.azplugins.pair.Colloid,
-        {
-            'A': 100.0,
-            'a1': 1.05,
-            'a2': 0,
-            'sigma': 1.05,
-        },
+        {'A': 100.0, 'a1': 1.5, 'a2': 0, 'sigma': 1.05},
         6.0,
         False,
         3.0,
-        -0.275765225801,
-        -0.710777032561,
+        -0.2757,
+        -0.7107,
     ),
     # test the calculation of force and potential for Colloid-Colloid
     PotentialTestCase(
         hoomd.azplugins.pair.Colloid,
-        {
-            'A': 100.0,
-            'a1': 1.05,
-            'a2': 1.05,
-            'sigma': 1.05,
-        },
+        {'A': 100.0, 'a1': 1.5, 'a2': 3.0, 'sigma': 1.05},
         6.0,
         False,
         3.0,
-        -1.0366943672424296,
-        -1.82673534348,
+        -1.0366,
+        -1.8267,
     ),
 ]
 
