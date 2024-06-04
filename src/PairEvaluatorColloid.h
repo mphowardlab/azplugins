@@ -23,13 +23,13 @@ namespace detail
 struct PairParametersColloid : public PairParameters
     {
 #ifndef __HIPCC__
-    PairParametersColloid() : A(0), d_1(0), d_2(0), sigma_3(0), sigma_6(0), style(0) { }
+    PairParametersColloid() : A(0), a1(0), a2(0), sigma_3(0), sigma_6(0), style(0) { }
 
     PairParametersColloid(pybind11::dict v, bool managed = false)
         {
         A = v["A"].cast<Scalar>();
-        d_1 = v["d_1"].cast<Scalar>();
-        d_2 = v["d_2"].cast<Scalar>();
+        a1 = v["a1"].cast<Scalar>();
+        a2 = v["a2"].cast<Scalar>();
         sigma_3 = v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>();
         sigma_6 = sigma_3 * sigma_3;
         style = v["style"].cast<Scalar>();
@@ -39,8 +39,8 @@ struct PairParametersColloid : public PairParameters
         {
         pybind11::dict v;
         v["A"] = A;
-        v["d_1"] = d_1;
-        v["d_2"] = d_2;
+        v["a1"] = a1;
+        v["a2"] = a2;
         v["sigma"] = std::cbrt(sigma_3);
         v["style"] = style;
         return v;
@@ -48,8 +48,8 @@ struct PairParametersColloid : public PairParameters
 #endif // __HIPCC__
 
     Scalar A;
-    Scalar d_1;
-    Scalar d_2;
+    Scalar a1;
+    Scalar a2;
     Scalar sigma_3;
     Scalar sigma_6;
     Scalar style;
@@ -124,24 +124,8 @@ class PairEvaluatorColloid : public PairEvaluator
         sigma_3 = _params.sigma_3;
         sigma_6 = _params.sigma_6;
         form = static_cast<interaction_type>(__scalar_as_int(_params.style));
-        }
-
-    //! Colloid potential needs diameter
-    DEVICE static bool needsDiameter()
-        {
-        return true;
-        }
-    //! Accept the optional diameter values
-    /*!
-     * \param di Diameter of particle i
-     * \param dj Diameter of particle j
-     *
-     * Diameters are stashed as the particle radii.
-     */
-    DEVICE void setDiameter(Scalar d_1, Scalar d_2)
-        {
-        ai = Scalar(0.5) * d_1;
-        aj = Scalar(0.5) * d_2;
+        ai = _params.a1;
+        aj = _params.a2;
         }
 
     //! Computes the solvent-solvent interaction

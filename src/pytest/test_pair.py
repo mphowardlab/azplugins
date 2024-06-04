@@ -155,7 +155,7 @@ potential_tests += [
     # test the calculation of force and potential
     PotentialTestCase(
         hoomd.azplugins.pair.Colloid,
-        {'A': 100.0, 'd_1': 0, 'd_2': 0, 'sigma': 2.0, 'style': 0},
+        {'A': 100.0, 'a1': 0, 'a2': 0, 'sigma': 2.0, 'style': 0},
         6.0,
         False,
         3.0,
