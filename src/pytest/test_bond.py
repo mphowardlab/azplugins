@@ -18,24 +18,51 @@ PotentialTestCase = collections.namedtuple(
 potential_tests = []
 # bond.DoubleWell
 potential_tests += [
+    # test potential at first minimum
     PotentialTestCase(
         hoomd.azplugins.bond.DoubleWell,
-        dict(r_0=-1.0, r_1=1.0, U_1=5.0, U_tilt=0.0),
-        1.0,
+        dict(r_0=0.5, r_1=2.5, U_1=5.0, U_tilt=0.0),
+        0.5,
+        0,
+        0,
+    ),
+    # test potential at local maximum
+    PotentialTestCase(
+        hoomd.azplugins.bond.DoubleWell,
+        dict(r_0=0.5, r_1=2.5, U_1=5.0, U_tilt=0.0),
+        2.5,
         5.0,
         0,
     ),
+    # test potential at second minimum
     PotentialTestCase(
         hoomd.azplugins.bond.DoubleWell,
-        dict(r_0=-0.5, r_1=0.5, U_1=1.0, U_tilt=0.0),
-        1.0,
+        dict(r_0=0.5, r_1=2.5, U_1=5.0, U_tilt=0.0),
+        4.5,
+        0,
+        0,
+    ),
+    # test potential between first minimum and maximum
+    PotentialTestCase(
+        hoomd.azplugins.bond.DoubleWell,
+        dict(r_0=1.0, r_1=2.0, U_1=1.0, U_tilt=0.0),
+        1.5,
+        0.5625,
+        -1.5,
+    ),
+    # test potential between maximum and second minimum
+    PotentialTestCase(
+        hoomd.azplugins.bond.DoubleWell,
+        dict(r_0=1.0, r_1=2.0, U_1=1.0, U_tilt=0.0),
+        2.5,
         0.5625,
         1.5,
     ),
+    # test non-zero tilt
     PotentialTestCase(
         hoomd.azplugins.bond.DoubleWell,
-        dict(r_0=-0.5, r_1=0.5, U_1=5.0, U_tilt=0.5),
-        1.0,
+        dict(r_0=1.0, r_1=2.0, U_1=1.0, U_tilt=0.5),
+        2.5,
         1.03125,
         0.25,
     ),
