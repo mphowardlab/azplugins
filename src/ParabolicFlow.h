@@ -28,7 +28,7 @@ class ParabolicFlow
     //! Construct parabolic flow profile
     /*!
      * \param U_ Mean velocity
-     * \param L_ Separation 
+     * \param L_ Separation
      */
     ParabolicFlow(Scalar U_, Scalar L_) : Umax(Scalar(1.5) * U_), L(Scalar(0.5) * L_) { }
 
@@ -41,7 +41,7 @@ class ParabolicFlow
         const Scalar zr = (r.z / L);
         return make_scalar3(Umax * (1. - zr * zr), 0.0, 0.0);
         }
-    
+
     HOSTDEVICE Scalar getVelocity() const
         {
         return Scalar(0.6666666667) * Umax;
@@ -61,24 +61,25 @@ class ParabolicFlow
         {
         L = Scalar(0.5) * L_;
         }
+
     private:
     Scalar Umax; //<! Mean velocity
     Scalar L;    //!< Full width
     };
-    
+
 namespace detail
     {
-    void export_ParabolicFlow(pybind11::module& m)
-        {
-        namespace py = pybind11;
-        py::class_<ParabolicFlow, std::shared_ptr<ParabolicFlow>>(m, "ParabolicFlow") 
+void export_ParabolicFlow(pybind11::module& m)
+    {
+    namespace py = pybind11;
+    py::class_<ParabolicFlow, std::shared_ptr<ParabolicFlow>>(m, "ParabolicFlow")
         .def(py::init<Scalar, Scalar>())
         .def_property("mean_velocity", &ParabolicFlow::getVelocity, &ParabolicFlow::setVelocity)
         .def_property("separation", &ParabolicFlow::getLength, &ParabolicFlow::setLength);
-        }
     }
-    }// end of azplugins
-    }
+    } // namespace detail
+    } // namespace azplugins
+    } // namespace hoomd
 #undef HOSTDEVICE
 
 #endif // AZPLUGINS_PARABOLIC_FLOW_H_
