@@ -22,7 +22,10 @@ set(python_files
 set(_bond_evaluators )
 
 # TODO: Add names of all pair evaluators`
-set(_pair_evaluators Hertz)
+set(_pair_evaluators
+    Hertz
+    PerturbedLennardJones
+    )
 
 # TODO: Add names of all anisotropic pair evaluators
 set(_aniso_pair_evaluators )
