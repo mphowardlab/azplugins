@@ -23,7 +23,7 @@ namespace detail
 struct PairParametersColloid : public PairParameters
     {
 #ifndef __HIPCC__
-    PairParametersColloid() : A(0), a1(0), a2(0), sigma_3(0), sigma_6(0), style(0) { }
+    PairParametersColloid() : A(0), a1(0), a2(0), sigma_3(0), style(0) { }
 
     PairParametersColloid(pybind11::dict v, bool managed = false)
         {
@@ -31,7 +31,6 @@ struct PairParametersColloid : public PairParameters
         a1 = v["a1"].cast<Scalar>();
         a2 = v["a2"].cast<Scalar>();
         sigma_3 = v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>();
-        sigma_6 = sigma_3 * sigma_3;
         style = v["style"].cast<Scalar>();
         }
 
@@ -51,7 +50,6 @@ struct PairParametersColloid : public PairParameters
     Scalar a1;
     Scalar a2;
     Scalar sigma_3;
-    Scalar sigma_6;
     Scalar style;
     }
 #if HOOMD_LONGREAL_SIZE == 32
@@ -122,7 +120,7 @@ class PairEvaluatorColloid : public PairEvaluator
         {
         A = _params.A;
         sigma_3 = _params.sigma_3;
-        sigma_6 = _params.sigma_6;
+        sigma_6 = sigma_3 * sigma_3;
         form = static_cast<interaction_type>(__scalar_as_int(_params.style));
         ai = _params.a1;
         aj = _params.a2;
