@@ -79,10 +79,11 @@ class PerturbedLennardJones(pair.Pair):
 
     :py:class:`PerturbedLennardJones` is a Lennard-Jones perturbation potential.
     The potential has a purely repulsive (Weeks-Chandler-Andersen) core, with a
-    parameter :math:`\lambda` setting the strength of the attractive tail. When
-    :math:`\lambda` is 0, the potential is purely repulsive. When
-    :math:`\lambda` is 1, the potential is the standard Lennard-Jones potential
-    (see :py:class:`hoomd.md.pair.LJ` for details).
+    parameter :math:`attraction_scale_factor` (\lambda) setting the strength of
+    the attractive tail. When
+    :math:`attraction_scale_factor` is 0, the potential is purely repulsive. When
+    :math:`attraction_scale_factor` is 1, the potential is the standard
+    Lennard-Jones potential (see :py:class:`hoomd.md.pair.LJ` for details).
 
     .. math::
         :nowrap:
@@ -101,7 +102,8 @@ class PerturbedLennardJones(pair.Pair):
 
         nl = nlist.Cell()
         perturbed_lj = pair.PerturbedLennardJones(default_r_cut=3.0, nlist=nl)
-        perturbed_lj.params[('A', 'A')] = dict(epsilon=1.0, sigma=1.0, lam=0.5)
+        perturbed_lj.params[('A', 'A')] = dict(epsilon=1.0, sigma=1.0,
+        attraction_scale_factor=0.5)
         perturbed_lj.r_cut[('A', 'B')] = 3.0
 
     .. py:attribute:: params
@@ -113,8 +115,8 @@ class PerturbedLennardJones(pair.Pair):
           :math:`\varepsilon` :math:`[\mathrm{energy}]`
         * ``sigma`` (`float`, **required**) - particle size :math:`\sigma`
           :math:`[\mathrm{length}]`
-        * ``lam`` (`float`, **required**) - scale factor for attraction,
-        between 0 and 1 :math:`\lambda`
+        * ``attraction_scale_factor`` (`float`, **required**) - scale factor
+          for attraction, between 0 and 1 :math:`attraction_scale_factor`
           :math:`[\mathrm{dimensionless}]`
 
         Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
@@ -136,6 +138,8 @@ class PerturbedLennardJones(pair.Pair):
         params = TypeParameter(
             'params',
             'particle_types',
-            TypeParameterDict(epsilon=float, sigma=float, lam=float, len_keys=2),
+            TypeParameterDict(
+                epsilon=float, sigma=float, attraction_scale_factor=float, len_keys=2
+            ),
         )
         self._add_typeparam(params)

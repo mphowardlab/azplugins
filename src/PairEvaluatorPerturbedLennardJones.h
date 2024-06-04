@@ -25,7 +25,10 @@ namespace detail
 struct PairParametersPerturbedLennardJones : public PairParameters
     {
 #ifndef __HIPCC__
-    PairParametersPerturbedLennardJones() : sigma_6(0), epsilon_x_4(0), lam(0), rwcasq(0) { }
+    PairParametersPerturbedLennardJones()
+        : sigma_6(0), epsilon_x_4(0), attraction_scale_factor(0), rwcasq(0)
+        {
+        }
 
     PairParametersPerturbedLennardJones(pybind11::dict v, bool managed = false)
         {
@@ -37,7 +40,7 @@ struct PairParametersPerturbedLennardJones : public PairParameters
         sigma_6 = sigma_2 * sigma_4;
 
         epsilon_x_4 = Scalar(4.0) * epsilon;
-        lam = v["lam"].cast<Scalar>();
+        attraction_scale_factor = v["attraction_scale_factor"].cast<Scalar>();
         rwcasq = pow(Scalar(2.), 1. / 3.) * sigma_2;
         }
 
@@ -46,15 +49,15 @@ struct PairParametersPerturbedLennardJones : public PairParameters
         pybind11::dict v;
         v["sigma"] = pow(sigma_6, 1. / 6.);
         v["epsilon"] = epsilon_x_4 / Scalar(4.);
-        v["lam"] = lam;
+        v["attraction_scale_factor"] = attraction_scale_factor;
         return v;
         }
 #endif // __HIPCC__
 
-    Scalar sigma_6;     //!< The coefficient for 1/r^12
-    Scalar epsilon_x_4; //!< The coefficient for 1/r^6
-    Scalar lam;         //!< Controls the attractive tail, between 0 and 1
-    Scalar rwcasq;      //!< The square of the location of the LJ potential minimum
+    Scalar sigma_6;                 //!< The coefficient for 1/r^12
+    Scalar epsilon_x_4;             //!< The coefficient for 1/r^6
+    Scalar attraction_scale_factor; //!< Controls the attractive tail, between 0 and 1
+    Scalar rwcasq;                  //!< The square of the location of the LJ potential minimum
     }
 #if HOOMD_LONGREAL_SIZE == 32
     __attribute__((aligned(16)));
@@ -94,9 +97,10 @@ class PairEvaluatorPerturbedLennardJones : public PairEvaluator
     PairEvaluatorPerturbedLennardJones(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
         : PairEvaluator(_rsq, _rcutsq),
           lj1(_params.epsilon_x_4 * _params.sigma_6 * _params.sigma_6),
-          lj2(_params.epsilon_x_4 * _params.sigma_6), lam(_params.lam), rwcasq(_params.rwcasq)
+          lj2(_params.epsilon_x_4 * _params.sigma_6),
+          attraction_scale_factor(_params.attraction_scale_factor), rwcasq(_params.rwcasq)
         {
-        wca_shift = _params.epsilon_x_4 * (Scalar(1.0) - lam) / Scalar(4.0);
+        wca_shift = _params.epsilon_x_4 * (Scalar(1.0) - attraction_scale_factor) / Scalar(4.0);
         }
 
     //! Evaluate the force and energy
@@ -125,8 +129,8 @@ class PairEvaluatorPerturbedLennardJones : public PairEvaluator
                 }
             else
                 {
-                force_divr *= lam;
-                pair_eng *= lam;
+                force_divr *= attraction_scale_factor;
+                pair_eng *= attraction_scale_factor;
                 }
 
             if (energy_shift)
@@ -140,7 +144,7 @@ class PairEvaluatorPerturbedLennardJones : public PairEvaluator
                     }
                 else
                     {
-                    pair_eng_shift *= lam;
+                    pair_eng_shift *= attraction_scale_factor;
                     }
                 pair_eng -= pair_eng_shift;
                 }
@@ -159,11 +163,11 @@ class PairEvaluatorPerturbedLennardJones : public PairEvaluator
 #endif
 
     private:
-    Scalar lj1;       //!< lj1 parameter - 4 epsilon sigma^12
-    Scalar lj2;       //!< lj2 parameter - 4 epsilon sigma^6
-    Scalar lam;       //!< lambda parameter
-    Scalar rwcasq;    //!< WCA cutoff radius squared
-    Scalar wca_shift; //!< Energy shift for WCA part of the potential
+    Scalar lj1;                     //!< lj1 parameter - 4 epsilon sigma^12
+    Scalar lj2;                     //!< lj2 parameter - 4 epsilon sigma^6
+    Scalar attraction_scale_factor; //!< attraction_scale_factor parameter
+    Scalar rwcasq;                  //!< WCA cutoff radius squared
+    Scalar wca_shift;               //!< Energy shift for WCA part of the potential
     };
 
     } // end namespace detail
