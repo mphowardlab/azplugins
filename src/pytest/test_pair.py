@@ -150,6 +150,20 @@ potential_tests += [
     ),
 ]
 
+# Colloid
+potential_tests += [
+    # test the calculation of force and potential
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {'hamaker': 100.0, 'd_1': 0, 'd_2': 0, 'sigma': 2.0, 'style': 0},
+        6.0,
+        False,
+        3.0,
+        -0.222455968249,
+        -0.402093561279,
+    ),
+]
+
 
 @pytest.mark.parametrize(
     'potential_test', potential_tests, ids=lambda x: x.potential.__name__

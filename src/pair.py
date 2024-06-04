@@ -10,6 +10,26 @@ from hoomd.data.typeparam import TypeParameter
 from hoomd.md import pair
 
 
+class Colloid(pair.Pair):
+    r"""Colloid potential."""
+
+    _ext_module = _azplugins
+    _cpp_class_name = 'PotentialPairColloid'
+    _accepted_modes = ('none', 'shift', 'xplor')
+
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode='none'):
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        params = TypeParameter(
+            'params',
+            'particle_types',
+            # TypeParameterDict needs updated still
+            TypeParameterDict(
+                hamaker=float, d_1=float, d_2=float, sigma=float, style=int, len_keys=2
+            ),
+        )
+        self._add_typeparam(params)
+
+
 class Hertz(pair.Pair):
     r"""Hertz potential.
 

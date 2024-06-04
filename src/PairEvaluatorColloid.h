@@ -2,27 +2,63 @@
 // Copyright (c) 2021-2024, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-/*!
- * \file PairEvaluatorColloid.h
- * \brief Defines the pair force evaluator class for colloid (integrated Lennard-Jones) potential
- */
-
 #ifndef AZPLUGINS_PAIR_EVALUATOR_COLLOID_H_
 #define AZPLUGINS_PAIR_EVALUATOR_COLLOID_H_
 
 #include "PairEvaluator.h"
 
-#ifdef NVCC
+#ifdef __HIPCC__
 #define DEVICE __device__
 #else
 #define DEVICE
 #endif
 
+namespace hoomd
+    {
 namespace azplugins
     {
 namespace detail
     {
 
+struct PairParametersColloid : public PairParameters
+    {
+#ifndef __HIPCC__
+    PairParametersColloid() : hamaker(0), d_1(0), d_2(0), sigma_3(0), sigma_6(0), style(0) { }
+
+    PairParametersColloid(pybind11::dict v, bool managed = false)
+        {
+        hamaker = v["hamaker"].cast<Scalar>();
+        d_1 = v["d_1"].cast<Scalar>();
+        d_2 = v["d_2"].cast<Scalar>();
+        sigma_3 = v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>();
+        sigma_6 = sigma_3 * sigma_3;
+        style = v["style"].cast<Scalar>();
+        }
+
+    pybind11::dict asDict()
+        {
+        pybind11::dict v;
+        v["hamaker"] = hamaker;
+        v["d_1"] = d_1;
+        v["d_2"] = d_2;
+        v["sigma"] = std::cbrt(sigma_3);
+        v["style"] = style;
+        return v;
+        }
+#endif // __HIPCC__
+
+    Scalar hamaker;
+    Scalar d_1;
+    Scalar d_2;
+    Scalar sigma_3;
+    Scalar sigma_6;
+    Scalar style;
+    }
+#if HOOMD_LONGREAL_SIZE == 32
+    __attribute__((aligned(16)));
+#else
+    __attribute__((aligned(32)));
+#endif
 //! Class for evaluating the colloid pair potential
 /*!
  * An effective Lennard-Jones potential obtained by integrating the Lennard-Jones potential
@@ -35,7 +71,7 @@ namespace detail
  * The pair potential has three different coupling styles between particle types:
  *
  * - ``slv-slv`` gives the Lennard-Jones potential for coupling between pointlike particles,
- *   with the standard \f$4 \varepsilon\f$ replaced by \f$A/36\f$.
+ *   with the standard \f$4 \varhamaker\f$ replaced by \f$A/36\f$.
  * - ``coll-slv`` gives the interaction between a pointlike particle and a colloid
  * - ``coll-coll`` gives the interaction between two colloids
  *
@@ -63,7 +99,7 @@ class PairEvaluatorColloid : public PairEvaluator
     {
     public:
     //! Define the parameter type used by this pair potential evaluator
-    typedef Scalar4 param_type;
+    typedef PairParametersColloid param_type;
 
     //! Different forms for the (i,j) interaction
     enum interaction_type
@@ -84,10 +120,10 @@ class PairEvaluatorColloid : public PairEvaluator
     DEVICE PairEvaluatorColloid(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
         : PairEvaluator(_rsq, _rcutsq)
         {
-        A = _params.x;
-        sigma_3 = _params.y;
-        sigma_6 = _params.z;
-        form = static_cast<interaction_type>(__scalar_as_int(_params.w));
+        A = _params.hamaker;
+        sigma_3 = _params.sigma_3;
+        sigma_6 = _params.sigma_6;
+        form = static_cast<interaction_type>(__scalar_as_int(_params.style));
         }
 
     //! Colloid potential needs diameter
@@ -102,10 +138,10 @@ class PairEvaluatorColloid : public PairEvaluator
      *
      * Diameters are stashed as the particle radii.
      */
-    DEVICE void setDiameter(Scalar di, Scalar dj)
+    DEVICE void setDiameter(Scalar d_1, Scalar d_2)
         {
-        ai = Scalar(0.5) * di;
-        aj = Scalar(0.5) * dj;
+        ai = Scalar(0.5) * d_1;
+        aj = Scalar(0.5) * d_2;
         }
 
     //! Computes the solvent-solvent interaction
@@ -290,7 +326,7 @@ class PairEvaluatorColloid : public PairEvaluator
             return false;
         }
 
-#ifndef NVCC
+#ifndef __HIPCC__
     //! Get the name of this potential
     /*! \returns The potential name. Must be short and all lowercase, as this is the name energies
        will be logged as via analyze.log.
@@ -313,6 +349,7 @@ class PairEvaluatorColloid : public PairEvaluator
 
     } // end namespace detail
     } // end namespace azplugins
+    } // end namespace hoomd
 
 #undef DEVICE
 
