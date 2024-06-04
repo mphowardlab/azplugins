@@ -107,12 +107,14 @@ class BondEvaluatorDoubleWell : public BondEvaluator
         Scalar r = fast::sqrt(rsq);
         Scalar x = (r_1 - r) / r_diff;
         Scalar x2 = x * x;
-        Scalar y = 1 - x2;
+        Scalar y = Scalar(1.0) - x2;
         Scalar y2 = y * y;
         Scalar w = (x * y) / r_diff;
 
-        bond_eng = (U_1 * y2 + U_tilt * (1 - x - y2));
-        force_divr = (-U_1 * x * y / r_diff - U_tilt * (1 / r_diff - 4 * w / r_diff)) / r;
+        bond_eng = (U_1 * y2 + U_tilt * (Scalar(1.0) - x - y2));
+        force_divr
+            = (-U_1 * x * y / r_diff - U_tilt * (Scalar(1.0) / r_diff - Scalar(4.0) * w / r_diff))
+              / r;
         return true;
         }
 

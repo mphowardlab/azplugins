@@ -19,25 +19,22 @@ potential_tests = []
 # bond.DoubleWell
 potential_tests += [
     PotentialTestCase(
-        hoomd.azplugins.bond.DoubleWell, dict(a=3.0, b=0.5, V_max=1.0, c=0.0), 1.0, 0, 0
-    ),
-    PotentialTestCase(
         hoomd.azplugins.bond.DoubleWell,
-        dict(a=2.0, b=2.0, V_max=5.0, c=0.0),
+        dict(r_0=-1.0, r_1=1.0, U_1=5.0, U_tilt=0.0),
         1.0,
         5.0,
         0,
     ),
     PotentialTestCase(
         hoomd.azplugins.bond.DoubleWell,
-        dict(a=1.0, b=1.0, V_max=1.0, c=0.0),
+        dict(r_0=-0.5, r_1=0.5, U_1=1.0, U_tilt=0.0),
         1.0,
         0.5625,
         1.5,
     ),
     PotentialTestCase(
         hoomd.azplugins.bond.DoubleWell,
-        dict(a=1.0, b=1.0, V_max=1.0, c=1.0),
+        dict(r_0=-0.5, r_1=0.5, U_1=5.0, U_tilt=0.5),
         1.0,
         1.03125,
         0.25,
