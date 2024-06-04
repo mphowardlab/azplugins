@@ -5,7 +5,8 @@
 #include "ConstantFlow.h"
 #include "ParabolicFlow.h"
 #include <pybind11/pybind11.h>
-
+#include "TwoStepBrownianFlow.h"
+#include "TwoStepLangevinFlow.h"
 namespace hoomd
     {
 //! Plugins for soft matter
@@ -53,12 +54,9 @@ namespace detail
     {
 
 void export_PotentialPairHertz(pybind11::module&);
-
 #ifdef ENABLE_HIP
 void export_PotentialPairHertzGPU(pybind11::module&);
 #endif // ENABLE_HIP
-
-
     } // namespace detail
     } // namespace azplugins
     } // namespace hoomd
@@ -67,13 +65,17 @@ void export_PotentialPairHertzGPU(pybind11::module&);
 PYBIND11_MODULE(_azplugins, m)
     {
     using namespace hoomd::azplugins::detail;
-  
+    export_PotentialPairHertz(m);
+    
     export_ConstantFlow(m);
     export_ParabolicFlow(m);
-
-    export_PotentialPairHertz(m);
-
+    export_TwoStepBrownianFlow<hoomd::azplugins::ConstantFlow>(m, "BrownianConstantFlow");
+    export_TwoStepBrownianFlow<hoomd::azplugins::ParabolicFlow>(m, "BrownianParabolicFlow");
+    export_TwoStepLangevinFlow<hoomd::azplugins::ConstantFlow>(m, "LangevinConstantFlow");
+    export_TwoStepLangevinFlow<hoomd::azplugins::ParabolicFlow>(m, "LangevinParabolicFlow");
 #ifdef ENABLE_HIP
     export_PotentialPairHertzGPU(m);
 #endif // ENABLE_HIP
     }
+    
+    
