@@ -49,23 +49,28 @@ namespace azplugins
     {
 namespace detail
     {
+void export_PotentialPairHertz(pybind11::module&);
 void export_PotentialBondDoubleWell(pybind11::module&);
 
 #ifdef ENABLE_HIP
+void export_PotentialPairHertzGPU(pybind11::module&);
 void export_PotentialBondDoubleWellGPU(pybind11::module&);
-#endif // ENABLE_HIP
-    }  // namespace detail
-    }  // namespace azplugins
-    }  // namespace hoomd
+#endif // ENABLE_HI
+
+    } // namespace detail
+    } // namespace azplugins
+    } // namespace hoomd
 
 // python module
 PYBIND11_MODULE(_azplugins, m)
     {
     using namespace hoomd::azplugins::detail;
 
+    export_PotentialPairHertz(m);
     export_PotentialBondDoubleWell(m);
 
 #ifdef ENABLE_HIP
+    export_PotentialPairHertzGPU(m);
     export_PotentialBondDoubleWellGPU(m);
 #endif // ENABLE_HIP
     }

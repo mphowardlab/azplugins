@@ -2,27 +2,49 @@
 // Copyright (c) 2021-2024, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-/*!
- * \file PairEvaluatorHertz.h
- * \brief Defines the pair force evaluator class for Hertz potential
- */
-
 #ifndef AZPLUGINS_PAIR_EVALUATOR_HERTZ_H_
 #define AZPLUGINS_PAIR_EVALUATOR_HERTZ_H_
 
 #include "PairEvaluator.h"
 
-#ifdef NVCC
+#ifdef __HIPCC__
 #define DEVICE __device__
 #else
 #define DEVICE
 #endif
 
+namespace hoomd
+    {
 namespace azplugins
     {
-
 namespace detail
     {
+
+struct PairParametersHertz : public PairParameters
+    {
+#ifndef __HIPCC__
+    PairParametersHertz() : epsilon(0) { }
+
+    PairParametersHertz(pybind11::dict v, bool managed = false)
+        {
+        epsilon = v["epsilon"].cast<Scalar>();
+        }
+
+    pybind11::dict asDict()
+        {
+        pybind11::dict v;
+        v["epsilon"] = epsilon;
+        return v;
+        }
+#endif // __HIPCC__
+
+    Scalar epsilon;
+    }
+#if HOOMD_LONGREAL_SIZE == 32
+    __attribute__((aligned(4)));
+#else
+    __attribute__((aligned(8)));
+#endif
 //! Class for evaluating the Hertz pair potential
 /*!
  * PairEvaluatorHertz evaluates the function:
@@ -42,7 +64,7 @@ class PairEvaluatorHertz : public PairEvaluator
     {
     public:
     //! Define the parameter type used by this pair potential evaluator
-    typedef Scalar param_type;
+    typedef PairParametersHertz param_type;
 
     //! Constructor
     /*!
@@ -53,7 +75,7 @@ class PairEvaluatorHertz : public PairEvaluator
      * The functor initializes its members from \a _params.
      */
     DEVICE PairEvaluatorHertz(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : PairEvaluator(_rsq, _rcutsq), epsilon(_params)
+        : PairEvaluator(_rsq, _rcutsq), epsilon(_params.epsilon)
         {
         }
 
@@ -87,7 +109,7 @@ class PairEvaluatorHertz : public PairEvaluator
             }
         }
 
-#ifndef NVCC
+#ifndef __HIPCC__
     //! Return the name of this potential
     static std::string getName()
         {
@@ -101,6 +123,7 @@ class PairEvaluatorHertz : public PairEvaluator
 
     } // end namespace detail
     } // end namespace azplugins
+    } // end namespace hoomd
 
 #undef DEVICE
 
