@@ -4,6 +4,6 @@
 
 """azplugins."""
 
-from hoomd.azplugins import bond, pair
+from hoomd.azplugins import bond, pair, flow
 
 __version__ = '1.0.0'

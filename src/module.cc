@@ -2,6 +2,8 @@
 // Copyright (c) 2021-2024, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
+#include "ConstantFlow.h"
+#include "ParabolicFlow.h"
 #include <pybind11/pybind11.h>
 
 namespace hoomd
@@ -49,6 +51,7 @@ namespace azplugins
     {
 namespace detail
     {
+
     } // namespace detail
     } // namespace azplugins
     } // namespace hoomd
@@ -57,4 +60,6 @@ namespace detail
 PYBIND11_MODULE(_azplugins, m)
     {
     using namespace hoomd::azplugins::detail;
+    export_ConstantFlow(m);
+    export_ParabolicFlow(m);
     }
