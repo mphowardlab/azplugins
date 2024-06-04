@@ -23,11 +23,11 @@ namespace detail
 struct PairParametersColloid : public PairParameters
     {
 #ifndef __HIPCC__
-    PairParametersColloid() : hamaker(0), d_1(0), d_2(0), sigma_3(0), sigma_6(0), style(0) { }
+    PairParametersColloid() : A(0), d_1(0), d_2(0), sigma_3(0), sigma_6(0), style(0) { }
 
     PairParametersColloid(pybind11::dict v, bool managed = false)
         {
-        hamaker = v["hamaker"].cast<Scalar>();
+        A = v["A"].cast<Scalar>();
         d_1 = v["d_1"].cast<Scalar>();
         d_2 = v["d_2"].cast<Scalar>();
         sigma_3 = v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>();
@@ -38,7 +38,7 @@ struct PairParametersColloid : public PairParameters
     pybind11::dict asDict()
         {
         pybind11::dict v;
-        v["hamaker"] = hamaker;
+        v["A"] = A;
         v["d_1"] = d_1;
         v["d_2"] = d_2;
         v["sigma"] = std::cbrt(sigma_3);
@@ -47,7 +47,7 @@ struct PairParametersColloid : public PairParameters
         }
 #endif // __HIPCC__
 
-    Scalar hamaker;
+    Scalar A;
     Scalar d_1;
     Scalar d_2;
     Scalar sigma_3;
@@ -120,7 +120,7 @@ class PairEvaluatorColloid : public PairEvaluator
     DEVICE PairEvaluatorColloid(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
         : PairEvaluator(_rsq, _rcutsq)
         {
-        A = _params.hamaker;
+        A = _params.A;
         sigma_3 = _params.sigma_3;
         sigma_6 = _params.sigma_6;
         form = static_cast<interaction_type>(__scalar_as_int(_params.style));
