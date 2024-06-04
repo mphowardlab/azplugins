@@ -51,9 +51,11 @@ namespace detail
     {
 
 void export_PotentialPairHertz(pybind11::module&);
+void export_PotentialPairColloid(pybind11::module&);
 
 #ifdef ENABLE_HIP
 void export_PotentialPairHertzGPU(pybind11::module&);
+void export_PotentialPairColloidGPU(pybind11::module&);
 #endif // ENABLE_HIP
 
     } // namespace detail
@@ -66,8 +68,10 @@ PYBIND11_MODULE(_azplugins, m)
     using namespace hoomd::azplugins::detail;
 
     export_PotentialPairHertz(m);
+    export_PotentialPairColloid(m);
 
 #ifdef ENABLE_HIP
     export_PotentialPairHertzGPU(m);
+    export_PotentialPairColloidGPU(m);
 #endif // ENABLE_HIP
     }
