@@ -62,6 +62,8 @@ potential_tests += [
 ]
 # PerturbedLennardJones
 potential_tests += [
+    # test the calculation of force and potential
+    # test when it's in the wca part, no potential shifting
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
         {'epsilon': 2.0, 'sigma': 1.05, 'lam': 0.0},
@@ -71,6 +73,7 @@ potential_tests += [
         2.0,
         45.7143,
     ),
+    # change lambda to check for shifting of energy (force stays the same)
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
         {'epsilon': 2.0, 'sigma': 1.05, 'lam': 0.5},
@@ -80,6 +83,8 @@ potential_tests += [
         1.0,
         45.7143,
     ),
+    # change sigma so that now the particle is in the LJ region
+    # when lambda = 0, then the potential and force are zero
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
         {'epsilon': 2.0, 'sigma': 0.5, 'lam': 0.0},
@@ -89,6 +94,7 @@ potential_tests += [
         0,
         0,
     ),
+    # partially switch on the LJ with lambda = 0.5
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
         {'epsilon': 2.0, 'sigma': 0.5, 'lam': 0.5},
@@ -98,6 +104,9 @@ potential_tests += [
         -0.0460947,
         -0.260291,
     ),
+    # test that energy shifting works (bump up sigma so that at
+    # rcut = 3 the shift is reasonable)
+    # check wca is shifted first
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
         {'epsilon': 2.0, 'sigma': 1.05, 'lam': 0.5},
@@ -107,6 +116,7 @@ potential_tests += [
         1.00734,
         45.7143,
     ),
+    # and check lj
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
         {'epsilon': 2.0, 'sigma': 0.85, 'lam': 0.5},
@@ -116,6 +126,8 @@ potential_tests += [
         -0.806849,
         -2.81197,
     ),
+    # test the cases where the potential should be zero
+    # outside cutoff
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
         {'epsilon': 1.0, 'sigma': 1.0, 'lam': 0.5},
@@ -125,6 +137,7 @@ potential_tests += [
         0,
         0,
     ),
+    # inside cutoff but epsilon = 0
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
         {'epsilon': 0.0, 'sigma': 1.0, 'lam': 0.5},
