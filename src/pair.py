@@ -23,9 +23,7 @@ class Colloid(pair.Pair):
             'params',
             'particle_types',
             # TypeParameterDict needs updated still
-            TypeParameterDict(
-                A=float, a1=float, a2=float, sigma=float, style=int, len_keys=2
-            ),
+            TypeParameterDict(A=float, a1=float, a2=float, sigma=float, len_keys=2),
         )
         self._add_typeparam(params)
 

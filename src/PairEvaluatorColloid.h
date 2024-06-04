@@ -23,7 +23,7 @@ namespace detail
 struct PairParametersColloid : public PairParameters
     {
 #ifndef __HIPCC__
-    PairParametersColloid() : A(0), a1(0), a2(0), sigma_3(0), style(0) { }
+    PairParametersColloid() : A(0), a1(0), a2(0), sigma_3(0) { }
 
     PairParametersColloid(pybind11::dict v, bool managed = false)
         {
@@ -31,7 +31,6 @@ struct PairParametersColloid : public PairParameters
         a1 = v["a1"].cast<Scalar>();
         a2 = v["a2"].cast<Scalar>();
         sigma_3 = v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>();
-        style = v["style"].cast<Scalar>();
         }
 
     pybind11::dict asDict()
@@ -41,7 +40,6 @@ struct PairParametersColloid : public PairParameters
         v["a1"] = a1;
         v["a2"] = a2;
         v["sigma"] = std::cbrt(sigma_3);
-        v["style"] = style;
         return v;
         }
 #endif // __HIPCC__
@@ -50,7 +48,6 @@ struct PairParametersColloid : public PairParameters
     Scalar a1;
     Scalar a2;
     Scalar sigma_3;
-    Scalar style;
     }
 #if HOOMD_LONGREAL_SIZE == 32
     __attribute__((aligned(16)));
@@ -121,7 +118,6 @@ class PairEvaluatorColloid : public PairEvaluator
         A = _params.A;
         sigma_3 = _params.sigma_3;
         sigma_6 = sigma_3 * sigma_3;
-        form = static_cast<interaction_type>(__scalar_as_int(_params.style));
         ai = _params.a1;
         aj = _params.a2;
         }
@@ -273,7 +269,8 @@ class PairEvaluatorColloid : public PairEvaluator
         // compute the force divided by r in force_divr
         if (rsq < rcutsq && A != 0)
             {
-            if (form == SOLVENT_SOLVENT)
+            // if (form == SOLVENT_SOLVENT)
+            if (ai == 0 && aj == 0)
                 {
                 pair_eng = computeSolventSolvent<true>(force_divr, rsq);
                 if (energy_shift)
@@ -281,15 +278,8 @@ class PairEvaluatorColloid : public PairEvaluator
                     pair_eng -= computeSolventSolvent<false>(force_divr, rcutsq);
                     }
                 }
-            else if (form == COLLOID_SOLVENT)
-                {
-                pair_eng = computeColloidSolvent<true>(force_divr, rsq);
-                if (energy_shift)
-                    {
-                    pair_eng -= computeColloidSolvent<false>(force_divr, rcutsq);
-                    }
-                }
-            else if (form == COLLOID_COLLOID)
+            // else if (form == COLLOID_COLLOID)
+            else if (ai != 0 && aj != 0)
                 {
                 pair_eng = computeColloidColloid<true>(force_divr, rsq);
                 if (energy_shift)
@@ -297,11 +287,15 @@ class PairEvaluatorColloid : public PairEvaluator
                     pair_eng -= computeColloidColloid<false>(force_divr, rcutsq);
                     }
                 }
+            // else if (form == COLLOID_SOLVENT)
             else
                 {
-                return false;
+                pair_eng = computeColloidSolvent<true>(force_divr, rsq);
+                if (energy_shift)
+                    {
+                    pair_eng -= computeColloidSolvent<false>(force_divr, rcutsq);
+                    }
                 }
-
             return true;
             }
         else
