@@ -49,6 +49,8 @@ namespace azplugins
     {
 namespace detail
     {
+void export_ConstantFlow(pybind11::module&);
+void export_ParabolicFlow(pybind11::module&);
 
 void export_PotentialBondDoubleWell(pybind11::module&);
 
@@ -71,8 +73,10 @@ PYBIND11_MODULE(_azplugins, m)
     {
     using namespace hoomd::azplugins::detail;
 
-    export_PotentialBondDoubleWell(m);
+    export_ConstantFlow(m);
+    export_ParabolicFlow(m);
 
+    export_PotentialBondDoubleWell(m);
     export_PotentialPairHertz(m);
     export_PotentialPairPerturbedLennardJones(m);
 
