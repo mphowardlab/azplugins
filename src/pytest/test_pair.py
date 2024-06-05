@@ -212,7 +212,12 @@ def test_energy_and_force(
 ):
     """Test energy and force evaluation."""
     # make 2 particle test configuration
-    sim = simulation_factory(two_particle_snapshot_factory(d=potential_test.distance))
+    r_cut = potential_test.r_cut
+    r_buff = 0.4
+    L_domain_min = 2 * (r_cut + r_buff)
+    sim = simulation_factory(
+        two_particle_snapshot_factory(d=potential_test.distance, L=1.1 * L_domain_min)
+    )
 
     # setup dummy NVE integrator
     integrator = hoomd.md.Integrator(dt=0.001)
@@ -221,7 +226,7 @@ def test_energy_and_force(
 
     # setup pair potential
     potential = potential_test.potential(
-        nlist=hoomd.md.nlist.Cell(buffer=0.4),
+        nlist=hoomd.md.nlist.Cell(buffer=r_buff),
         default_r_cut=potential_test.r_cut,
         mode='shift' if potential_test.shift else 'none',
     )
