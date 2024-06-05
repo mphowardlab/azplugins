@@ -49,10 +49,10 @@ struct BondParametersDoubleWell : public BondParameters
         }
 #endif
 
-    Scalar r_1; //!<
-    Scalar r_diff;
-    Scalar U_1;    //!<
-    Scalar U_tilt; //!<
+    Scalar r_1;    //!< location of the potential local maximum
+    Scalar r_diff; //!< difference between r_1 and r_0 (location of first minimum)
+    Scalar U_1;    //!< Potential Potential maximum energy barrier between minima
+    Scalar U_tilt; //!< tunes the energy offset (tilt) between minima
     }
 #if HOOMD_LONGREAL_SIZE == 32
     __attribute__((aligned(16)));
@@ -65,21 +65,22 @@ struct BondParametersDoubleWell : public BondParameters
  * This bond potential follows the functional form
  * \f{eqnarray*}
  *
- * V_{\rm{DW}}(r) = \frac{V_{max}-c/2}{b^4} \left[ \left( r - a/2 \right)^2 -b^2 \right]^2 +
- * \frac{c}{2b}\left(r-a/2\right)+c/2
+ * U(r)  =  U_1\left[\frac{\left((r-r_1)^2-(r_1-r_0)^2\right)^2}{\left(r_1-r_0\right)^4}\right]
+ *  +
+ * U_{\rm{tilt}}\left[1+\frac{r-r_1}{r_1-r_0}-\frac{\left((r-r_1)^2-(r_1-r_0)^2\right)^2}{\left(r_1-r_0\right)^4}\right]
  *
  * \f}
- * which has two minima at r = (a/2 +/- b), seperated by a maximum at a/2 of height U_1 when c is
- * set to zero.
+ * which has two minima at r = r_0 and r = 2 * r_1 - r_0, seperated by a maximum
+ * at r_1 of height U_1 when U_tilt is set to zero.
  *
- * The parameter a tunes the location of the maximal value and the parameter b tunes the distance of
- * the two maxima from each other.  This potential is useful to model bonds which can be either
- * mechanically or thermally "activated" into a effectively longer state. The value of U_1 can be
- * used to tune the height of the energy barrier in between the two states.
+ * The parameter r_1 tunes the location of the maximal value and the parameter r_0 tunes the
+ * distance of the two minima from each other.  This potential is useful to model bonds which can be
+ * either mechanically or thermally "activated" into a effectively longer state. The value of U_1
+ * can be used to tune the height of the energy barrier in between the two states.
  *
- * If c is non zero, the relative energy of the minima can be tuned, where c is the energy of the
- * second minima, the first minima value is at zero. This  causes a small shift in the location of
- * the minima and the maxima, because of the added linear term.
+ * If U_tilt is non zero, the relative energy of the minima can be tuned, where 2 * U_tilt
+ * is the energy of the second minima, the first minima value is at zero. This causes a
+ * small shift in the location of the minima and the maxima, because of the added linear term.
  */
 class BondEvaluatorDoubleWell : public BondEvaluator
     {
@@ -119,10 +120,10 @@ class BondEvaluatorDoubleWell : public BondEvaluator
 #endif
 
     private:
-    Scalar r_1;    //!< a parameter
-    Scalar r_diff; //!< U_1 parameter
-    Scalar U_1;    //!< b parameter
-    Scalar U_tilt; //!< c parameter
+    Scalar r_1;    //!< r_1 parameter
+    Scalar r_diff; //!< r_diff parameter
+    Scalar U_1;    //!< U_1 parameter
+    Scalar U_tilt; //!< U_tilt parameter
     };
 
     } // end namespace detail

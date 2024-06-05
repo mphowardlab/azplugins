@@ -22,35 +22,36 @@ class DoubleWell(_Bond):
 
     .. math::
 
-        U(r)  =  \frac{V_{max}-c/2}{b^4} \left[
-            \left( r - a/2 \right)^2 - b^2 \right]^2
-            +\frac{c}{2b}(r - a/2) + c/2
+        U(r)  =  U_1\left[\frac{\left((r-r_1)^2-(r_1-r_0)^2\right)^2}
+                    {\left(r_1-r_0\right)^4}\right]
+                + U_{\rm{tilt}}\left[1+\frac{r-r_1}{r_1-r_0}-
+                    \frac{\left((r-r_1)^2-(r_1-r_0)^2\right)^2}
+                        {\left(r_1-r_0\right)^4}\right]
 
     Attributes:
         params (TypeParameter[``bond type``, dict]):
             The parameter of the double-well bonds for each particle type.
             The dictionary has the following keys:
 
-            * ``V_max`` (`float`, **required**) - Potential maximum energy
-                barrier between the two minima at ``a/2`` for c=0 (in energy
-                units)
+            * ``r_0`` (`float`, **required**) - The location of the
+                first potential minimum( in distance units)
 
-            * ``a`` (`float`, **required**) - twice the location of the
-                potential maximum, maximum is at ``a/2`` for c=0 ( in distance
-                units)
+            * ``r_1`` (`float`, **required**) - The location of the
+                local potential maximum( in distance units)
 
-            * ``b`` (`float`, **required**) - tunes the distance between the
-                potential minima at ``(a/2 +/- b)`` for c=0 (in distance units)
+            * ``U_1`` (`float`, **required**) - Potential maximum energy
+                barrier between the two minima at ``r_1`` for ``U_tilt=0`` (in
+                energy units)
 
-            * ``c`` (`float`, **required**) -tunes the energy offset between the
-                two potential minima values, i.e. it tilts the potential (in
-                energy units). The default value of c is zero.
+            * ``U_tilt`` (`float`, **required**) -tunes the energy offset
+                between the two potential minima values, i.e. it tilts the
+                potential (in energy units). The default value of c is zero.
 
     Examples::
 
         dw = azplugins.bond.DoubleWell()
-        dw.params['A-A'] = dict(V_max=2.0, a=2.5, b=0.5)
-        dw.params['A-A'] = dict(V_max=2.0, a=2.5, b=0.2, c=1.0)
+        dw.params['A-A'] = dict(r_0=0.5, r_1=2.5, U_1=5.0, U_tilt=0.0)
+        dw.params['A-A'] = dict(r_0=1.0, r_1=2.0, U_1=1.0, U_tilt=0.5)
     """
 
     _cpp_class_name = 'PotentialBondDoubleWell'
