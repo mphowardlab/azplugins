@@ -50,6 +50,7 @@ namespace detail
     {
 void export_ConstantFlow(pybind11::module&);
 void export_ParabolicFlow(pybind11::module&);
+
 void export_PotentialPairHertz(pybind11::module&);
 void export_PotentialPairPerturbedLennardJones(pybind11::module&);
 

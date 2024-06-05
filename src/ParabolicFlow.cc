@@ -15,8 +15,10 @@ void export_ParabolicFlow(pybind11::module& m)
     namespace py = pybind11;
     py::class_<ParabolicFlow, std::shared_ptr<ParabolicFlow>>(m, "ParabolicFlow")
         .def(py::init<Scalar, Scalar>())
-        .def_property("mean_velocity", &ParabolicFlow::getVelocity, &ParabolicFlow::setVelocity)
-        .def_property("separation", &ParabolicFlow::getLength, &ParabolicFlow::setLength);
+        .def_property("mean_velocity",
+                      &ParabolicFlow::getMeanVelocity,
+                      &ParabolicFlow::setMeanVelocity)
+        .def_property("separation", &ParabolicFlow::getSeparation, &ParabolicFlow::setSeparation);
     }
     } // namespace detail
     } // namespace azplugins

@@ -30,7 +30,11 @@ class ConstantFlow
     /*!
      *\param U_ Flow field
      */
-    ConstantFlow(Scalar3 U_) : U(U_) { }
+    ConstantFlow(Scalar3 velocity)
+        {
+        setVelocity(velocity);
+        }
+
     //! Evaluate the flow field
     /*!
      * \param r position to evaluate flow

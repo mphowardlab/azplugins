@@ -21,7 +21,7 @@ class ConstantFlow(FlowField):
     r"""Constant flow profile.
 
     Args:
-        U (tuple): Flow field.
+        velocity (tuple): Flow field.
 
     This flow corresponds to a constant vector field, e.g., a constant
     backflow in bulk or a plug flow in a channel. The flow field is
@@ -29,7 +29,7 @@ class ConstantFlow(FlowField):
 
     Example::
 
-        u = azplugins.flow.constant(velocity=(1,0,0))
+        u = hoomd.azplugins.flow.ConstantFlow(velocity=(1,0,0))
 
     """
 
@@ -52,22 +52,22 @@ class ParabolicFlow(FlowField):
     r"""Parabolic flow profile between parallel plates.
 
     Args:
-         U (float): Mean velocity
-         H (float): Channel half-width
+         mean_velocity (float): Mean velocity.
+         separation (float): Separation between parallel plates defining the flow field.
 
     This flow field generates the parabolic flow profile in a slit geomtry:
 
     .. math::
 
-        u_x(z) = \frac{3}{2}U \left[1 - \left(\frac{z}{H}\right)^2 \right]
+        u_x(y) = \frac{3}{2}U \left[1 - \left(\frac{y}{H}\right)^2 \right]
 
-    The flow is along *x* with the gradient in *z*. The distance between the
-    two plates is :math:`2H`, and the channel is centered around :math:`z=0`.
-    The mean flow velocity is *U*.
+    The flow is along *x* with the gradient in *y*. The ``separation`` between the
+    two plates is :math:`2H`, and the channel is centered around :math:`y=0`.
+    The ``mean_velocity`` is *U*.
 
     Example::
 
-        u = hoomd.azplugins.flow.parabolic(mean_velocity = 2.0, separation = 0.5)
+        u = hoomd.azplugins.flow.ParabolicFlow(mean_velocity=2.0, separation=0.5)
 
     Note:
         Creating a flow profile does **not** imply anything about the simulation
