@@ -15,8 +15,8 @@
 #endif
 
 #include "hoomd/RandomNumbers.h"
-#include <pybind11/pybind11.h>
 #include "hoomd/md/TwoStepLangevinBase.h"
+#include <pybind11/pybind11.h>
 
 #include "RNGIdentifiers.h"
 namespace hoomd
@@ -28,8 +28,7 @@ namespace azplugins
 /*!
  * \note Only translational motion is supported by this integrator.
  */
-template<class FlowField>
-class PYBIND11_EXPORT TwoStepBrownianFlow : public md::TwoStepLangevinBase
+template<class FlowField> class PYBIND11_EXPORT TwoStepBrownianFlow : public md::TwoStepLangevinBase
     {
     public:
     //! Constructor
@@ -84,6 +83,10 @@ class PYBIND11_EXPORT TwoStepBrownianFlow : public md::TwoStepLangevinBase
     /*!
      * \param noiseless If true, do not apply a random diffusive force
      */
+    void setNoiseless(bool noiseless)
+        {
+        m_noiseless = noiseless;
+        }
 
     protected:
     std::shared_ptr<FlowField> m_flow_field; //!< Flow field functor
@@ -136,10 +139,11 @@ void TwoStepBrownianFlow<FlowField>::integrateStepOne(unsigned int timestep)
             coeff = Scalar(0.0);
 
         // draw random force
-        hoomd::RandomGenerator rng(hoomd::Seed(hoomd::azplugins::detail::RNGIdentifier::TwoStepBrownianFlow,
-                                   timestep,
-                                   seed),
-                                   hoomd::Counter(h_tag.data[idx]));
+        hoomd::RandomGenerator rng(
+            hoomd::Seed(hoomd::azplugins::detail::RNGIdentifier::TwoStepBrownianFlow,
+                        timestep,
+                        seed),
+            hoomd::Counter(h_tag.data[idx]));
         hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
         const Scalar3 random_force = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 
@@ -165,18 +169,19 @@ void export_TwoStepBrownianFlow(pybind11::module& m, const std::string& name)
     namespace py = pybind11;
     typedef TwoStepBrownianFlow<FlowField> BrownianFlow;
 
-    py::class_<BrownianFlow, std::shared_ptr<BrownianFlow>>(m,
-                                                            name.c_str(),
-                                                            py::base<hoomd::md::TwoStepLangevinBase>())
+    py::class_<BrownianFlow, std::shared_ptr<BrownianFlow>>(
+        m,
+        name.c_str(),
+        py::base<hoomd::md::TwoStepLangevinBase>())
         .def(py::init<std::shared_ptr<SystemDefinition>,
                       std::shared_ptr<ParticleGroup>,
                       std::shared_ptr<Variant>,
                       std::shared_ptr<FlowField>,
                       bool>())
-        .def("getFlowField", &BrownianFlow::getFlowField)
-        .def("getNoiseless", &BrownianFlow::getNoiseless);
+        .def_property_readonly("flow_field", &BrownianFlow::getFlowField)
+        .def_property("noiseless", &BrownianFlow::getNoiseless, &BrownianFlow::setNoiseless);
     }
-    } // end namespace detail
-    } // end namespace azplugins
-    } // end namespace hoomd
+    }  // end namespace detail
+    }  // end namespace azplugins
+    }  // end namespace hoomd
 #endif // AZPLUGINS_TWO_STEP_BROWNIAN_FLOW_H_
