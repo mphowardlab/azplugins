@@ -50,11 +50,15 @@ namespace azplugins
 namespace detail
     {
 
+void export_PotentialBondDoubleWell(pybind11::module&);
+
 void export_PotentialPairColloid(pybind11::module&);
 void export_PotentialPairHertz(pybind11::module&);
 void export_PotentialPairPerturbedLennardJones(pybind11::module&);
 
 #ifdef ENABLE_HIP
+void export_PotentialBondDoubleWellGPU(pybind11::module&);
+
 void export_PotentialPairColloidGPU(pybind11::module&);
 void export_PotentialPairHertzGPU(pybind11::module&);
 void export_PotentialPairPerturbedLennardJonesGPU(pybind11::module&);
@@ -69,11 +73,15 @@ PYBIND11_MODULE(_azplugins, m)
     {
     using namespace hoomd::azplugins::detail;
 
+    export_PotentialBondDoubleWell(m);
+
     export_PotentialPairColloid(m);
     export_PotentialPairHertz(m);
     export_PotentialPairPerturbedLennardJones(m);
 
 #ifdef ENABLE_HIP
+    export_PotentialBondDoubleWellGPU(m);
+
     export_PotentialPairColloidGPU(m);
     export_PotentialPairHertzGPU(m);
     export_PotentialPairPerturbedLennardJonesGPU(m);
