@@ -32,6 +32,8 @@ ignore = [
 
 "__init__.py" = ["F401", # __init__.py import submodules for use by the package importer.
 ]
+"*/pytest/*.py" = ["PLR2004", # allow "magic numbers" in tests
+]
 
 [lint.pydocstyle]
 convention = "google"

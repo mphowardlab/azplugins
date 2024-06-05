@@ -10,19 +10,45 @@
 #ifndef AZPLUGINS_PARABOLIC_FLOW_H_
 #define AZPLUGINS_PARABOLIC_FLOW_H_
 
+#ifndef __HIPCC__
+#include <pybind11/pybind11.h>
+#endif
+
 #include "hoomd/HOOMDMath.h"
 
-#ifdef __HIPCC__
+#ifndef __HIPCC__
 #define HOSTDEVICE __host__ __device__
 #else
 #define HOSTDEVICE
-#include <pybind11/pybind11.h>
+#endif // __HIPCC__
+
+#ifndef PYBIND11_EXPORT
+#define PYBIND11_EXPORT __attribute__((visibility("default")))
 #endif
+
 namespace hoomd
     {
 namespace azplugins
     {
-class ParabolicFlow
+
+//! Unidirectional parabolic flow field
+/*!
+ * 1d flow along the \a x axis. The geometry is a parallel plate channel with
+ * the plates centered around \f$ y = 0 \f$ and positioned at \f$ \pm L \f$.
+ * The \a y axis is the vorticity direction and periodic. The flow profile in
+ * this geometry is then
+ *
+ * \f[
+ * u_x(y) = \frac{3}{2} U \left[1 - \left(\frac{y}{L}\right)^2 \right]
+ * \f]
+ *
+ * Here, \f$ mean_velocity \f$ is the mean velocity, which is related to the pressure drop
+ * and viscosity.
+ *
+ * \note The user must properly establish no flux of particles through the channel
+ *       walls through an appropriate wall potential.
+ */
+class PYBIND11_EXPORT ParabolicFlow
     {
     public:
     //! Construct parabolic flow profile
@@ -30,7 +56,11 @@ class ParabolicFlow
      * \param U_ Mean velocity
      * \param L_ Separation
      */
-    ParabolicFlow(Scalar U_, Scalar L_) : Umax(Scalar(1.5) * U_), L(Scalar(0.5) * L_) { }
+    ParabolicFlow(Scalar mean_velocity, Scalar separation)
+        {
+        setMeanVelocity(mean_velocity);
+        setSeparation(separation);
+        }
 
     //! Evaluate the flow field
     /*!
@@ -38,26 +68,26 @@ class ParabolicFlow
      */
     HOSTDEVICE Scalar3 operator()(const Scalar3& r) const
         {
-        const Scalar zr = (r.z / L);
-        return make_scalar3(Umax * (1. - zr * zr), 0.0, 0.0);
+        const Scalar yr = (r.y / L);
+        return make_scalar3(Umax * (1. - yr * yr), 0.0, 0.0);
         }
 
-    HOSTDEVICE Scalar getVelocity() const
+    HOSTDEVICE Scalar getMeanVelocity() const
         {
-        return Scalar(0.6666666667) * Umax;
+        return Umax / Scalar(1.5);
         }
 
-    HOSTDEVICE void setVelocity(const Scalar& U)
+    HOSTDEVICE void setMeanVelocity(const Scalar& U)
         {
         Umax = Scalar(1.5) * U;
         }
 
-    HOSTDEVICE Scalar getLength() const
+    HOSTDEVICE Scalar getSeparation() const
         {
         return Scalar(2.0) * L;
         }
 
-    HOSTDEVICE void setLength(const Scalar& L_)
+    HOSTDEVICE void setSeparation(const Scalar& L_)
         {
         L = Scalar(0.5) * L_;
         }
@@ -67,19 +97,10 @@ class ParabolicFlow
     Scalar L;    //!< Full width
     };
 
-namespace detail
-    {
-void export_ParabolicFlow(pybind11::module& m)
-    {
-    namespace py = pybind11;
-    py::class_<ParabolicFlow, std::shared_ptr<ParabolicFlow>>(m, "ParabolicFlow")
-        .def(py::init<Scalar, Scalar>())
-        .def_property("mean_velocity", &ParabolicFlow::getVelocity, &ParabolicFlow::setVelocity)
-        .def_property("separation", &ParabolicFlow::getLength, &ParabolicFlow::setLength);
-    }
-    } // namespace detail
     } // namespace azplugins
     } // namespace hoomd
+
 #undef HOSTDEVICE
+#undef PYBIND11_EXPORT
 
 #endif // AZPLUGINS_PARABOLIC_FLOW_H_
