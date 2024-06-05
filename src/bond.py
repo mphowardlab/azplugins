@@ -45,7 +45,7 @@ class DoubleWell(_Bond):
 
             * ``U_tilt`` (`float`, **required**) -tunes the energy offset
                 between the two potential minima values, i.e. it tilts the
-                potential (in energy units). The default value of c is zero.
+                potential (in energy units). The default value of U_tilt is zero.
 
     Examples::
 
