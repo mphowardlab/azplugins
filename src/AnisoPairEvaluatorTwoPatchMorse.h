@@ -5,6 +5,10 @@
 #ifndef AZPLUGINS_ANISO_PAIR_EVALUATOR_TWO_PATCH_MORSE_H_
 #define AZPLUGINS_ANISO_PAIR_EVALUATOR_TWO_PATCH_MORSE_H_
 
+#ifndef __HIPCC__
+#include <string>
+#endif // __HIPCC__
+
 #include "AnisoPairEvaluator.h"
 
 #include "hoomd/VectorMath.h"
@@ -23,20 +27,21 @@ namespace azplugins
     {
 namespace detail
     {
+
 //! Two-patch Morse parameters
 struct AnisoPairParametersTwoPatchMorse : public AnisoPairParameters
     {
 #ifndef __HIPCC__
     AnisoPairParametersTwoPatchMorse()
-        : Mdeps(0), Mrinv(0), req(0), omega(0), alpha(0), repulsion(false)
+        : M_d(0), M_rinv(1.0), r_eq(0), omega(0), alpha(0), repulsion(false)
         {
         }
 
     AnisoPairParametersTwoPatchMorse(pybind11::dict v, bool managed = false)
         {
-        Mdeps = v["Mdeps"].cast<Scalar>();
-        Mrinv = Scalar(1.0) / v["Mr"].cast<Scalar>();
-        req = v["req"].cast<Scalar>();
+        M_d = v["M_d"].cast<Scalar>();
+        M_rinv = Scalar(1.0) / v["M_r"].cast<Scalar>();
+        r_eq = v["r_eq"].cast<Scalar>();
         omega = v["omega"].cast<Scalar>();
         alpha = v["alpha"].cast<Scalar>();
         repulsion = v["repulsion"].cast<bool>();
@@ -45,9 +50,9 @@ struct AnisoPairParametersTwoPatchMorse : public AnisoPairParameters
     pybind11::dict toPython()
         {
         pybind11::dict v;
-        v["Mdeps"] = Mdeps;
-        v["Mr"] = Scalar(1.0) / Mrinv;
-        v["req"] = req;
+        v["M_d"] = M_d;
+        v["M_r"] = Scalar(1.0) / M_rinv;
+        v["r_eq"] = r_eq;
         v["omega"] = omega;
         v["alpha"] = alpha;
         v["repulsion"] = repulsion;
@@ -55,9 +60,9 @@ struct AnisoPairParametersTwoPatchMorse : public AnisoPairParameters
         }
 #endif // __HIPCC__
 
-    Scalar Mdeps;   //<! Controls the well depth
-    Scalar Mrinv;   //<! Controls the well steepness
-    Scalar req;     //<! Controls the well position
+    Scalar M_d;     //<! Controls the well depth
+    Scalar M_rinv;  //<! Controls the well steepness
+    Scalar r_eq;    //<! Controls the well position
     Scalar omega;   //<! Controls the patch steepness
     Scalar alpha;   //<! Controls the patch width (lower is greater coverage)
     bool repulsion; //<! Whether to include Morse repulsion
@@ -107,8 +112,8 @@ class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
                                            Scalar4& _quat_j,
                                            Scalar _rcutsq,
                                            const param_type& _params)
-        : AnisoPairEvaluator(_dr, _quat_i, _quat_j, _rcutsq), Mdeps(_params.Mdeps),
-          Mrinv(_params.Mrinv), req(_params.req), omega(_params.omega), alpha(_params.alpha),
+        : AnisoPairEvaluator(_dr, _quat_i, _quat_j, _rcutsq), M_d(_params.M_d),
+          M_rinv(_params.M_rinv), r_eq(_params.r_eq), omega(_params.omega), alpha(_params.alpha),
           repulsion(_params.repulsion)
         {
         }
@@ -146,15 +151,15 @@ class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
         Scalar e = Scalar(0.0);
 
         //! Morse potential
-        Scalar UMorse = Scalar(-1.0) * Mdeps;
+        Scalar UMorse = Scalar(-1.0) * M_d;
         Scalar dUMorse_dr = Scalar(0.0);
-        //! Purely attractive when r > req
-        if (r > req || repulsion)
+        //! Purely attractive when r > r_eq
+        if (r > r_eq || repulsion)
             {
-            Scalar Morse_exp = fast::exp(-(r - req) * Mrinv);
+            Scalar Morse_exp = fast::exp(-(r - r_eq) * M_rinv);
             Scalar one_minus_exp = Scalar(1.0) - Morse_exp;
-            UMorse = Mdeps * (one_minus_exp * one_minus_exp - Scalar(1.0));
-            dUMorse_dr = Scalar(2.0) * Mdeps * Mrinv * Morse_exp * one_minus_exp;
+            UMorse = M_d * (one_minus_exp * one_minus_exp - Scalar(1.0));
+            dUMorse_dr = Scalar(2.0) * M_d * M_rinv * Morse_exp * one_minus_exp;
             }
 
         //! Patch orientation for particle i
@@ -192,11 +197,11 @@ class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
             Scalar rcut = fast::sqrt(rcutsq);
 
             //! Preprocess Morse parameters
-            Scalar Morse_exp_shift = fast::exp(-(rcut - req) * Mrinv);
+            Scalar Morse_exp_shift = fast::exp(-(rcut - r_eq) * M_rinv);
             Scalar one_minus_exp_shift = Scalar(1.0) - Morse_exp_shift;
 
             //! Shift by UMorse
-            Scalar UMorse_shift = Mdeps * (one_minus_exp_shift * one_minus_exp_shift - Scalar(1.0));
+            Scalar UMorse_shift = M_d * (one_minus_exp_shift * one_minus_exp_shift - Scalar(1.0));
 
             e -= UMorse_shift * Omega_i * Omega_j;
             }
@@ -218,9 +223,9 @@ class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
 #endif
 
     private:
-    Scalar Mdeps;   //<! Controls the well depth
-    Scalar Mrinv;   //<! Controls the well steepness
-    Scalar req;     //<! Controls the well position
+    Scalar M_d;     //<! Controls the well depth
+    Scalar M_rinv;  //<! Controls the well steepness
+    Scalar r_eq;    //<! Controls the well position
     Scalar omega;   //<! Controls the patch steepness
     Scalar alpha;   //<! Controls the patch width (lower is greater coverage)
     bool repulsion; //<! Whether to include Morse repulsion

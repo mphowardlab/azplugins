@@ -146,12 +146,12 @@ class PerturbedLennardJones(pair.Pair):
 
 
 class TwoPatchMorse(pair.aniso.AnisotropicPair):
-    r"""TwoPatchMorse potential.
+    r"""Two-patch Morse potential.
 
     Args:
         nlist (hoomd.md.nlist.NeighborList): Neighbor list.
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
-        mode (str): Energy shifting/smoothing mode.
+        mode (str): Energy shifting mode.
 
     :py:class:`TwoPatchMorse` is a Morse potential which is modulated by an
     orientation-dependent function.
@@ -175,7 +175,7 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
 
     The potential can be smoothed to zero force (making it purely attractive)
     when :math:`r < r_{\rm eq}` by making :math:`V_{\rm M}(r < r_{\rm eq}) = -M_d`
-    when the option  *repulsion* is ``False``.
+    when the option  ``repulsion`` is ``False``.
 
     Here, :math:`vec{r}_{ij}` is the displacement vector between particles
     :math:`i` and :math:`j`, :math:`|\vec{r}_{ij}|` is the magnitude of
@@ -189,7 +189,7 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
 
         nl = hoomd.md.nlist.cell()
         m2p = azplugins.pair.TwoPatchMorse(r_cut=1.6, nlist=nl)
-        m2p.pair_coeff.set('A', 'A', Mdeps=1.8347, Mr=0.0302, req=1.0043,
+        m2p.pair_coeff.set('A', 'A', M_d=1.8347, M_r=0.0302, r_eq=1.0043,
         omega=20, alpha=0.50, repulsion=True)
 
     .. py:attribute:: params
@@ -197,12 +197,12 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
         The Two Patch Morse potential parameters. The dictionary has the following
         keys:
 
-        * ``Mdeps`` (`float`, **required**) - controls the depth of the
+        * ``M_d`` (`float`, **required**) - controls the depth of the
          potential well
           :math:`M_d` :math:`[\mathrm{energy}]`
-        * ``Mr`` (`float`, **required**) - controls the width of the
+        * ``M_r`` (`float`, **required**) - controls the width of the
          potential well :math:`M_r` :math:`[\mathrm{length}]`
-        * ``req`` (`float`, **required**) - controls the position of
+        * ``r_eq`` (`float`, **required**) - controls the position of
         the potential well :math:`r_eq` :math:`[\mathrm{length}]`
         * ``omega`` (`float`, **required**) - controls the steepness
         of the orientation depndence :math:`\omega`
@@ -226,9 +226,9 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
             'params',
             'particle_types',
             TypeParameterDict(
-                Mdeps=float,
-                Mr=float,
-                req=float,
+                M_d=float,
+                M_r=float,
+                r_eq=float,
                 omega=float,
                 alpha=float,
                 repulsion=bool,

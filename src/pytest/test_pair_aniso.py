@@ -24,9 +24,9 @@ potential_tests += [
     PotentialTestCase(
         hoomd.azplugins.pair.TwoPatchMorse,
         {
-            'Mdeps': 1.8341,
-            'Mr': 0.0302,
-            'req': 1.0043,
+            'M_d': 1.8341,
+            'M_r': 0.0302,
+            'r_eq': 1.0043,
             'omega': 5.0,
             'alpha': 0.40,
             'repulsion': False,
@@ -41,9 +41,9 @@ potential_tests += [
     PotentialTestCase(
         hoomd.azplugins.pair.TwoPatchMorse,
         {
-            'Mdeps': 1.8341,
-            'Mr': 0.0302,
-            'req': 1.0043,
+            'M_d': 1.8341,
+            'M_r': 0.0302,
+            'r_eq': 1.0043,
             'omega': 5.0,
             'alpha': 0.40,
             'repulsion': False,
@@ -59,9 +59,9 @@ potential_tests += [
     PotentialTestCase(
         hoomd.azplugins.pair.TwoPatchMorse,
         {
-            'Mdeps': 1.8341,
-            'Mr': 0.0302,
-            'req': 1.0043,
+            'M_d': 1.8341,
+            'M_r': 0.0302,
+            'r_eq': 1.0043,
             'omega': 5.0,
             'alpha': 0.40,
             'repulsion': False,
@@ -76,9 +76,9 @@ potential_tests += [
     PotentialTestCase(
         hoomd.azplugins.pair.TwoPatchMorse,
         {
-            'Mdeps': 0.0,
-            'Mr': 0.0302,
-            'req': 1.0043,
+            'M_d': 0.0,
+            'M_r': 0.0302,
+            'r_eq': 1.0043,
             'omega': 5.0,
             'alpha': 0.40,
             'repulsion': False,
@@ -87,6 +87,23 @@ potential_tests += [
         True,
         0,
         None,
+        None,
+    ),
+    # test no force
+    PotentialTestCase(
+        hoomd.azplugins.pair.TwoPatchMorse,
+        {
+            'M_d': 1.8341,
+            'M_r': 0.0302,
+            'r_eq': 1.1,
+            'omega': 100.0,
+            'alpha': 0.40,
+            'repulsion': False,
+        },
+        1.6,
+        False,
+        -1.8341,
+        (0, 0, 0),
         None,
     ),
 ]
