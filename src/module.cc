@@ -3,6 +3,7 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 #include <pybind11/pybind11.h>
+
 namespace hoomd
     {
 //! Plugins for soft matter
@@ -71,7 +72,6 @@ void export_PotentialPairPerturbedLennardJonesGPU(pybind11::module&);
 PYBIND11_MODULE(_azplugins, m)
     {
     using namespace hoomd::azplugins::detail;
-
 
     export_ConstantFlow(m);
     export_ParabolicFlow(m);
