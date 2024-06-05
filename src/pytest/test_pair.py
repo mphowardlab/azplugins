@@ -216,7 +216,7 @@ def test_energy_and_force(
     r_buff = 0.4
     L_domain_min = 2 * (r_cut + r_buff)
     sim = simulation_factory(
-        two_particle_snapshot_factory(d=potential_test.distance, L=1.1 * L_domain_min)
+        two_particle_snapshot_factory(d=potential_test.distance, L=2.1 * L_domain_min)
     )
 
     # setup dummy NVE integrator
