@@ -30,7 +30,8 @@ struct PairParametersColloid : public PairParameters
         A = v["A"].cast<Scalar>();
         a_1 = v["a_1"].cast<Scalar>();
         a_2 = v["a_2"].cast<Scalar>();
-        sigma_3 = v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>();
+        const Scalar sigma = v["sigma"].cast<Scalar>();
+        sigma_3 = sigma * sigma * sigma;
         }
 
     pybind11::dict asDict()
@@ -94,14 +95,6 @@ class PairEvaluatorColloid : public PairEvaluator
     public:
     //! Define the parameter type used by this pair potential evaluator
     typedef PairParametersColloid param_type;
-
-    //! Different forms for the (i,j) interaction
-    enum interaction_type
-        {
-        SOLVENT_SOLVENT = 0,
-        COLLOID_SOLVENT,
-        COLLOID_COLLOID
-        };
 
     //! Constructor
     /*!
@@ -268,7 +261,7 @@ class PairEvaluatorColloid : public PairEvaluator
         // compute the force divided by r in force_divr
         if (rsq < rcutsq && A != 0)
             {
-            // if (form == SOLVENT_SOLVENT)
+            // Solvent-Solvent interaction
             if (ai == 0 && aj == 0)
                 {
                 pair_eng = computeSolventSolvent<true>(force_divr, rsq);
@@ -277,7 +270,7 @@ class PairEvaluatorColloid : public PairEvaluator
                     pair_eng -= computeSolventSolvent<false>(force_divr, rcutsq);
                     }
                 }
-            // else if (form == COLLOID_COLLOID)
+            // Colloid-Colloid interaction
             else if (ai != 0 && aj != 0)
                 {
                 pair_eng = computeColloidColloid<true>(force_divr, rsq);
@@ -286,7 +279,7 @@ class PairEvaluatorColloid : public PairEvaluator
                     pair_eng -= computeColloidColloid<false>(force_divr, rcutsq);
                     }
                 }
-            // else if (form == COLLOID_SOLVENT)
+            // Colloid-Solvent interaction
             else
                 {
                 pair_eng = computeColloidSolvent<true>(force_divr, rsq);
@@ -313,10 +306,9 @@ class PairEvaluatorColloid : public PairEvaluator
 #endif
 
     protected:
-    Scalar A;              //!< Hamaker constant
-    Scalar sigma_3;        //!< Sigma^3
-    Scalar sigma_6;        //!< Sigma^6
-    interaction_type form; //!< Form of the interaction
+    Scalar A;       //!< Hamaker constant
+    Scalar sigma_3; //!< Sigma^3
+    Scalar sigma_6; //!< Sigma^6
 
     Scalar ai; //!< radius 1
     Scalar aj; //!< radius 2
