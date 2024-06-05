@@ -14,6 +14,7 @@ set(_${COMPONENT_NAME}_cu_sources
 # TODO: List all Python modules in python_files.
 set(python_files
     __init__.py
+    conftest.py
     bond.py
     pair.py
     )

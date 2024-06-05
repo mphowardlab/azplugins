@@ -33,19 +33,21 @@ class DoubleWell(_Bond):
             The parameter of the double-well bonds for each particle type.
             The dictionary has the following keys:
 
-            * ``r_0`` (`float`, **required**) - The location of the
-                first potential minimum( in distance units)
+            * ``r_0`` (`float`, **required**) - Location of the first potential
+              minimum :math:`r_0` when :math:`U_{\rm tilt} = 0`
+              :math:`[\mathrm{length}]`
 
-            * ``r_1`` (`float`, **required**) - The location of the
-                local potential maximum( in distance units)
+            * ``r_1`` (`float`, **required**) - Location of the potential local
+              maximum :math:`r_1` when :math:`U_{\rm tilt} = 0`
+              :math:`[\mathrm{length}]`
 
-            * ``U_1`` (`float`, **required**) - Potential maximum energy
-                barrier between the two minima at ``r_1`` for ``U_tilt=0`` (in
-                energy units)
+            * ``U_1`` (`float`, **required**) - Potential energy
+              :math:`U_1 = U(r_1)`
+              :math:`[\mathrm{energy}]`
 
-            * ``U_tilt`` (`float`, **required**) -tunes the energy offset
-                between the two potential minima values, i.e. it tilts the
-                potential (in energy units). The default value of U_tilt is zero.
+            * ``U_tilt`` (`float`, **required**) - Tunes the energy offset
+              :math:`U_{\rm tilt}` between the two potential minima values,
+              i.e. it tilts the potential :math:`[\mathrm{energy}]`
 
     Examples::
 

@@ -107,8 +107,8 @@ class BondEvaluatorDoubleWell : public BondEvaluator
         const Scalar y = Scalar(1.0) - x2;
         const Scalar y2 = y * y;
 
-        bond_eng = (U_1 * y2 + U_tilt * (Scalar(1.0) - x - y2));
-        force_divr = ((Scalar(4.0) * x * y * (U_tilt - U_1) - U_tilt) / r_diff) / r;
+        bond_eng = U_1 * y2 + U_tilt * (Scalar(1.0) - x - y2);
+        force_divr = (Scalar(4.0) * x * y * (U_tilt - U_1) - U_tilt) / (r_diff * r);
         return true;
         }
 

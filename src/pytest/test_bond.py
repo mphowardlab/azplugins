@@ -69,23 +69,6 @@ potential_tests += [
 ]
 
 
-@pytest.fixture(scope='session')
-def bonded_two_particle_snapshot_factory(two_particle_snapshot_factory):
-    """Fixture for a single bond."""
-
-    def make_snapshot(bond_types=None, **kwargs):
-        if bond_types is None:
-            bond_types = ['A-A']
-        snap = two_particle_snapshot_factory(**kwargs)
-        if snap.communicator.rank == 0:
-            snap.bonds.types = bond_types
-            snap.bonds.N = 1
-            snap.bonds.group[0] = [0, 1]
-        return snap
-
-    return make_snapshot
-
-
 @pytest.mark.parametrize(
     'potential_test', potential_tests, ids=lambda x: x.potential.__name__
 )
