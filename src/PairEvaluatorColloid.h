@@ -23,13 +23,13 @@ namespace detail
 struct PairParametersColloid : public PairParameters
     {
 #ifndef __HIPCC__
-    PairParametersColloid() : A(0), a1(0), a2(0), sigma_3(0) { }
+    PairParametersColloid() : A(0), a_1(0), a_2(0), sigma_3(0) { }
 
     PairParametersColloid(pybind11::dict v, bool managed = false)
         {
         A = v["A"].cast<Scalar>();
-        a1 = v["a1"].cast<Scalar>();
-        a2 = v["a2"].cast<Scalar>();
+        a_1 = v["a_1"].cast<Scalar>();
+        a_2 = v["a_2"].cast<Scalar>();
         sigma_3 = v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>() * v["sigma"].cast<Scalar>();
         }
 
@@ -37,16 +37,16 @@ struct PairParametersColloid : public PairParameters
         {
         pybind11::dict v;
         v["A"] = A;
-        v["a1"] = a1;
-        v["a2"] = a2;
+        v["a_1"] = a_1;
+        v["a_2"] = a_2;
         v["sigma"] = std::cbrt(sigma_3);
         return v;
         }
 #endif // __HIPCC__
 
     Scalar A;
-    Scalar a1;
-    Scalar a2;
+    Scalar a_1;
+    Scalar a_2;
     Scalar sigma_3;
     }
 #if HOOMD_LONGREAL_SIZE == 32
@@ -65,20 +65,19 @@ struct PairParametersColloid : public PairParameters
  *
  * The pair potential has three different coupling styles between particle types:
  *
- * - ``slv-slv`` gives the Lennard-Jones potential for coupling between pointlike particles,
+ * - Solvent-Solvent gives the Lennard-Jones potential for coupling between pointlike particles,
  *   with the standard \f$4 \varhamaker\f$ replaced by \f$A/36\f$.
- * - ``coll-slv`` gives the interaction between a pointlike particle and a colloid
- * - ``coll-coll`` gives the interaction between two colloids
+ * - Colloid-Solvent gives the interaction between a pointlike particle and a colloid
+ * - Colloid-Colloid gives the interaction between two colloids
  *
  * Refer to the work by <a href="http://dx.doi.org/10.1063/1.3578181">Grest et al.</a> for the
  * form of the colloid-solvent and colloid-colloid potentials, which are too cumbersome
  * to report on here.
  *
  * \warning
- * The ``coll-slv`` and ``coll-coll`` styles make use of the particle diameters to
- * compute the interactions. In the ``coll-slv`` case, the identity of the colloid
- * in the pair is inferred to be the larger of the two diameters. You must make
- * sure you appropriately set the particle diameters in the particle data.
+ * The diameter parameters are used to infer which case is used to compute
+ * the interactions. A particle diameter equal to 0 is used to infer
+ * a solvent interaction. You must make sure you appropriately set the diameter.
  *
  * The strength of all potentials is set by the Hamaker constant, represented here by the
  * symbol \f$A\f$. The other parameter \f$\sigma\f$ is the diameter of the particles that
@@ -86,9 +85,9 @@ struct PairParametersColloid : public PairParameters
  * \f$\sigma\f$). The parameters that are fed in are:
  *
  * - \a A - the Hamaker constant
+ * - \a a_1 - diameter of particle 1
+ * - \a a_2 - diameter of particle 2
  * - \a sigma_3 - \f$\sigma^3\f$
- * - \a sigma_6 - \f$\sigma^6\f$
- * - \a form - the style of the pair interaction as in int that is cast to the interaction_type
  */
 class PairEvaluatorColloid : public PairEvaluator
     {
@@ -118,8 +117,8 @@ class PairEvaluatorColloid : public PairEvaluator
         A = _params.A;
         sigma_3 = _params.sigma_3;
         sigma_6 = sigma_3 * sigma_3;
-        ai = _params.a1;
-        aj = _params.a2;
+        ai = _params.a_1;
+        aj = _params.a_2;
         }
 
     //! Computes the solvent-solvent interaction

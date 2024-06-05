@@ -11,7 +11,62 @@ from hoomd.md import pair
 
 
 class Colloid(pair.Pair):
-    r"""Colloid potential."""
+    r"""Colloid pair potential.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list.
+        r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+        mode (str): Energy shifting/smoothing mode.
+
+    :py:class:`Colloid` is the effective Lennard-Jones potential obtained by
+    integrating the Lennard-Jones potential between a point and a sphere or a
+    sphere and a sphere. The attractive part of the colloid-colloid pair
+    potential was derived originally by Hamaker, and the full potential by
+    `Everaers and Ejtehadi <http://doi.org/10.1103/PhysRevE.67.041710>`_.
+    A discussion of the application of these potentials to colloidal suspensions
+    can be found in `Grest et al. <http://dx.doi.org/10.1063/1.3578181>`_
+
+    The pair potential has three different coupling styles between particle types:
+
+    - Solvent-Solvent gives the Lennard-Jones potential for coupling between
+    pointlike particles
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray*}
+        V(r)  = & \frac{A}{36} \left[\left(\frac{\sigma}{r}\right)^{12}
+                  - \left(\frac{\sigma}{r}\right)^6 \right] & r < r_{\mathrm{cut}} \\
+              = & 0 & r \ge r_{\mathrm{cut}}
+        \end{eqnarray*}
+
+    - Colloid-Solvent gives the interaction between a pointlike particle and a colloid
+    - Colloid-Colloid gives the interaction between two colloids
+
+    Refer to the work by `Grest et al. <http://dx.doi.org/10.1063/1.3578181>`_ for the
+    form of the colloid-solvent and colloid-colloid potentials, which are too cumbersome
+    to report on here.
+
+    .. warning::
+        The diameter parameters are used to infer which case is used to compute
+        the interactions. A particle diameter equal to 0 is used to infer
+        a solvent interaction. You must make sure you appropriately set the
+        diameter.
+
+    Example::
+
+        nl = nlist.Cell()
+        colloid = pair.Colloid(default_r_cut=3.0, nlist=nl)
+        # standard Lennard-Jones for solvent-solvent
+        colloid.params[('S', 'S')] = dict(A=144.0, a_1=0, a_2=0 sigma=1.0)
+        # solvent-colloid
+        colloid.params[('S', 'C')] = dict(A=144.0, a_1=0, a_2=5.0 sigma=1.0)
+        colloid.r_cut[('S', 'C')] = 9.0
+        # colloid-colloid
+        colloid.params[('C', 'C')] = dict(A=40.0, a_1=5.0, a_2=5.0 sigma=1.0)
+        colloid.r_cut[('C', 'C')] = 10.581
+
+    """
 
     _ext_module = _azplugins
     _cpp_class_name = 'PotentialPairColloid'
@@ -23,7 +78,7 @@ class Colloid(pair.Pair):
             'params',
             'particle_types',
             # TypeParameterDict needs updated still
-            TypeParameterDict(A=float, a1=float, a2=float, sigma=float, len_keys=2),
+            TypeParameterDict(A=float, a_1=float, a_2=float, sigma=float, len_keys=2),
         )
         self._add_typeparam(params)
 
