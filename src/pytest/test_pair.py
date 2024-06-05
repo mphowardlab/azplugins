@@ -172,6 +172,15 @@ potential_tests += [
         -0.2757,
         -0.7107,
     ),
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {'A': 100.0, 'a_1': 0, 'a_2': 1.5, 'sigma': 1.05},
+        6.0,
+        False,
+        3.0,
+        -0.2757,
+        -0.7107,
+    ),
     # test the calculation of force and potential for Colloid-Colloid
     PotentialTestCase(
         hoomd.azplugins.pair.Colloid,
@@ -181,6 +190,16 @@ potential_tests += [
         3.0,
         -1.0366,
         -1.8267,
+    ),
+    # test the calculation of force and potential outside r_cut
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {'A': 100.0, 'a_1': 1.5, 'a_2': 0.75, 'sigma': 1.05},
+        6.0,
+        False,
+        7.0,
+        0,
+        0,
     ),
 ]
 
