@@ -5,14 +5,18 @@
 #ifndef AZPLUGINS_CONSTANT_FLOW_H_
 #define AZPLUGINS_CONSTANT_FLOW_H_
 
+#ifndef __HIPCC__
+#include <pybind11/pybind11.h>
+#endif
+
 #include "hoomd/HOOMDMath.h"
 
-#ifdef __HIPCC__
+#ifndef __HIPCC__
 #define HOSTDEVICE __host__ __device__
 #else
 #define HOSTDEVICE
-#include <pybind11/pybind11.h>
-#endif
+#endif // __HIPCC__
+
 namespace hoomd
     {
 namespace azplugins
@@ -51,29 +55,6 @@ class ConstantFlow
     private:
     Scalar3 U; //!< Flow field
     };
-
-namespace detail
-    {
-void export_ConstantFlow(pybind11::module& m)
-    {
-    namespace py = pybind11;
-    py::class_<ConstantFlow, std::shared_ptr<ConstantFlow>>(m, "ConstantFlow")
-        .def(py::init<Scalar3>())
-        .def_property(
-            "mean_velocity",
-            [](const ConstantFlow& U)
-            {
-                const auto field = U.getVelocity();
-                return pybind11::make_tuple(field.x, field.y, field.z);
-            },
-            [](ConstantFlow& U, const pybind11::tuple& field)
-            {
-                U.setVelocity(make_scalar3(pybind11::cast<Scalar>(field[0]),
-                                           pybind11::cast<Scalar>(field[1]),
-                                           pybind11::cast<Scalar>(field[2])));
-            });
-    }
-    } // end namespace detail
 
     } // namespace azplugins
     } // namespace hoomd

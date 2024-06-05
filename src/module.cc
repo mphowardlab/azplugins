@@ -2,10 +2,7 @@
 // Copyright (c) 2021-2024, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-#include "ConstantFlow.h"
-#include "ParabolicFlow.h"
 #include <pybind11/pybind11.h>
-
 namespace hoomd
     {
 //! Plugins for soft matter
@@ -51,13 +48,12 @@ namespace azplugins
     {
 namespace detail
     {
-
+void export_ConstantFlow(pybind11::module&);
+void export_ParabolicFlow(pybind11::module&);
 void export_PotentialPairHertz(pybind11::module&);
-
 #ifdef ENABLE_HIP
 void export_PotentialPairHertzGPU(pybind11::module&);
 #endif // ENABLE_HIP
-
 
     } // namespace detail
     } // namespace azplugins
@@ -67,7 +63,7 @@ void export_PotentialPairHertzGPU(pybind11::module&);
 PYBIND11_MODULE(_azplugins, m)
     {
     using namespace hoomd::azplugins::detail;
-  
+
     export_ConstantFlow(m);
     export_ParabolicFlow(m);
 

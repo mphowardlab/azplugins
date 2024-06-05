@@ -10,18 +10,39 @@
 #ifndef AZPLUGINS_PARABOLIC_FLOW_H_
 #define AZPLUGINS_PARABOLIC_FLOW_H_
 
+#ifndef __HIPCC__
+#include <pybind11/pybind11.h>
+#endif
+
 #include "hoomd/HOOMDMath.h"
 
-#ifdef __HIPCC__
+#ifndef __HIPCC__
 #define HOSTDEVICE __host__ __device__
 #else
 #define HOSTDEVICE
-#include <pybind11/pybind11.h>
-#endif
+#endif // __HIPCC__
+
 namespace hoomd
     {
 namespace azplugins
     {
+//! Unidirectional parabolic flow field
+/*!
+ * 1d flow along the \a x axis. The geometry is a parallel plate channel with
+ * the plates centered around \f$ z = 0 \f$ and positioned at \f$ \pm L \f$.
+ * The \a y axis is the vorticity direction and periodic. The flow profile in
+ * this geometry is then
+ *
+ * \f[
+ * u_x(z) = \frac{3}{2} U \left[1 - \left(\frac{z}{L}\right)^2 \right]
+ * \f]
+ *
+ * Here, \f$ U \f$ is the mean velocity, which is related to the pressure drop
+ * and viscosity.
+ *
+ * \note The user must properly establish no flux of particles through the channel
+ *       walls through an appropriate wall potential.
+ */
 class ParabolicFlow
     {
     public:
@@ -44,7 +65,7 @@ class ParabolicFlow
 
     HOSTDEVICE Scalar getVelocity() const
         {
-        return Scalar(0.6666666667) * Umax;
+        return Umax / Scalar(1.5);
         }
 
     HOSTDEVICE void setVelocity(const Scalar& U)
@@ -67,17 +88,6 @@ class ParabolicFlow
     Scalar L;    //!< Full width
     };
 
-namespace detail
-    {
-void export_ParabolicFlow(pybind11::module& m)
-    {
-    namespace py = pybind11;
-    py::class_<ParabolicFlow, std::shared_ptr<ParabolicFlow>>(m, "ParabolicFlow")
-        .def(py::init<Scalar, Scalar>())
-        .def_property("mean_velocity", &ParabolicFlow::getVelocity, &ParabolicFlow::setVelocity)
-        .def_property("separation", &ParabolicFlow::getLength, &ParabolicFlow::setLength);
-    }
-    } // namespace detail
     } // namespace azplugins
     } // namespace hoomd
 #undef HOSTDEVICE
