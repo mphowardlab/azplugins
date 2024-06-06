@@ -28,8 +28,8 @@ class Colloid(pair.Pair):
 
     The pair potential has three different coupling styles between particle types:
 
-    - Solvent-Solvent gives the Lennard-Jones potential for coupling between
-    pointlike particles
+    - When the radius of both particles is zero, the potential is the usual
+    Lennard-Jones coupling:
 
     .. math::
         :nowrap:
@@ -40,21 +40,20 @@ class Colloid(pair.Pair):
               = & 0 & r \ge r_{\mathrm{cut}}
         \end{eqnarray*}
 
-    - Colloid-Solvent gives the interaction between a pointlike particle and a colloid
-    - Colloid-Colloid gives the interaction between two colloids
+    - When the radius of one particle is zero and the other radius is non-zero,
+    the potential is the interaction between a pointlike particle and a colloid
+    -  When the radius of both particles is non-zero, the potential is the
+    interaction between two colloids
 
     Refer to the work by `Grest et al. <http://dx.doi.org/10.1063/1.3578181>`_ for the
     form of the colloid-solvent and colloid-colloid potentials, which are too cumbersome
-    to report on here.
-
-    .. warning::
-        The diameter parameters are used to infer which case is used to compute
-        the interactions. A particle diameter equal to 0 is used to infer
-        a solvent interaction. You must make sure you appropriately set the
-        diameter.
+    to report on here. Refer to Eqs. (3) & (4) for the colloid-colloid potential
+    and Eq. (5) for the colloid-solvent potential. Grest et al. provide
+    equations for choosing the Hamaker constant.
 
     Example::
 
+        # Explicit Solvent Model from https://doi.org/10.1063/1.5043401
         nl = nlist.Cell()
         colloid = pair.Colloid(default_r_cut=3.0, nlist=nl)
         # standard Lennard-Jones for solvent-solvent
@@ -66,6 +65,27 @@ class Colloid(pair.Pair):
         colloid.params[('C', 'C')] = dict(A=40.0, a_1=5.0, a_2=5.0 sigma=1.0)
         colloid.r_cut[('C', 'C')] = 10.581
 
+    .. py:attribute:: params
+
+        The potential parameters. The dictionary has the following keys:
+
+        * ``A`` (`float`, **required**) - Hamaker constant :math:`A`
+          :math:`[\mathrm{energy}]`
+        * ``a_1`` (`float`, **required**) - Radius of first particle
+          :math:`a_1` :math:`[\mathrm{length}]`
+        * ``a_2`` (`float`, **required**) - Radius of second particle
+          :math:`a_2` :math:`[\mathrm{length}]`
+        * ``sigma`` (`float`, **required**) - particle size :math:`\sigma`
+          :math:`[\mathrm{length}]`
+
+        Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
+        `dict`]
+
+    .. py:attribute:: mode
+
+        Energy shifting/smoothing mode: ``"none"`` or ``"shift"``.
+
+        Type: `str`
     """
 
     _ext_module = _azplugins

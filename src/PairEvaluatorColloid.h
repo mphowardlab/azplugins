@@ -45,16 +45,17 @@ struct PairParametersColloid : public PairParameters
         }
 #endif // __HIPCC__
 
-    Scalar A;
-    Scalar a_1;
-    Scalar a_2;
-    Scalar sigma_3;
+    Scalar A;       //!< Hamaker constant
+    Scalar a_1;     //!< particle 1 radius
+    Scalar a_2;     //!< particle 2 radius
+    Scalar sigma_3; //!< Lennard-Jones sigma
     }
 #if HOOMD_LONGREAL_SIZE == 32
     __attribute__((aligned(16)));
 #else
     __attribute__((aligned(32)));
 #endif
+
 //! Class for evaluating the colloid pair potential
 /*!
  * An effective Lennard-Jones potential obtained by integrating the Lennard-Jones potential
@@ -63,37 +64,10 @@ struct PairParametersColloid : public PairParameters
  * by <a href="http://doi.org/10.1103/PhysRevE.67.041710">Everaers and Ejtehadi</a>.
  * A discussion of the application of these potentials to colloidal suspensions can be found
  * in <a href="http://dx.doi.org/10.1063/1.3578181">Grest et al.</a>
- *
- * The pair potential has three different coupling styles between particle types:
- *
- * - Solvent-Solvent gives the Lennard-Jones potential for coupling between pointlike particles,
- *   with the standard \f$4 \varhamaker\f$ replaced by \f$A/36\f$.
- * - Colloid-Solvent gives the interaction between a pointlike particle and a colloid
- * - Colloid-Colloid gives the interaction between two colloids
- *
- * Refer to the work by <a href="http://dx.doi.org/10.1063/1.3578181">Grest et al.</a> for the
- * form of the colloid-solvent and colloid-colloid potentials, which are too cumbersome
- * to report on here.
- *
- * \warning
- * The diameter parameters are used to infer which case is used to compute
- * the interactions. A particle diameter equal to 0 is used to infer
- * a solvent interaction. You must make sure you appropriately set the diameter.
- *
- * The strength of all potentials is set by the Hamaker constant, represented here by the
- * symbol \f$A\f$. The other parameter \f$\sigma\f$ is the diameter of the particles that
- * are integrated out (colloids are comprised of Lennard-Jones particles with parameter
- * \f$\sigma\f$). The parameters that are fed in are:
- *
- * - \a A - the Hamaker constant
- * - \a a_1 - diameter of particle 1
- * - \a a_2 - diameter of particle 2
- * - \a sigma_3 - \f$\sigma^3\f$
  */
 class PairEvaluatorColloid : public PairEvaluator
     {
     public:
-    //! Define the parameter type used by this pair potential evaluator
     typedef PairParametersColloid param_type;
 
     //! Constructor
@@ -259,10 +233,10 @@ class PairEvaluatorColloid : public PairEvaluator
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
         {
         // compute the force divided by r in force_divr
-        if (rsq < rcutsq && A != 0)
+        if (rsq < rcutsq && A != Scalar(0))
             {
             // Solvent-Solvent interaction
-            if (ai == 0 && aj == 0)
+            if (ai == Scalar(0) && aj == Scalar(0))
                 {
                 pair_eng = computeSolventSolvent<true>(force_divr, rsq);
                 if (energy_shift)
@@ -271,7 +245,7 @@ class PairEvaluatorColloid : public PairEvaluator
                     }
                 }
             // Colloid-Colloid interaction
-            else if (ai != 0 && aj != 0)
+            else if (ai != Scalar(0) && aj != Scalar(0))
                 {
                 pair_eng = computeColloidColloid<true>(force_divr, rsq);
                 if (energy_shift)
@@ -309,9 +283,8 @@ class PairEvaluatorColloid : public PairEvaluator
     Scalar A;       //!< Hamaker constant
     Scalar sigma_3; //!< Sigma^3
     Scalar sigma_6; //!< Sigma^6
-
-    Scalar ai; //!< radius 1
-    Scalar aj; //!< radius 2
+    Scalar ai;      //!< radius 1
+    Scalar aj;      //!< radius 2
     };
 
     } // end namespace detail
