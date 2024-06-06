@@ -190,8 +190,8 @@ class PerturbedLennardJones(pair.Pair):
 
         \begin{eqnarray*}
         U(r)  &= U_{\mathrm{LJ}}(r) +
-                (1-\lambda)\varepsilon & r < 2^{1/6}\sigma \\
-              &= \lambda U_{\mathrm{LJ}}(r) & 2^{1/6}\sigma \le r
+                (1-\lambda)\varepsilon, & r \le 2^{1/6}\sigma \\
+              &= \lambda U_{\mathrm{LJ}}(r), & r > 2^{1/6}\sigma
         \end{eqnarray*}
 
     where :math:`U_{\rm LJ}` is the standard Lennard-Jones potential (see
@@ -202,9 +202,10 @@ class PerturbedLennardJones(pair.Pair):
     Example::
 
         nl = nlist.Cell()
-        perturbed_lj = azplugins.pair.PerturbedLennardJones(default_r_cut=3.0, nlist=nl)
-        perturbed_lj.params[('A', 'A')] = dict(epsilon=1.0, sigma=1.0,
-            attraction_scale_factor=0.5)
+        perturbed_lj = azplugins.pair.PerturbedLennardJones(
+            default_r_cut=3.0, nlist=nl)
+        perturbed_lj.params[('A', 'A')] = dict(
+            epsilon=1.0, sigma=1.0, attraction_scale_factor=0.5)
         perturbed_lj.r_cut[('A', 'B')] = 3.0
 
     .. py:attribute:: params
@@ -277,10 +278,10 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
     when :math:`r < r_{\rm eq}` by making :math:`U_{\rm M}(r < r_{\rm eq}) = -M_{\rm d}`
     with the option  ``repulsion = False``.
 
-    Here, :math:`vec{r}_{ij}` is the displacement vector between particles
+    Here, :math:`\vec{r}_{ij}` is the displacement vector between particles
     :math:`i` and :math:`j`, :math:`|\vec{r}_{ij}|` is the magnitude of
-    that displacement, and :math:`\hat{n}` is the normalized
-    orientation vector of the particle. The parameters :math:`M_{\rm d}`,
+    that displacement, and :math:`\hat{n}_i` is the normalized
+    orientation vector of particle :math:`i`. The parameters :math:`M_{\rm d}`,
     :math:`M_{\rm r}`, and :math:`r_{\rm eq}` control the depth, width, and
     position of the potential well. The parameters :math:`\alpha` and
     :math:`\omega` control the width and steepness of the orientation dependence.
@@ -302,8 +303,8 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
           depth of the potential well :math:`[\mathrm{energy}]`
         * ``M_r`` (`float`, **required**) - :math:`M_r` controls the width of
           the potential well  :math:`[\mathrm{length}]`
-        * ``r_eq`` (`float`, **required**) - :math:`r_eq` controls the position
-          of the potential well  :math:`[\mathrm{length}]`
+        * ``r_eq`` (`float`, **required**) - :math:`r_{\rm eq}` controls the
+          position of the potential well  :math:`[\mathrm{length}]`
         * ``omega`` (`float`, **required**) - :math:`\omega` controls the
           steepness of the orientation dependence
         * ``alpha`` (`float`, **required**) - :math:`\alpha` controls the width

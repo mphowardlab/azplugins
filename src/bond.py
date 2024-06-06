@@ -18,11 +18,9 @@ class DoubleWell(bond.Bond):
 
     .. math::
 
-        U(r)  =  U_1\left[\frac{\left((r-r_1)^2-(r_1-r_0)^2\right)^2}
-                    {\left(r_1-r_0\right)^4}\right]
-                + U_{\rm{tilt}}\left[1+\frac{r-r_1}{r_1-r_0}-
-                    \frac{\left((r-r_1)^2-(r_1-r_0)^2\right)^2}
-                        {\left(r_1-r_0\right)^4}\right]
+        U(r)  &= U_1 \left[1 - \left(\frac{r_1-r}{r_1-r_0}\right)^2 \right]^2 \\
+              &+ U_{\rm{tilt}}\left(1 - \frac{r_1-r}{r_1-r_0}
+                    -\left[1 - \left(\frac{r_1-r}{r_1-r_0}\right)^2 \right]^2 \right)
 
     Attributes:
         params (TypeParameter[``bond type``, dict]):
