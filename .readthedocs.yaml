@@ -12,3 +12,7 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.12"
+  post_checkout:
+    - mkdir hoomd
+    - touch hoomd/__init__.py
+    - mv src hoomd/azplugins

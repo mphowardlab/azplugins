@@ -12,6 +12,12 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 import datetime
+import os
+import sys
+
+# this is part of a trick on read the docs to change the import structure
+if os.getenv('READTHEDOCS'):
+    sys.path.insert(0, os.path.abspath('..'))
 
 project = 'azplugins'
 year = datetime.date.today().year
