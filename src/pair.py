@@ -10,6 +10,99 @@ from hoomd.data.typeparam import TypeParameter
 from hoomd.md import pair
 
 
+class Colloid(pair.Pair):
+    r"""Colloid pair potential.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list.
+        r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+        mode (str): Energy shifting/smoothing mode.
+
+    :py:class:`Colloid` is the effective Lennard-Jones potential obtained by
+    integrating the Lennard-Jones potential between a point and a sphere or a
+    sphere and a sphere. The attractive part of the colloid-colloid pair
+    potential was derived originally by Hamaker, and the full potential by
+    `Everaers and Ejtehadi <http://doi.org/10.1103/PhysRevE.67.041710>`_.
+    A discussion of the application of these potentials to colloidal suspensions
+    can be found in `Grest et al. <http://dx.doi.org/10.1063/1.3578181>`_
+
+    The pair potential has three different coupling styles between particle types:
+
+    - When the radius of both particles is zero, the potential is the usual
+    Lennard-Jones coupling:
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray*}
+        V(r)  = & \frac{A}{36} \left[\left(\frac{\sigma}{r}\right)^{12}
+                  - \left(\frac{\sigma}{r}\right)^6 \right] & r < r_{\mathrm{cut}} \\
+              = & 0 & r \ge r_{\mathrm{cut}}
+        \end{eqnarray*}
+
+    - When the radius of one particle is zero and the other radius is non-zero,
+    the potential is the interaction between a pointlike particle and a colloid
+    -  When the radius of both particles is non-zero, the potential is the
+    interaction between two colloids
+
+    Refer to the work by `Grest et al. <http://dx.doi.org/10.1063/1.3578181>`_ for the
+    form of the colloid-solvent and colloid-colloid potentials, which are too cumbersome
+    to report on here. Refer to Eqs. (3) & (4) for the colloid-colloid potential
+    and Eq. (5) for the colloid-solvent potential. Grest et al. provide
+    equations for choosing the Hamaker constant.
+
+    Example::
+
+        # Explicit Solvent Model from https://doi.org/10.1063/1.5043401
+        nl = nlist.Cell()
+        colloid = pair.Colloid(default_r_cut=3.0, nlist=nl)
+        # standard Lennard-Jones for solvent-solvent
+        colloid.params[('S', 'S')] = dict(A=144.0, a_1=0, a_2=0 sigma=1.0)
+        # solvent-colloid
+        colloid.params[('S', 'C')] = dict(A=144.0, a_1=0, a_2=5.0 sigma=1.0)
+        colloid.r_cut[('S', 'C')] = 9.0
+        # colloid-colloid
+        colloid.params[('C', 'C')] = dict(A=40.0, a_1=5.0, a_2=5.0 sigma=1.0)
+        colloid.r_cut[('C', 'C')] = 10.581
+
+    .. py:attribute:: params
+
+        The potential parameters. The dictionary has the following keys:
+
+        * ``A`` (`float`, **required**) - Hamaker constant :math:`A`
+          :math:`[\mathrm{energy}]`
+        * ``a_1`` (`float`, **required**) - Radius of first particle
+          :math:`a_1` :math:`[\mathrm{length}]`
+        * ``a_2`` (`float`, **required**) - Radius of second particle
+          :math:`a_2` :math:`[\mathrm{length}]`
+        * ``sigma`` (`float`, **required**) - particle size :math:`\sigma`
+          :math:`[\mathrm{length}]`
+
+        Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
+        `dict`]
+
+    .. py:attribute:: mode
+
+        Energy shifting/smoothing mode: ``"none"`` or ``"shift"``.
+
+        Type: `str`
+    """
+
+    _ext_module = _azplugins
+    _cpp_class_name = 'PotentialPairColloid'
+    _accepted_modes = ('none', 'shift', 'xplor')
+
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode='none'):
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        params = TypeParameter(
+            'params',
+            'particle_types',
+            # TypeParameterDict needs updated still
+            TypeParameterDict(A=float, a_1=float, a_2=float, sigma=float, len_keys=2),
+        )
+        self._add_typeparam(params)
+
+
 class Hertz(pair.Pair):
     r"""Hertz potential.
 

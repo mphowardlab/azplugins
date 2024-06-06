@@ -150,6 +150,59 @@ potential_tests += [
     ),
 ]
 
+# Colloid
+potential_tests += [
+    # test the calculation of force and potential for Solvent-Solvent
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {'A': 100.0, 'a_1': 0, 'a_2': 0, 'sigma': 2.0},
+        6.0,
+        False,
+        3.0,
+        -0.2224,
+        -0.4020,
+    ),
+    # test the calculation of force and potential for Colloid-Solvent
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {'A': 100.0, 'a_1': 1.5, 'a_2': 0, 'sigma': 1.05},
+        6.0,
+        False,
+        3.0,
+        -0.2757,
+        -0.7107,
+    ),
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {'A': 100.0, 'a_1': 0, 'a_2': 1.5, 'sigma': 1.05},
+        6.0,
+        False,
+        3.0,
+        -0.2757,
+        -0.7107,
+    ),
+    # test the calculation of force and potential for Colloid-Colloid
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {'A': 100.0, 'a_1': 1.5, 'a_2': 0.75, 'sigma': 1.05},
+        6.0,
+        False,
+        3.0,
+        -1.0366,
+        -1.8267,
+    ),
+    # test the calculation of force and potential outside r_cut
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {'A': 100.0, 'a_1': 1.5, 'a_2': 0.75, 'sigma': 1.05},
+        6.0,
+        False,
+        7.0,
+        0,
+        0,
+    ),
+]
+
 
 @pytest.mark.parametrize(
     'potential_test', potential_tests, ids=lambda x: x.potential.__name__
@@ -159,7 +212,12 @@ def test_energy_and_force(
 ):
     """Test energy and force evaluation."""
     # make 2 particle test configuration
-    sim = simulation_factory(two_particle_snapshot_factory(d=potential_test.distance))
+    r_cut = potential_test.r_cut
+    r_buff = 0.4
+    L_domain_min = 2 * (r_cut + r_buff)
+    sim = simulation_factory(
+        two_particle_snapshot_factory(d=potential_test.distance, L=2.1 * L_domain_min)
+    )
 
     # setup dummy NVE integrator
     integrator = hoomd.md.Integrator(dt=0.001)
@@ -168,7 +226,7 @@ def test_energy_and_force(
 
     # setup pair potential
     potential = potential_test.potential(
-        nlist=hoomd.md.nlist.Cell(buffer=0.4),
+        nlist=hoomd.md.nlist.Cell(buffer=r_buff),
         default_r_cut=potential_test.r_cut,
         mode='shift' if potential_test.shift else 'none',
     )
