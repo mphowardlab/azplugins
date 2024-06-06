@@ -15,8 +15,8 @@
 #endif
 
 #include "hoomd/RandomNumbers.h"
-#include <pybind11/pybind11.h>
 #include "hoomd/md/TwoStepLangevinBase.h"
+#include <pybind11/pybind11.h>
 
 #include "RNGIdentifiers.h"
 namespace hoomd
@@ -28,7 +28,8 @@ namespace azplugins
 /*!
  * \note Only translational motion is supported by this integrator.
  */
-template<class FlowField> class PYBIND11_EXPORT TwoStepLangevinFlow : public md::TwoStepLangevinBase
+template<class FlowField>
+class PYBIND11_EXPORT TwoStepLangevinFlow : public hoomd::md::TwoStepLangevinBase
     {
     public:
     //! Constructor
@@ -37,8 +38,7 @@ template<class FlowField> class PYBIND11_EXPORT TwoStepLangevinFlow : public md:
                         std::shared_ptr<Variant> T,
                         std::shared_ptr<FlowField> flow_field,
                         bool noiseless)
-        : TwoStepLangevinBase(sysdef, group, T), m_flow_field(flow_field),
-          m_noiseless(noiseless)
+        : TwoStepLangevinBase(sysdef, group, T), m_flow_field(flow_field), m_noiseless(noiseless)
         {
         m_exec_conf->msg->notice(5) << "Constructing TwoStepLangevinFlow" << std::endl;
         if (m_sysdef->getNDimensions() < 3)
@@ -80,6 +80,10 @@ template<class FlowField> class PYBIND11_EXPORT TwoStepLangevinFlow : public md:
     /*!
      * \param noiseless If true, do not apply a random diffusive force
      */
+    void setNoiseless(bool noiseless)
+        {
+        m_noiseless = noiseless;
+        }
 
     protected:
     std::shared_ptr<FlowField> m_flow_field; //!< Flow field functor
@@ -158,8 +162,8 @@ void TwoStepLangevinFlow<FlowField>::integrateStepTwo(unsigned int timestep)
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
     ArrayHandle<Scalar4> h_net_force(m_pdata->getNetForce(),
-                                   access_location::host,
-                                   access_mode::read);
+                                     access_location::host,
+                                     access_mode::read);
     ArrayHandle<Scalar> h_gamma(m_gamma, access_location::host, access_mode::read);
 
     const Scalar currentTemp = (*m_T)(timestep);
@@ -182,10 +186,11 @@ void TwoStepLangevinFlow<FlowField>::integrateStepTwo(unsigned int timestep)
         Scalar coeff = fast::sqrt(Scalar(6.0) * gamma * currentTemp / m_deltaT);
         if (m_noiseless)
             coeff = Scalar(0.0);
-        hoomd::RandomGenerator rng(hoomd::Seed(hoomd::azplugins::detail::RNGIdentifier::TwoStepBrownianFlow,
-                                   timestep,
-                                   seed),
-                                   hoomd::Counter(h_tag.data[idx]));
+        hoomd::RandomGenerator rng(
+            hoomd::Seed(hoomd::azplugins::detail::RNGIdentifier::TwoStepBrownianFlow,
+                        timestep,
+                        seed),
+            hoomd::Counter(h_tag.data[idx]));
         hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
         const Scalar3 random = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 
@@ -212,7 +217,6 @@ void TwoStepLangevinFlow<FlowField>::integrateStepTwo(unsigned int timestep)
         h_vel.data[idx] = make_scalar4(vel.x, vel.y, vel.z, mass);
         h_accel.data[idx] = accel;
         }
-
     }
 
 namespace detail
@@ -224,16 +228,17 @@ void export_TwoStepLangevinFlow(pybind11::module& m, const std::string& name)
     namespace py = pybind11;
     typedef TwoStepLangevinFlow<FlowField> LangevinFlow;
 
-    py::class_<LangevinFlow, std::shared_ptr<LangevinFlow>>(m,
-                                                            name.c_str(),
-                                                            py::base<hoomd::md::TwoStepLangevinBase>())
+    py::class_<LangevinFlow, std::shared_ptr<LangevinFlow>>(
+        m,
+        name.c_str(),
+        py::base<hoomd::md::TwoStepLangevinBase>())
         .def(py::init<std::shared_ptr<SystemDefinition>,
                       std::shared_ptr<ParticleGroup>,
                       std::shared_ptr<Variant>,
                       std::shared_ptr<FlowField>,
                       bool>())
-        .def("getFlowField", &LangevinFlow::getFlowField)
-        .def("getNoiseless", &LangevinFlow::getNoiseless);
+        .def_property_readonly("flow_field", &LangevinFlow::getFlowField)
+        .def_property("noiseless", &LangevinFlow::getNoiseless, &LangevinFlow::setNoiseless);
     }
     } // end namespace detail
     } // end namespace azplugins
