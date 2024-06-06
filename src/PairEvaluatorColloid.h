@@ -2,26 +2,59 @@
 // Copyright (c) 2021-2024, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-/*!
- * \file PairEvaluatorColloid.h
- * \brief Defines the pair force evaluator class for colloid (integrated Lennard-Jones) potential
- */
-
 #ifndef AZPLUGINS_PAIR_EVALUATOR_COLLOID_H_
 #define AZPLUGINS_PAIR_EVALUATOR_COLLOID_H_
 
 #include "PairEvaluator.h"
 
-#ifdef NVCC
+#ifdef __HIPCC__
 #define DEVICE __device__
 #else
 #define DEVICE
 #endif
 
+namespace hoomd
+    {
 namespace azplugins
     {
 namespace detail
     {
+
+struct PairParametersColloid : public PairParameters
+    {
+#ifndef __HIPCC__
+    PairParametersColloid() : A(0), a_1(0), a_2(0), sigma_3(0) { }
+
+    PairParametersColloid(pybind11::dict v, bool managed = false)
+        {
+        A = v["A"].cast<Scalar>();
+        a_1 = v["a_1"].cast<Scalar>();
+        a_2 = v["a_2"].cast<Scalar>();
+        const Scalar sigma = v["sigma"].cast<Scalar>();
+        sigma_3 = sigma * sigma * sigma;
+        }
+
+    pybind11::dict asDict()
+        {
+        pybind11::dict v;
+        v["A"] = A;
+        v["a_1"] = a_1;
+        v["a_2"] = a_2;
+        v["sigma"] = std::cbrt(sigma_3);
+        return v;
+        }
+#endif // __HIPCC__
+
+    Scalar A;       //!< Hamaker constant
+    Scalar a_1;     //!< particle 1 radius
+    Scalar a_2;     //!< particle 2 radius
+    Scalar sigma_3; //!< Lennard-Jones sigma
+    }
+#if HOOMD_LONGREAL_SIZE == 32
+    __attribute__((aligned(16)));
+#else
+    __attribute__((aligned(32)));
+#endif
 
 //! Class for evaluating the colloid pair potential
 /*!
@@ -31,47 +64,11 @@ namespace detail
  * by <a href="http://doi.org/10.1103/PhysRevE.67.041710">Everaers and Ejtehadi</a>.
  * A discussion of the application of these potentials to colloidal suspensions can be found
  * in <a href="http://dx.doi.org/10.1063/1.3578181">Grest et al.</a>
- *
- * The pair potential has three different coupling styles between particle types:
- *
- * - ``slv-slv`` gives the Lennard-Jones potential for coupling between pointlike particles,
- *   with the standard \f$4 \varepsilon\f$ replaced by \f$A/36\f$.
- * - ``coll-slv`` gives the interaction between a pointlike particle and a colloid
- * - ``coll-coll`` gives the interaction between two colloids
- *
- * Refer to the work by <a href="http://dx.doi.org/10.1063/1.3578181">Grest et al.</a> for the
- * form of the colloid-solvent and colloid-colloid potentials, which are too cumbersome
- * to report on here.
- *
- * \warning
- * The ``coll-slv`` and ``coll-coll`` styles make use of the particle diameters to
- * compute the interactions. In the ``coll-slv`` case, the identity of the colloid
- * in the pair is inferred to be the larger of the two diameters. You must make
- * sure you appropriately set the particle diameters in the particle data.
- *
- * The strength of all potentials is set by the Hamaker constant, represented here by the
- * symbol \f$A\f$. The other parameter \f$\sigma\f$ is the diameter of the particles that
- * are integrated out (colloids are comprised of Lennard-Jones particles with parameter
- * \f$\sigma\f$). The parameters that are fed in are:
- *
- * - \a A - the Hamaker constant
- * - \a sigma_3 - \f$\sigma^3\f$
- * - \a sigma_6 - \f$\sigma^6\f$
- * - \a form - the style of the pair interaction as in int that is cast to the interaction_type
  */
 class PairEvaluatorColloid : public PairEvaluator
     {
     public:
-    //! Define the parameter type used by this pair potential evaluator
-    typedef Scalar4 param_type;
-
-    //! Different forms for the (i,j) interaction
-    enum interaction_type
-        {
-        SOLVENT_SOLVENT = 0,
-        COLLOID_SOLVENT,
-        COLLOID_COLLOID
-        };
+    typedef PairParametersColloid param_type;
 
     //! Constructor
     /*!
@@ -84,28 +81,11 @@ class PairEvaluatorColloid : public PairEvaluator
     DEVICE PairEvaluatorColloid(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
         : PairEvaluator(_rsq, _rcutsq)
         {
-        A = _params.x;
-        sigma_3 = _params.y;
-        sigma_6 = _params.z;
-        form = static_cast<interaction_type>(__scalar_as_int(_params.w));
-        }
-
-    //! Colloid potential needs diameter
-    DEVICE static bool needsDiameter()
-        {
-        return true;
-        }
-    //! Accept the optional diameter values
-    /*!
-     * \param di Diameter of particle i
-     * \param dj Diameter of particle j
-     *
-     * Diameters are stashed as the particle radii.
-     */
-    DEVICE void setDiameter(Scalar di, Scalar dj)
-        {
-        ai = Scalar(0.5) * di;
-        aj = Scalar(0.5) * dj;
+        A = _params.A;
+        sigma_3 = _params.sigma_3;
+        sigma_6 = sigma_3 * sigma_3;
+        ai = _params.a_1;
+        aj = _params.a_2;
         }
 
     //! Computes the solvent-solvent interaction
@@ -253,9 +233,10 @@ class PairEvaluatorColloid : public PairEvaluator
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
         {
         // compute the force divided by r in force_divr
-        if (rsq < rcutsq && A != 0)
+        if (rsq < rcutsq && A != Scalar(0))
             {
-            if (form == SOLVENT_SOLVENT)
+            // Solvent-Solvent interaction
+            if (ai == Scalar(0) && aj == Scalar(0))
                 {
                 pair_eng = computeSolventSolvent<true>(force_divr, rsq);
                 if (energy_shift)
@@ -263,15 +244,8 @@ class PairEvaluatorColloid : public PairEvaluator
                     pair_eng -= computeSolventSolvent<false>(force_divr, rcutsq);
                     }
                 }
-            else if (form == COLLOID_SOLVENT)
-                {
-                pair_eng = computeColloidSolvent<true>(force_divr, rsq);
-                if (energy_shift)
-                    {
-                    pair_eng -= computeColloidSolvent<false>(force_divr, rcutsq);
-                    }
-                }
-            else if (form == COLLOID_COLLOID)
+            // Colloid-Colloid interaction
+            else if (ai != Scalar(0) && aj != Scalar(0))
                 {
                 pair_eng = computeColloidColloid<true>(force_divr, rsq);
                 if (energy_shift)
@@ -279,18 +253,22 @@ class PairEvaluatorColloid : public PairEvaluator
                     pair_eng -= computeColloidColloid<false>(force_divr, rcutsq);
                     }
                 }
+            // Colloid-Solvent interaction
             else
                 {
-                return false;
+                pair_eng = computeColloidSolvent<true>(force_divr, rsq);
+                if (energy_shift)
+                    {
+                    pair_eng -= computeColloidSolvent<false>(force_divr, rcutsq);
+                    }
                 }
-
             return true;
             }
         else
             return false;
         }
 
-#ifndef NVCC
+#ifndef __HIPCC__
     //! Get the name of this potential
     /*! \returns The potential name. Must be short and all lowercase, as this is the name energies
        will be logged as via analyze.log.
@@ -302,17 +280,16 @@ class PairEvaluatorColloid : public PairEvaluator
 #endif
 
     protected:
-    Scalar A;              //!< Hamaker constant
-    Scalar sigma_3;        //!< Sigma^3
-    Scalar sigma_6;        //!< Sigma^6
-    interaction_type form; //!< Form of the interaction
-
-    Scalar ai; //!< radius 1
-    Scalar aj; //!< radius 2
+    Scalar A;       //!< Hamaker constant
+    Scalar sigma_3; //!< Sigma^3
+    Scalar sigma_6; //!< Sigma^6
+    Scalar ai;      //!< radius 1
+    Scalar aj;      //!< radius 2
     };
 
     } // end namespace detail
     } // end namespace azplugins
+    } // end namespace hoomd
 
 #undef DEVICE
 
