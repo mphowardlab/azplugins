@@ -1,13 +1,14 @@
 version: 2
 
+python:
+  install:
+    - requirements: doc/requirements.txt
+
 sphinx:
-  configuration: doc/source/conf.py
+  configuration: doc/conf.py
   fail_on_warning: true
 
 build:
-  os: "ubuntu-20.04"
+  os: ubuntu-22.04
   tools:
-    python: "mambaforge-4.10"
-
-conda:
-  environment: doc/environment.yml
+    python: "3.12"

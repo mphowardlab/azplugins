@@ -18,16 +18,12 @@ class Hertz(pair.Pair):
         r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
         mode (str): Energy shifting/smoothing mode.
 
-    :py:class:`Hertz` is the Hertz potential:
+    The `Hertz` potential is:
 
     .. math::
-        :nowrap:
 
-        \begin{eqnarray*}
-        V(r)  &= \varepsilon ( 1-\frac{ r }{ r_{\rm{cut}} } )^{5/2} ,
-                & r < r_{\rm{cut}} \\
-              &= 0,& r \ge r_{\rm{cut}}
-        \end{eqnarray*}
+        U(r) = \varepsilon \left( 1-\frac{ r }{ r_{\rm{cut}} } \right)^{5/2} ,
+                \quad r < r_{\rm{cut}}
 
     Example::
 
@@ -38,13 +34,13 @@ class Hertz(pair.Pair):
 
     .. py:attribute:: params
 
-        The Hertz potential parameters. The dictonary has the following key:
+        The `Hertz` potential parameters. The dictonary has the following key:
 
         * ``epsilon`` (`float`, **required**) - energy parameter
           :math:`\varepsilon` :math:`[\mathrm{energy}]`
 
-        Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
-        `dict`]
+        Type: :class:`~hoomd.data.typeparam.TypeParameter` [`tuple`
+        [``particle_type``, ``particle_type``], `dict`]
 
     .. py:attribute:: mode
 
@@ -77,26 +73,24 @@ class PerturbedLennardJones(pair.Pair):
         default_r_on (float): Default turn-on radius :math:`[\mathrm{length}]`.
         mode (str): Energy shifting/smoothing mode.
 
-    :py:class:`PerturbedLennardJones` is a Lennard-Jones perturbation potential.
-    The potential has a purely repulsive (Weeks-Chandler-Andersen) core, with a
-    parameter :math:`attraction_scale_factor` (\lambda) setting the strength of
-    the attractive tail. When
-    :math:`attraction_scale_factor` is 0, the potential is purely repulsive. When
-    :math:`attraction_scale_factor` is 1, the potential is the standard
-    Lennard-Jones potential (see :py:class:`hoomd.md.pair.LJ` for details).
+    `PerturbedLennardJones` is a Lennard-Jones perturbation potential. The
+    potential has a purely repulsive core, and the parameter
+    ``attraction_scale_factor`` (\lambda) sets the strength of the attractive
+    tail:
 
     .. math::
         :nowrap:
 
         \begin{eqnarray*}
-        V(r)  = & V_{\mathrm{LJ}}(r, \varepsilon, \sigma) +
-        (1-\lambda)\varepsilon & r < 2^{1/6}\sigma \\
-              = & \lambda V_{\mathrm{LJ}}(
-                r, \varepsilon, \sigma) & 2^{1/6}\sigma \ge
-                  r < r_{\mathrm{cut}} \\
-              = & 0 & r \ge r_{\mathrm{cut}}
+        U(r)  &= U_{\mathrm{LJ}}(r) +
+                (1-\lambda)\varepsilon & r < 2^{1/6}\sigma \\
+              &= \lambda U_{\mathrm{LJ}}(r) & 2^{1/6}\sigma \le r
         \end{eqnarray*}
 
+    where :math:`U_{\rm LJ}` is the standard Lennard-Jones potential (see
+    `hoomd.md.pair.LJ`). When :math:`\lambda = 0`, :math:`U` is the standard
+    Weeks-Chandler-Anderson repulsive potential, while when :math:`\lambda = 1`,
+    :math:`U` is :math:`U_{\rm LJ}`.
 
     Example::
 
@@ -116,11 +110,10 @@ class PerturbedLennardJones(pair.Pair):
         * ``sigma`` (`float`, **required**) - particle size :math:`\sigma`
           :math:`[\mathrm{length}]`
         * ``attraction_scale_factor`` (`float`, **required**) - scale factor
-          for attraction, between 0 and 1 :math:`attraction_scale_factor`
-          :math:`[\mathrm{dimensionless}]`
+          for attraction :math:`\lambda`, between 0 and 1
 
-        Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
-        `dict`]
+        Type: :class:`~hoomd.data.typeparam.TypeParameter` [`tuple`
+        [``particle_type``, ``particle_type``], `dict`]
 
     .. py:attribute:: mode
 
@@ -165,7 +158,7 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
 
     .. math::
 
-        U_{\rm M}(r) = M_d \left( \left[ 1 - \exp\left(
+        U_{\rm M}(r) = M_{\rm d} \left( \left[ 1 - \exp\left(
               -\frac{r-r_{\rm eq}}{M_r}\right) \right]^2 - 1 \right)
 
     and :math:`\Omega(\gamma)` depends on the orientations
@@ -212,8 +205,8 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
           repulsive part of :math:`U_{\rm M}` for :math:`r < r_{\rm eq}`.
           Otherwise, set :math:`U_{\rm r} = -M_{\rm d}` for :math:`r < r_{\rm eq}`.
 
-        Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
-        `dict`]
+        Type: :class:`~hoomd.data.typeparam.TypeParameter` [`tuple`
+        [``particle_type``, ``particle_type``], `dict`]
 
     """
 

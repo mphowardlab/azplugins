@@ -10,11 +10,7 @@ from hoomd.data.typeparam import TypeParameter
 from hoomd.md import bond
 
 
-class _Bond(bond.Bond):
-    _ext_module = _azplugins
-
-
-class DoubleWell(_Bond):
+class DoubleWell(bond.Bond):
     r"""Double-well bond potential.
 
     `DoubleWell` specifies a double well potential between the two particles in
@@ -56,6 +52,7 @@ class DoubleWell(_Bond):
         dw.params['A-A'] = dict(r_0=1.0, r_1=2.0, U_1=1.0, U_tilt=0.5)
     """
 
+    _ext_module = _azplugins
     _cpp_class_name = 'PotentialBondDoubleWell'
 
     def __init__(self):
