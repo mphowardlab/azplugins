@@ -4,6 +4,8 @@
 
 #include <pybind11/pybind11.h>
 
+#include "ConstantFlow.h"
+#include "ParabolicFlow.h"
 #include "TwoStepBrownianFlow.h"
 #include "TwoStepLangevinFlow.h"
 
