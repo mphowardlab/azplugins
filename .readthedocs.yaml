@@ -1,9 +1,5 @@
 version: 2
 
-python:
-  install:
-    - requirements: doc/requirements.txt
-
 sphinx:
   configuration: doc/conf.py
   fail_on_warning: true
@@ -11,8 +7,6 @@ sphinx:
 build:
   os: ubuntu-22.04
   tools:
-    python: "3.12"
-  post_checkout:
-    - mkdir hoomd
-    - touch hoomd/__init__.py
-    - mv src hoomd/azplugins
+    python: "mambaforge-22.9"
+  pre_build:
+    - python doc/mock_install.py

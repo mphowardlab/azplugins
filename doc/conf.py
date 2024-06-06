@@ -16,8 +16,9 @@ import os
 import sys
 
 # this is part of a trick on read the docs to change the import structure
-if os.getenv('READTHEDOCS'):
-    sys.path.insert(0, os.path.abspath('..'))
+# if os.getenv('READTHEDOCS'):
+sys.path.insert(0, os.path.abspath('..'))
+print(sys.path)
 
 project = 'azplugins'
 year = datetime.date.today().year
@@ -34,15 +35,13 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 extensions = [
-    'nbsphinx',
     'sphinx.ext.mathjax',
-    'IPython.sphinxext.ipython_console_highlighting',
 ]
 
 extensions += ['sphinx.ext.autodoc', 'sphinx.ext.autosummary']
 autodoc_docstring_signature = True
 autodoc_typehints_format = 'short'
-autodoc_mock_imports = ['hoomd.azplugins._azplugins']
+autodoc_mock_imports = ['hoomd._hoomd', 'hoomd.md._md', 'hoomd.azplugins._azplugins']
 
 extensions += ['sphinx.ext.napoleon']
 napoleon_include_special_with_doc = True
