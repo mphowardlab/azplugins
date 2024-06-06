@@ -194,9 +194,9 @@ class PerturbedLennardJones(pair.Pair):
     Example::
 
         nl = nlist.Cell()
-        perturbed_lj = pair.PerturbedLennardJones(default_r_cut=3.0, nlist=nl)
+        perturbed_lj = azplugins.pair.PerturbedLennardJones(default_r_cut=3.0, nlist=nl)
         perturbed_lj.params[('A', 'A')] = dict(epsilon=1.0, sigma=1.0,
-        attraction_scale_factor=0.5)
+            attraction_scale_factor=0.5)
         perturbed_lj.r_cut[('A', 'B')] = 3.0
 
     .. py:attribute:: params
@@ -233,6 +233,99 @@ class PerturbedLennardJones(pair.Pair):
             'particle_types',
             TypeParameterDict(
                 epsilon=float, sigma=float, attraction_scale_factor=float, len_keys=2
+            ),
+        )
+        self._add_typeparam(params)
+
+
+class TwoPatchMorse(pair.aniso.AnisotropicPair):
+    r"""Two-patch Morse potential.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list.
+        default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+        mode (str): Energy shifting mode.
+
+    :py:class:`TwoPatchMorse` is a Morse potential that is modulated by an
+    orientation-dependent function.
+
+    .. math::
+
+        U(\vec{r}_{ij}, \hat{n}_i, \hat{n}_j) = U_{\rm M}(|\vec{r}_{ij}|)
+        \Omega(\hat{r}_{ij} \cdot \hat{n}_i) \Omega(\hat{r}_{ij} \cdot \hat{n}_j)
+
+    where :math:`U_{\rm M}` is the potential that depends on distance
+
+    .. math::
+
+        U_{\rm M}(r) = M_d \left( \left[ 1 - \exp\left(
+              -\frac{r-r_{\rm eq}}{M_r}\right) \right]^2 - 1 \right)
+
+    and :math:`\Omega(\gamma)` depends on the orientations
+
+    .. math::
+        \Omega(\gamma) = \frac{1}{1+\exp[-\omega (\gamma^2 - \alpha)]}
+
+    The potential can be smoothed to zero force (making it purely attractive)
+    when :math:`r < r_{\rm eq}` by making :math:`U_{\rm M}(r < r_{\rm eq}) = -M_{\rm d}`
+    with the option  ``repulsion = False``.
+
+    Here, :math:`vec{r}_{ij}` is the displacement vector between particles
+    :math:`i` and :math:`j`, :math:`|\vec{r}_{ij}|` is the magnitude of
+    that displacement, and :math:`\hat{n}` is the normalized
+    orientation vector of the particle. The parameters :math:`M_{\rm d}`,
+    :math:`M_{\rm r}`, and :math:`r_{\rm eq}` control the depth, width, and
+    position of the potential well. The parameters :math:`\alpha` and
+    :math:`\omega` control the width and steepness of the orientation dependence.
+
+    Example::
+
+        nl = hoomd.md.nlist.Cell()
+        m2p = azplugins.pair.TwoPatchMorse(nlist=nl)
+        m2p.params[('A', 'A')] = dict(M_d=1.8347, M_r=0.0302, r_eq=1.0043,
+            omega=20, alpha=0.50, repulsion=True)
+        m2p.r_cut[('A', 'A')] = 3.0
+
+    .. py:attribute:: params
+
+        The two-patch Morse potential parameters. The dictionary has the following
+        keys:
+
+        * ``M_d`` (`float`, **required**) - :math:`M_{\rm d}`, controls the
+          depth of the potential well :math:`[\mathrm{energy}]`
+        * ``M_r`` (`float`, **required**) - :math:`M_r` controls the width of
+          the potential well  :math:`[\mathrm{length}]`
+        * ``r_eq`` (`float`, **required**) - :math:`r_eq` controls the position
+          of the potential well  :math:`[\mathrm{length}]`
+        * ``omega`` (`float`, **required**) - :math:`\omega` controls the
+          steepness of the orientation dependence
+        * ``alpha`` (`float`, **required**) - :math:`\alpha` controls the width
+          of the orientation depndence
+        * ``repulsion`` (`bool`, **required**) - If ``True``, include the
+          repulsive part of :math:`U_{\rm M}` for :math:`r < r_{\rm eq}`.
+          Otherwise, set :math:`U_{\rm r} = -M_{\rm d}` for :math:`r < r_{\rm eq}`.
+
+        Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
+        `dict`]
+
+    """
+
+    _ext_module = _azplugins
+    _cpp_class_name = 'AnisoPotentialPairTwoPatchMorse'
+
+    def __init__(self, nlist, default_r_cut=None, mode='none'):
+        super().__init__(nlist, default_r_cut, mode)
+        params = TypeParameter(
+            'params',
+            'particle_types',
+            TypeParameterDict(
+                M_d=float,
+                M_r=float,
+                r_eq=float,
+                omega=float,
+                alpha=float,
+                repulsion=bool,
+                len_keys=2,
             ),
         )
         self._add_typeparam(params)

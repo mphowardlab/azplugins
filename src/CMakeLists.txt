@@ -3,8 +3,10 @@ set(COMPONENT_NAME azplugins)
 
 # TODO: List all host C++ source code files in _${COMPONENT_NAME}_sources.
 set(_${COMPONENT_NAME}_sources
+    ConstantFlow.cc
     GroupVelocityCompute.cc
     module.cc
+    ParabolicFlow.cc
     )
 
 # TODO: List all GPU C++ source code files in _${COMPONENT_NAME}_cu_sources.
@@ -16,6 +18,7 @@ set(python_files
     __init__.py
     conftest.py
     bond.py
+    flow.py
     pair.py
     )
 
@@ -32,7 +35,9 @@ set(_pair_evaluators
     )
 
 # TODO: Add names of all anisotropic pair evaluators
-set(_aniso_pair_evaluators )
+set(_aniso_pair_evaluators
+    TwoPatchMorse
+    )
 
 # process bond potentials
 foreach(_evaluator ${_bond_evaluators})
