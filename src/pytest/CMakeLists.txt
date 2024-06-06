@@ -4,6 +4,7 @@ set(test_files
     test_bond.py
     test_flow.py
     test_pair.py
+    test_pair_aniso.py
     )
 
 # Copy tests to the install directory.

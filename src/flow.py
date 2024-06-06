@@ -53,7 +53,8 @@ class ParabolicFlow(FlowField):
 
     Args:
          mean_velocity (float): Mean velocity.
-         separation (float): Separation between parallel plates defining the flow field.
+         separation (float): Separation between parallel plates defining the
+            flow field.
 
     This flow field generates the parabolic flow profile in a slit geomtry:
 
@@ -63,7 +64,7 @@ class ParabolicFlow(FlowField):
 
     The flow is along *x* with the gradient in *y*. The ``separation`` between the
     two plates is :math:`2H`, and the channel is centered around :math:`y=0`.
-    The ``mean_velocity`` is *U*.
+    The ``mean_velocity`` is :math:`U`.
 
     Example::
 
