@@ -8,8 +8,9 @@ build:
   os: ubuntu-22.04
   tools:
     python: "mambaforge-22.9"
-  pre_build:
-    - python doc/mock_install.py
+  jobs:
+    post_install:
+      - python doc/mock_install.py
 
 conda:
   environment: doc/environment.yaml
