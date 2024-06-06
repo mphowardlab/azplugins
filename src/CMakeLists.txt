@@ -34,7 +34,9 @@ set(_pair_evaluators
     )
 
 # TODO: Add names of all anisotropic pair evaluators
-set(_aniso_pair_evaluators )
+set(_aniso_pair_evaluators
+    TwoPatchMorse
+    )
 
 # process bond potentials
 foreach(_evaluator ${_bond_evaluators})

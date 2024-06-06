@@ -49,17 +49,24 @@ namespace azplugins
     {
 namespace detail
     {
+// bond
+void export_PotentialBondDoubleWell(pybind11::module&);
+
+// flow
 void export_ConstantFlow(pybind11::module&);
 void export_ParabolicFlow(pybind11::module&);
 
-void export_PotentialBondDoubleWell(pybind11::module&);
-
+// pair
+void export_AnisoPotentialPairTwoPatchMorse(pybind11::module&);
 void export_PotentialPairHertz(pybind11::module&);
 void export_PotentialPairPerturbedLennardJones(pybind11::module&);
 
 #ifdef ENABLE_HIP
+// bond
 void export_PotentialBondDoubleWellGPU(pybind11::module&);
 
+// pair
+void export_AnisoPotentialPairTwoPatchMorseGPU(pybind11::module&);
 void export_PotentialPairHertzGPU(pybind11::module&);
 void export_PotentialPairPerturbedLennardJonesGPU(pybind11::module&);
 #endif // ENABLE_HIP
@@ -73,16 +80,24 @@ PYBIND11_MODULE(_azplugins, m)
     {
     using namespace hoomd::azplugins::detail;
 
+    // bond
+    export_PotentialBondDoubleWell(m);
+
+    // flow
     export_ConstantFlow(m);
     export_ParabolicFlow(m);
 
-    export_PotentialBondDoubleWell(m);
+    // pair
+    export_AnisoPotentialPairTwoPatchMorse(m);
     export_PotentialPairHertz(m);
     export_PotentialPairPerturbedLennardJones(m);
 
 #ifdef ENABLE_HIP
+    // bond
     export_PotentialBondDoubleWellGPU(m);
 
+    // pair
+    export_AnisoPotentialPairTwoPatchMorseGPU(m);
     export_PotentialPairHertzGPU(m);
     export_PotentialPairPerturbedLennardJonesGPU(m);
 #endif // ENABLE_HIP
