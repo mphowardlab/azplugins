@@ -12,6 +12,7 @@ azplugins.pair
 .. autosummary::
     :nosignatures:
 
+    Colloid
     Hertz
     PerturbedLennardJones
     TwoPatchMorse
@@ -20,7 +21,8 @@ azplugins.pair
 
 .. automodule:: hoomd.azplugins.pair
     :synopsis: Pair potentials.
-    :members: Hertz,
+    :members: Colloid,
+        Hertz,
         PerturbedLennardJones,
         TwoPatchMorse
     :no-inherited-members:
