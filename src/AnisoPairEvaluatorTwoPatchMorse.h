@@ -141,7 +141,7 @@ class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
         vec3<Scalar> rvec(dr);
         vec3<Scalar> unitr = rvec * rinv;
 
-        //! Convert patch vector in the body frame of each particle to space frame
+        // Convert patch vector in the body frame of each particle to space frame
         vec3<Scalar> n_i = rotate(quat<Scalar>(quat_i), vec3<Scalar>(1.0, 0, 0));
         vec3<Scalar> n_j = rotate(quat<Scalar>(quat_j), vec3<Scalar>(1.0, 0, 0));
 
@@ -150,10 +150,10 @@ class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
         vec3<Scalar> t_j;
         Scalar e = Scalar(0.0);
 
-        //! Morse potential
+        // Morse potential
         Scalar UMorse = Scalar(-1.0) * M_d;
         Scalar dUMorse_dr = Scalar(0.0);
-        //! Purely attractive when r > r_eq
+        // Purely attractive when r > r_eq
         if (r > r_eq || repulsion)
             {
             Scalar Morse_exp = fast::exp(-(r - r_eq) * M_rinv);
@@ -162,51 +162,51 @@ class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
             dUMorse_dr = Scalar(2.0) * M_d * M_rinv * Morse_exp * one_minus_exp;
             }
 
-        //! Patch orientation for particle i
+        // Patch orientation for particle i
         Scalar gamma_i = dot(unitr, n_i);
         Scalar gamma_i_exp = fast::exp(-omega * (gamma_i * gamma_i - alpha));
         Scalar Omega_i = Scalar(1.0) / (Scalar(1.0) + gamma_i_exp);
 
-        //! Patch orientation for particle j
+        // Patch orientation for particle j
         Scalar gamma_j = dot(unitr, n_j);
         Scalar gamma_j_exp = fast::exp(-omega * (gamma_j * gamma_j - alpha));
         Scalar Omega_j = Scalar(1.0) / (Scalar(1.0) + gamma_j_exp);
 
-        //! Modulate the Morse potential according to orientations
+        // Modulate the Morse potential according to orientations
         e += UMorse * Omega_i * Omega_j;
 
-        //! Compute scalar values for force and torque
+        // Compute scalar values for force and torque
         Scalar dU_dr = dUMorse_dr * Omega_i * Omega_j;
         Scalar dOmegai_dgi = Scalar(2.0) * omega * gamma_i * gamma_i_exp * Omega_i * Omega_i;
         Scalar dOmegaj_dgj = Scalar(2.0) * omega * gamma_j * gamma_j_exp * Omega_j * Omega_j;
         Scalar dU_dgi = dOmegai_dgi * UMorse * Omega_j;
         Scalar dU_dgj = dOmegaj_dgj * UMorse * Omega_i;
 
-        //! Compute vector directions for forces
+        // Compute vector directions for forces
         vec3<Scalar> n_i_perp = cross(-unitr, cross(unitr, n_i));
         vec3<Scalar> n_j_perp = cross(-unitr, cross(unitr, n_j));
 
-        //! Compute force and torque
+        // Compute force and torque
         f = -dU_dr * unitr - rinv * (dU_dgi * n_i_perp + dU_dgj * n_j_perp);
         t_i = dU_dgi * cross(unitr, n_i);
         t_j = dU_dgj * cross(unitr, n_j);
 
         if (energy_shift)
             {
-            //! Preprocess rcut parameter
+            // Preprocess rcut parameter
             Scalar rcut = fast::sqrt(rcutsq);
 
-            //! Preprocess Morse parameters
+            // Preprocess Morse parameters
             Scalar Morse_exp_shift = fast::exp(-(rcut - r_eq) * M_rinv);
             Scalar one_minus_exp_shift = Scalar(1.0) - Morse_exp_shift;
 
-            //! Shift by UMorse
+            // Shift by UMorse
             Scalar UMorse_shift = M_d * (one_minus_exp_shift * one_minus_exp_shift - Scalar(1.0));
 
             e -= UMorse_shift * Omega_i * Omega_j;
             }
 
-        //! Return vector force and torque
+        // Return vector force and torque
         force = vec_to_scalar3(f);
         torque_i = vec_to_scalar3(t_i);
         torque_j = vec_to_scalar3(t_j);
