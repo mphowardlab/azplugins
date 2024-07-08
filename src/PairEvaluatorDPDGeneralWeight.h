@@ -7,8 +7,8 @@
  * \brief Defines the dpd force evaluator using generalized weight functions.
  */
 
-#ifndef AZPLUGINS_DPD_EVALUATOR_GENERAL_WEIGHT_H_
-#define AZPLUGINS_DPD_EVALUATOR_GENERAL_WEIGHT_H_
+#ifndef AZPLUGINS_PAIR_EVALUATOR_DPD_GENERAL_WEIGHT_H_
+#define AZPLUGINS_PAIR_EVALUATOR_DPD_GENERAL_WEIGHT_H_
 
 #include "PairEvaluator.h"
 
@@ -16,11 +16,10 @@
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/RandomNumbers.h"
 
-#ifdef NVCC
+#ifdef __HIPCC__
 #define DEVICE __device__
 #else
 #define DEVICE
-#include <string>
 #endif
 
 namespace hoomd
@@ -29,6 +28,40 @@ namespace azplugins
     {
 namespace detail
     {
+
+struct PairParametersDPDGeneralWeight : public PairParameters
+    {
+#ifndef __HIPCC__
+    PairParametersDPDGeneralWeight() : A(0), gamma(0), s(0) { }
+
+    PairParametersDPDGeneralWeight(pybind11::dict v, bool managed = false)
+        {
+        A = v["A"].cast<Scalar>();
+        gamma = v["gamma"].cast<Scalar>();
+        s = v["A"].cast<Scalar>();
+ 
+        }
+
+    pybind11::dict asDict()
+        {
+        pybind11::dict v;
+        v["A"] = A;
+        v["gamma"] = gamma;
+        v["s"] = s;
+        return v;
+        }
+#endif // __HIPCC__
+
+    Scalar A;
+    Scalar gamma;
+    Scalar s;
+    }
+
+#if HOOMD_LONGREAL_SIZE == 32
+    __attribute__((aligned(4)));
+#else
+    __attribute__((aligned(8)));
+#endif
 
 //! Evaluator for DPD generalized dissipative / random weight functions
 /*!
@@ -63,7 +96,7 @@ class PairEvaluatorDPDGeneralWeight : public PairEvaluator
     {
     public:
     //! Three parameters are used by this DPD potential evaluator
-    typedef Scalar3 param_type;
+    typedef PairParametersDPDGeneralWeight param_type;
 
     //! Constructs the DPD potential evaluator
     /*!
@@ -72,8 +105,11 @@ class PairEvaluatorDPDGeneralWeight : public PairEvaluator
      * \param _params Per type pair parameters of this potential
      */
     DEVICE PairEvaluatorDPDGeneralWeight(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : PairEvaluator(_rsq, _rcutsq), a(_params.x), gamma(_params.y), s(_params.z)
+        : PairEvaluator(_rsq, _rcutsq)
         {
+        A = _params.A;
+        gamma = _params.gamma;
+        s = _params.s;
         }
 
     //! Set seed, i and j (particle tags), and the timestep
@@ -138,8 +174,8 @@ class PairEvaluatorDPDGeneralWeight : public PairEvaluator
             Scalar rcut = Scalar(1.0) / rcutinv;
 
             // force is easy to calculate
-            force_divr = a * (rinv - rcutinv);
-            pair_eng = a * (rcut - r) - Scalar(0.5) * a * rcutinv * (rcutsq - rsq);
+            force_divr = A * (rinv - rcutinv);
+            pair_eng = A * (rcut - r) - Scalar(0.5) * A * rcutinv * (rcutsq - rsq);
 
             return true;
             }
@@ -188,18 +224,19 @@ class PairEvaluatorDPDGeneralWeight : public PairEvaluator
                 m_oj = m_j;
                 }
 
-            // TODO: double check this random number generation when having two particles 
+            // TODO: double check this random number generation when having two particles - this is copied from hoomd4
+            // EvaluatorPairDPDThermoDPD.h
             // Generate a single random number
             hoomd::RandomGenerator rng(
-                                   hoomd::Seed(hoomd::azplugins::detail::RNGIdentifier::DPDEvaluatorGeneralWeight,
+                                    hoomd::Seed(hoomd::azplugins::detail::RNGIdentifier::DPDEvaluatorGeneralWeight,
                                     m_timestep,
                                     m_seed),
-                                    m_oi);
+                                    hoomd::Counter(m_oi, m_oj));
 
             Scalar alpha = hoomd::UniformDistribution<Scalar>(-1, 1)(rng);
 
             // conservative dpd
-            force_divr = a * (rinv - rcutinv);
+            force_divr = A * (rinv - rcutinv);
 
             //  conservative force only
             force_divr_cons = force_divr;
@@ -212,7 +249,7 @@ class PairEvaluatorDPDGeneralWeight : public PairEvaluator
             force_divr += fast::rsqrt(m_deltaT / (m_T * gamma * Scalar(6.0))) * wR * alpha;
 
             // conservative energy only
-            pair_eng = a * (rcut - r) - Scalar(0.5) * a * rcutinv * (rcutsq - rsq);
+            pair_eng = A * (rcut - r) - Scalar(0.5) * A * rcutinv * (rcutsq - rsq);
 
             return true;
             }
@@ -229,7 +266,7 @@ class PairEvaluatorDPDGeneralWeight : public PairEvaluator
 #endif
 
     protected:
-    Scalar a;     //!< Strength of repulsion
+    Scalar A;     //!< Strength of repulsion
     Scalar gamma; //!< Drag term
     Scalar s;     //!< Exponent for the dissipative weight function
 
