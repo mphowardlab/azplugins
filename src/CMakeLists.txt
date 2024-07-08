@@ -30,6 +30,7 @@ set(_bond_evaluators
 # TODO: Add names of all pair evaluators`
 set(_pair_evaluators
     Colloid
+    DPDGeneralWeight
     Hertz
     PerturbedLennardJones
     )

@@ -23,6 +23,8 @@
 #include <string>
 #endif
 
+namespace hoomd
+    {
 namespace azplugins
     {
 namespace detail
@@ -57,7 +59,7 @@ namespace detail
  * where \a s is usually 2 for the "standard" DPD method. Refer to the original paper for more
  * details.
  */
-class DPDEvaluatorGeneralWeight : public PairEvaluator
+class PairEvaluatorDPDGeneralWeight : public PairEvaluator
     {
     public:
     //! Three parameters are used by this DPD potential evaluator
@@ -69,7 +71,7 @@ class DPDEvaluatorGeneralWeight : public PairEvaluator
      * \param _rcutsq Sqauared distance at which the potential goes to 0
      * \param _params Per type pair parameters of this potential
      */
-    DEVICE DPDEvaluatorGeneralWeight(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
+    DEVICE PairEvaluatorDPDGeneralWeight(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
         : PairEvaluator(_rsq, _rcutsq), a(_params.x), gamma(_params.y), s(_params.z)
         {
         }
@@ -186,12 +188,14 @@ class DPDEvaluatorGeneralWeight : public PairEvaluator
                 m_oj = m_j;
                 }
 
+            // TODO: double check this random number generation when having two particles 
             // Generate a single random number
-            hoomd::RandomGenerator rng(azplugins::RNGIdentifier::DPDEvaluatorGeneralWeight,
-                                       m_seed,
-                                       m_oi,
-                                       m_oj,
-                                       m_timestep);
+            hoomd::RandomGenerator rng(
+                                   hoomd::Seed(hoomd::azplugins::detail::RNGIdentifier::DPDEvaluatorGeneralWeight,
+                                    m_timestep,
+                                    m_seed),
+                                    m_oi);
+
             Scalar alpha = hoomd::UniformDistribution<Scalar>(-1, 1)(rng);
 
             // conservative dpd
@@ -241,6 +245,7 @@ class DPDEvaluatorGeneralWeight : public PairEvaluator
 
     } // end namespace detail
     } // end namespace azplugins
+    } // end namespace hoomd
 
 #undef DEVICE
 
