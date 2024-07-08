@@ -224,8 +224,6 @@ class PairEvaluatorDPDGeneralWeight : public PairEvaluator
                 m_oj = m_j;
                 }
 
-            // TODO: double check this random number generation when having two particles - this is copied from hoomd4
-            // EvaluatorPairDPDThermoDPD.h
             // Generate a single random number
             hoomd::RandomGenerator rng(
                                     hoomd::Seed(hoomd::azplugins::detail::RNGIdentifier::DPDEvaluatorGeneralWeight,

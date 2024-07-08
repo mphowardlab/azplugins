@@ -24,7 +24,7 @@ python -m pytest --pyargs hoomd.azplugins
 Contributions are welcomed and appreciated! Fork and create a pull request on
 [GitHub][4]. Be sure to follow the [HOOMD-blue guidelines for developers][5]! We
 value the input and experiences all users and contributors bring to
-`relentless`.
+`azplugins`.
 
 ## History
 
