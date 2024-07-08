@@ -5,7 +5,7 @@
 """Pair potentials."""
 
 from hoomd.azplugins import _azplugins
-from hoomd.data.parameterdicts import TypeParameterDict
+from hoomd.data.parameterdicts import ParameterDict, TypeParameterDict
 from hoomd.data.typeparam import TypeParameter
 from hoomd.md import pair
 
@@ -337,3 +337,34 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
             ),
         )
         self._add_typeparam(params)
+
+
+class DPDGeneralWeight(piar.Pair):
+    
+
+    _ext_module = _azplugins
+    _cpp_class_name = "PotentialPairDPDGeneralWeight"
+    _accepted_modes = ("none",)
+
+    def __init__(
+        self,
+        nlist,
+        kT,
+        default_r_cut=None,
+    ):
+        super().__init__(nlist=nlist,
+                         default_r_cut=default_r_cut,
+                         default_r_on=0,
+                         mode='none')
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(A=float, gamma=float, s=float, len_keys=2))
+        self._add_typeparam(params)
+        param_dict = ParameterDict(kT=hoomd.variant.Variant)
+        param_dict["kT"] = kT
+        self._param_dict.update(param_dict)
+
+    def _attach_hook(self):
+        """DPD uses RNGs. Warn the user if they did not set the seed."""
+        self._simulation._warn_if_seed_unset()
+        super()._attach_hook()
