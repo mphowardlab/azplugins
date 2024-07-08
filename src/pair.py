@@ -8,7 +8,7 @@ from hoomd.azplugins import _azplugins
 from hoomd.data.parameterdicts import ParameterDict, TypeParameterDict
 from hoomd.data.typeparam import TypeParameter
 from hoomd.md import pair
-
+from hoomd.variant import Variant
 
 class Colloid(pair.Pair):
     r"""Colloid pair potential.
@@ -339,8 +339,90 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
         self._add_typeparam(params)
 
 
-class DPDGeneralWeight(piar.Pair):
-    
+class DPDGeneralWeight(pair.Pair):
+    R""" Dissipative Particle Dynamics with generalized weight function
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list
+        kT (`hoomd.variant` or `float`): Temperature of
+            thermostat :math:`[\mathrm{energy}]`.
+        default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+       
+
+    :py:class:`general` specifies that a DPD pair force should be applied between every
+    non-excluded particle pair in the simulation, including an interaction potential,
+    pairwise drag force, and pairwise random force. The form of the forces between
+    pairs of particles is:
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray*}
+        \mathbf{F} = \mathbf{F}_{\rm C} + \mathbf{F}_{\rm D} +  \mathbf{F}_{\rm R} \\
+        \end{eqnarray*}
+
+    The conservative force :math:`\mathbf{F}_{\rm C}` is the standard form:
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray*}
+        \mathbf{F}_{\rm C} =& A (1- r_{ij}/r_{\rm cut}) & r \le r_{\rm cut} \\
+                           =& 0 & r > r_{\rm cut}
+        \end{eqnarray*}
+
+    where *A* is the interaction parameter and :math:`r_{\rm cut}` is the cutoff radius.
+    Here, :math:`r_{ij} = r_i - r_j`. See `Groot and Warren 1997 <http://dx.doi.org/10.1063/1.474784>`_
+    for more details.
+
+    The dissipative and random forces, respectively, are:
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray*}
+        \mathbf{F}_{\rm D} =& -\gamma \omega_{\rm D}(r_{ij}) (\mathbf{v}_{ij} \cdot \mathbf{\hat r}_{ij}) \mathbf{\hat r}_{ij} \\
+        \mathbf{F}_{\rm R} =& \sigma \omega_{\rm R}(r_{ij}) \xi_{ij} \mathbf{\hat r}_{ij}
+        \end{eqnarray*}
+
+    where :math:`\sigma = 2\gamma k_{\rm B}T` and :math:`\omega_{\rm D} = \left[\omega_{\rm R} \right]^2`
+    to satisfy the fluctuation dissipation relation. The genealized weight function is given by the
+    form proposed by `Fan et al. <https://doi.org/10.1063/1.2206595>`_:
+
+    .. math::
+        :nowrap:
+
+        \begin{eqnarray*}
+        w_{\rm D}(r) = &\left( 1 - r/r_{\mathrm{cut}} \right)^s  & r \le r_{\mathrm{cut}} \\
+                     = & 0 & r > r_{\mathrm{cut}} \\
+        \end{eqnarray*}
+
+    :py:class:`general` generates random numbers by hashing together the particle tags in the pair, the seed,
+    and the current time step index.
+
+    `C. L. Phillips et. al. 2011 <http://dx.doi.org/10.1016/j.jcp.2011.05.021>`_ describes the DPD implementation
+    details in HOOMD-blue. Cite it if you utilize the DPD functionality in your work.
+
+    The following coefficients must be set per unique pair of particle types:
+
+    - :math:`A` - *A* (in force units)
+    - :math:`\gamma` - *gamma* (in units of force/velocity)
+    - :math:`s` - *s* (*optional*: defaults to 2 for standard DPD)
+    - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
+      - *optional*: defaults to the global `default_r_cut` specified in the pair command
+
+    To use the DPD thermostat, an nve integrator must be applied to the system and
+    the user must specify a temperature.  Use of the dpd thermostat pair force with other integrators will result
+    in unphysical behavior. To use this DPD potential with a different conservative potential than :math:`F_C`,
+    set A to zero and define the conservative pair potential separately.
+
+    Example::
+
+        nl =  hoomd.md.nlist.cell()
+        dpd = azplugins.pair.DPDGeneralWeight(default_r_cut=1.0, nlist=nl)
+        dpd.params[('A', 'A')] = dict(A=25.0, gamma=4.5, s=2.)
+
+    """
 
     _ext_module = _azplugins
     _cpp_class_name = "PotentialPairDPDGeneralWeight"
@@ -351,6 +433,7 @@ class DPDGeneralWeight(piar.Pair):
         nlist,
         kT,
         default_r_cut=None,
+        mode='none',
     ):
         super().__init__(nlist=nlist,
                          default_r_cut=default_r_cut,
@@ -360,7 +443,7 @@ class DPDGeneralWeight(piar.Pair):
             'params', 'particle_types',
             TypeParameterDict(A=float, gamma=float, s=float, len_keys=2))
         self._add_typeparam(params)
-        param_dict = ParameterDict(kT=hoomd.variant.Variant)
+        param_dict = ParameterDict(kT=Variant)
         param_dict["kT"] = kT
         self._param_dict.update(param_dict)
 

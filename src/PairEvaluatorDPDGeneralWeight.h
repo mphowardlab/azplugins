@@ -38,7 +38,7 @@ struct PairParametersDPDGeneralWeight : public PairParameters
         {
         A = v["A"].cast<Scalar>();
         gamma = v["gamma"].cast<Scalar>();
-        s = v["A"].cast<Scalar>();
+        s = v["s"].cast<Scalar>();
  
         }
 

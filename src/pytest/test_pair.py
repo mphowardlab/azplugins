@@ -202,7 +202,40 @@ potential_tests += [
         0,
     ),
 ]
-
+#DPDGeneralWeight 
+potential_tests += [
+    # test the calculation of force and potential
+    PotentialTestCase(
+        hoomd.azplugins.pair.DPDGeneralWeight,
+        {'A': 2.0, 'gamma':4.5, 's':0.5},
+        1.0,
+        False,
+        0.5,
+        0.25,
+        1.0,
+    ),
+    # test the cases where the potential should be zero
+    # outside cutoff
+    PotentialTestCase(
+        hoomd.azplugins.pair.DPDGeneralWeight,
+        {'A': 25.0, 'gamma':4.5, 's':2},
+        1.0,
+        False,
+        1.05,
+        0,
+        0,
+    ),
+    # inside cutoff but A = 0
+    PotentialTestCase(
+        hoomd.azplugins.pair.DPDGeneralWeight,
+        {'A': 0.0, 'gamma':4.5, 's':2},
+        1.0,
+        False,
+        0.5,
+        0,
+        0,
+    ),
+]
 
 @pytest.mark.parametrize(
     'potential_test', potential_tests, ids=lambda x: x.potential.__name__
@@ -225,11 +258,20 @@ def test_energy_and_force(
     integrator.methods = [nve]
 
     # setup pair potential
-    potential = potential_test.potential(
-        nlist=hoomd.md.nlist.Cell(buffer=r_buff),
-        default_r_cut=potential_test.r_cut,
-        mode='shift' if potential_test.shift else 'none',
-    )
+    if potential_test.potential.__name__ != 'DPDGeneralWeight':
+        potential = potential_test.potential(
+            nlist=hoomd.md.nlist.Cell(buffer=r_buff),
+            default_r_cut=potential_test.r_cut,
+            mode='shift' if potential_test.shift else 'none',
+        )
+    else: # DPDGeneralWeight pair potential has additional parameter kT in init.
+        potential = potential_test.potential(
+            nlist=hoomd.md.nlist.Cell(buffer=r_buff),
+            kT = 1.0,
+            default_r_cut=potential_test.r_cut,
+            mode='shift' if potential_test.shift else 'none',
+        )
+
     potential.params[('A', 'A')] = potential_test.params
     integrator.forces = [potential]
 
