@@ -53,9 +53,9 @@ class DPDGeneralWeight(pair.Pair):
         :nowrap:
 
         \begin{eqnarray*}
-        \mathbf{F}_{\rm D} =& -\gamma \omega_{\rm D}(r_{ij}) 
+        \mathbf{F}_{\rm D} =& -\gamma \omega_{\rm D}(r_{ij})
           (\mathbf{v}_{ij} \cdot \mathbf{\hat r}_{ij}) \mathbf{\hat r}_{ij} \\
-        \mathbf{F}_{\rm R} =& \sigma \omega_{\rm R}(r_{ij}) \xi_{ij} 
+        \mathbf{F}_{\rm R} =& \sigma \omega_{\rm R}(r_{ij}) \xi_{ij}
             \mathbf{\hat r}_{ij}
         \end{eqnarray*}
 
