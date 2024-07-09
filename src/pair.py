@@ -11,7 +11,7 @@ from hoomd.md import pair
 from hoomd.variant import Variant
 
 class DPDGeneralWeight(pair.Pair):
-    R""" Dissipative Particle Dynamics with generalized weight function
+    R""" Dissipative Particle Dynamics with generalized weight function.
 
     Args:
         nlist (hoomd.md.nlist.NeighborList): Neighbor list
@@ -43,7 +43,8 @@ class DPDGeneralWeight(pair.Pair):
         \end{eqnarray*}
 
     where *A* is the interaction parameter and :math:`r_{\rm cut}` is the cutoff radius.
-    Here, :math:`r_{ij} = r_i - r_j`. See `Groot and Warren 1997 <http://dx.doi.org/10.1063/1.474784>`_
+    Here, :math:`r_{ij} = r_i - r_j`. See `Groot and Warren 1997
+      <http://dx.doi.org/10.1063/1.474784>`_
     for more details.
 
     The dissipative and random forces, respectively, are:
@@ -52,27 +53,33 @@ class DPDGeneralWeight(pair.Pair):
         :nowrap:
 
         \begin{eqnarray*}
-        \mathbf{F}_{\rm D} =& -\gamma \omega_{\rm D}(r_{ij}) (\mathbf{v}_{ij} \cdot \mathbf{\hat r}_{ij}) \mathbf{\hat r}_{ij} \\
-        \mathbf{F}_{\rm R} =& \sigma \omega_{\rm R}(r_{ij}) \xi_{ij} \mathbf{\hat r}_{ij}
+        \mathbf{F}_{\rm D} =& -\gamma \omega_{\rm D}(r_{ij}) 
+          (\mathbf{v}_{ij} \cdot \mathbf{\hat r}_{ij}) \mathbf{\hat r}_{ij} \\
+        \mathbf{F}_{\rm R} =& \sigma \omega_{\rm R}(r_{ij}) \xi_{ij} 
+            \mathbf{\hat r}_{ij}
         \end{eqnarray*}
 
-    where :math:`\sigma = 2\gamma k_{\rm B}T` and :math:`\omega_{\rm D} = \left[\omega_{\rm R} \right]^2`
-    to satisfy the fluctuation dissipation relation. The genealized weight function is given by the
-    form proposed by `Fan et al. <https://doi.org/10.1063/1.2206595>`_:
+    where :math:`\sigma = 2\gamma k_{\rm B}T` and 
+    :math:`\omega_{\rm D} = \left[\omega_{\rm R} \right]^2`
+    to satisfy the fluctuation dissipation relation. The genealized weight 
+    function is given by the form proposed by 
+    `Fan et al. <https://doi.org/10.1063/1.2206595>`_:
 
     .. math::
         :nowrap:
 
         \begin{eqnarray*}
-        w_{\rm D}(r) = &\left( 1 - r/r_{\mathrm{cut}} \right)^s  & r \le r_{\mathrm{cut}} \\
+        w_{\rm D}(r) = &\left( 1 - r/r_{\mathrm{cut}} \right)^s  
+                       & r \le r_{\mathrm{cut}} \\
                      = & 0 & r > r_{\mathrm{cut}} \\
         \end{eqnarray*}
 
-    :py:class:`general` generates random numbers by hashing together the particle tags in the pair, the seed,
-    and the current time step index.
+    :py:class:`general` generates random numbers by hashing together the particle 
+    tags in the pair, the seed, and the current time step index.
 
-    `C. L. Phillips et. al. 2011 <http://dx.doi.org/10.1016/j.jcp.2011.05.021>`_ describes the DPD implementation
-    details in HOOMD-blue. Cite it if you utilize the DPD functionality in your work.
+    `C. L. Phillips et. al. 2011 <http://dx.doi.org/10.1016/j.jcp.2011.05.021>`
+    describes the DPD implementation details in HOOMD-blue. Cite it if you utilize 
+    the DPD functionality in your work.
 
     The following coefficients must be set per unique pair of particle types:
 
@@ -83,9 +90,10 @@ class DPDGeneralWeight(pair.Pair):
       - *optional*: defaults to the global `default_r_cut` specified in the pair command
 
     To use the DPD thermostat, an nve integrator must be applied to the system and
-    the user must specify a temperature.  Use of the dpd thermostat pair force with other integrators will result
-    in unphysical behavior. To use this DPD potential with a different conservative potential than :math:`F_C`,
-    set A to zero and define the conservative pair potential separately.
+    the user must specify a temperature.  Use of the dpd thermostat pair force with 
+    other integrators will result in unphysical behavior. To use this DPD potential 
+    with a different conservative potential than :math:`F_C`, set A to zero and define 
+    the conservative pair potential separately.
 
     Example::
 
@@ -94,7 +102,7 @@ class DPDGeneralWeight(pair.Pair):
         dpd.params[('A', 'A')] = dict(A=25.0, gamma=4.5, s=2.)
 
     """
-
+    
     _ext_module = _azplugins
     _cpp_class_name = "PotentialPairDPDGeneralWeight"
     _accepted_modes = ("none",)
