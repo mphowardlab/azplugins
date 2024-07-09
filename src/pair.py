@@ -11,7 +11,7 @@ from hoomd.md import pair
 from hoomd.variant import Variant
 
 class DPDGeneralWeight(pair.Pair):
-    R""" Dissipative Particle Dynamics with generalized weight function.
+    r""" Dissipative Particle Dynamics with generalized weight function.
 
     Args:
         nlist (hoomd.md.nlist.NeighborList): Neighbor list
