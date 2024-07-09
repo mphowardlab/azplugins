@@ -12,12 +12,12 @@ from hoomd.variant import Variant
 
 class DPDGeneralWeight(pair.Pair):
     r"""Dissipative Particle Dynamics with generalized weight function.
+
     Args:
         nlist (hoomd.md.nlist.NeighborList): Neighbor list
         kT (`hoomd.variant` or `float`): Temperature of
             thermostat :math:`[\mathrm{energy}]`.
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
-
 
     :py:class:`general` specifies that a DPD pair force should be applied between every
     non-excluded particle pair in the simulation, including an interaction potential,
