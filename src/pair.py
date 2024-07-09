@@ -11,8 +11,7 @@ from hoomd.md import pair
 from hoomd.variant import Variant
 
 class DPDGeneralWeight(pair.Pair):
-    r""" Dissipative Particle Dynamics with generalized weight function.
-
+    r"""Dissipative Particle Dynamics with generalized weight function.
     Args:
         nlist (hoomd.md.nlist.NeighborList): Neighbor list
         kT (`hoomd.variant` or `float`): Temperature of
@@ -27,7 +26,6 @@ class DPDGeneralWeight(pair.Pair):
 
     .. math::
         :nowrap:
-
         \begin{eqnarray*}
         \mathbf{F} = \mathbf{F}_{\rm C} + \mathbf{F}_{\rm D} +  \mathbf{F}_{\rm R} \\
         \end{eqnarray*}
@@ -36,7 +34,6 @@ class DPDGeneralWeight(pair.Pair):
 
     .. math::
         :nowrap:
-
         \begin{eqnarray*}
         \mathbf{F}_{\rm C} =& A (1- r_{ij}/r_{\rm cut}) & r \le r_{\rm cut} \\
                            =& 0 & r > r_{\rm cut}
@@ -51,7 +48,6 @@ class DPDGeneralWeight(pair.Pair):
 
     .. math::
         :nowrap:
-
         \begin{eqnarray*}
         \mathbf{F}_{\rm D} =& -\gamma \omega_{\rm D}(r_{ij})
           (\mathbf{v}_{ij} \cdot \mathbf{\hat r}_{ij}) \mathbf{\hat r}_{ij} \\
@@ -67,7 +63,6 @@ class DPDGeneralWeight(pair.Pair):
 
     .. math::
         :nowrap:
-
         \begin{eqnarray*}
         w_{\rm D}(r) = &\left( 1 - r/r_{\mathrm{cut}} \right)^s
                        & r \le r_{\mathrm{cut}} \\
@@ -87,7 +82,7 @@ class DPDGeneralWeight(pair.Pair):
     - :math:`\gamma` - *gamma* (in units of force/velocity)
     - :math:`s` - *s* (*required*: equals to 2 for standard DPD)
     - :math:`r_{\mathrm{cut}}` - *r_cut* (in distance units)
-      - *optional*: defaults to the global `default_r_cut` specified in the pair command
+    - *optional*: defaults to the global `default_r_cut` specified in the pair command
 
     To use the DPD thermostat, an nve integrator must be applied to the system and
     the user must specify a temperature.  Use of the dpd thermostat pair force with
@@ -96,11 +91,9 @@ class DPDGeneralWeight(pair.Pair):
     the conservative pair potential separately.
 
     Example::
-
         nl =  hoomd.md.nlist.cell()
         dpd = azplugins.pair.DPDGeneralWeight(default_r_cut=1.0, nlist=nl)
         dpd.params[('A', 'A')] = dict(A=25.0, gamma=4.5, s=2.)
-
     """
 
     _ext_module = _azplugins
