@@ -19,12 +19,24 @@
 
 namespace hoomd
     {
+namespace md
+    {
+
+// This should not be needed as the export_ method below instantiates the template, but runtime
+// errors result without these lines.
+template class PotentialPair<azplugins::detail::EVALUATOR_CLASS>;
+template class PotentialPairDPDThermo<azplugins::detail::EVALUATOR_CLASS>;
+
+    }
+    }
+
+namespace hoomd
+    {
 namespace azplugins
     {
-
-
 namespace detail
     {
+
 void EXPORT_FUNCTION(pybind11::module& m)
     {
     hoomd::md::detail::export_PotentialPair<EVALUATOR_CLASS>(m, "PotentialPairConservative@_evaluator@");
