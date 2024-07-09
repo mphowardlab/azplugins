@@ -59,9 +59,11 @@ void export_ParabolicFlow(pybind11::module&);
 // pair
 void export_AnisoPotentialPairTwoPatchMorse(pybind11::module&);
 void export_PotentialPairColloid(pybind11::module&);
-void export_PotentialPairDPDGeneralWeight(pybind11::module&);
 void export_PotentialPairHertz(pybind11::module&);
 void export_PotentialPairPerturbedLennardJones(pybind11::module&);
+
+// dpd
+void export_PotentialPairDPDThermoDPDGeneralWeight(pybind11::module&);
 
 #ifdef ENABLE_HIP
 // bond
@@ -70,9 +72,12 @@ void export_PotentialBondDoubleWellGPU(pybind11::module&);
 // pair
 void export_AnisoPotentialPairTwoPatchMorseGPU(pybind11::module&);
 void export_PotentialPairColloidGPU(pybind11::module&);
-void export_PotentialPairDPDGeneralWeightGPU(pybind11::module&);
 void export_PotentialPairHertzGPU(pybind11::module&);
 void export_PotentialPairPerturbedLennardJonesGPU(pybind11::module&);
+
+// dpd
+void export_PotentialPairDPDThermoDPDGeneralWeightGPU(pybind11::module&);
+
 #endif // ENABLE_HIP
 
     } // namespace detail
@@ -98,7 +103,7 @@ PYBIND11_MODULE(_azplugins, m)
     export_PotentialPairPerturbedLennardJones(m);
 
     //dpd pair
-    export_PotentialPairDPDGeneralWeight(m);
+    export_PotentialPairDPDThermoDPDGeneralWeight(m);
 
 #ifdef ENABLE_HIP
     // bond
@@ -111,7 +116,7 @@ PYBIND11_MODULE(_azplugins, m)
     export_PotentialPairPerturbedLennardJonesGPU(m);
 
     // dpd pair
-    export_PotentialPairDPDGeneralWeightGPU(m);
+    export_PotentialPairDPDThermoDPDGeneralWeightGPU(m);
 
 #endif // ENABLE_HIP
     }

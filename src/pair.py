@@ -99,7 +99,7 @@ class DPDGeneralWeight(pair.Pair):
     """
 
     _ext_module = _azplugins
-    _cpp_class_name = 'PotentialPairDPDGeneralWeight'
+    _cpp_class_name = 'PotentialPairDPDThermoDPDGeneralWeight'
     _accepted_modes = ('none',)
 
     def __init__(
