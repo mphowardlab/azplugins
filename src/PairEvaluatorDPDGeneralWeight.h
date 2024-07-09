@@ -284,4 +284,4 @@ class PairEvaluatorDPDGeneralWeight : public PairEvaluator
 
 #undef DEVICE
 
-#endif // AZPLUGINS_DPD_EVALUATOR_GENERAL_WEIGHT_H_
+#endif // AZPLUGINS_PAIR_EVALUATOR_DPD_GENERAL_WEIGHT_H_
