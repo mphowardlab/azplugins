@@ -225,10 +225,10 @@ class PairEvaluatorDPDGeneralWeight : public PairEvaluator
 
             // Generate a single random number
             hoomd::RandomGenerator rng(
-                                    hoomd::Seed(hoomd::azplugins::detail::RNGIdentifier::DPDEvaluatorGeneralWeight,
-                                    m_timestep,
-                                    m_seed),
-                                    hoomd::Counter(m_oi, m_oj));
+                hoomd::Seed(hoomd::azplugins::detail::RNGIdentifier::DPDEvaluatorGeneralWeight,
+                            m_timestep,
+                            m_seed),
+                hoomd::Counter(m_oi, m_oj));
 
             Scalar alpha = hoomd::UniformDistribution<Scalar>(-1, 1)(rng);
 
