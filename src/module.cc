@@ -94,9 +94,11 @@ PYBIND11_MODULE(_azplugins, m)
     // pair
     export_AnisoPotentialPairTwoPatchMorse(m);
     export_PotentialPairColloid(m);
-    export_PotentialPairDPDGeneralWeight(m);
     export_PotentialPairHertz(m);
     export_PotentialPairPerturbedLennardJones(m);
+
+    //dpd pair
+    export_PotentialPairDPDGeneralWeight(m);
 
 #ifdef ENABLE_HIP
     // bond
@@ -105,8 +107,11 @@ PYBIND11_MODULE(_azplugins, m)
     // pair
     export_AnisoPotentialPairTwoPatchMorseGPU(m);
     export_PotentialPairColloidGPU(m);
-    export_PotentialPairDPDGeneralWeightGPU(m);
     export_PotentialPairHertzGPU(m);
     export_PotentialPairPerturbedLennardJonesGPU(m);
+
+    // dpd pair
+    export_PotentialPairDPDGeneralWeightGPU(m);
+
 #endif // ENABLE_HIP
     }

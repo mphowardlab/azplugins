@@ -27,12 +27,16 @@ set(_bond_evaluators
     DoubleWell
     )
 
-# TODO: Add names of all pair evaluators`
+# TODO: Add names of all pair evaluators
 set(_pair_evaluators
     Colloid
-    DPDGeneralWeight
     Hertz
     PerturbedLennardJones
+    )
+
+# TODO: Add names of all dpd evaluators
+set(_dpd_evaluators
+    DPDGeneralWeight
     )
 
 # TODO: Add names of all anisotropic pair evaluators
@@ -75,6 +79,25 @@ foreach(_evaluator ${_pair_evaluators})
                        @ONLY)
         set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialPair${_evaluator}GPU.cc)
         set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} PotentialPair${_evaluator}GPUKernel.cu)
+    endif()
+endforeach()
+
+# process DPD potentials
+foreach(_evaluator ${_dpd_evaluators})
+    configure_file(export_PotentialPairDPDThermo.cc.inc
+                   export_PotentialPairDPDThermo${_evaluator}.cc
+                   @ONLY)
+    set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources}  export_PotentialPairDPDThermo${_evaluator}.cc)
+
+    if (ENABLE_HIP)
+        configure_file(export_PotentialPairDPDThermoGPU.cc.inc
+                       export_PotentialPairDPDThermo${_evaluator}GPU.cc
+                       @ONLY)
+        configure_file(PotentialPairDPDThermoGPUKernel.cu.inc
+                       PotentialPairDPDThermo${_evaluator}GPUKernel.cu
+                       @ONLY)
+        set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialPairDPDThermo${_evaluator}GPU.cc)
+        set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} PotentialPairDPDThermo${_evaluator}GPUKernel.cu)
     endif()
 endforeach()
 
