@@ -102,7 +102,7 @@ class DPDGeneralWeight(pair.Pair):
         dpd.params[('A', 'A')] = dict(A=25.0, gamma=4.5, s=2.)
 
     """
-    
+
     _ext_module = _azplugins
     _cpp_class_name = "PotentialPairDPDGeneralWeight"
     _accepted_modes = ("none",)
