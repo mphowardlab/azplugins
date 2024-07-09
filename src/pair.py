@@ -18,7 +18,7 @@ class DPDGeneralWeight(pair.Pair):
         kT (`hoomd.variant` or `float`): Temperature of
             thermostat :math:`[\mathrm{energy}]`.
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
-       
+
 
     :py:class:`general` specifies that a DPD pair force should be applied between every
     non-excluded particle pair in the simulation, including an interaction potential,
@@ -59,26 +59,26 @@ class DPDGeneralWeight(pair.Pair):
             \mathbf{\hat r}_{ij}
         \end{eqnarray*}
 
-    where :math:`\sigma = 2\gamma k_{\rm B}T` and 
+    where :math:`\sigma = 2\gamma k_{\rm B}T` and
     :math:`\omega_{\rm D} = \left[\omega_{\rm R} \right]^2`
-    to satisfy the fluctuation dissipation relation. The genealized weight 
-    function is given by the form proposed by 
+    to satisfy the fluctuation dissipation relation. The genealized weight
+    function is given by the form proposed by
     `Fan et al. <https://doi.org/10.1063/1.2206595>`_:
 
     .. math::
         :nowrap:
 
         \begin{eqnarray*}
-        w_{\rm D}(r) = &\left( 1 - r/r_{\mathrm{cut}} \right)^s  
+        w_{\rm D}(r) = &\left( 1 - r/r_{\mathrm{cut}} \right)^s
                        & r \le r_{\mathrm{cut}} \\
                      = & 0 & r > r_{\mathrm{cut}} \\
         \end{eqnarray*}
 
-    :py:class:`general` generates random numbers by hashing together the particle 
+    :py:class:`general` generates random numbers by hashing together the particle
     tags in the pair, the seed, and the current time step index.
 
     `C. L. Phillips et. al. 2011 <http://dx.doi.org/10.1016/j.jcp.2011.05.021>`
-    describes the DPD implementation details in HOOMD-blue. Cite it if you utilize 
+    describes the DPD implementation details in HOOMD-blue. Cite it if you utilize
     the DPD functionality in your work.
 
     The following coefficients must be set per unique pair of particle types:
@@ -90,9 +90,9 @@ class DPDGeneralWeight(pair.Pair):
       - *optional*: defaults to the global `default_r_cut` specified in the pair command
 
     To use the DPD thermostat, an nve integrator must be applied to the system and
-    the user must specify a temperature.  Use of the dpd thermostat pair force with 
-    other integrators will result in unphysical behavior. To use this DPD potential 
-    with a different conservative potential than :math:`F_C`, set A to zero and define 
+    the user must specify a temperature.  Use of the dpd thermostat pair force with
+    other integrators will result in unphysical behavior. To use this DPD potential
+    with a different conservative potential than :math:`F_C`, set A to zero and define
     the conservative pair potential separately.
 
     Example::
