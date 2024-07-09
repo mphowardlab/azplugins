@@ -107,7 +107,7 @@ PYBIND11_MODULE(_azplugins, m)
     // pair
     export_AnisoPotentialPairTwoPatchMorseGPU(m);
     export_PotentialPairColloidGPU(m);
-    export_PotentialPairDPDGeneralWeight(m);
+    export_PotentialPairDPDGeneralWeightGPU(m);
     export_PotentialPairHertzGPU(m);
     export_PotentialPairPerturbedLennardJonesGPU(m);
 #endif // ENABLE_HIP
