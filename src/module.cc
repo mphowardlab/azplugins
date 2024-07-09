@@ -63,8 +63,6 @@ void export_PotentialPairDPDGeneralWeight(pybind11::module&);
 void export_PotentialPairHertz(pybind11::module&);
 void export_PotentialPairPerturbedLennardJones(pybind11::module&);
 
-
-
 #ifdef ENABLE_HIP
 // bond
 void export_PotentialBondDoubleWellGPU(pybind11::module&);

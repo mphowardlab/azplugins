@@ -10,6 +10,7 @@ from hoomd.data.typeparam import TypeParameter
 from hoomd.md import pair
 from hoomd.variant import Variant
 
+
 class DPDGeneralWeight(pair.Pair):
     r"""Dissipative Particle Dynamics with generalized weight function.
 
@@ -94,11 +95,12 @@ class DPDGeneralWeight(pair.Pair):
         nl =  hoomd.md.nlist.cell()
         dpd = azplugins.pair.DPDGeneralWeight(default_r_cut=1.0, nlist=nl)
         dpd.params[('A', 'A')] = dict(A=25.0, gamma=4.5, s=2.)
+
     """
 
     _ext_module = _azplugins
-    _cpp_class_name = "PotentialPairDPDGeneralWeight"
-    _accepted_modes = ("none",)
+    _cpp_class_name = 'PotentialPairDPDGeneralWeight'
+    _accepted_modes = ('none',)
 
     def __init__(
         self,
@@ -107,16 +109,17 @@ class DPDGeneralWeight(pair.Pair):
         default_r_cut=None,
         mode='none',
     ):
-        super().__init__(nlist=nlist,
-                         default_r_cut=default_r_cut,
-                         default_r_on=0,
-                         mode='none')
+        super().__init__(
+            nlist=nlist, default_r_cut=default_r_cut, default_r_on=0, mode='none'
+        )
         params = TypeParameter(
-            'params', 'particle_types',
-            TypeParameterDict(A=float, gamma=float, s=float, len_keys=2))
+            'params',
+            'particle_types',
+            TypeParameterDict(A=float, gamma=float, s=float, len_keys=2),
+        )
         self._add_typeparam(params)
         param_dict = ParameterDict(kT=Variant)
-        param_dict["kT"] = kT
+        param_dict['kT'] = kT
         self._param_dict.update(param_dict)
 
     def _attach_hook(self):
