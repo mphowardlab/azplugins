@@ -202,7 +202,8 @@ potential_tests += [
         0,
     ),
 ]
-#DPDGeneralWeight 
+
+#DPDGeneralWeight
 potential_tests += [
     # test the calculation of force and potential
     PotentialTestCase(
@@ -258,7 +259,7 @@ def test_energy_and_force(
     integrator.methods = [nve]
 
     # setup pair potential
-    if potential_test.potential.__name__ != 'DPDGeneralWeight':
+    if potential_test.potential.__name__!='DPDGeneralWeight':
         potential = potential_test.potential(
             nlist=hoomd.md.nlist.Cell(buffer=r_buff),
             default_r_cut=potential_test.r_cut,
