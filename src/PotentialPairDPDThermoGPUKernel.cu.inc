@@ -7,7 +7,7 @@
 
 // clang-format off
 #include "hoomd/md/PotentialPairDPDThermoGPU.cuh"
-#include "hoomd/md/EvaluatorPairDPDThermo@_evaluator@.h"
+#include "EvaluatorPairDPDThermo@_evaluator@.h"
 
 #define EVALUATOR_CLASS EvaluatorPairDPDThermo@_evaluator@
 // clang-format on
