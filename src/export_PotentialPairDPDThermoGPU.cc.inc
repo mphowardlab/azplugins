@@ -11,7 +11,7 @@
 
 // clang-format off
 #include "hoomd/md/PotentialPairDPDThermoGPU.h"
-#include "hoomd/md/EvaluatorPairDPDThermo@_evaluator@.h"
+#include "EvaluatorPairDPDThermo@_evaluator@.h"
 
 #define EVALUATOR_CLASS EvaluatorPairDPDThermo@_evaluator@
 #define EXPORT_FUNCTION export_PotentialPairDPDThermo@_evaluator@GPU

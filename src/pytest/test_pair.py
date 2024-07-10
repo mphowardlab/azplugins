@@ -212,8 +212,8 @@ potential_tests += [
         1.0,
         False,
         0.5,
-        0.25,
-        1.0,
+        -0.25,
+        -1.0,
     ),
     # test the cases where the potential should be zero
     # outside cutoff
