@@ -167,6 +167,7 @@ class EvaluatorPairDPDThermoDPDGeneralWeight : public PairEvaluator
         // compute the force divided by r in force_divr
         if (rsq < rcutsq)
             {
+
             Scalar rinv = fast::rsqrt(rsq);
             Scalar r = Scalar(1.0) / rinv;
             Scalar rcutinv = fast::rsqrt(rcutsq);
@@ -203,6 +204,7 @@ class EvaluatorPairDPDThermoDPDGeneralWeight : public PairEvaluator
         // compute the force divided by r in force_divr
         if (rsq < rcutsq)
             {
+
             Scalar rinv = fast::rsqrt(rsq);
             Scalar r = Scalar(1.0) / rinv;
             Scalar rcutinv = fast::rsqrt(rcutsq);

@@ -205,15 +205,15 @@ potential_tests += [
 
 # DPDGeneralWeight
 potential_tests += [
-    # test the calculation of force and potential
+    # test the calculation of force and potential (needs kT=0 for zero random force)
     PotentialTestCase(
         hoomd.azplugins.pair.DPDGeneralWeight,
         {'A': 2.0, 'gamma': 4.5, 's': 0.5},
         1.0,
         False,
         0.5,
-        -0.25,
-        -1.0,
+        0.25,
+        1.0,
     ),
     # test the cases where the potential should be zero
     # outside cutoff
@@ -269,7 +269,7 @@ def test_energy_and_force(
     else:  # DPDGeneralWeight pair potential has additional parameter kT in init.
         potential = potential_test.potential(
             nlist=hoomd.md.nlist.Cell(buffer=r_buff),
-            kT=1.0,
+            kT=0.0,
             default_r_cut=potential_test.r_cut,
             mode='shift' if potential_test.shift else 'none',
         )
