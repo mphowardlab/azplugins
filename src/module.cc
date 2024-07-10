@@ -102,7 +102,7 @@ PYBIND11_MODULE(_azplugins, m)
     export_PotentialPairHertz(m);
     export_PotentialPairPerturbedLennardJones(m);
 
-    //dpd pair
+    // dpd pair
     export_PotentialPairDPDThermoDPDGeneralWeight(m);
 
 #ifdef ENABLE_HIP

@@ -32,8 +32,12 @@ namespace detail
 
 void EXPORT_FUNCTION(pybind11::module& m)
     {
-    hoomd::md::detail::export_PotentialPair<EVALUATOR_CLASS>(m, "PotentialPairConservative@_evaluator@");
-    hoomd::md::detail::export_PotentialPairDPDThermo<EVALUATOR_CLASS>(m, "PotentialPairDPDThermo@_evaluator@");
+    hoomd::md::detail::export_PotentialPair<EVALUATOR_CLASS>(
+        m,
+        "PotentialPairConservative@_evaluator@");
+    hoomd::md::detail::export_PotentialPairDPDThermo<EVALUATOR_CLASS>(
+        m,
+        "PotentialPairDPDThermo@_evaluator@");
     }
     } // end namespace detail
     } // end namespace azplugins

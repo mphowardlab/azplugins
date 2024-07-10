@@ -103,7 +103,8 @@ class EvaluatorPairDPDThermoDPDGeneralWeight : public PairEvaluator
      * \param _rcutsq Sqauared distance at which the potential goes to 0
      * \param _params Per type pair parameters of this potential
      */
-    DEVICE EvaluatorPairDPDThermoDPDGeneralWeight(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
+    DEVICE
+    EvaluatorPairDPDThermoDPDGeneralWeight(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
         : PairEvaluator(_rsq, _rcutsq)
         {
         A = _params.A;
@@ -167,7 +168,6 @@ class EvaluatorPairDPDThermoDPDGeneralWeight : public PairEvaluator
         // compute the force divided by r in force_divr
         if (rsq < rcutsq)
             {
-
             Scalar rinv = fast::rsqrt(rsq);
             Scalar r = Scalar(1.0) / rinv;
             Scalar rcutinv = fast::rsqrt(rcutsq);
@@ -204,7 +204,6 @@ class EvaluatorPairDPDThermoDPDGeneralWeight : public PairEvaluator
         // compute the force divided by r in force_divr
         if (rsq < rcutsq)
             {
-
             Scalar rinv = fast::rsqrt(rsq);
             Scalar r = Scalar(1.0) / rinv;
             Scalar rcutinv = fast::rsqrt(rcutsq);

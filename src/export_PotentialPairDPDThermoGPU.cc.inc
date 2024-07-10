@@ -30,7 +30,9 @@ namespace detail
     {
 void EXPORT_FUNCTION(pybind11::module& m)
     {
-    hoomd::md::detail::export_PotentialPairDPDThermoGPU<EVALUATOR_CLASS>(m, "PotentialPairDPDThermo@_evaluator@GPU");
+    hoomd::md::detail::export_PotentialPairDPDThermoGPU<EVALUATOR_CLASS>(
+        m,
+        "PotentialPairDPDThermo@_evaluator@GPU");
     }
     } // end namespace detail
     } // end namespace azplugins
