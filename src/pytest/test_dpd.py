@@ -6,19 +6,16 @@
 
 import hoomd
 import numpy
-from hoomd.conftest import pickling_check
 
 
 def test_dpd_general_weight_temperature(simulation_factory, lattice_snapshot_factory):
     """Test dpd general weight thermostat."""
-
     # use lattice snapshot to generate a simulation with N=1000 in a box 6 x 6 x 6
     n = 10
     snap = lattice_snapshot_factory(dimensions=3, n=n, a=0.6)
     # randomize  positions
-    snap.particles.position[:] = numpy.random.uniform(
-        low=-1.5, high=1.5, size=(snap.particles.N, 3)
-    )
+    rng = numpy.random.default_rng()
+    snap.particles.position[:] = rng.uniform(low=-3, high=3, size=(snap.particles.N, 3))
 
     sim = simulation_factory(snap)
 
@@ -43,7 +40,7 @@ def test_dpd_general_weight_temperature(simulation_factory, lattice_snapshot_fac
     # Ideally, we should be able to use hoomd.md.compute.ThermodynamicQuantities
     # with a logger function, but I could not figure out how to save the output into
     # an numy array instead of stdout (with Table logger) or file.
-    class calc_temperature(hoomd.custom.Action):
+    class CalcTemperature(hoomd.custom.Action):
         def __init__(self):
             self.kT = []
 
@@ -59,7 +56,7 @@ def test_dpd_general_weight_temperature(simulation_factory, lattice_snapshot_fac
         def calc_average(self):
             return numpy.average(self.kT)
 
-    custom_action = calc_temperature()
+    custom_action = CalcTemperature()
 
     custom_op = hoomd.write.CustomWriter(
         action=custom_action, trigger=hoomd.trigger.Periodic(1)
@@ -69,5 +66,6 @@ def test_dpd_general_weight_temperature(simulation_factory, lattice_snapshot_fac
     sim.run(100)
 
     # average temperature should be close (within a decimal place) to the set value
-    av_kT = custom_action.calc_average()
-    numpy.testing.assert_almost_equal(av_kT, 1.5, 1)
+    if sim.device.communicator.rank == 0:
+        av_kT = custom_action.calc_average()
+        numpy.testing.assert_almost_equal(av_kT, 1.5, 1)
