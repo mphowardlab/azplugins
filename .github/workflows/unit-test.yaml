@@ -112,7 +112,7 @@ jobs:
       working-directory: build-component
 
     - name: Run pytest (serial)
-      run: python3 -m pytest --pyargs hoomd.${COMPONENT_NAME} -x -v -ra --durations=0 --durations-min=0.1
+      run: python3 -m pytest --pyargs hoomd.${COMPONENT_NAME} -x -v -ra --durations=0 --durations-min=2
     - name: Run pytest (MPI)
       if: ${{ matrix.enable_mpi == 'ON' }}
       run: mpirun -n 2 ${GITHUB_WORKSPACE}/install/hoomd/pytest/pytest-openmpi.sh --pyargs hoomd.${COMPONENT_NAME} -x -v -ra --durations=0 --durations-min=0.1 || (( cat pytest.out.1 && exit 1 ))
