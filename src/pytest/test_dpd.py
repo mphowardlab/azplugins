@@ -31,10 +31,12 @@ def test_dpd_general_weight_temperature(simulation_factory,
     sim.operations.integrator = integrator
     integrator.forces = [dpd]
 
-    sim.state.thermalize_particle_momenta(filter=hoomd.filter.All(), kT=1.5)
+    #sim.state.thermalize_particle_momenta(filter=hoomd.filter.All(), kT=1.5)
 
     nve = hoomd.md.methods.ConstantVolume(filter=hoomd.filter.All())
     sim.operations.integrator.methods.append(nve)
+
+    sim.run(10)
 
     # This custom action calculates the temperature from particle velocities
     # Ideally, we should be able to use hoomd.md.compute.ThermodynamicQuantities
