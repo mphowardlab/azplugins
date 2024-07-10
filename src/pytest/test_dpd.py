@@ -50,8 +50,8 @@ def test_dpd_general_weight_temperature(simulation_factory, lattice_snapshot_fac
                 vel = snap.particles.velocity[:]
                 mass = snap.particles.mass[:]
                 kin_energy = 1 / 2.0 * mass * numpy.sum(vel**2, axis=1)
-            kT = 2.0 / (snap.particles.N - 1) * numpy.sum(kin_energy) / 3.0
-            self.kT.append(kT)
+                kT = 2.0 / (snap.particles.N - 1) * numpy.sum(kin_energy) / 3.0
+                self.kT.append(kT)
 
         def calc_average(self):
             return numpy.average(self.kT)
