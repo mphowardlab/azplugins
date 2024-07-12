@@ -2,10 +2,10 @@
 set(test_files
     __init__.py
     test_bond.py
-    test_dpd.py
     test_flow.py
     test_pair.py
     test_pair_aniso.py
+    test_pair_dpd.py
     )
 
 # Copy tests to the install directory.
