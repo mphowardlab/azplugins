@@ -260,20 +260,16 @@ def test_energy_and_force(
     integrator.methods = [nve]
 
     # setup pair potential
-    if potential_test.potential.__name__ != 'DPDGeneralWeight':
-        potential = potential_test.potential(
-            nlist=hoomd.md.nlist.Cell(buffer=r_buff),
-            default_r_cut=potential_test.r_cut,
-            mode='shift' if potential_test.shift else 'none',
-        )
-    else:  # DPDGeneralWeight pair potential has additional parameter kT in init.
-        potential = potential_test.potential(
-            nlist=hoomd.md.nlist.Cell(buffer=r_buff),
-            kT=0.0,
-            default_r_cut=potential_test.r_cut,
-            mode='shift' if potential_test.shift else 'none',
-        )
+    extra_args = {}
+    if potential_test.potential is hoomd.azplugins.pair.DPDGeneralWeight:
+        extra_args['kT'] = 0.0
 
+    potential = potential_test.potential(
+        nlist=hoomd.md.nlist.Cell(buffer=r_buff),
+        default_r_cut=potential_test.r_cut,
+        mode='shift' if potential_test.shift else 'none',
+        **extra_args,
+    )
     potential.params[('A', 'A')] = potential_test.params
     integrator.forces = [potential]
 
