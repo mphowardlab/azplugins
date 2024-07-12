@@ -36,7 +36,7 @@ set(_pair_evaluators
 
 # TODO: Add names of all dpd evaluators
 set(_dpd_evaluators
-    DPDGeneralWeight
+    GeneralWeight
     )
 
 # TODO: Add names of all anisotropic pair evaluators

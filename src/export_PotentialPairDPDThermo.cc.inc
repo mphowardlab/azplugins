@@ -11,17 +11,15 @@
 
 // clang-format off
 #include "hoomd/md/PotentialPairDPDThermo.h"
-#include "EvaluatorPairDPDThermo@_evaluator@.h"
+#include "DPDPairEvaluator@_evaluator@.h"
 
-#define EVALUATOR_CLASS EvaluatorPairDPDThermo@_evaluator@
+#define EVALUATOR_CLASS DPDPairEvaluator@_evaluator@
 #define EXPORT_FUNCTION export_PotentialPairDPDThermo@_evaluator@
 // clang-format on
 
 namespace hoomd
     {
 
-// This should not be needed as the export_ method below instantiates the template, but runtime
-// errors result without these lines.
 template class hoomd::md::PotentialPair<azplugins::detail::EVALUATOR_CLASS>;
 template class hoomd::md::PotentialPairDPDThermo<azplugins::detail::EVALUATOR_CLASS>;
 
@@ -39,6 +37,7 @@ void EXPORT_FUNCTION(pybind11::module& m)
         m,
         "PotentialPairDPDThermo@_evaluator@");
     }
+
     } // end namespace detail
     } // end namespace azplugins
     } // end namespace hoomd

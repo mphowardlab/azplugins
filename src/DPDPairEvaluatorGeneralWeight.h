@@ -3,12 +3,12 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file DPDEvaluatorGeneralWeight.h
+ * \file DPDPairEvaluatorGeneralWeight.h
  * \brief Defines the dpd force evaluator using generalized weight functions.
  */
 
-#ifndef AZPLUGINS_PAIR_EVALUATOR_DPD_GENERAL_WEIGHT_H_
-#define AZPLUGINS_PAIR_EVALUATOR_DPD_GENERAL_WEIGHT_H_
+#ifndef AZPLUGINS_DPD_PAIR_EVALUATOR_GENERAL_WEIGHT_H_
+#define AZPLUGINS_DPD_PAIR_EVALUATOR_GENERAL_WEIGHT_H_
 
 #include "PairEvaluator.h"
 
@@ -55,11 +55,10 @@ struct PairParametersDPDGeneralWeight : public PairParameters
     Scalar gamma;
     Scalar s;
     }
-
 #if HOOMD_LONGREAL_SIZE == 32
-    __attribute__((aligned(4)));
+    __attribute__((aligned(16)));
 #else
-    __attribute__((aligned(8)));
+    __attribute__((aligned(32)));
 #endif
 
 //! Evaluator for DPD generalized dissipative / random weight functions
@@ -91,7 +90,7 @@ struct PairParametersDPDGeneralWeight : public PairParameters
  * where \a s is usually 2 for the "standard" DPD method. Refer to the original paper for more
  * details.
  */
-class EvaluatorPairDPDThermoDPDGeneralWeight : public PairEvaluator
+class DPDPairEvaluatorGeneralWeight : public PairEvaluator
     {
     public:
     //! Three parameters are used by this DPD potential evaluator
@@ -104,7 +103,7 @@ class EvaluatorPairDPDThermoDPDGeneralWeight : public PairEvaluator
      * \param _params Per type pair parameters of this potential
      */
     DEVICE
-    EvaluatorPairDPDThermoDPDGeneralWeight(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
+    DPDPairEvaluatorGeneralWeight(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
         : PairEvaluator(_rsq, _rcutsq)
         {
         A = _params.A;
@@ -120,7 +119,7 @@ class EvaluatorPairDPDThermoDPDGeneralWeight : public PairEvaluator
      * \param timestep Timestep to evaluate forces at
      */
     DEVICE void
-    set_seed_ij_timestep(unsigned int seed, unsigned int i, unsigned int j, unsigned int timestep)
+    set_seed_ij_timestep(uint16_t seed, unsigned int i, unsigned int j, unsigned int timestep)
         {
         m_seed = seed;
         m_i = i;
@@ -268,7 +267,7 @@ class EvaluatorPairDPDThermoDPDGeneralWeight : public PairEvaluator
     Scalar gamma; //!< Drag term
     Scalar s;     //!< Exponent for the dissipative weight function
 
-    unsigned int m_seed;     //!< User set seed for PRNG
+    uint16_t m_seed;         //!< User set seed for PRNG
     unsigned int m_i;        //!< Tag of first particle for PRNG
     unsigned int m_j;        //!< Tag of second particle for PRNG
     unsigned int m_timestep; //!< timestep for use in PRNG
@@ -284,4 +283,4 @@ class EvaluatorPairDPDThermoDPDGeneralWeight : public PairEvaluator
 
 #undef DEVICE
 
-#endif // AZPLUGINS_PAIR_EVALUATOR_DPD_GENERAL_WEIGHT_H_
+#endif // AZPLUGINS_DPD_PAIR_EVALUATOR_GENERAL_WEIGHT_H_
