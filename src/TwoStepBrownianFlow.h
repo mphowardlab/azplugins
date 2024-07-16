@@ -10,16 +10,17 @@
 #ifndef AZPLUGINS_TWO_STEP_BROWNIAN_FLOW_H_
 #define AZPLUGINS_TWO_STEP_BROWNIAN_FLOW_H_
 
-#ifdef NVCC
+#ifdef __HIPCC__
 #error This header cannot be compiled by nvcc
 #endif
 
 #include "hoomd/RandomNumbers.h"
-#include "hoomd/extern/pybind/include/pybind11/pybind11.h"
 #include "hoomd/md/TwoStepLangevinBase.h"
+#include <pybind11/pybind11.h>
 
 #include "RNGIdentifiers.h"
-
+namespace hoomd
+    {
 namespace azplugins
     {
 
@@ -27,7 +28,7 @@ namespace azplugins
 /*!
  * \note Only translational motion is supported by this integrator.
  */
-template<class FlowField> class PYBIND11_EXPORT TwoStepBrownianFlow : public TwoStepLangevinBase
+template<class FlowField> class PYBIND11_EXPORT TwoStepBrownianFlow : public md::TwoStepLangevinBase
     {
     public:
     //! Constructor
@@ -35,17 +36,13 @@ template<class FlowField> class PYBIND11_EXPORT TwoStepBrownianFlow : public Two
                         std::shared_ptr<ParticleGroup> group,
                         std::shared_ptr<Variant> T,
                         std::shared_ptr<FlowField> flow_field,
-                        unsigned int seed,
-                        bool use_lambda,
-                        Scalar lambda,
                         bool noiseless)
-        : TwoStepLangevinBase(sysdef, group, T, seed, use_lambda, lambda), m_flow_field(flow_field),
+        : md::TwoStepLangevinBase(sysdef, group, T), m_flow_field(flow_field),
           m_noiseless(noiseless)
         {
         m_exec_conf->msg->notice(5) << "Constructing TwoStepBrownianFlow" << std::endl;
         if (m_sysdef->getNDimensions() < 3)
             {
-            m_exec_conf->msg->error() << "flow.brownian is only supported in 3D" << std::endl;
             throw std::runtime_error("Brownian dynamics in flow is only supported in 3D");
             }
         }
@@ -75,10 +72,6 @@ template<class FlowField> class PYBIND11_EXPORT TwoStepBrownianFlow : public Two
     /*!
      * \param flow_field New flow field to apply
      */
-    void setFlowField(std::shared_ptr<FlowField> flow_field)
-        {
-        m_flow_field = flow_field;
-        }
 
     //! Get the flag for if noise is applied to the motion
     bool getNoiseless() const
@@ -105,13 +98,8 @@ void TwoStepBrownianFlow<FlowField>::integrateStepOne(unsigned int timestep)
     {
     if (m_aniso)
         {
-        m_exec_conf->msg->error() << "azplugins.integrate: anisotropic particles are not supported "
-                                     "with brownian flow integrators."
-                                  << std::endl;
         throw std::runtime_error("Anisotropic integration not supported with brownian flow");
         }
-    if (m_prof)
-        m_prof->push("Brownian step");
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(),
                                access_location::host,
@@ -121,15 +109,14 @@ void TwoStepBrownianFlow<FlowField>::integrateStepOne(unsigned int timestep)
     ArrayHandle<Scalar4> h_net_force(m_pdata->getNetForce(),
                                      access_location::host,
                                      access_mode::read);
-    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
-                                   access_location::host,
-                                   access_mode::read);
     ArrayHandle<Scalar> h_gamma(m_gamma, access_location::host, access_mode::read);
 
-    const Scalar currentTemp = m_T->getValue(timestep);
+    const Scalar currentTemp = (*m_T)(timestep);
     const FlowField& flow_field = *m_flow_field;
 
     const BoxDim& box = m_pdata->getBox();
+
+    uint16_t seed = m_sysdef->getSeed();
 
     // perform the first half step of velocity verlet
     unsigned int group_size = m_group->getNumMembers();
@@ -141,13 +128,7 @@ void TwoStepBrownianFlow<FlowField>::integrateStepOne(unsigned int timestep)
         const Scalar4 postype = h_pos.data[idx];
         Scalar3 pos = make_scalar3(postype.x, postype.y, postype.z);
         const unsigned int type = __scalar_as_int(postype.w);
-        Scalar gamma;
-        if (m_use_lambda)
-            gamma = m_lambda * h_diameter.data[idx];
-        else
-            {
-            gamma = h_gamma.data[type];
-            }
+        const Scalar gamma = h_gamma.data[type];
 
         // get the flow velocity at the current position
         const Scalar3 flow_vel = flow_field(pos);
@@ -158,10 +139,11 @@ void TwoStepBrownianFlow<FlowField>::integrateStepOne(unsigned int timestep)
             coeff = Scalar(0.0);
 
         // draw random force
-        hoomd::RandomGenerator rng(azplugins::RNGIdentifier::TwoStepBrownianFlow,
-                                   m_seed,
-                                   h_tag.data[idx],
-                                   timestep);
+        hoomd::RandomGenerator rng(
+            hoomd::Seed(hoomd::azplugins::detail::RNGIdentifier::TwoStepBrownianFlow,
+                        timestep,
+                        seed),
+            hoomd::Counter(h_tag.data[idx]));
         hoomd::UniformDistribution<Scalar> uniform(-coeff, coeff);
         const Scalar3 random_force = make_scalar3(uniform(rng), uniform(rng), uniform(rng));
 
@@ -176,9 +158,6 @@ void TwoStepBrownianFlow<FlowField>::integrateStepOne(unsigned int timestep)
         // write out the position
         h_pos.data[idx] = make_scalar4(pos.x, pos.y, pos.z, type);
         }
-
-    if (m_prof)
-        m_prof->pop();
     }
 
 namespace detail
@@ -190,21 +169,19 @@ void export_TwoStepBrownianFlow(pybind11::module& m, const std::string& name)
     namespace py = pybind11;
     typedef TwoStepBrownianFlow<FlowField> BrownianFlow;
 
-    py::class_<BrownianFlow, std::shared_ptr<BrownianFlow>>(m,
-                                                            name.c_str(),
-                                                            py::base<TwoStepLangevinBase>())
+    py::class_<BrownianFlow, std::shared_ptr<BrownianFlow>>(
+        m,
+        name.c_str(),
+        py::base<hoomd::md::TwoStepLangevinBase>())
         .def(py::init<std::shared_ptr<SystemDefinition>,
                       std::shared_ptr<ParticleGroup>,
                       std::shared_ptr<Variant>,
                       std::shared_ptr<FlowField>,
-                      unsigned int,
-                      bool,
-                      Scalar,
                       bool>())
-        .def("setFlowField", &BrownianFlow::setFlowField)
-        .def("setNoiseless", &BrownianFlow::setNoiseless);
+        .def_property_readonly("flow_field", &BrownianFlow::getFlowField)
+        .def_property("noiseless", &BrownianFlow::getNoiseless, &BrownianFlow::setNoiseless);
     }
-    } // end namespace detail
-    } // end namespace azplugins
-
+    }  // end namespace detail
+    }  // end namespace azplugins
+    }  // end namespace hoomd
 #endif // AZPLUGINS_TWO_STEP_BROWNIAN_FLOW_H_

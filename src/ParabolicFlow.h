@@ -23,7 +23,9 @@
 #endif // __HIPCC__
 
 #ifndef PYBIND11_EXPORT
-#define PYBIND11_EXPORT __attribute__((visibility("default")))
+#define _PYBIND11_EXPORT __attribute__((visibility("default")))
+#else
+#define _PYBIND11_EXPORT PYBIND11_EXPORT
 #endif
 
 namespace hoomd
@@ -48,7 +50,7 @@ namespace azplugins
  * \note The user must properly establish no flux of particles through the channel
  *       walls through an appropriate wall potential.
  */
-class PYBIND11_EXPORT ParabolicFlow
+class _PYBIND11_EXPORT ParabolicFlow
     {
     public:
     //! Construct parabolic flow profile
@@ -101,6 +103,6 @@ class PYBIND11_EXPORT ParabolicFlow
     } // namespace hoomd
 
 #undef HOSTDEVICE
-#undef PYBIND11_EXPORT
+#undef _PYBIND11_EXPORT
 
 #endif // AZPLUGINS_PARABOLIC_FLOW_H_

@@ -4,6 +4,11 @@
 
 #include <pybind11/pybind11.h>
 
+#include "ConstantFlow.h"
+#include "ParabolicFlow.h"
+#include "TwoStepBrownianFlow.h"
+#include "TwoStepLangevinFlow.h"
+
 namespace hoomd
     {
 //! Plugins for soft matter
@@ -72,10 +77,9 @@ void export_PotentialPairColloidGPU(pybind11::module&);
 void export_PotentialPairHertzGPU(pybind11::module&);
 void export_PotentialPairPerturbedLennardJonesGPU(pybind11::module&);
 #endif // ENABLE_HIP
-
-    } // namespace detail
-    } // namespace azplugins
-    } // namespace hoomd
+    }  // namespace detail
+    }  // namespace azplugins
+    }  // namespace hoomd
 
 // python module
 PYBIND11_MODULE(_azplugins, m)
@@ -88,6 +92,10 @@ PYBIND11_MODULE(_azplugins, m)
     // flow
     export_ConstantFlow(m);
     export_ParabolicFlow(m);
+    export_TwoStepBrownianFlow<hoomd::azplugins::ConstantFlow>(m, "BrownianConstantFlow");
+    export_TwoStepBrownianFlow<hoomd::azplugins::ParabolicFlow>(m, "BrownianParabolicFlow");
+    export_TwoStepLangevinFlow<hoomd::azplugins::ConstantFlow>(m, "LangevinConstantFlow");
+    export_TwoStepLangevinFlow<hoomd::azplugins::ParabolicFlow>(m, "LangevinParabolicFlow");
 
     // pair
     export_AnisoPotentialPairTwoPatchMorse(m);

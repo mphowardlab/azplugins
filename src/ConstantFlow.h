@@ -18,7 +18,9 @@
 #endif // __HIPCC__
 
 #ifndef PYBIND11_EXPORT
-#define PYBIND11_EXPORT __attribute__((visibility("default")))
+#define _PYBIND11_EXPORT __attribute__((visibility("default")))
+#else
+#define _PYBIND11_EXPORT PYBIND11_EXPORT
 #endif
 
 namespace hoomd
@@ -27,7 +29,7 @@ namespace azplugins
     {
 
 //! Position-independent flow along a vector
-class PYBIND11_EXPORT ConstantFlow
+class _PYBIND11_EXPORT ConstantFlow
     {
     public:
     //! Constructor
@@ -68,6 +70,6 @@ class PYBIND11_EXPORT ConstantFlow
     } // namespace hoomd
 
 #undef HOSTDEVICE
-#undef PYBIND11_EXPORT
+#undef _PYBIND11_EXPORT
 
 #endif // AZPLUGINS_CONSTANT_FLOW_H_
