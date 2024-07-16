@@ -263,11 +263,12 @@ def test_energy_and_force(
     extra_args = {}
     if potential_test.potential is hoomd.azplugins.pair.DPDGeneralWeight:
         extra_args['kT'] = 0.0
+    else:
+        extra_args['mode'] = 'shift' if potential_test.shift else 'none'
 
     potential = potential_test.potential(
         nlist=hoomd.md.nlist.Cell(buffer=r_buff),
         default_r_cut=potential_test.r_cut,
-        mode='shift' if potential_test.shift else 'none',
         **extra_args,
     )
     potential.params[('A', 'A')] = potential_test.params
