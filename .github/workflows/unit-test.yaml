@@ -8,19 +8,21 @@ env:
 
   #############################################################################################
   # HOOMD-blue version to build.
-  HOOMD_BLUE_VERSION: 4.7.0
+  HOOMD_BLUE_VERSION: v4.8.0
   # prevent deadlocked MPI tests from causing the job to cancel
   MPIEXEC_TIMEOUT: 3000
   # allow mpirun to execute as root in the tests
   OMPI_ALLOW_RUN_AS_ROOT: 1
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
   # allow openmpi to oversubscribe cores
-  OMPI_MCA_rmaps_base_oversubscribe: 1
+  PRTE_MCA_rmaps_default_mapping_policy: ":oversubscribe"
+  OMPI_MCA_rmaps_base_oversubscribe: "true"
   # prevent errors from mis-configured openib systems
   OMPI_MCA_btl: "vader,self"
-  # import HOOMD out of the build directory
-  PYTHONPATH: ${{ github.workspace }}/install
-
+  # skip running the CPU tests in GPU builds
+  _HOOMD_SKIP_CPU_TESTS_WHEN_GPUS_PRESENT_: 1
+  # Require GPU tests in GPU builds.
+  _HOOMD_REQUIRE_GPU_TESTS_IN_GPU_BUILDS_: 1
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -40,9 +42,9 @@ defaults:
 jobs:
   build_test:
     name: Build and test [${{ matrix.name }}]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
-      image: glotzerlab/ci:2023.11.27-cuda120_gcc11_py310
+      image: nvidia/cuda:12.5.0-devel-ubuntu22.04
     strategy:
       fail-fast: false
       matrix:
@@ -66,15 +68,32 @@ jobs:
       uses: actions/cache/restore@v4
       with:
         path: install
-        key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-2023.11.27-cuda120_gcc11_py310-mpi-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
+        key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
+    - name: Install git
+      run: |
+        apt-get update
+        apt-get install git --yes
     - name: Checkout HOOMD-blue
-      if: steps.cache.outputs.cache-hit != 'true'
       uses: actions/checkout@v4
       with:
         repository: glotzerlab/hoomd-blue
         path: hoomd-blue
         submodules: true
-        ref: v${{ env.HOOMD_BLUE_VERSION }}
+        ref: ${{ env.HOOMD_BLUE_VERSION }}
+    - name: Create Python Environment
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        environment-name: test
+        environment-file: hoomd-blue/.github/workflows/environments/py312-conda-lock.yml
+        micromamba-root-path: ${{ github.workspace }}/micromamba
+
+    - name: Configure conda environment variables
+      run: |
+        echo "PYTHONPATH=$GITHUB_WORKSPACE/install" >> $GITHUB_ENV
+        echo "CONDA_PREFIX=$MAMBA_ROOT_PREFIX/envs/test" >> $GITHUB_ENV
+        echo "CMAKE_PREFIX_PATH=$MAMBA_ROOT_PREFIX/envs/test" >> $GITHUB_ENV
+        echo "$MAMBA_ROOT_PREFIX/envs/test/bin" >> $GITHUB_PATH
+
     - name: Configure HOOMD-blue
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
@@ -99,7 +118,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         path: install
-        key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-2023.11.27-cuda120_gcc11_py310-mpi-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
+        key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-${{ job.container.image }}-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
 
     - name: Checkout component
       uses: actions/checkout@v4
