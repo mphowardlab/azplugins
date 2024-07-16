@@ -72,8 +72,9 @@ class Quartic(bond.Bond):
 
     .. math::
         \begin{eqnarray*}
-        U(r) = & k4 ((r - r_{0}) - b_{1})((r - r_{0}) - b_{2})(r - r_{0})^2 + U_{0} + U_{\rm WCA}(r) & r < r_0\\
-                   = & U_0        & r\ge r_0
+        U(r) = & k4 ((r - r_{0}) - b_{1})((r - r_{0}) - b_{2})(r - r_{0})^2 
+                  + U_{0} + U_{\rm WCA}(r)      & r < r_0\\
+             = & U_0                            & r\ge r_0
         \end{eqnarray*}
                   
     where :math:`\vec{r}` is the vector pointing from one particle to the other in the bond.
@@ -83,8 +84,10 @@ class Quartic(bond.Bond):
         :nowrap:
 
         \begin{eqnarray*}
-        U_{\mathrm{WCA}}(r)  = & 4 \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r} \right)^{6} \right]  + \varepsilon & r < 2^{\frac{1}{6}}\sigma\\
-                   = & 0          & r\ge 2^{\frac{1}{6}}\sigma
+        U_{\mathrm{WCA}}(r)  = & 4 \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12} 
+                                - \left( \frac{\sigma}{r} \right)^{6} \right]  + \varepsilon 
+                                            & r < 2^{\frac{1}{6}}\sigma\\
+                             = & 0          & r \ge 2^{\frac{1}{6}}\sigma
         \end{eqnarray*}
 
 
@@ -142,4 +145,5 @@ class Quartic(bond.Bond):
                 k=float, r_0=float, b_1=float, b_2=float, U_0=float, sigma=float, epsilon=float, delta=float, len_keys=1
             ),
         )
+        params.setdefault('delta',default=0.0)
         self._add_typeparam(params)
