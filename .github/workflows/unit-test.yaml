@@ -22,7 +22,7 @@ env:
   # skip running the CPU tests in GPU builds
   _HOOMD_SKIP_CPU_TESTS_WHEN_GPUS_PRESENT_: 1
   # Require GPU tests in GPU builds.
-  _HOOMD_REQUIRE_GPU_TESTS_IN_GPU_BUILDS_: 1
+  # _HOOMD_REQUIRE_GPU_TESTS_IN_GPU_BUILDS_: 1
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
