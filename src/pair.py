@@ -5,9 +5,10 @@
 """Pair potentials."""
 
 from hoomd.azplugins import _azplugins
-from hoomd.data.parameterdicts import TypeParameterDict
+from hoomd.data.parameterdicts import ParameterDict, TypeParameterDict
 from hoomd.data.typeparam import TypeParameter
 from hoomd.md import pair
+from hoomd.variant import Variant
 
 
 class Colloid(pair.Pair):
@@ -115,6 +116,127 @@ class Colloid(pair.Pair):
             TypeParameterDict(A=float, a_1=float, a_2=float, sigma=float, len_keys=2),
         )
         self._add_typeparam(params)
+
+
+class DPDGeneralWeight(pair.Pair):
+    r"""Dissipative Particle Dynamics with generalized weight function.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list.
+        kT (`hoomd.variant` or `float`): Temperature of
+            thermostat :math:`[\mathrm{energy}]`.
+        default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+
+    `DPDGeneralWeight` is a complete set of DPD forces (conservative force,
+    dissipative force, and random force):
+
+    .. math::
+
+        \mathbf{F} = \mathbf{F}_{\rm C} + \mathbf{F}_{\rm D} +  \mathbf{F}_{\rm R}
+
+    The conservative force :math:`\mathbf{F}_{\rm C}` is the standard form:
+
+    .. math::
+
+        \mathbf{F}_{\rm C} =
+            A \left(1 - \frac{r_{ij}}{r_{\rm cut}} \right) \mathbf{\hat{r}}_{ij}
+
+    where *A* is the interaction parameter and :math:`r_{\rm cut}` is the cutoff
+    radius. Here, :math:`r_{ij} = |\mathbf{r}_{ij}|` and
+    :math:`\mathbf{\hat{r}}_{ij} = \mathbf{r}_{ij}/r_{ij}`, where
+    :math:`\mathbf{r}_{ij} = \mathbf{r}_i - \mathbf{r}_j` is the vector from
+    particle *j* to *i* and :math:`\mathbf{r}_i` is the position of particle
+    *i*. See `Groot and Warren`_ for more details.
+
+    The dissipative force :math:`\mathbf{F}_{\rm D}` is:
+
+    .. math::
+
+        \mathbf{F}_{\rm D} = -\gamma w(r_{ij})
+          (\mathbf{v}_{ij} \cdot \mathbf{\hat r}_{ij}) \mathbf{\hat r}_{ij}
+
+    and the random force :math:`\mathbf{F}_{\rm R}` is:
+
+    .. math::
+
+        \mathbf{F}_{\rm R} = \sqrt{\gamma w(r_{ij})}
+            \theta_{ij} \mathbf{\hat r}_{ij}
+
+    where :math:`\mathbf{v}_{ij} = \mathbf{v}_i - \mathbf{v}_j` with
+    :math:`\mathbf{v}_i` being the velocity of particle *i*,
+    :math:`w` is the dissipative weight function, and :math:`\theta_{ij}` is a
+    random noise term with zero mean and variance
+    :math:`\langle \theta_{ij}(t) \theta_{ij}(t') \rangle = 2 k_{\rm B} T \delta(t-t')`.
+
+    Unlike `hoomd.md.pair.DPD`, `DPDGeneralWeight` uses the general weight
+    function proposed by `Fan et al.`_:
+
+    .. math::
+
+        w(r) = \left(1 - \frac{r_{ij}}{r_{\rm cut}}\right)^s
+
+    Setting :math:`s = 2` gives the standard DPD weight function.
+
+    Example::
+
+        nl = nlist.Cell()
+        dpd = pair.DPDGeneralWeight(nlist=nl, kT=1.0, default_r_cut=1.0)
+        dpd.params[('A', 'A')] = dict(A=25.0, gamma=4.5, s=0.5)
+        dpd.params[('A', 'B')] = dict(A=50.0, gamma=4.5, s=0.5)
+        dpd.params[('B', 'B')] = dict(A=25.0, gamma=4.5, s=0.5)
+
+    .. py:attribute:: params
+
+        The `DPDGeneralWeight` potential parameters. The dictionary has the
+        following keys:
+
+        * ``A`` (`float`, **required**) - Repulsive parameter :math:`A`
+          :math:`[\mathrm{force}]`
+        * ``gamma`` (`float`, **required**) - Friction parameter :math:`\gamma`
+          :math:`[\mathrm{mass} \cdot \mathrm{time}^{-1}]`
+        * ``s`` (`float`, **required**) - Weight function exponent :math:`s`
+
+        Type: :class:`~hoomd.data.typeparam.TypeParameter` [`tuple`
+        [``particle_type``, ``particle_type``], `dict`]
+
+    .. py:attribute:: mode
+
+        Energy shifting/smoothing mode: ``"none"``.
+
+        Type: `str`
+
+    .. _Groot and Warren: https://doi.org/10.1063/1.474784
+    .. _Fan et al.: https://doi.org/10.1063/1.2206595
+
+    """
+
+    _ext_module = _azplugins
+    _cpp_class_name = 'PotentialPairDPDThermoGeneralWeight'
+    _accepted_modes = ('none',)
+
+    def __init__(
+        self,
+        nlist,
+        kT,
+        default_r_cut=None,
+    ):
+        super().__init__(
+            nlist=nlist, default_r_cut=default_r_cut, default_r_on=0, mode='none'
+        )
+        params = TypeParameter(
+            'params',
+            'particle_types',
+            TypeParameterDict(A=float, gamma=float, s=float, len_keys=2),
+        )
+        self._add_typeparam(params)
+        param_dict = ParameterDict(kT=Variant)
+        param_dict['kT'] = kT
+        self._param_dict.update(param_dict)
+
+    def _attach_hook(self):
+        """DPD uses RNGs. Warn the user if they did not set the seed."""
+        self._simulation._warn_if_seed_unset()
+        super()._attach_hook()
 
 
 class Hertz(pair.Pair):

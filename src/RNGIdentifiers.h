@@ -10,18 +10,24 @@
 #ifndef AZPLUGINS_RNG_IDENTIFIERS_H_
 #define AZPLUGINS_RNG_IDENTIFIERS_H_
 
+namespace hoomd
+    {
 namespace azplugins
     {
 
+namespace detail
+    {
 struct RNGIdentifier
     {
     // hoomd's identifiers, changed by +/- 1
-    static const uint32_t DPDEvaluatorGeneralWeight = 0x4a84f5d1;
-    static const uint32_t TwoStepBrownianFlow = 0x431287fe;
-    static const uint32_t TwoStepLangevinFlow = 0x89abcdee;
-    static const uint32_t ParticleEvaporator = 0x3eb8536f;
+    static const uint8_t DPDEvaluatorGeneralWeight = 200;
+    static const uint8_t TwoStepBrownianFlow = 201;
+    static const uint8_t TwoStepLangevinFlow = 202;
+    static const uint8_t ParticleEvaporator = 203;
     };
 
+    } // end namespace detail
     } // end namespace azplugins
+    } // end namespace hoomd
 
 #endif // AZPLUGINS_RNG_IDENTIFIERS_H_

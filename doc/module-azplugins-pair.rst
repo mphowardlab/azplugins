@@ -13,6 +13,7 @@ azplugins.pair
     :nosignatures:
 
     Colloid
+    DPDGeneralWeight
     Hertz
     PerturbedLennardJones
     TwoPatchMorse
@@ -22,6 +23,7 @@ azplugins.pair
 .. automodule:: hoomd.azplugins.pair
     :synopsis: Pair potentials.
     :members: Colloid,
+        DPDGeneralWeight,
         Hertz,
         PerturbedLennardJones,
         TwoPatchMorse
