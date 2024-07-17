@@ -25,6 +25,7 @@ set(python_files
 # TODO: Add names of all bond evaluators
 set(_bond_evaluators
     DoubleWell
+    Quartic
     )
 
 # TODO: Add names of all pair evaluators`
