@@ -28,7 +28,7 @@ namespace detail
 struct BondParametersQuartic : public BondParameters
     {
 #ifndef __HIPCC__
-    BondParametersQuartic() : k(0), r_0(0), b_1(0), b_2(0), U_0(0), sigma(0), epsilon(0), delta(0) { }
+    BondParametersQuartic() : k(0), r_0(0), b_1(0), b_2(0), U_0(0), lj1(0), lj2(0), delta(0) { }
 
     BondParametersQuartic(pybind11::dict v)
         {
@@ -37,8 +37,8 @@ struct BondParametersQuartic : public BondParameters
         b_1 = v["b_1"].cast<Scalar>();
         b_2 = v["b_2"].cast<Scalar>();
         U_0 = v["U_0"].cast<Scalar>();
-        sigma = v["sigma"].cast<Scalar>();
-        epsilon = v["epsilon"].cast<Scalar>();
+        lj1 = 4.0 * v["epsilon"].cast<Scalar>() * pow(v["sigma"].cast<Scalar>(),12.0);
+        lj2 = 4.0 * v["epsilon"].cast<Scalar>() * pow(v["sigma"].cast<Scalar>(),6.0);
         delta = v["delta"].cast<Scalar>();
         }
 
@@ -50,8 +50,8 @@ struct BondParametersQuartic : public BondParameters
         v["b_1"] = b_1;
         v["b_2"] = b_2;
         v["U_0"] = U_0;
-        v["sigma"] = sigma;
-        v["epsilon"] = epsilon;
+        v["sigma"] = pow(lj1/lj2,1/6);
+        v["epsilon"] = lj2/4.0/pow(v["sigma"].cast<Scalar>(),6.0);
         v["delta"] = delta;
         return v;
         }
@@ -62,9 +62,9 @@ struct BondParametersQuartic : public BondParameters
     Scalar b_1;         //!< quartic tuning parameter #1
     Scalar b_2;         //!< quartic tuning parameter #2
     Scalar U_0;         //!< quartic energy barrier to "breaking"
-    Scalar delta;      //!< delta parameter bond
     Scalar lj1;        //!< lj1 parameter used in WCA calculation
     Scalar lj2;        //!< lj2 parameter used in WCA calculation
+    Scalar delta;      //!< delta parameter bond
     }
 #if HOOMD_LONGREAL_SIZE == 32
     __attribute__((aligned(16)));
@@ -144,7 +144,7 @@ class BondEvaluatorQuartic : public BondEvaluator
         else // when delta != 0, a square root needs to be taken
             {
             const Scalar r = fast::sqrt(rsq) - delta;
-            const Scalar r2inv = Scalar(1.0)/rsq;
+            const Scalar r2inv = Scalar(1.0)/r/r;
             const Scalar r6inv = r2inv*r2inv*r2inv;
             const Scalar sigma6inv = lj2/lj1;
 
@@ -166,13 +166,14 @@ class BondEvaluatorQuartic : public BondEvaluator
         // If the distance is less than the quartic cutoff distance, calculate as normal
         if (rsq < r_0*r_0)
             {
+            Scalar r_red = Scalar(0.0);
             if (r == Scalar(-1.0))  //The square root hasn't already been taken
                 {
-                const Scalar r_red = fast::sqrt(rsq) - r_0 - delta;
+                r_red = fast::sqrt(rsq) - r_0 - delta;
                 }
             else                    //The square root has already been taken
                 {
-                const Scalar r_red = r - delta;
+                r_red = r - delta;
                 }
             force_divr += Scalar(-1)*k*r_red*(4*r_red*r_red-3*(b_1+b_2)*r_red+2*b_1*b_2)/(r_red+r_0);
             bond_eng += k*(r_red-b_1)*(r_red-b_2)*r_red*r_red + U_0;
