@@ -77,17 +77,18 @@ class Quartic(bond.Bond):
              = & U_0                            & r\ge r_0
         \end{eqnarray*}
                   
-    where :math:`\vec{r}` is the vector pointing from one particle to the other in the bond.
+    where :math:`\vec{r}` is the vector pointing from one particle to the other in the 
+    bond.
     The potential :math:`U_{\rm WCA}(r)` is given by:
 
     .. math::
         :nowrap:
 
         \begin{eqnarray*}
-        U_{\mathrm{WCA}}(r)  = & 4 \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12} 
-                                - \left( \frac{\sigma}{r} \right)^{6} \right]  + \varepsilon 
-                                            & r < 2^{\frac{1}{6}}\sigma\\
-                             = & 0          & r \ge 2^{\frac{1}{6}}\sigma
+        U_{\mathrm{WCA}}(r)= & 4 \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12} 
+                             - \left( \frac{\sigma}{r} \right)^{6} \right] + \varepsilon 
+                                          & r < 2^{\frac{1}{6}}\sigma\\
+                           = & 0          & r \ge 2^{\frac{1}{6}}\sigma
         \end{eqnarray*}
 
 
@@ -99,15 +100,18 @@ class Quartic(bond.Bond):
             * ``k`` (`float`, **required**) - quartic attractive force strength
               :math:`[\mathrm{energy/length^4}]`
 
-            * ``r_0`` (`float`, **required**) - Location of the quartic potential attractive
-              cutoff. Intended to be larger than the WCA cutoff, 2^{\frac{1}{6}}\sigma.
+            * ``r_0`` (`float`, **required**) - Location of the quartic potential 
+              attractive cutoff. Intended to be larger than 
+              the WCA cutoff, 2^{\frac{1}{6}}\sigma.
               :math:`r_0` when :math:`U(r_0) = V_{0} + V_{\rm WCA}(r_0)`
               :math:`[\mathrm{length}]`
 
-            * ``b_1`` (`float`, **required**) - First quartic potential fitting parameter
+            * ``b_1`` (`float`, **required**) - First quartic potential fitting 
+              parameter 
               :math:`[\mathrm{length}]`
 
-            * ``b_2`` (`float`, **required**) - Second quartic potential fitting parameter
+            * ``b_2`` (`float`, **required**) - Second quartic potential fitting 
+              parameter
               :math:`[\mathrm{length}]`
 
             * ``U_0`` (`float`, **required**) - Potential energy barrier height
@@ -129,8 +133,10 @@ class Quartic(bond.Bond):
     Examples::
 
         quartic = azplugins.bond.Quartic()
-        quartic.params['A-A'] = dict(k=1434.3, r_0=1.5, b_1=-0.7589, b_2=0.0, U_0=67.2234, sigma=1, epsilon=1)
-        quartic.params['A-A'] = dict(k=100, r_0=2.0, b_1=-0.7589, b_2=0.0, U_0=20, sigma=1, epsilon=1, delta=0.1)
+        quartic.params['A-A'] = dict(k=1434.3, r_0=1.5, b_1=-0.7589, b_2=0.0, 
+                                    U_0=67.2234, sigma=1, epsilon=1)
+        quartic.params['A-A'] = dict(k=100, r_0=2.0, b_1=-0.7589, b_2=0.0, 
+                                    U_0=20, sigma=1, epsilon=1, delta=0.1)
     """
 
     _ext_module = _azplugins
@@ -142,7 +148,8 @@ class Quartic(bond.Bond):
             'params',
             'bond_types',
             TypeParameterDict(
-                k=float, r_0=float, b_1=float, b_2=float, U_0=float, sigma=float, epsilon=float, delta=0.0, len_keys=1
+                k=float, r_0=float, b_1=float, b_2=float, U_0=float, 
+                sigma=float, epsilon=float, delta=0.0, len_keys=1
             ),
         )
         self._add_typeparam(params)
