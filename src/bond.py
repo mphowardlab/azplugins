@@ -142,8 +142,7 @@ class Quartic(bond.Bond):
             'params',
             'bond_types',
             TypeParameterDict(
-                k=float, r_0=float, b_1=float, b_2=float, U_0=float, sigma=float, epsilon=float, delta=float, len_keys=1
+                k=float, r_0=float, b_1=float, b_2=float, U_0=float, sigma=float, epsilon=float, delta=0.0, len_keys=1
             ),
         )
-        params.setdefault('delta',default=0.0)
         self._add_typeparam(params)

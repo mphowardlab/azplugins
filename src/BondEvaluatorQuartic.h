@@ -28,7 +28,7 @@ namespace detail
 struct BondParametersQuartic : public BondParameters
     {
 #ifndef __HIPCC__
-    BondParametersQuartic() : k(0), r_0(0), b_1(0), b_2(0), U_0(0), lj1(0), lj2(0), delta(0) { }
+    BondParametersQuartic() : k(0), r_0(0), b_1(0), b_2(0), U_0(0), sigma_6(0), epsilon_x_4(0), delta(0) { }
 
     BondParametersQuartic(pybind11::dict v)
         {
@@ -37,9 +37,15 @@ struct BondParametersQuartic : public BondParameters
         b_1 = v["b_1"].cast<Scalar>();
         b_2 = v["b_2"].cast<Scalar>();
         U_0 = v["U_0"].cast<Scalar>();
-        lj1 = 4.0 * v["epsilon"].cast<Scalar>() * pow(v["sigma"].cast<Scalar>(),12.0);
-        lj2 = 4.0 * v["epsilon"].cast<Scalar>() * pow(v["sigma"].cast<Scalar>(),6.0);
         delta = v["delta"].cast<Scalar>();
+
+        auto sigma(v["sigma"].cast<Scalar>());
+        auto epsilon(v["epsilon"].cast<Scalar>());
+
+        const Scalar sigma_2 = sigma * sigma;
+        const Scalar sigma_4 = sigma_2 * sigma_2;
+        sigma_6 = sigma_2 * sigma_4;
+        epsilon_x_4 = Scalar(4.0) * epsilon;
         }
 
     pybind11::dict asDict()
@@ -50,21 +56,21 @@ struct BondParametersQuartic : public BondParameters
         v["b_1"] = b_1;
         v["b_2"] = b_2;
         v["U_0"] = U_0;
-        v["sigma"] = pow(lj1/lj2,1/6);
-        v["epsilon"] = lj2/4.0/pow(v["sigma"].cast<Scalar>(),6.0);
+        v["sigma"] = pow(sigma_6, 1. / 6.);
+        v["epsilon"] = epsilon_x_4 / Scalar(4.);
         v["delta"] = delta;
         return v;
         }
 #endif
 
-    Scalar k;          //!< k parameter for quartic potential strength
-    Scalar r_0;        //!< energy barrier breaking distance
+    Scalar k;           //!< k parameter for quartic potential strength
+    Scalar r_0;         //!< energy barrier breaking distance
     Scalar b_1;         //!< quartic tuning parameter #1
     Scalar b_2;         //!< quartic tuning parameter #2
     Scalar U_0;         //!< quartic energy barrier to "breaking"
-    Scalar lj1;        //!< lj1 parameter used in WCA calculation
-    Scalar lj2;        //!< lj2 parameter used in WCA calculation
-    Scalar delta;      //!< delta parameter bond
+    Scalar sigma_6;     //!< sigma raised to the power of 6 for WCA
+    Scalar epsilon_x_4; //!< epsilon * 4 for WCA 
+    Scalar delta;       //!< delta parameter bond
     }
 #if HOOMD_LONGREAL_SIZE == 32
     __attribute__((aligned(16)));
@@ -107,7 +113,9 @@ class BondEvaluatorQuartic : public BondEvaluator
     DEVICE BondEvaluatorQuartic(Scalar _rsq, const param_type& _params)
         : BondEvaluator(_rsq), k(_params.k), r_0(_params.r_0), b_1(_params.b_1),
           b_2(_params.b_2), U_0(_params.U_0), delta(_params.delta), 
-          lj1(_params.lj1), lj2(_params.lj2)
+          lj1(_params.epsilon_x_4 * _params.sigma_6 * _params.sigma_6),
+          lj2(_params.epsilon_x_4 * _params.sigma_6),
+          epsilon(_params.epsilon_x_4 / Scalar(4.0))
         {
         }
 
@@ -121,7 +129,7 @@ class BondEvaluatorQuartic : public BondEvaluator
 
         Scalar r = Scalar(-1.0); //sentinel value for whether the square root has already been taken
 
-        if (delta == Scalar(0.0)) // when delta = 0, no square root is needed for WCA
+        if (delta == Scalar(0.0)) // case when delta = 0, no square root is needed for WCA
             {
             const Scalar r2inv = Scalar(1.0)/rsq;
             const Scalar r6inv = r2inv*r2inv*r2inv;
@@ -140,20 +148,33 @@ class BondEvaluatorQuartic : public BondEvaluator
                 force_divr = 0;
                 bond_eng = 0;
                 }
+
+            // Quartic component
+            // If the distance is less than the quartic cutoff distance, calculate as normal
+            if (rsq < r_0*r_0)
+                {
+                Scalar r_red = fast::sqrt(rsq) - r_0;
+                force_divr += Scalar(-1)*k*r_red*(4*r_red*r_red-3*(b_1+b_2)*r_red+2*b_1*b_2)/(r_red+r_0);
+                bond_eng += k*(r_red-b_1)*(r_red-b_2)*r_red*r_red + U_0;
+                }
+            else
+                {
+                force_divr += 0;
+                bond_eng += U_0;
+                }
             }
-        else // when delta != 0, a square root needs to be taken
+        else // case when delta != 0, a square root needs to be taken
             {
-            const Scalar r = fast::sqrt(rsq) - delta;
+            r = fast::sqrt(rsq) - delta;
             const Scalar r2inv = Scalar(1.0)/r/r;
             const Scalar r6inv = r2inv*r2inv*r2inv;
             const Scalar sigma6inv = lj2/lj1;
 
             // wca cutoff: r < 2^(1/6)*sigma
-            // if epsilon or sigma is zero OR r is beyond cutoff, the force and energy are zero
+            // if epsilon or sigma is zero OR r is beyond cutoff, the WCA force and energy are zero
             if (lj1 != Scalar(0) && r6inv > sigma6inv/Scalar(2.0))
                 {
-                Scalar epsilon = lj2*lj2/Scalar(4.0)/lj1;
-                force_divr = r2inv * r6inv * (Scalar(12.0)*lj1*r6inv - Scalar(6.0)*lj2);
+                force_divr = r6inv * (Scalar(12.0)*lj1*r6inv - Scalar(6.0)*lj2) / r / (r+delta) ;
                 bond_eng = r6inv * (lj1*r6inv - lj2) + epsilon;
                 }
             else
@@ -161,28 +182,21 @@ class BondEvaluatorQuartic : public BondEvaluator
                 force_divr = 0;
                 bond_eng = 0;
                 }
-            }
-        
-        // If the distance is less than the quartic cutoff distance, calculate as normal
-        if (rsq < r_0*r_0)
-            {
-            Scalar r_red = Scalar(0.0);
-            if (r == Scalar(-1.0))  //The square root hasn't already been taken
+            
+            //Quartic component of the force
+            if (r < r_0)
                 {
-                r_red = fast::sqrt(rsq) - r_0 - delta;
+                Scalar r_red = r - r_0;
+                force_divr += Scalar(-1)*k*r_red*(4*r_red*r_red-3*(b_1+b_2)*r_red+2*b_1*b_2)/(r_red+r_0+delta);
+                bond_eng += k*(r_red-b_1)*(r_red-b_2)*r_red*r_red + U_0;
                 }
-            else                    //The square root has already been taken
+            else
                 {
-                r_red = r - delta;
+                force_divr += 0;
+                bond_eng += U_0;
                 }
-            force_divr += Scalar(-1)*k*r_red*(4*r_red*r_red-3*(b_1+b_2)*r_red+2*b_1*b_2)/(r_red+r_0);
-            bond_eng += k*(r_red-b_1)*(r_red-b_2)*r_red*r_red + U_0;
             }
-        else
-            {
-            force_divr += 0;
-            bond_eng += U_0;
-            }
+
         return true;
         }
 
@@ -196,12 +210,13 @@ class BondEvaluatorQuartic : public BondEvaluator
     private:
     Scalar k;          //!< k parameter for quartic potential strength
     Scalar r_0;        //!< energy barrier breaking distance
-    Scalar b_1;         //!< quartic tuning parameter #1
-    Scalar b_2;         //!< quartic tuning parameter #2
-    Scalar U_0;         //!< quartic energy barrier to "breaking"
+    Scalar b_1;        //!< quartic tuning parameter #1
+    Scalar b_2;        //!< quartic tuning parameter #2
+    Scalar U_0;        //!< quartic energy barrier to "breaking"
     Scalar delta;      //!< delta parameter bond
     Scalar lj1;        //!< lj1 parameter used in WCA calculation
     Scalar lj2;        //!< lj2 parameter used in WCA calculation
+    Scalar epsilon;    //!< epsilon parameter used in WCA calculation
     };
 
     } // end namespace detail
