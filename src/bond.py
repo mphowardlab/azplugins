@@ -74,8 +74,8 @@ class Quartic(bond.Bond):
     .. math::
         \begin{eqnarray*}
         U(r) = & k [(r - r_{0}) - b_{1}][(r - r_{0}) - b_{2}](r - r_{0})^2
-                  + U_{0} + U_{\rm WCA}(r)      & \mathrm{when} r < r_0\\
-             = & U_0                            & \mathrm{when} r\ge r_0
+                  + U_{0} + U_{\rm WCA}(r)      & \mathrm{when } r < r_0\\
+             = & U_0                            & \mathrm{when } r\ge r_0
         \end{eqnarray*}
 
     where :math:`\vec{r}` is the vector pointing from one particle to the other in the
@@ -88,8 +88,8 @@ class Quartic(bond.Bond):
         \begin{eqnarray*}
         U_{\mathrm{WCA}}(r)= & 4 \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12}
                              - \left( \frac{\sigma}{r} \right)^{6} \right] + \varepsilon
-                                          & \mathrm{when} r < 2^{\frac{1}{6}}\sigma\\
-                           = & 0          & \mathrm{when} r \ge 2^{\frac{1}{6}}\sigma
+                                          & \mathrm{when } r < 2^{\frac{1}{6}}\sigma\\
+                           = & 0          & \mathrm{when } r \ge 2^{\frac{1}{6}}\sigma
         \end{eqnarray*}
 
 
@@ -103,8 +103,8 @@ class Quartic(bond.Bond):
 
             * ``r_0`` (`float`, **required**) - Location of the quartic potential
               cutoff. Intended to be larger than the WCA cutoff,
-              :math:`2^{\frac{1}{6}}\sigma`.
-              :math:`r_0` when :math:`U(r_0) = U_{0} + U_{\rm WCA}(r_0)`
+              :math:`2^{\frac{1}{6}}\sigma`. When true,
+              :math:`U(r_0) = U_{0} + U_{\rm WCA}(r_0)`
               :math:`[\mathrm{length}]`
 
             * ``b_1`` (`float`, **required**) - First quartic potential fitting
@@ -120,15 +120,16 @@ class Quartic(bond.Bond):
               :math:`[\mathrm{energy}]`
 
             * ``epsilon`` (`float`, **required**) - Repulsive WCA force strength
-              parameter for :math:`U_{\mathrm{WCA}}`
+              parameter
               :math:`[\mathrm{energy}]`
 
             * ``sigma`` (`float`, **required**) - Repulsive WCA interaction distance
-              parameter for :math:`U_{\mathrm{WCA}}`
+              parameter
               :math:`[\mathrm{length}]`
 
-            * ``Delta`` (`float`, **required**) - bond length shift ``Delta``
-              default value is zero
+            * ``Delta`` (`float`, **optional**) - bond length shift ``Delta``
+              Effectively replaces all instances of :math:`r \mathrm{with} r - \Delta`
+              The default value is zero.
               :math:`[\mathrm{length}]`
 
     Examples::
