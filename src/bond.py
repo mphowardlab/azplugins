@@ -74,8 +74,8 @@ class Quartic(bond.Bond):
     .. math::
         \begin{eqnarray*}
         U(r) = & k [(r - r_{0}) - b_{1}][(r - r_{0}) - b_{2}](r - r_{0})^2
-                  + U_{0} + U_{\rm WCA}(r)      & \mathrm{when } r < r_0\\
-             = & U_0                            & \mathrm{when } r\ge r_0
+                  + U_{0} + U_{\rm WCA}(r)      & \text{when } r < r_0\\
+             = & U_0                            & \text{when } r\ge r_0
         \end{eqnarray*}
 
     where :math:`\vec{r}` is the vector pointing from one particle to the other in the
@@ -88,8 +88,8 @@ class Quartic(bond.Bond):
         \begin{eqnarray*}
         U_{\mathrm{WCA}}(r)= & 4 \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12}
                              - \left( \frac{\sigma}{r} \right)^{6} \right] + \varepsilon
-                                          & \mathrm{when } r < 2^{\frac{1}{6}}\sigma\\
-                           = & 0          & \mathrm{when } r \ge 2^{\frac{1}{6}}\sigma
+                                          & \text{when } r < 2^{\frac{1}{6}}\sigma\\
+                           = & 0          & \text{when } r \ge 2^{\frac{1}{6}}\sigma
         \end{eqnarray*}
 
 
@@ -128,7 +128,7 @@ class Quartic(bond.Bond):
               :math:`[\mathrm{length}]`
 
             * ``Delta`` (`float`, **optional**) - bond length shift ``Delta``
-              Effectively replaces all instances of :math:`r \mathrm{with} r - \Delta`
+              Effectively replaces all instances of :math:`r \text{ with } r - \Delta`
               The default value is zero.
               :math:`[\mathrm{length}]`
 
