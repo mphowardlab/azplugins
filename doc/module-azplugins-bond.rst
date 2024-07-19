@@ -13,11 +13,13 @@ azplugins.bond
     :nosignatures:
 
     DoubleWell
+    Quartic
 
 .. rubric:: Details
 
 .. automodule:: hoomd.azplugins.bond
     :synopsis: Bond potentials.
-    :members: DoubleWell
+    :members: DoubleWell,
+        Quartic
     :no-inherited-members:
     :show-inheritance:
