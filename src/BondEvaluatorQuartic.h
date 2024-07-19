@@ -113,12 +113,17 @@ class BondEvaluatorQuartic : public BondEvaluator
     public:
     typedef BondParametersQuartic param_type;
 
-    DEVICE BondEvaluatorQuartic(Scalar _rsq, const param_type& _params)
-        : BondEvaluator(_rsq), k(_params.k), r_0(_params.r_0), b_1(_params.b_1), b_2(_params.b_2),
-          U_0(_params.U_0), delta(_params.delta),
-          lj1(_params.epsilon_x_4 * _params.sigma_6 * _params.sigma_6),
-          lj2(_params.epsilon_x_4 * _params.sigma_6), epsilon(_params.epsilon_x_4 / Scalar(4.0))
+    DEVICE BondEvaluatorQuartic(Scalar _rsq, const param_type& _params) : BondEvaluator(_rsq)
         {
+        k = _params.k;
+        r_0 = _params.r_0;
+        b_1 = _params.b_1;
+        b_2 = _params.b_2;
+        U_0 = _params.U_0;
+        delta = _params.delta;
+        lj1 = _params.epsilon_x_4 * _params.sigma_6 * _params.sigma_6;
+        lj2 = _params.epsilon_x_4 * _params.sigma_6;
+        epsilon = _params.epsilon_x_4 / Scalar(4.0);
         }
 
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& bond_eng)
@@ -218,8 +223,8 @@ class BondEvaluatorQuartic : public BondEvaluator
     private:
     Scalar k;       //!< k parameter for quartic potential strength
     Scalar r_0;     //!< energy barrier breaking distance
-    Scalar b_1;     //!< quartic tuning parameter #1
-    Scalar b_2;     //!< quartic tuning parameter #2
+    Scalar b_1;     //!< primary quartic potential tuning parameter
+    Scalar b_2;     //!< secondary quartic potential tuning parameter
     Scalar U_0;     //!< quartic energy barrier to "breaking"
     Scalar delta;   //!< delta parameter bond
     Scalar lj1;     //!< lj1 parameter used in WCA calculation

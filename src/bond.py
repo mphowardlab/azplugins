@@ -136,9 +136,7 @@ class Quartic(bond.Bond):
 
         quartic = azplugins.bond.Quartic()
         quartic.params['A-A'] = dict(k=1434.3, r_0=1.5, b_1=-0.7589, b_2=0.0,
-                                    U_0=67.2234, sigma=1, epsilon=1)
-        quartic.params['A-A'] = dict(k=100, r_0=2.0, b_1=-0.7589, b_2=0.0,
-                                    U_0=20, sigma=1, epsilon=1, delta=0.1)
+                                    U_0=67.2234, sigma=1, epsilon=1, delta=0)
     """
 
     _ext_module = _azplugins
