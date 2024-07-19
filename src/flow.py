@@ -2,89 +2,132 @@
 # Copyright (c) 2021-2024, Auburn University
 # Part of azplugins, released under the BSD 3-Clause License.
 
-"""Flow fields."""
-
 import hoomd
 from hoomd.azplugins import _azplugins
 from hoomd.data.parameterdicts import ParameterDict
-from hoomd.operation import _HOOMDBaseObject
+from hoomd.custom import Action
+import pickle
 
+class FlowField(Action):
+    """Base class for flow fields."""
+    def __init__(self):
+        super().__init__()
+        self._param_dict = ParameterDict()
+        self._cpp_obj = None
+        self._simulation = None
 
-class FlowField(_HOOMDBaseObject):
-    """Base flow field."""
+    def attach(self, simulation):
+        """Attach the flow field to the simulation."""
+        self._simulation = simulation
+        self._attach_hook()
 
-    pass
+    def _attach(self, simulation):
+        """Attach the flow field to the simulation."""
+        self.attach(simulation)
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['_cpp_obj']
+        del state['_simulation']
+        return state
 
-# hoomd.azplugins.flow.constant
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._cpp_obj = None
+        self._simulation = None
+
 class ConstantFlow(FlowField):
-    r"""Constant flow profile.
+    """Constant flow profile.
 
     Args:
         velocity (tuple): Flow field.
 
-    This flow corresponds to a constant vector field, e.g., a constant
-    backflow in bulk or a plug flow in a channel. The flow field is
-    independent of the position it is evaluated at.
-
-    Example::
-
+    Example:
         u = hoomd.azplugins.flow.ConstantFlow(velocity=(1,0,0))
-
     """
-
     def __init__(self, velocity):
         super().__init__()
+        self.velocity = velocity
         param_dict = ParameterDict(velocity=(float, float, float))
         param_dict['velocity'] = velocity
         self._param_dict.update(param_dict)
 
     def _attach_hook(self):
+        """Initialize C++ object for constant flow."""
         self._cpp_obj = _azplugins.ConstantFlow(
             hoomd._hoomd.make_scalar3(
                 self.velocity[0], self.velocity[1], self.velocity[2]
             )
         )
-        super()._attach_hook()
 
+    def act(self, timestep):
+        pass
+
+    @property
+    def velocity(self):
+        return self._param_dict['velocity']
+
+    @velocity.setter
+    def velocity(self, value):
+        self._param_dict['velocity'] = value
+        if self._cpp_obj is not None:
+            self._cpp_obj.velocity = value
 
 class ParabolicFlow(FlowField):
-    r"""Parabolic flow profile between parallel plates.
+    """Parabolic flow profile between parallel plates.
 
     Args:
-         mean_velocity (float): Mean velocity.
-         separation (float): Separation between parallel plates defining the flow field.
+        mean_velocity (float): Mean velocity.
+        separation (float): Separation between parallel plates.
 
-    This flow field generates the parabolic flow profile in a slit geomtry:
-
-    .. math::
-
-        u_x(y) = \frac{3}{2}U \left[1 - \left(\frac{y}{H}\right)^2 \right]
-
-    The flow is along *x* with the gradient in *y*. The ``separation`` between the
-    two plates is :math:`2H`, and the channel is centered around :math:`y=0`.
-    The ``mean_velocity`` is :math:`U`.
-
-    Example::
-
+    Example:
         u = hoomd.azplugins.flow.ParabolicFlow(mean_velocity=2.0, separation=0.5)
-
-    Note:
-        Creating a flow profile does **not** imply anything about the simulation
-        box boundaries. It is the responsibility of the user to construct
-        appropriate bounding walls commensurate with the flow profile geometry.
-
     """
-
     def __init__(self, mean_velocity, separation):
         super().__init__()
-
-        param_dict = ParameterDict(
-            mean_velocity=float(mean_velocity), separation=float(separation)
-        )
-
+        self.mean_velocity = mean_velocity
+        self.separation = separation
+        param_dict = ParameterDict(mean_velocity=float, separation=float)
+        param_dict['mean_velocity'] = mean_velocity
+        param_dict['separation'] = separation
         self._param_dict.update(param_dict)
 
     def _attach_hook(self):
-        self._cpp_obj = _azplugins.ParabolicFlow(self.mean_velocity, self.separation)
-        super()._attach_hook()
+        """Initialize C++ object for parabolic flow."""
+        self._cpp_obj = _azplugins.ParabolicFlow(
+            self.mean_velocity, self.separation
+        )
+
+    def act(self, timestep):
+        pass
+
+    @property
+    def mean_velocity(self):
+        return self._param_dict['mean_velocity']
+
+    @mean_velocity.setter
+    def mean_velocity(self, value):
+        self._param_dict['mean_velocity'] = value
+        if self._cpp_obj is not None:
+            self._cpp_obj.mean_velocity = value
+
+    @property
+    def separation(self):
+        return self._param_dict['separation']
+
+    @separation.setter
+    def separation(self, value):
+        self._param_dict['separation'] = value
+        if self._cpp_obj is not None:
+            self._cpp_obj.separation = value
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['_cpp_obj']
+        del state['_simulation']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._cpp_obj = None
+        self._simulation = None
