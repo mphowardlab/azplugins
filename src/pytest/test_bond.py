@@ -73,7 +73,16 @@ potential_tests += [
     # test potential with sigma = epsilon = 0
     PotentialTestCase(
         hoomd.azplugins.bond.Quartic,
-        dict(k=1434.3,r_0=1.5,b_1=-0.7589,b_2=0,U_0=67.2234,sigma=0.0,epsilon=0.0,delta=0.0),
+        dict(
+            k=1434.3,
+            r_0=1.5,
+            b_1=-0.7589,
+            b_2=0,
+            U_0=67.2234,
+            sigma=0.0,
+            epsilon=0.0,
+            delta=0.0,
+        ),
         1,
         20.80586625,
         -99.2177025,
@@ -81,7 +90,16 @@ potential_tests += [
     # test potential with k == 0
     PotentialTestCase(
         hoomd.azplugins.bond.Quartic,
-        dict(epsilon=1.0,sigma=1.0,k=0.0,r_0=1.5,b_1=-0.7589,b_2=0,U_0=67.2234,delta=0),
+        dict(
+            epsilon=1.0,
+            sigma=1.0,
+            k=0.0,
+            r_0=1.5,
+            b_1=-0.7589,
+            b_2=0,
+            U_0=67.2234,
+            delta=0,
+        ),
         1,
         68.2234,
         24,
@@ -89,7 +107,16 @@ potential_tests += [
     # test potential with delta passed
     PotentialTestCase(
         hoomd.azplugins.bond.Quartic,
-        dict(epsilon=1.0, sigma=1.0, k=1434.3,r_0=1.5,b_1=-0.7589, b_2=0,U_0=67.2234,delta=0.0),
+        dict(
+            epsilon=1.0,
+            sigma=1.0,
+            k=1434.3,
+            r_0=1.5,
+            b_1=-0.7589,
+            b_2=0,
+            U_0=67.2234,
+            delta=0.0,
+        ),
         1,
         21.80586625,
         -75.2177025,
@@ -97,7 +124,16 @@ potential_tests += [
     # test potential with nonzero delta passed
     PotentialTestCase(
         hoomd.azplugins.bond.Quartic,
-        dict(epsilon=1.0, sigma=1.0, k=1434.3,r_0=1.5,b_1=-0.7589, b_2=0,U_0=67.2234,delta=0.5),
+        dict(
+            epsilon=1.0,
+            sigma=1.0,
+            k=1434.3,
+            r_0=1.5,
+            b_1=-0.7589,
+            b_2=0,
+            U_0=67.2234,
+            delta=0.5,
+        ),
         1.5,
         21.80586625,
         -75.2177025,
@@ -105,7 +141,16 @@ potential_tests += [
     # test potential at breaking point
     PotentialTestCase(
         hoomd.azplugins.bond.Quartic,
-        dict(epsilon=1.0,sigma=1.0,k=1434.3,r_0=1.5,b_1=-0.7589,b_2=0,U_0=67.2234,delta=0.0),
+        dict(
+            epsilon=1.0,
+            sigma=1.0,
+            k=1434.3,
+            r_0=1.5,
+            b_1=-0.7589,
+            b_2=0,
+            U_0=67.2234,
+            delta=0.0,
+        ),
         1.5,
         67.2234,
         0,
@@ -113,7 +158,16 @@ potential_tests += [
     # test potential beyond breaking point
     PotentialTestCase(
         hoomd.azplugins.bond.Quartic,
-        dict(epsilon=1.0,sigma=1.0,k=1434.3,r_0=1.5,b_1=-0.7589,b_2=0,U_0=67.2234,delta=0.0),
+        dict(
+            epsilon=1.0,
+            sigma=1.0,
+            k=1434.3,
+            r_0=1.5,
+            b_1=-0.7589,
+            b_2=0,
+            U_0=67.2234,
+            delta=0.0,
+        ),
         1.5,
         67.2234,
         0,
@@ -121,7 +175,16 @@ potential_tests += [
     # test potential b_1 = b_2 = 0
     PotentialTestCase(
         hoomd.azplugins.bond.Quartic,
-        dict(epsilon=1.0,sigma=1.0,k=1434.3,r_0=1.5,b_1=0,b_2=0,U_0=67.2234,delta=0.0),
+        dict(
+            epsilon=1.0,
+            sigma=1.0,
+            k=1434.3,
+            r_0=1.5,
+            b_1=0,
+            b_2=0,
+            U_0=67.2234,
+            delta=0.0,
+        ),
         1.25,
         72.82613438,
         89.64375,
