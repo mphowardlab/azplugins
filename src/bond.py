@@ -127,8 +127,8 @@ class Quartic(bond.Bond):
               parameter
               :math:`[\mathrm{length}]`
 
-            * ``Delta`` (`float`, **optional**) - bond length shift ``Delta``
-              Effectively replaces all instances of :math:`r \text{ with } r - \Delta`
+            * ``Delta`` (`float`, **optional**) - bond length shift ``Delta``.
+              Effectively replaces all instances of :math:`r \text{ with } r - \Delta`.
               The default value is zero.
               :math:`[\mathrm{length}]`
 
