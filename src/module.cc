@@ -67,6 +67,7 @@ void export_PotentialPairDPDThermoGeneralWeight(pybind11::module&);
 
 // wall
 void export_PotentialWallLJ93(pybind11::module& m);
+void export_PotentialWallColloid(pybind11::module& m);
 
 #ifdef ENABLE_HIP
 // bond
@@ -110,6 +111,7 @@ PYBIND11_MODULE(_azplugins, m)
 
     // wall
     export_PotentialWallLJ93(m);
+    export_PotentialWallColloid(m);
 
 #ifdef ENABLE_HIP
     // bond

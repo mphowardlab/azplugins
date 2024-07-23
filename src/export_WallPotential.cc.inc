@@ -6,11 +6,14 @@
 
 // clang-format off
 #include "hoomd/md/PotentialExternal.h"
-#include "WallEvaluatorLJ93.h"
 #include "hoomd/md/EvaluatorWalls.h"
 
-#define EVALUATOR_CLASS hoomd::md::EvaluatorWalls<hoomd::azplugins::detail::WallEvaluatorLJ93>
-#define EXPORT_FUNCTION export_PotentialWallLJ93
+#include "WallEvaluator@_evaluator@.h"
+// #include "WallEvaluatorColloid.h"
+
+#define EVALUATOR_CLASS hoomd::md::EvaluatorWalls<hoomd::azplugins::detail::WallEvaluator@_evaluator@>
+#define EXPORT_FUNCTION export_PotentialWall@_evaluator@
+
 // clang-format on
 
 namespace hoomd
@@ -22,9 +25,10 @@ namespace detail
 
 void EXPORT_FUNCTION(pybind11::module& m)
     {
-    hoomd::md::detail::export_PotentialExternal<EVALUATOR_CLASS>(m, "WallPotentialLJ93");
+    hoomd::md::detail::export_PotentialExternal<EVALUATOR_CLASS>(m, "WallPotential@_evaluator@");
     }
 
+
     } // end namespace detail
-    } // end namespace rusenplugins
+    } // end namespace azplugins
     } // end namespace hoomd

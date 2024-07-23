@@ -162,4 +162,4 @@ Scalar lj2;    //!< lj2 parameter extracted from the params passed to the constr
     } // end namespace hoomd
   }
 
-#endif // RUSENPLUGINS_WALL_EVALUATOR_LJ_93_H_
+#endif // AZPLUGINS_WALL_EVALUATOR_LJ_93_H_

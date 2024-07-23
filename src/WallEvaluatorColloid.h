@@ -11,22 +11,36 @@
 #ifndef AZPLUGINS_WALL_EVALUATOR_COLLOID_H_
 #define AZPLUGINS_WALL_EVALUATOR_COLLOID_H_
 
-#ifndef NVCC
+#ifndef __HIPCC__
 #include <string>
 #endif
 
 #include "hoomd/HOOMDMath.h"
 
-#ifdef NVCC
+/*! \file EvaluatorPairLJ.h
+    \brief Defines the pair evaluator class for LJ potentials
+    \details As the prototypical example of a MD pair potential, this also serves as the primary
+   documentation and base reference for the implementation of pair evaluators.
+*/
+
+// need to declare these class methods with __device__ qualifiers when building in nvcc
+// DEVICE is __host__ __device__ when included in nvcc and blank when included into the host
+// compiler
+#ifdef __HIPCC__
 #define DEVICE __device__
+#define HOSTDEVICE __host__ __device__
 #else
 #define DEVICE
+#define HOSTDEVICE
 #endif
 
+namespace hoomd
+    {
 namespace azplugins
     {
 namespace detail
-    {
+{
+
 //! Evaluates the Lennard-Jones colloid wall force
 /*!
  * The Lennard-Jones colloid wall potential is derived from integrating the standard Lennard-Jones
@@ -52,8 +66,53 @@ namespace detail
 class WallEvaluatorColloid
     {
     public:
-    //! Define the parameter type used by this wall potential evaluator
-    typedef Scalar2 param_type;
+      struct param_type
+          {
+
+          DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
+
+          HOSTDEVICE void allocate_shared(char*& ptr, unsigned int& available_bytes) const { }
+
+    #ifndef ENABLE_HIP
+          //! set CUDA memory hints
+          void set_memory_hint() const { }
+    #endif
+
+    #ifndef __HIPCC__
+          param_type() : sigma(0), epsilon(0), a(0), lj1(0), lj2(0) { }
+
+          param_type(pybind11::dict v, bool managed = false)
+              {
+              sigma = v["sigma"].cast<Scalar>();
+              epsilon = v["epsilon"].cast<Scalar>();
+              a = v["a"].cast<Scalar>();
+              a = a * Scalar(0.5);
+              Scalar sigma_3 = sigma * sigma * sigma;
+              Scalar sigma_6 = sigma_3 * sigma_3;
+              lj1 = epsilon * sigma_6 / Scalar(7560.0) ;
+              lj2 = epsilon / Scalar(6.0);
+              }
+
+          pybind11::dict asDict()
+              {
+              pybind11::dict v;
+              v["sigma"] = sigma;
+              v["epsilon"] = epsilon;
+              v["a"] = a;
+              return v;
+              }
+    #endif
+          Scalar sigma;
+          Scalar epsilon;
+          Scalar a;
+          Scalar lj1;
+          Scalar lj2;
+          }
+    #if HOOMD_LONGREAL_SIZE == 32
+          __attribute__((aligned(8)));
+    #else
+          __attribute__((aligned(16)));
+    #endif
 
     //! Constructor
     /*!
@@ -64,7 +123,7 @@ class WallEvaluatorColloid
      * The functor initializes its members from \a _params.
      */
     DEVICE WallEvaluatorColloid(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), A(_params.x), B(_params.y)
+        : rsq(_rsq), rcutsq(_rcutsq), A(_params.lj1), B(_params.lj2), a(_params.a)
         {
         }
 
@@ -83,6 +142,7 @@ class WallEvaluatorColloid
      */
     DEVICE void setDiameter(Scalar di, Scalar dj)
         {
+          std::cout<<"setting diameter: "<<di<<std::endl;
         a = Scalar(0.5) * di;
         }
 
@@ -166,21 +226,25 @@ class WallEvaluatorColloid
         if (rsq < rcutsq && A != 0 && a > 0)
             {
             energy = computePotential<true>(force_divr, rsq);
+
             if (energy_shift)
                 {
                 energy -= computePotential<false>(force_divr, rcutsq);
                 }
+                // std::cout<<"eval2: "<<energy<<std::endl;
             return true;
             }
         else
             return false;
         }
 
-#ifndef NVCC
-    //! Return the name of this potential
+#ifndef __HIPCC__
+//! Get the name of this potential
+/*! \returns The potential name.
+*/
     static std::string getName()
         {
-        return std::string("colloid");
+        return std::string("Colloid");
         }
 #endif
 
@@ -194,8 +258,8 @@ class WallEvaluatorColloid
     Scalar a; //!< The particle radius
     };
 
+  }
     } // end namespace detail
     } // namespace azplugins
 
-#undef DEVICE
-#endif // AZPLUGINS_WALL_EVALUATOR_COLLOID_H_
+    #endif // AZPLUGINS_WALL_EVALUATOR_LJ_93_H_

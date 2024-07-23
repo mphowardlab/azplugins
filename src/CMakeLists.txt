@@ -46,9 +46,10 @@ set(_aniso_pair_evaluators
     )
 
 # TODO: Add names of all wall pair evaluators
-#set(_wall_evaluators
-#
-#    )
+set(_wall_evaluators
+    LJ93
+    Colloid
+    )
 
 # process bond potentials
 foreach(_evaluator ${_bond_evaluators})
@@ -126,19 +127,19 @@ foreach(_evaluator ${_aniso_pair_evaluators})
     endif()
 endforeach()
 
-configure_file(export_WallPotential.cc.inc
-               export_PotentialWallLJ93.cc
-               @ONLY)
-set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialWallLJ93.cc)
+#configure_file(export_WallPotential.cc.inc
+#               export_PotentialWallLJ93.cc
+#               @ONLY)
+#set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialWallLJ93.cc)
 
 
 
 # process wall potentials
-# foreach(_evaluator ${_wall_evaluators})
-#    configure_file(export_WallPotential.cc.inc
-#                   export_WallPotential${_evaluator}.cc
-#                   @ONLY)
-#    set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_WallPotential${_evaluator}.cc)
+foreach(_evaluator ${_wall_evaluators})
+   configure_file(export_WallPotential.cc.inc
+                  export_PotentialWall${_evaluator}.cc
+                  @ONLY)
+   set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialWall${_evaluator}.cc)
 
 #    if (ENABLE_HIP)
 #        configure_file(export_WallPotentialGPU.cc.inc
@@ -150,7 +151,7 @@ set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialWal
 #        set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_WallPotential${_evaluator}GPU.cc)
 #        set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} WallPotential${_evaluator}GPUKernel.cu)
 #    endif()
-#endforeach()
+endforeach()
 
 if (ENABLE_HIP)
 set(_cuda_sources ${_${COMPONENT_NAME}_cu_sources})

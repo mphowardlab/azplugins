@@ -19,3 +19,19 @@ class LJ93(wall.WallPotential):
                                                         r_extrap=0.0,
                                                         len_keys=1))
         self._add_typeparam(params)
+
+class Colloid(wall.WallPotential):
+    _ext_module = _azplugins
+    _cpp_class_name = "WallPotentialColloid"
+    def __init__(self, walls):
+        super().__init__(walls)
+
+        params = TypeParameter(
+            "params", "particle_types",
+            TypeParameterDict(epsilon=float,
+                                                        sigma=float,
+                                                        a=float,
+                                                        r_cut=float,
+                                                        r_extrap=0.0,
+                                                        len_keys=1))
+        self._add_typeparam(params)
