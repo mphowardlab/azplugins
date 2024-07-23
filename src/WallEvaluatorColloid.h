@@ -142,7 +142,7 @@ class WallEvaluatorColloid
      */
     DEVICE void setDiameter(Scalar di, Scalar dj)
         {
-          std::cout<<"setting diameter: "<<di<<std::endl;
+          // std::cout<<"setting diameter: "<<di<<std::endl;
         a = Scalar(0.5) * di;
         }
 
