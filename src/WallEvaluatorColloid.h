@@ -86,7 +86,7 @@ class WallEvaluatorColloid
               sigma = v["sigma"].cast<Scalar>();
               epsilon = v["epsilon"].cast<Scalar>();
               a = v["a"].cast<Scalar>();
-              a = a * Scalar(0.5);
+              // a = a * Scalar(0.5);
               Scalar sigma_3 = sigma * sigma * sigma;
               Scalar sigma_6 = sigma_3 * sigma_3;
               lj1 = epsilon * sigma_6 / Scalar(7560.0) ;
@@ -123,7 +123,7 @@ class WallEvaluatorColloid
      * The functor initializes its members from \a _params.
      */
     DEVICE WallEvaluatorColloid(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), A(_params.lj1), B(_params.lj2), a(_params.a)
+        : rsq(_rsq), rcutsq(_rcutsq), A(_params.lj1), B(_params.lj2), a(_params.a * Scalar(0.5))
         {
         }
 
