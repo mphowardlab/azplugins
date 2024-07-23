@@ -15,7 +15,7 @@ import pytest
 PotentialTestCase = collections.namedtuple(
     'PotentialTestCase',
     ['potential', 'params', 'pos', 'energy', 'force'],
-)## Assume wall is always at the same place
+)  ## Assume wall is always at the same place
 
 
 potential_tests = []
@@ -24,16 +24,15 @@ potential_tests += [
     # test the calculation of force and potential
     PotentialTestCase(
         hoomd.azplugins.wall.Colloid,
-        {"epsilon": 100.0, "sigma": 1.05, "r_cut": 6.0, "a": 1.5, 'r_extrap': 0.0},
-        numpy.array([[1.,1.,-2.]]),
+        {'epsilon': 100.0, 'sigma': 1.05, 'r_cut': 6.0, 'a': 1.5, 'r_extrap': 0.0},
+        numpy.array([[1.0, 1.0, -2.0]]),
         -0.374977848076 - (-0.0442302367107),
         -0.394551653468,
     ),
-    
     PotentialTestCase(
         hoomd.azplugins.wall.LJ93,
-        {"epsilon": 2.0, "sigma": 1.05, "r_cut": 3.0, 'r_extrap': 0.0},
-        numpy.array([[1,1,-3.95]]),
+        {'epsilon': 2.0, 'sigma': 1.05, 'r_cut': 3.0, 'r_extrap': 0.0},
+        numpy.array([[1, 1, -3.95]]),
         -1.7333333333333334 - (-0.08572898249635419),
         -3.4285714285714284,
     ),
@@ -63,9 +62,8 @@ def test_energy_and_force(
     integrator.methods = [nve]
 
     wall_potential = potential_test.potential(walls=[top])
-    wall_potential.params[('A')] =  potential_test.params
+    wall_potential.params[('A')] = potential_test.params
     integrator.forces = [wall_potential]
-
 
     # calculate energies and forces
     sim.operations.integrator = integrator
@@ -87,19 +85,15 @@ def test_energy_and_force(
     f = potential_test.force
     # f = -0.394551653468
     if sim.device.communicator.rank == 0:
-        numpy.testing.assert_array_almost_equal(
-            forces, [[0,0,f]], decimal=4
-        )
+        numpy.testing.assert_array_almost_equal(forces, [[0, 0, f]], decimal=4)
 
     # check epsilon = 0 is zero
     wall_potential.params[('A')]['epsilon'] = 0.0
     sim.run(1)
     if sim.device.communicator.rank == 0:
+        numpy.testing.assert_array_almost_equal(wall_potential.energies, 0.0, decimal=4)
         numpy.testing.assert_array_almost_equal(
-            wall_potential.energies, 0.0, decimal=4
-        )
-        numpy.testing.assert_array_almost_equal(
-            wall_potential.forces, [[0.0,0.0,0.0]], decimal=4
+            wall_potential.forces, [[0.0, 0.0, 0.0]], decimal=4
         )
 
     # check outside the cutoff is zero
@@ -107,9 +101,7 @@ def test_energy_and_force(
     wall_potential.params[('A')]['epsilon'] = 1.0
     sim.run(1)
     if sim.device.communicator.rank == 0:
+        numpy.testing.assert_array_almost_equal(wall_potential.energies, 0.0, decimal=4)
         numpy.testing.assert_array_almost_equal(
-            wall_potential.energies, 0.0, decimal=4
-        )
-        numpy.testing.assert_array_almost_equal(
-        wall_potential.forces, [[0.0,0.0,0.0]], decimal=4
+            wall_potential.forces, [[0.0, 0.0, 0.0]], decimal=4
         )

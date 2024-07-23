@@ -86,7 +86,6 @@ void export_PotentialPairDPDThermoGeneralWeightGPU(pybind11::module&);
 void export_PotentialWallLJ93GPU(pybind11::module& m);
 void export_PotentialWallColloidGPU(pybind11::module& m);
 
-
 #endif // ENABLE_HIP
 
     } // namespace detail
@@ -134,7 +133,6 @@ PYBIND11_MODULE(_azplugins, m)
     // wall
     export_PotentialWallLJ93GPU(m);
     export_PotentialWallColloidGPU(m);
-
 
 #endif // ENABLE_HIP
     }

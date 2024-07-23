@@ -1,5 +1,6 @@
-// Copyright (c) 2009-2024 The Regents of the University of Michigan.
-// Part of HOOMD-blue, released under the BSD 3-Clause License.
+// Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 // See md/CMakeLists.txt for the source of these variables to be processed by CMake's
 // configure_file().
@@ -27,7 +28,6 @@ void EXPORT_FUNCTION(pybind11::module& m)
     {
     hoomd::md::detail::export_PotentialExternal<EVALUATOR_CLASS>(m, "WallPotential@_evaluator@");
     }
-
 
     } // end namespace detail
     } // end namespace azplugins
