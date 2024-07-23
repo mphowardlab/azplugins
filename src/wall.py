@@ -46,19 +46,16 @@ class Colloid(wall.WallPotential):
         The `Colloid` wall potential parameters. The dictionary has the following
         keys:
 
-        * ``epsilon`` (`float`, **required**) -
-        energy parameter :math:`\varepsilon` :math:`[\mathrm{energy}]`
-        * ``sigma`` (`float`, **required**) -
-          particle size :math:`\sigma` :math:`[\mathrm{length}]`
-        * ``a`` (`float`, **required**) - Diameter of particle
-          :math:`a` :math:`[\mathrm{length}]`
+        * ``epsilon`` (`float`, **required**) - energy parameter :math:`\varepsilon` :math:`[\mathrm{energy}]`
+        * ``sigma`` (`float`, **required**) - particle size :math:`\sigma` :math:`[\mathrm{length}]`
+        * ``a`` (`float`, **required**) - Diameter of particle :math:`a` :math:`[\mathrm{length}]`
         * ``r_cut`` (`float`, **required**) -
           The cut off distance for the wall potential :math:`[\mathrm{length}]`
         * ``r_extrap`` (`float`, **optional**) -
           The distance to extrapolate the potential :math:`[\mathrm{length}]`,
           defaults to 0.
 
-        Type: `TypeParameter` [``particle_types``, `dict`]
+        Type: :class:`~hoomd.data.typeparam.TypeParameter` [``particle_types``, `dict`]
 
     Example::
 
@@ -126,17 +123,14 @@ class LJ93(wall.WallPotential):
         The `LJ93` wall potential parameters. The dictionary has the following
         keys:
 
-        * ``epsilon`` (`float`, **required**) -
-        energy parameter :math:`\varepsilon` :math:`[\mathrm{energy}]`
-        * ``sigma`` (`float`, **required**) -
-          particle size :math:`\sigma` :math:`[\mathrm{length}]`
-        * ``r_cut`` (`float`, **required**) -
-          The cut off distance for the wall potential :math:`[\mathrm{length}]`
+        * ``epsilon`` (`float`, **required**) - energy parameter :math:`\varepsilon` :math:`[\mathrm{energy}]`
+        * ``sigma`` (`float`, **required**) - particle size :math:`\sigma` :math:`[\mathrm{length}]`
+        * ``r_cut`` (`float`, **required**) - The cut off distance for the wall potential :math:`[\mathrm{length}]`
         * ``r_extrap`` (`float`, **optional**) -
           The distance to extrapolate the potential :math:`[\mathrm{length}]`,
           defaults to 0.
 
-        Type: `TypeParameter` [``particle_types``, `dict`]
+        Type: :class:`~hoomd.data.typeparam.TypeParameter` [``particle_types``, `dict`]
 
     Example::
 
