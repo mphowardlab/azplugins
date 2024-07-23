@@ -41,22 +41,6 @@ class Colloid(wall.WallPotential):
     See :py:class:`hoomd.md.external.wall.WallPotential` for generalized
     wall potential implementation, including cutoff and extrapolation schemes.
 
-    .. py:attribute:: params
-
-        The `Colloid` wall potential parameters. The dictionary has the following
-        keys:
-
-        * ``epsilon`` (`float`, **required**) - energy parameter :math:`\varepsilon` :math:`[\mathrm{energy}]`
-        * ``sigma`` (`float`, **required**) - particle size :math:`\sigma` :math:`[\mathrm{length}]`
-        * ``a`` (`float`, **required**) - Diameter of particle :math:`a` :math:`[\mathrm{length}]`
-        * ``r_cut`` (`float`, **required**) -
-          The cut off distance for the wall potential :math:`[\mathrm{length}]`
-        * ``r_extrap`` (`float`, **optional**) -
-          The distance to extrapolate the potential :math:`[\mathrm{length}]`,
-          defaults to 0.
-
-        Type: :class:`~hoomd.data.typeparam.TypeParameter` [``particle_types``, `dict`]
-
     Example::
 
         top = hoomd.wall.Plane(origin=(0, 7, 0), normal=(0, -1, 0))
@@ -66,6 +50,26 @@ class Colloid(wall.WallPotential):
                                         "a": 1.0,
                                         "r_cut": 4.0}
         simulation.operations.integrator.forces.append(wall_potential)
+
+    .. py:attribute:: params
+
+        The `Colloid` wall potential parameters. The dictionary has the following
+        keys:
+
+        * ``epsilon`` (`float`, **required**) -
+          energy parameter :math:`\varepsilon` :math:`[\mathrm{energy}]`
+        * ``sigma`` (`float`, **required**) -
+          particle size :math:`\sigma` :math:`[\mathrm{length}]`
+        * ``a`` (`float`, **required**) -
+          Diameter of particle :math:`a` :math:`[\mathrm{length}]`
+        * ``r_cut`` (`float`, **required**) -
+          The cut off distance for the wall potential :math:`[\mathrm{length}]`
+        * ``r_extrap`` (`float`, **optional**) -
+          The distance to extrapolate the potential :math:`[\mathrm{length}]`,
+          defaults to 0.
+
+    Type: :class:`~hoomd.data.typeparam.TypeParameter` [``particle_types``, `dict`]
+
     """
 
     _ext_module = _azplugins
@@ -118,26 +122,30 @@ class LJ93(wall.WallPotential):
     See :py:class:`hoomd.md.external.wall.WallPotential` for generalized wall
     potential implementation, including cutoff and extrapolation schemes.
 
-    .. py:attribute:: params
-
-        The `LJ93` wall potential parameters. The dictionary has the following
-        keys:
-
-        * ``epsilon`` (`float`, **required**) - energy parameter :math:`\varepsilon` :math:`[\mathrm{energy}]`
-        * ``sigma`` (`float`, **required**) - particle size :math:`\sigma` :math:`[\mathrm{length}]`
-        * ``r_cut`` (`float`, **required**) - The cut off distance for the wall potential :math:`[\mathrm{length}]`
-        * ``r_extrap`` (`float`, **optional**) -
-          The distance to extrapolate the potential :math:`[\mathrm{length}]`,
-          defaults to 0.
-
-        Type: :class:`~hoomd.data.typeparam.TypeParameter` [``particle_types``, `dict`]
-
     Example::
 
         top = hoomd.wall.Plane(origin=(0, 7, 0), normal=(0, -1, 0))
         wall_potential = azplugins.wall.LJ93(walls=[top])
         wall_potential.params['A'] = {"epsilon": 1.0, "sigma": 1.0, "r_cut": 2.0}
         simulation.operations.integrator.forces.append(wall_potential)
+
+    .. py:attribute:: params
+
+        The `LJ93` wall potential parameters. The dictionary has the following
+        keys:
+
+        * ``epsilon`` (`float`, **required**) -
+          energy parameter :math:`\varepsilon` :math:`[\mathrm{energy}]`
+        * ``sigma`` (`float`, **required**) -
+          particle size :math:`\sigma` :math:`[\mathrm{length}]`
+        * ``r_cut`` (`float`, **required**) -
+          The cut off distance for the wall potential :math:`[\mathrm{length}]`
+        * ``r_extrap`` (`float`, **optional**) -
+          The distance to extrapolate the potential :math:`[\mathrm{length}]`,
+          defaults to 0.
+
+    Type: :class:`~hoomd.data.typeparam.TypeParameter` [``particle_types``, `dict`]
+
     """
 
     _ext_module = _azplugins
