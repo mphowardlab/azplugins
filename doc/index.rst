@@ -20,6 +20,7 @@ tested against v4.7.0 of HOOMD-blue.
     module-azplugins-bond
     module-azplugins-flow
     module-azplugins-pair
+    module-azplugins-wall
 
 Index
 =====
