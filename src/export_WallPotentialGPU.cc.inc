@@ -1,5 +1,6 @@
-// Copyright (c) 2009-2024 The Regents of the University of Michigan.
-// Part of HOOMD-blue, released under the BSD 3-Clause License.
+// Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021-2024, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
 
 // See md/CMakeLists.txt for the source of these variables to be processed by CMake's
 // configure_file().
@@ -17,9 +18,6 @@
 
 namespace hoomd
     {
-
-// Use CPU class from another compilation unit to reduce compile time and compiler memory usage.
-// extern template class md::PotentialPair<azplugins::detail::EVALUATOR_CLASS>;
 namespace azplugins
     {
 namespace detail
@@ -27,9 +25,9 @@ namespace detail
 
 void EXPORT_FUNCTION(pybind11::module& m)
     {
-    hoomd::md::detail::export_PotentialExternalGPU<EVALUATOR_CLASS>(m, "WallPotential@_evaluator@GPU");
+    hoomd::md::detail::export_PotentialExternalGPU<EVALUATOR_CLASS>(m,
+                                                                    "WallPotential@_evaluator@GPU");
     }
-
 
     } // end namespace detail
     } // end namespace azplugins

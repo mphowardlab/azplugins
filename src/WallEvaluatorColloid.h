@@ -17,12 +17,6 @@
 
 #include "hoomd/HOOMDMath.h"
 
-/*! \file EvaluatorPairLJ.h
-    \brief Defines the pair evaluator class for LJ potentials
-    \details As the prototypical example of a MD pair potential, this also serves as the primary
-   documentation and base reference for the implementation of pair evaluators.
-*/
-
 // need to declare these class methods with __device__ qualifiers when building in nvcc
 // DEVICE is __host__ __device__ when included in nvcc and blank when included into the host
 // compiler
@@ -39,7 +33,7 @@ namespace hoomd
 namespace azplugins
     {
 namespace detail
-{
+    {
 
 //! Evaluates the Lennard-Jones colloid wall force
 /*!
@@ -66,53 +60,52 @@ namespace detail
 class WallEvaluatorColloid
     {
     public:
-      struct param_type
-          {
+    struct param_type
+        {
+        DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
 
-          DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
+        HOSTDEVICE void allocate_shared(char*& ptr, unsigned int& available_bytes) const { }
 
-          HOSTDEVICE void allocate_shared(char*& ptr, unsigned int& available_bytes) const { }
+#ifndef ENABLE_HIP
+        //! set CUDA memory hints
+        void set_memory_hint() const { }
+#endif
 
-    #ifndef ENABLE_HIP
-          //! set CUDA memory hints
-          void set_memory_hint() const { }
-    #endif
+#ifndef __HIPCC__
+        param_type() : sigma(0), epsilon(0), a(0), lj1(0), lj2(0) { }
 
-    #ifndef __HIPCC__
-          param_type() : sigma(0), epsilon(0), a(0), lj1(0), lj2(0) { }
+        param_type(pybind11::dict v, bool managed = false)
+            {
+            sigma = v["sigma"].cast<Scalar>();
+            epsilon = v["epsilon"].cast<Scalar>();
+            a = v["a"].cast<Scalar>();
+            // a = a * Scalar(0.5);
+            Scalar sigma_3 = sigma * sigma * sigma;
+            Scalar sigma_6 = sigma_3 * sigma_3;
+            lj1 = epsilon * sigma_6 / Scalar(7560.0);
+            lj2 = epsilon / Scalar(6.0);
+            }
 
-          param_type(pybind11::dict v, bool managed = false)
-              {
-              sigma = v["sigma"].cast<Scalar>();
-              epsilon = v["epsilon"].cast<Scalar>();
-              a = v["a"].cast<Scalar>();
-              // a = a * Scalar(0.5);
-              Scalar sigma_3 = sigma * sigma * sigma;
-              Scalar sigma_6 = sigma_3 * sigma_3;
-              lj1 = epsilon * sigma_6 / Scalar(7560.0) ;
-              lj2 = epsilon / Scalar(6.0);
-              }
-
-          pybind11::dict asDict()
-              {
-              pybind11::dict v;
-              v["sigma"] = sigma;
-              v["epsilon"] = epsilon;
-              v["a"] = a;
-              return v;
-              }
-    #endif
-          Scalar sigma;
-          Scalar epsilon;
-          Scalar a;
-          Scalar lj1;
-          Scalar lj2;
-          }
-    #if HOOMD_LONGREAL_SIZE == 32
-          __attribute__((aligned(8)));
-    #else
-          __attribute__((aligned(16)));
-    #endif
+        pybind11::dict asDict()
+            {
+            pybind11::dict v;
+            v["sigma"] = sigma;
+            v["epsilon"] = epsilon;
+            v["a"] = a;
+            return v;
+            }
+#endif
+        Scalar sigma;
+        Scalar epsilon;
+        Scalar a;
+        Scalar lj1;
+        Scalar lj2;
+        }
+#if HOOMD_LONGREAL_SIZE == 32
+        __attribute__((aligned(8)));
+#else
+        __attribute__((aligned(16)));
+#endif
 
     //! Constructor
     /*!
@@ -142,7 +135,7 @@ class WallEvaluatorColloid
      */
     DEVICE void setDiameter(Scalar di, Scalar dj)
         {
-          // std::cout<<"setting diameter: "<<di<<std::endl;
+        // std::cout<<"setting diameter: "<<di<<std::endl;
         a = Scalar(0.5) * di;
         }
 
@@ -231,7 +224,7 @@ class WallEvaluatorColloid
                 {
                 energy -= computePotential<false>(force_divr, rcutsq);
                 }
-                // std::cout<<"eval2: "<<energy<<std::endl;
+            // std::cout<<"eval2: "<<energy<<std::endl;
             return true;
             }
         else
@@ -239,9 +232,9 @@ class WallEvaluatorColloid
         }
 
 #ifndef __HIPCC__
-//! Get the name of this potential
-/*! \returns The potential name.
-*/
+    //! Get the name of this potential
+    /*! \returns The potential name.
+     */
     static std::string getName()
         {
         return std::string("Colloid");
@@ -258,8 +251,8 @@ class WallEvaluatorColloid
     Scalar a; //!< The particle radius
     };
 
-  }
     } // end namespace detail
     } // namespace azplugins
+    } // end namespace hoomd
 
-    #endif // AZPLUGINS_WALL_EVALUATOR_LJ_93_H_
+#endif // AZPLUGINS_WALL_EVALUATOR_LJ_93_H_
