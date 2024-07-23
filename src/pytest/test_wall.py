@@ -47,7 +47,7 @@ def test_energy_and_force(
 ):
     """Test energy and force evaluation."""
     # make 2 particle test configuration
-    r_buff = 0.4
+    # r_buff = 0.4
     # L_domain_min = 20.
     snap = two_particle_snapshot_factory()
     snap.particles.N = 1
