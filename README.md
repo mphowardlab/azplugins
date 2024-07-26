@@ -1,72 +1,47 @@
 # azplugins
 
-azplugins is a component (plugin) for [HOOMD-blue](http://glotzerlab.engin.umich.edu/hoomd-blue)
-which expands its functionality for tackling a variety of problems in soft matter physics.
-Currently, azplugins is tested against v2.6.0 of HOOMD-blue. See [CHANGELOG.rst](CHANGELOG.rst) for
-a list of recent development. If you are interested in adding new code, please refer to the
-[guidelines](SourceConventions.md).
+azplugins is a component for [HOOMD-blue][1] which expands its functionality for
+tackling a variety of problems in soft matter physics. Currently, azplugins is
+tested against v4.8.2 of HOOMD-blue. See [CHANGELOG.rst](CHANGELOG.rst) for a
+list of recent development.
 
 ## Compiling azplugins
 
-azplugins can be built using either of the standard [plugin build methods](http://hoomd-blue.readthedocs.io/en/stable/developer.html).
-To build azplugins **internally** to HOOMD-blue, add a symlink to the code into the `hoomd-blue/hoomd`:
+azplugins follows the [standard component template][2]. It has the same
+dependencies used to build HOOMD-blue. With HOOMD-blue installed already, adding
+azplugins can be as easy as:
 
-```bash
-cd hoomd-blue/hoomd
-ln -s /path/to/azplugins/azplugins azplugins
-cd ../build && make install
+```
+git clone https://github.com/mphowardlab/azplugins
+cmake -B build/azplugins -S azplugins
+cmake --build build/azplugins
+cmake --install build/azplugins
 ```
 
-azplugins is now available as a component of HOOMD-blue:
-
-```python
-import hoomd
-from hoomd import azplugins
-```
-
-To build azplugins **externally** to HOOMD-blue, ensure that the `hoomd` module is on your Python path
-(or hint to its location using `HOOMD_ROOT`), and install to an appropriate location:
-
-```bash
-cd /path/to/azplugins
-mkdir build && cd build
-cmake ..
-make install
-```
-
-You must make sure that your installation location is on your `PYTHONPATH`, and then `azplugins` can
-be imported as usual
-
-```python
-import hoomd
-import azplugins
-```
-
-### Prerequisites
-
-azplugins requires the same dependencies used to build HOOMD-blue. Typically, this means a modern
-Python installation with numpy, a reasonably recent version of CMake, and a C++11 capable compiler.
-To get good performance, you probably also want a recent CUDA toolkit and an MPI library.
+Please refer to the directions in the HOOMD-blue documentation on building an
+external component for more information.
 
 ### Testing
 
-All code is unittested at the Python level. If azplugins has been built as an internal HOOMD-blue component,
-it is automatically included into the testing tree. To run only the `azplugins` tests out of your build
-directory, use ctest:
+After building and installing azplugins, you can run our tests with pytest:
 
-```bash
-ctest -R azplugins-*
+```
+python -m pytest --pyargs hoomd.azplugins
 ```
 
-If azplugins has been built as an external Python package, all CTest options are available to you.
-To run all tests out of your build directory,
+## Contributing
 
-```bash
-make test
-```
+Contributions are welcomed and appreciated! Fork and create a pull request on
+[GitHub][3]. Be sure to follow the [HOOMD-blue guidelines for developers][4]! We
+value the input and experiences all users and contributors bring to `azplugins`.
 
 ## History
 
-azplugins began as a collection of code shared between students and postdocs at Princeton University (2016-2018).
-It is named for their research advisor, Prof. Athanassios (Thanos) Z. Panagiotopoulos, whose group has made several
-contributions to HOOMD-blue and frequently uses it in their work.
+azplugins began as a collection of code shared between students and postdocs at
+Princeton University (2016-2018). It is named for their research advisor, Prof.
+Athanassios (Thanos) Z. Panagiotopoulos.
+
+[1]: http://glotzerlab.engin.umich.edu/hoomd-blue
+[2]: https://hoomd-blue.readthedocs.io/en/latest/components.html
+[3]: https://github.com/mphowardlab/azplugins
+[4]: https://hoomd-blue.readthedocs.io/en/latest/developers.html
