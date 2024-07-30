@@ -102,7 +102,7 @@ class Quartic(bond.Bond):
             The dictionary has the following keys:
 
             * ``k`` (`float`, **required**) - quartic attractive force strength
-              :math:`[\mathrm{energy/length^4}]`.
+              :math:`[\mathrm{energy}/\mathrm{length}^4]`.
 
             * ``r_0`` (`float`, **required**) - Location of the quartic potential
               cutoff :math:`r_0`. Intended to be larger than the WCA cutoff,
