@@ -117,7 +117,7 @@ class Quartic(bond.Bond):
               parameter :math:`b_2` :math:`[\mathrm{length}]`.
 
             * ``U_0`` (`float`, **required**) - Quartic potential energy barrier height
-              :math:`U_0` at :math:`r_0` when :math:`r_0 > 2^{\frac{1}{6}}\sigma`
+              :math:`U_0` at :math:`r_0` when :math:`r_0 > 2^{1/6}\sigma`
               :math:`[\mathrm{energy}]`.
 
             * ``epsilon`` (`float`, **required**) - Repulsive WCA interaction energy
