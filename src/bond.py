@@ -91,8 +91,8 @@ class Quartic(bond.Bond):
                                                                             \right)^{12}
                              - \left( \frac{\sigma}{r-\Delta} \right)^{6} \right]
                              + \varepsilon,
-                                          & r < 2^{\frac{1}{6}}\sigma + \Delta  \\
-                           &= 0,          & r \ge 2^{\frac{1}{6}}\sigma + \Delta
+                                          & r < 2^{1/6}\sigma + \Delta  \\
+                           &= 0,          & r \ge 2^{1/6}\sigma + \Delta
         \end{eqnarray*}
 
 
