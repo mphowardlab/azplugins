@@ -134,8 +134,7 @@ class BondEvaluatorQuartic : public BondEvaluator
         if (r_0 == Scalar(0.0))
             return false;
 
-        Scalar r = Scalar(-1.0); // sentinel value for whether the square root has already been
-                                 // taken
+        Scalar r_red(1.0);
 
         if (delta == Scalar(0.0)) // case when delta = 0, no square root is needed for WCA
             {
@@ -143,71 +142,69 @@ class BondEvaluatorQuartic : public BondEvaluator
             const Scalar r6inv = r2inv * r2inv * r2inv;
             const Scalar sigma6inv = lj2 / lj1;
 
-            // wca cutoff: r < 2^(1/6)*sigma
+            // WCA component without delta
+            // WCA cutoff: r < 2^(1/6)*sigma
             // if epsilon or sigma is zero OR r is beyond cutoff, the force and energy are zero
             if (lj1 != Scalar(0) && r6inv > sigma6inv / Scalar(2.0))
                 {
                 Scalar epsilon = lj2 * lj2 / Scalar(4.0) / lj1;
-                force_divr = r2inv * r6inv * (Scalar(12.0) * lj1 * r6inv - Scalar(6.0) * lj2);
-                bond_eng = r6inv * (lj1 * r6inv - lj2) + epsilon;
-                }
-            else
-                {
-                force_divr = 0;
-                bond_eng = 0;
-                }
-
-            // Quartic component
-            // If the distance is less than the quartic cutoff distance, calculate as normal
-            if (rsq < r_0 * r_0)
-                {
-                Scalar r_red = fast::sqrt(rsq) - r_0;
-                force_divr += Scalar(-1) * k * r_red
-                              * (4 * r_red * r_red - 3 * (b_1 + b_2) * r_red + 2 * b_1 * b_2)
-                              / (r_red + r_0);
-                bond_eng += k * (r_red - b_1) * (r_red - b_2) * r_red * r_red + U_0;
+                force_divr += r2inv * r6inv * (Scalar(12.0) * lj1 * r6inv - Scalar(6.0) * lj2);
+                bond_eng += r6inv * (lj1 * r6inv - lj2) + epsilon;
                 }
             else
                 {
                 force_divr += 0;
-                bond_eng += U_0;
+                bond_eng += 0;
+                }
+
+            // Quartic component prep
+            // If the distance is less than the quartic cutoff distance, calculate as normal
+            if (rsq < r_0 * r_0)
+                {
+                r_red = fast::sqrt(rsq) - r_0;
                 }
             }
         else // case when delta != 0, a square root needs to be taken
             {
-            r = fast::sqrt(rsq) - delta;
+            Scalar r = fast::sqrt(rsq) - delta;
             const Scalar r2inv = Scalar(1.0) / r / r;
             const Scalar r6inv = r2inv * r2inv * r2inv;
             const Scalar sigma6inv = lj2 / lj1;
 
+            // WCA component with delta
             // wca cutoff: r < 2^(1/6)*sigma
             // if epsilon or sigma is zero OR r is beyond cutoff, the WCA force and energy are zero
             if (lj1 != Scalar(0) && r6inv > sigma6inv / Scalar(2.0))
                 {
                 force_divr
-                    = r6inv * (Scalar(12.0) * lj1 * r6inv - Scalar(6.0) * lj2) / r / (r + delta);
-                bond_eng = r6inv * (lj1 * r6inv - lj2) + epsilon;
-                }
-            else
-                {
-                force_divr = 0;
-                bond_eng = 0;
-                }
-
-            // Quartic component of the force
-            if (r < r_0)
-                {
-                Scalar r_red = r - r_0;
-                force_divr += Scalar(-1) * k * r_red
-                              * (4 * r_red * r_red - 3 * (b_1 + b_2) * r_red + 2 * b_1 * b_2)
-                              / (r_red + r_0 + delta);
-                bond_eng += k * (r_red - b_1) * (r_red - b_2) * r_red * r_red + U_0;
+                    += r6inv * (Scalar(12.0) * lj1 * r6inv - Scalar(6.0) * lj2) / r / (r + delta);
+                bond_eng += r6inv * (lj1 * r6inv - lj2) + epsilon;
                 }
             else
                 {
                 force_divr += 0;
-                bond_eng += U_0;
+                bond_eng += 0;
                 }
+
+            // Quartic component prep
+            if (r < r_0)
+                {
+                r_red = r - r_0;
+                }
+            }
+
+        // Quartic bond potential is on when r_red < 0
+        if (r_red < Scalar(0))
+            {
+            force_divr += Scalar(-1) * k * r_red
+                          * (4 * r_red * r_red - 3 * (b_1 + b_2) * r_red + 2 * b_1 * b_2)
+                          / (r_red + r_0 + delta);
+            bond_eng += k * (r_red - b_1) * (r_red - b_2) * r_red * r_red + U_0;
+            }
+        else
+            {
+            force_divr += 0;
+            bond_eng += U_0;
             }
 
         return true;

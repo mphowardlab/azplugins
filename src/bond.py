@@ -72,24 +72,26 @@ class Quartic(bond.Bond):
     the simulation state with:
 
     .. math::
+        :nowrap:
         \begin{eqnarray*}
-        U(r) = & k [(r - r_{0}) - b_{1}][(r - r_{0}) - b_{2}](r - r_{0})^2
-                  + U_{0} + U_{\rm WCA}(r)      & \text{when } r < r_0\\
-             = & U_0                            & \text{when } r\ge r_0
+        U(r) &= k (r - \Delta - r_0 - b_1)(r - \Delta - r_0 - b_2)(r - \Delta - r_0)^2
+                  + U_0 + U_{\rm WCA}(r), & r < r_0 + \Delta \\
+             &= U_0, & r \ge r_0 + \Delta
         \end{eqnarray*}
 
     where :math:`\vec{r}` is the vector pointing from one particle to the other in the
-    bond.
-    The potential :math:`U_{\rm WCA}(r)` is given by:
+    bond. The potential :math:`U_{\rm WCA}(r)` is given by:
 
     .. math::
         :nowrap:
 
         \begin{eqnarray*}
-        U_{\mathrm{WCA}}(r)= & 4 \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12}
-                             - \left( \frac{\sigma}{r} \right)^{6} \right] + \varepsilon
-                                          & \text{when } r < 2^{\frac{1}{6}}\sigma\\
-                           = & 0          & \text{when } r \ge 2^{\frac{1}{6}}\sigma
+        U_{\rm WCA}(r) &= 4 \varepsilon \left[ \left( \frac{\sigma}{r-\Delta} \\
+                                                                            \right)^{12}
+                             - \left( \frac{\sigma}{r-\Delta} \right)^{6} \right] \\
+                             + \varepsilon,
+                                          & r < 2^{\frac{1}{6}}\sigma + \Delta  \\
+                           &= 0,          & r \ge 2^{\frac{1}{6}}\sigma + \Delta
         \end{eqnarray*}
 
 
@@ -99,44 +101,45 @@ class Quartic(bond.Bond):
             The dictionary has the following keys:
 
             * ``k`` (`float`, **required**) - quartic attractive force strength
-              :math:`[\mathrm{energy/length^4}]`
+              :math:`[\mathrm{energy/length^4}]`.
 
             * ``r_0`` (`float`, **required**) - Location of the quartic potential
-              cutoff. Intended to be larger than the WCA cutoff,
+              cutoff :math:`r_0`. Intended to be larger than the WCA cutoff,
               :math:`2^{\frac{1}{6}}\sigma`. When true,
               :math:`U(r_0) = U_{0} + U_{\rm WCA}(r_0)`
-              :math:`[\mathrm{length}]`
+              :math:`[\mathrm{length}]`.
 
             * ``b_1`` (`float`, **required**) - First quartic potential fitting
-              parameter
-              :math:`[\mathrm{length}]`
+              parameter :math:`b_1` :math:`[\mathrm{length}]`.
 
             * ``b_2`` (`float`, **required**) - Second quartic potential fitting
-              parameter
-              :math:`[\mathrm{length}]`
+              parameter :math:`b_2` :math:`[\mathrm{length}]`.
 
             * ``U_0`` (`float`, **required**) - Quartic potential energy barrier height
-              at :math:`r_0` when :math:`r_0 > 2^{\frac{1}{6}}\sigma`
-              :math:`[\mathrm{energy}]`
+              :math:`U_0` at :math:`r_0` when :math:`r_0 > 2^{\frac{1}{6}}\sigma`
+              :math:`[\mathrm{energy}]`.
 
-            * ``epsilon`` (`float`, **required**) - Repulsive WCA force strength
-              parameter
-              :math:`[\mathrm{energy}]`
+            * ``epsilon`` (`float`, **required**) - Repulsive WCA interaction energy
+              :math:`\varepsilon` :math:`[\mathrm{energy}]`.
 
-            * ``sigma`` (`float`, **required**) - Repulsive WCA interaction distance
-              parameter
-              :math:`[\mathrm{length}]`
+            * ``sigma`` (`float`, **required**) - Repulsive WCA interaction size
+              :math:`\sigma` :math:`[\mathrm{length}]`.
 
-            * ``Delta`` (`float`, **optional**) - bond length shift ``Delta``.
-              Effectively replaces all instances of :math:`r \text{ with } r - \Delta`.
-              The default value is zero.
-              :math:`[\mathrm{length}]`
+            * ``Delta`` (`float`, **optional**) - Shift :math:`\Delta`,
+              defaults to zero :math:`[\mathrm{length}]`.
 
     Examples::
 
         quartic = azplugins.bond.Quartic()
         quartic.params['A-A'] = dict(k=1434.3, r_0=1.5, b_1=-0.7589, b_2=0.0,
-                                    U_0=67.2234, sigma=1, epsilon=1, delta=0)
+                                    U_0=67.2234, sigma=1, epsilon=1)
+        quartic.params['B-B'] = dict(k=1434.3, r_0=1.5, b_1=-0.7589, b_2=0.0,
+                                    U_0=67.2234, sigma=1, epsilon=1, delta=0.2)
+
+    The parameters for the examples provided above were derived by Tsige and Stevens in
+    a 2004 paper, which used this quartic bond potential with fitted parameters in place
+    of FENE bond potentials. This paper can be found here:
+    https://pubs.acs.org/doi/10.1021/ma034970t
     """
 
     _ext_module = _azplugins
