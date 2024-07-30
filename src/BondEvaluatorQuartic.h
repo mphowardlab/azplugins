@@ -180,11 +180,6 @@ class BondEvaluatorQuartic : public BondEvaluator
                     += r6inv * (Scalar(12.0) * lj1 * r6inv - Scalar(6.0) * lj2) / r / (r + delta);
                 bond_eng += r6inv * (lj1 * r6inv - lj2) + epsilon;
                 }
-            else
-                {
-                force_divr += 0;
-                bond_eng += 0;
-                }
 
             // Quartic component prep
             if (r < r_0)
