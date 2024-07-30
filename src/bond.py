@@ -80,7 +80,7 @@ class Quartic(bond.Bond):
              &= U_0, & r \ge r_0 + \Delta
         \end{eqnarray*}
 
-    where :math:`\vec{r}` is the vector pointing from one particle to the other in the
+    where :math:`r` is the distance from one particle to the other in the
     bond. The potential :math:`U_{\rm WCA}(r)` is given by:
 
     .. math::
