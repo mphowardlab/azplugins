@@ -76,8 +76,8 @@ class Quartic(bond.Bond):
 
         \begin{eqnarray*}
         U(r) &= k (r - \Delta - r_0 - b_1)(r - \Delta - r_0 - b_2)(r - \Delta - r_0)^2
-                  + U_0 + U_{\rm WCA}(r), & r < r_0 + \Delta \\
-             &= U_0, & r \ge r_0 + \Delta
+                  &+ U_0 + U_{\rm WCA}(r), & r < r_0 + \Delta \\
+             &= U_0 + U_{\rm WCA}(r), & r \ge r_0 + \Delta
         \end{eqnarray*}
 
     where :math:`r` is the distance from one particle to the other in the
