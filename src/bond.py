@@ -106,7 +106,7 @@ class Quartic(bond.Bond):
 
             * ``r_0`` (`float`, **required**) - Location of the quartic potential
               cutoff :math:`r_0`. Intended to be larger than the WCA cutoff,
-              :math:`2^{\frac{1}{6}}\sigma`. When true,
+              :math:`2^{1/6}\sigma`. When true,
               :math:`U(r_0) = U_{0} + U_{\rm WCA}(r_0)`
               :math:`[\mathrm{length}]`.
 
