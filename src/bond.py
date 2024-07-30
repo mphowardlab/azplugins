@@ -73,6 +73,7 @@ class Quartic(bond.Bond):
 
     .. math::
         :nowrap:
+
         \begin{eqnarray*}
         U(r) &= k (r - \Delta - r_0 - b_1)(r - \Delta - r_0 - b_2)(r - \Delta - r_0)^2
                   + U_0 + U_{\rm WCA}(r), & r < r_0 + \Delta \\
