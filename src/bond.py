@@ -126,7 +126,7 @@ class Quartic(bond.Bond):
             * ``sigma`` (`float`, **required**) - Repulsive WCA interaction size
               :math:`\sigma` :math:`[\mathrm{length}]`.
 
-            * ``Delta`` (`float`, **optional**) - Shift :math:`\Delta`,
+            * ``delta`` (`float`, **optional**) - Shift :math:`\Delta`,
               defaults to zero :math:`[\mathrm{length}]`.
 
     Examples::
