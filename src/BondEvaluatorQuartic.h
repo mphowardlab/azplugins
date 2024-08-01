@@ -48,7 +48,7 @@ struct BondParametersQuartic : public BondParameters
         const Scalar sigma_2 = sigma * sigma;
         const Scalar sigma_4 = sigma_2 * sigma_2;
         sigma_6 = sigma_2 * sigma_4;
-        epsilon_x_4 = Scalar(4.0) * epsilon;
+        epsilon_x_4 = Scalar(4.) * epsilon;
         }
 
     pybind11::dict asDict()
