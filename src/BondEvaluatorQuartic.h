@@ -123,7 +123,7 @@ class BondEvaluatorQuartic : public BondEvaluator
         delta = _params.delta;
         lj1 = _params.epsilon_x_4 * _params.sigma_6 * _params.sigma_6;
         lj2 = _params.epsilon_x_4 * _params.sigma_6;
-        epsilon = _params.epsilon_x_4 / Scalar(4.0);
+        epsilon = _params.epsilon_x_4 / Scalar(4.);
         }
 
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& bond_eng)
