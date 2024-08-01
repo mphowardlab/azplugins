@@ -193,7 +193,6 @@ class BondEvaluatorQuartic : public BondEvaluator
             }
         else
             {
-            force_divr += 0;
             bond_eng += U_0;
             }
 
