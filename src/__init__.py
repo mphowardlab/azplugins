@@ -6,6 +6,6 @@
 
 from hoomd.azplugins import bond, flow, pair
 
-from .compute import FlowProfile
+from .flow_profile import FlowProfile
 
 __version__ = '1.0.0'

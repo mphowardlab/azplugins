@@ -7,10 +7,10 @@
 import numpy
 from hoomd.data.parameterdicts import ParameterDict
 from hoomd.logging import log
-from hoomd.operation import Compute
+from hoomd.custom import Action
 
 
-class FlowProfile(Compute):
+class FlowProfile(Action):
     """Measure average profiles along a spatial dimension.
 
     The average density, velocity, and temperature profiles are computed along
@@ -18,8 +18,6 @@ class FlowProfile(Compute):
     are available.
 
     Args:
-        system (hoomd.Simulation): The HOOMD simulation object containing the
-            system state.
         axis (int): direction for binning (0=*x*, 1=*y*, 2=*z*).
         bins (int): Number of bins to use along ``axis``.
         range (tuple): Lower and upper spatial bounds to use along ``axis`` like
@@ -30,8 +28,8 @@ class FlowProfile(Compute):
     Examples::
 
         flow_profile = hoomd.azplugins.compute.FlowProfile(
-            system=sim.state, axis=2, bins=20, range=(-10, 10), area=100)
-        sim.operations.computes.append(flow_profile)
+            axis=2, bins=20, range=(-10, 10), area=100)
+        sim.operations.writers.append(flow_profile)
         sim.run(1e4)
         if sim.device.communicator.rank == 0:
             numpy.savetxt('profiles.dat', numpy.column_stack((
@@ -39,10 +37,9 @@ class FlowProfile(Compute):
                 flow_profile.number_velocity[:, 2], flow_profile.kT)))
     """
 
-    def __init__(self, system, axis, bins, range_, area=1.0):
+    def __init__(self, axis, bins, range_, area=1.0):
         super().__init__()
         param_dict = ParameterDict(
-            system=system,
             axis=int(axis),
             bins=int(bins),
             range=tuple(range_),
@@ -59,9 +56,13 @@ class FlowProfile(Compute):
             msg = 'Axis not recognized.'
             raise ValueError(msg)
 
-    def __call__(self, timestep):
+    def attach(self, simulation):
+        self._state = simulation.state
+        super().attach(simulation)
+
+    def act(self, timestep):
         """Compute the flow profile at the given timestep."""
-        state = self._simulation.state
+        state = self._state
 
         if self._simulation.device.communicator.rank == 0:
             positions = state.get_snapshot().particles.position
@@ -119,35 +120,35 @@ class FlowProfile(Compute):
         self._mass_velocity = numpy.zeros((self.bins, 3))
         self._kT = numpy.zeros(self.bins)
 
-    @log(category='sequence')
+    @log(category='sequence', requires_run=True)
     def number_density(self):
         """Return the number density."""
         if self._simulation.device.communicator.rank == 0 and self.samples > 0:
             return self._counts / (self._dx * self.area * self.samples)
         return None
 
-    @log(category='sequence')
+    @log(category='sequence', requires_run=True)
     def mass_density(self):
         """Return the mass density."""
         if self._simulation.device.communicator.rank == 0 and self.samples > 0:
             return self._bin_mass / (self._dx * self.area * self.samples)
         return None
 
-    @log(category='sequence')
+    @log(category='sequence', requires_run=True)
     def number_velocity(self):
         """Return the number velocity."""
         if self._simulation.device.communicator.rank == 0 and self.samples > 0:
             return self._number_velocity / self.samples
         return None
 
-    @log(category='sequence')
+    @log(category='sequence', requires_run=True)
     def mass_velocity(self):
         """Return the mass velocity."""
         if self._simulation.device.communicator.rank == 0 and self.samples > 0:
             return self._mass_velocity / self.samples
         return None
 
-    @log(category='sequence')
+    @log(category='sequence', requires_run=True)
     def kt(self):
         """Return the temperature (kT)."""
         if self._simulation.device.communicator.rank == 0 and self.samples > 0:
