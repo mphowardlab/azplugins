@@ -72,28 +72,22 @@ class Quartic(bond.Bond):
     the simulation state with:
 
     .. math::
-        :nowrap:
 
-        \begin{eqnarray*}
-        U(r) &= k (r - \Delta - r_0 - b_1)(r - \Delta - r_0 - b_2)(r - \Delta -r_0)^2 \\
-                  &+ U_0 + U_{\rm WCA}(r), & r < r_0 + \Delta \\
+        U(r) &= k (r - \Delta - r_0 - b_1)(r - \Delta - r_0 - b_2)
+                    (r - \Delta -r_0)^2 & \\
+               &+ U_0 + U_{\rm WCA}(r), & r < r_0 + \Delta \\
              &= U_0 + U_{\rm WCA}(r), & r \ge r_0 + \Delta
-        \end{eqnarray*}
 
     where :math:`r` is the distance from one particle to the other in the
     bond. The potential :math:`U_{\rm WCA}(r)` is given by:
 
     .. math::
-        :nowrap:
 
-        \begin{eqnarray*}
-        U_{\rm WCA}(r) &= 4 \varepsilon \left[ \left( \frac{\sigma}{r-\Delta} \\
-                                                                            \right)^{12}
-                             - \left( \frac{\sigma}{r-\Delta} \right)^{6} \right]
-                             + \varepsilon,
-                                          & r < 2^{1/6}\sigma + \Delta  \\
-                           &= 0,          & r \ge 2^{1/6}\sigma + \Delta
-        \end{eqnarray*}
+        U_{\rm WCA}(r) &= 4 \varepsilon \left[
+                \left( \frac{\sigma}{r-\Delta} \right)^{12}
+                - \left( \frac{\sigma}{r-\Delta} \right)^{6}
+            \right] + \varepsilon, & r < 2^{1/6}\sigma + \Delta  \\
+            &= 0,          & r \ge 2^{1/6}\sigma + \Delta
 
 
     Attributes:
@@ -131,17 +125,12 @@ class Quartic(bond.Bond):
 
     .. rubric:: Examples:
 
-    The parameters for the examples provided below were derived by Tsige and Stevens in
-    a 2004 paper, which used this quartic bond potential with fitted parameters in place
-    of FENE bond potentials. This paper can be found
-    `here <https://www.doi.org/10.1021/ma034970t>`_
+    `Tsige and Stevens <https://www.doi.org/10.1021/ma034970t>`_ bond potential.
 
     .. code-block:: python
 
         quartic = hoomd.azplugins.bond.Quartic()
         quartic.params['A-A'] = dict(k=1434.3, r_0=1.5, b_1=-0.7589, b_2=0.0,
-                                    U_0=67.2234, sigma=1, epsilon=1)
-        quartic.params['B-B'] = dict(k=1434.3, r_0=1.5, b_1=-0.7589, b_2=0.0,
                                     U_0=67.2234, sigma=1, epsilon=1, delta=0.0)
     """
 
