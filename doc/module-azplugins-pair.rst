@@ -17,6 +17,7 @@ azplugins.pair
     Hertz
     PerturbedLennardJones
     TwoPatchMorse
+    ExpandedYukawa
 
 .. rubric:: Details
 
@@ -27,5 +28,6 @@ azplugins.pair
         Hertz,
         PerturbedLennardJones,
         TwoPatchMorse
+        ExpandedYukawa
     :no-inherited-members:
     :show-inheritance:

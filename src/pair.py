@@ -459,3 +459,51 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
             ),
         )
         self._add_typeparam(params)
+
+
+class ExpandedYukawa(pair.Pair):
+    r"""Expanded Yukawa pair potential.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list.
+        r_cut (float):cDefault cutoff radius :math:`[\mathrm{length}]`.
+        mode (str): Energy shifting/smoothing mode.
+
+    `ExpandedYukawa` is a shifted Yukawa potential. The discontinuity is shifted based on a :math:'\varDelta' that is the minimum interaction distance between particles.
+
+    Example::
+
+        nl = nlist.Cell()
+        exyuk = pair.ExpandedYukawa(default_r_cut=4.0, nlist=nl)
+        # particle types A interacting
+        exyuk.params[('A', 'A')] = dict(epsilon=1.0, kappa=1.0, delta=2)
+
+    .. py:attribute:: params
+
+        The `ExpandedYukawa` potential parameters. The dictionary has the following
+        keys:
+
+        * ``epsilon`` (`float`, **required**) - Energy parameter :math:`epsilon`
+          :math:`[\mathrm{energy}]`
+        * ``kappa`` (`float`, **required**) - Scaling parameter :math:`kappa`
+          :math:`[\mathrm{length}]^{-1}`
+        * ``delta`` (`float`, **required**) - Minimum interaction distance
+          :math:`Delta` :math:`[\mathrm{length}]`
+
+        Type: :class:`~hoomd.data.typeparam.TypeParameter` [`tuple`
+        [``particle_type``, ``particle_type``], `dict`]
+
+
+    """
+
+    _ext_module = _azplugins
+    _cpp_class_name = 'PotentialPairExpandedYukawa'
+
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode='none'):
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        params = TypeParameter(
+            'params',
+            'particle_types',
+            TypeParameterDict(epsilon=float, kappa=float, delta=float, len_keys=2),
+        )
+        self._add_typeparam(params)

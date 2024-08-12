@@ -238,6 +238,53 @@ potential_tests += [
     ),
 ]
 
+# ExpandedYukawa
+potential_tests += [
+    # test the calculation of force and potential
+    # test goes to zero outside cutoff
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {'epsilon': 1.0, 'kappa': 1.0, 'delta': 1.0},
+        3.0,
+        False,
+        4.0,
+        0.0,
+        0.0,
+    ),
+    # change epsilon to check for changing
+    # steepness of potential
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {'epsilon': 3.0, 'kappa': 1.0, 'delta': 1.0},
+        3.0,
+        False,
+        1.05,
+        57.07376547,
+        1198.549075,
+    ),
+    # change delta so that now the potential will
+    # be shifted to the right
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {'epsilon': 1.0, 'kappa': 1.0, 'delta': 3.0},
+        9.0,
+        False,
+        3.05,
+        19.02458849,
+        399.5163583,
+    ),
+    # change kappa to check scaling
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {'epsilon': 1.0, 'kappa': 3.0, 'delta': 1.0},
+        5.0,
+        False,
+        1.05,
+        17.21415953,
+        395.9256692,
+    ),
+]
+
 
 @pytest.mark.parametrize(
     'potential_test', potential_tests, ids=lambda x: x.potential.__name__
