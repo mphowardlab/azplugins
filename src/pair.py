@@ -471,6 +471,12 @@ class ExpandedYukawa(pair.Pair):
 
     `ExpandedYukawa` is a shifted Yukawa potential. The discontinuity is shifted based on a :math:'\varDelta' that is the minimum interaction distance between particles.
 
+    The `ExpandedYukawa` potential is:
+
+    .. math::
+
+        U(r) = \varepsilon \frac{\exp[-\varkappa(r - \varDelta)]}{r - \varDelta}
+
     Example::
 
         nl = nlist.Cell()
