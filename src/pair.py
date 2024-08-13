@@ -469,20 +469,22 @@ class ExpandedYukawa(pair.Pair):
         r_cut (float):cDefault cutoff radius :math:`[\mathrm{length}]`.
         mode (str): Energy shifting/smoothing mode.
 
-    `ExpandedYukawa` is a shifted Yukawa potential. The discontinuity is shifted based on a :math:'\varDelta' that is the minimum interaction distance between particles.
+    `ExpandedYukawa` is a shifted Yukawa potential. The discontinuity is shifted
+    based on a :math:`\Delta` that is the minimum interaction distance between
+    particles.
 
     The `ExpandedYukawa` potential is:
 
     .. math::
 
-        U(r) = \varepsilon \frac{\exp[-\varkappa(r - \varDelta)]}{r - \varDelta}
+        U(r) = \varepsilon \frac{\exp[-\kappa(r - \Delta)]}{r - \Delta}
 
     Example::
 
         nl = nlist.Cell()
         exyuk = pair.ExpandedYukawa(default_r_cut=4.0, nlist=nl)
         # particle types A interacting
-        exyuk.params[('A', 'A')] = dict(epsilon=1.0, kappa=1.0, delta=2)
+        exyuk.params[('A', 'A')] = dict(epsilon=1.0, kappa=1.0, delta=2.0)
 
     .. py:attribute:: params
 
@@ -499,6 +501,11 @@ class ExpandedYukawa(pair.Pair):
         Type: :class:`~hoomd.data.typeparam.TypeParameter` [`tuple`
         [``particle_type``, ``particle_type``], `dict`]
 
+    .. py:attribute:: mode
+
+        Energy shifting/smoothing mode: ``"none"``.
+
+        Type: `str`
 
     """
 

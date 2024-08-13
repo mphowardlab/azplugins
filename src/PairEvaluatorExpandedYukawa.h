@@ -42,9 +42,9 @@ struct PairParametersExpandedYukawa : public PairParameters
         }
 #endif // __HIPCC__
 
-    Scalar epsilon;       //!< energy parameter [energy]
-    Scalar kappa;     //!< scaling parameter [length]^-1
-    Scalar delta;     //!< minimum interaction distance [length]
+    Scalar epsilon; //!< energy parameter [energy]
+    Scalar kappa;   //!< scaling parameter [length]^-1
+    Scalar delta;   //!< minimum interaction distance [length]
     }
 #if HOOMD_LONGREAL_SIZE == 32
     __attribute__((aligned(16)));
@@ -78,7 +78,6 @@ class PairEvaluatorExpandedYukawa : public PairEvaluator
         delta = _params.delta;
         }
 
-
     //! Evaluate the force and energy
     /*!
      * \param force_divr Holds the computed force divided by r
@@ -96,15 +95,15 @@ class PairEvaluatorExpandedYukawa : public PairEvaluator
         // compute the force divided by r in force_divr
         if (rsq < rcutsq && epsilon != Scalar(0))
             {
-              Scalar r = fast::sqrt(rsq);
-              Scalar rinv = 1 / r;
-              Scalar delta_dist = r - delta;
-              Scalar rinv_delt = 1/(r - delta);
-              Scalar kappa_delt = kappa*delta_dist;
-              Scalar exponent = exp(-kappa_delt);
+            Scalar r = fast::sqrt(rsq);
+            Scalar rinv = 1 / r;
+            Scalar delta_dist = r - delta;
+            Scalar rinv_delt = 1 / (r - delta);
+            Scalar kappa_delt = kappa * delta_dist;
+            Scalar exponent = exp(-kappa_delt);
 
-              force_divr = epsilon*exponent*(1 + kappa_delt)*rinv_delt*rinv_delt*rinv;
-              pair_eng = epsilon*exponent*rinv_delt;
+            force_divr = epsilon * exponent * (1 + kappa_delt) * rinv_delt * rinv_delt * rinv;
+            pair_eng = epsilon * exponent * rinv_delt;
 
             return true;
             }
@@ -124,10 +123,9 @@ class PairEvaluatorExpandedYukawa : public PairEvaluator
 #endif
 
     protected:
-    Scalar epsilon;       //!< Energy parameter
-    Scalar kappa; //!< Scaling parameter
-    Scalar delta; //!< Minimum interaction distance
-
+    Scalar epsilon; //!< Energy parameter
+    Scalar kappa;   //!< Scaling parameter
+    Scalar delta;   //!< Minimum interaction distance
     };
 
     } // end namespace detail

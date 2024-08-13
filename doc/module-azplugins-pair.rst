@@ -27,7 +27,7 @@ azplugins.pair
         DPDGeneralWeight,
         Hertz,
         PerturbedLennardJones,
-        TwoPatchMorse
+        TwoPatchMorse,
         ExpandedYukawa
     :no-inherited-members:
     :show-inheritance:
