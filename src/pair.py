@@ -460,6 +460,7 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
         )
         self._add_typeparam(params)
 
+
 class AGCMS(pair.Pair):
     r"""Adjusted Generalized Continuous Multiple Step potential.
 

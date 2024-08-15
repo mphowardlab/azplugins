@@ -291,9 +291,10 @@ potential_tests += [
         False,
         1.50,
         -0.9999999984,
-        5.1583220989569564*10**(-8.0),
+        5.1583220989569564 * 10 ** (-8.0),
     ),
 ]
+
 
 @pytest.mark.parametrize(
     'potential_test', potential_tests, ids=lambda x: x.potential.__name__

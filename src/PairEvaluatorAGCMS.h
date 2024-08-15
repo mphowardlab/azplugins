@@ -45,10 +45,10 @@ struct PairParametersAGCMS : public PairParameters
         }
 #endif // __HIPCC__
 
-    Scalar w; //!< well width [length]
-    Scalar sigma;   //!< Hard core repulsion distance [length]
-    Scalar a;   //!< Well depth [energy]
-    Scalar q;   //!< steepness
+    Scalar w;     //!< well width [length]
+    Scalar sigma; //!< Hard core repulsion distance [length]
+    Scalar a;     //!< Well depth [energy]
+    Scalar q;     //!< steepness
     }
 #if HOOMD_LONGREAL_SIZE == 32
     __attribute__((aligned(16)));
@@ -106,9 +106,11 @@ class PairEvaluatorAGCMS : public PairEvaluator
             Scalar rinv = 1 / r;
             Scalar w_rinv_shifted = w / (r - sigma + w);
             Scalar core_repuls = pow(w_rinv_shifted, q);
-            Scalar exponent = exp(q*(r - sigma - w)/w);
-            force_divr = -a*rinv*(q*core_repuls*w_rinv_shifted - q*exponent/(w*pow(1 + exponent, 2.0)));
-            pair_eng = a*(1/(1 + exponent) - core_repuls);
+            Scalar exponent = exp(q * (r - sigma - w) / w);
+            force_divr = -a * rinv
+                         * (q * core_repuls * w_rinv_shifted
+                            - q * exponent / (w * pow(1 + exponent, 2.0)));
+            pair_eng = a * (1 / (1 + exponent) - core_repuls);
             return true;
             }
         else
@@ -127,10 +129,10 @@ class PairEvaluatorAGCMS : public PairEvaluator
 #endif
 
     protected:
-    Scalar w; //!< well width
-    Scalar sigma;   //!< Hard core repulsion distance
-    Scalar a;   //!< well depth
-    Scalar q;   //!< Steepness
+    Scalar w;     //!< well width
+    Scalar sigma; //!< Hard core repulsion distance
+    Scalar a;     //!< well depth
+    Scalar q;     //!< Steepness
     };
 
     } // end namespace detail
