@@ -459,3 +459,106 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
             ),
         )
         self._add_typeparam(params)
+
+class AGCMS(pair.Pair):
+    r"""Adjusted Generalized Continuous Multiple Step potential.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list.
+        r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+        mode (str): Energy shifting/smoothing mode.
+
+    `AGCMS` is a Generalized Continuous Mutltiple Step potential adjusted such
+    that all :math:`a` and :math:`w` values at a distance of :math:`\sigma` will
+    have a potential value of zero.
+
+
+    The original GCMS potential from |Munguia-Valadez et al.|_ is:
+
+    .. math::
+
+        U(r) = U_{\rm{core}}(r, \sigma_0, w_0, q_0) + \sum^{n}_{k=1}U_{\rm{step}}(r,
+        \sigma_k, w_k, q_k)
+
+    where :math:`U_{\rm{core}}` is
+
+    .. math::
+
+        U_{\rm{core}} = \left(\frac{w_0}{r - \sigma_0 + w_0}\right)^{q_0}
+
+
+    and :math:`U_{\rm{step}}` is
+
+    .. math::
+
+        U_{\rm{step}} = \left(\frac{a_k}{1 + \exp[q_k(r-\sigma_k-w_k)/w_k]}\right)
+
+    The `AGCMS` potential is
+
+    .. math::
+
+        U(r) = a\left[U_{\rm{step}}(r, \sigma, w, q) -
+        U_{\rm{core}}(r, \sigma, w, q)\right]
+
+    where
+
+    .. math::
+
+        U_{\rm{core}} = \left(\frac{w}{r - \sigma + w}\right)^q
+
+    and :math:`U_{\rm{step}}` is
+
+    .. math::
+
+        U_{\rm{step}} = \left(\frac{1}{1 + \exp[q(r-\sigma-w)/w]}\right)
+
+    Here, :math:`w` is the well width, :math:`a` is the signed well depth,
+    :math:`\sigma` is the hard core repulsion diameter, and :math:`q` is the
+    steepness of the potential.
+
+    Example::
+
+        nl = nlist.Cell()
+        agcms = pair.AGCMS(default_r_cut=4.0, nlist=nl)
+        # particle types A interacting
+        agcms.params[('A', 'A')] = dict(w=1.0, sigma=2.0, a=2.0, q=16.0)
+
+    .. py:attribute:: params
+
+        The `AGCMS` potential parameters. The dictionary has the following
+        keys:
+
+        * ``w`` (`float`, **required**) - Well width :math:`w`
+          :math:`[\mathrm{length}]`
+        * ``sigma`` (`float`, **required**) - Hard core repulsion diameter
+          :math:`\sigma` :math:`[\mathrm{length}]`
+        * ``a`` (`float`, **required**) - Depth of well :math:`a`
+          :math:`[\mathrm{energy}]`
+        * ``q`` (`float`, **required**) - Steepness parameter for well
+
+        Type: :class:`~hoomd.data.typeparam.TypeParameter` [`tuple`
+        [``particle_type``, ``particle_type``], `dict`]
+
+    .. py:attribute:: mode
+
+        Energy shifting/smoothing mode: ``"none"``.
+
+        Type: `str`
+
+    .. |acutei| unicode:: U+00ED .. acute i
+    .. |Munguia-Valadez et al.| replace:: Mungu\ |acutei|\ a-Valadez et al.
+    .. _Munguia-Valadez et al.: https://doi.org/10.1088/1361-648X/ac4fe8
+
+    """
+
+    _ext_module = _azplugins
+    _cpp_class_name = 'PotentialPairAGCMS'
+
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode='none'):
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        params = TypeParameter(
+            'params',
+            'particle_types',
+            TypeParameterDict(w=float, sigma=float, a=float, q=float, len_keys=2),
+        )
+        self._add_typeparam(params)

@@ -17,6 +17,7 @@ azplugins.pair
     Hertz
     PerturbedLennardJones
     TwoPatchMorse
+    AGCMS
 
 .. rubric:: Details
 
@@ -26,6 +27,7 @@ azplugins.pair
         DPDGeneralWeight,
         Hertz,
         PerturbedLennardJones,
-        TwoPatchMorse
+        TwoPatchMorse,
+        AGCMS
     :no-inherited-members:
     :show-inheritance:

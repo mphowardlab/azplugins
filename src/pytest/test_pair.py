@@ -238,6 +238,62 @@ potential_tests += [
     ),
 ]
 
+# AGCMS
+potential_tests += [
+    # test the calculation of force and potential
+    # test goes to zero outside cutoff
+    PotentialTestCase(
+        hoomd.azplugins.pair.AGCMS,
+        {'w': 1.0, 'sigma': 1.0, 'a': -1.0, 'q': 16.0},
+        3.0,
+        False,
+        4.0,
+        0.0,
+        0.0,
+    ),
+    # change w to check for changing
+    # well width
+    PotentialTestCase(
+        hoomd.azplugins.pair.AGCMS,
+        {'w': 1.25, 'sigma': 1.0, 'a': -1.0, 'q': 16.0},
+        3.0,
+        False,
+        1.75,
+        -0.9977990978,
+        -0.015776422214703146,
+    ),
+    # change sigma so that now the potential will
+    # be shifted to the right
+    PotentialTestCase(
+        hoomd.azplugins.pair.AGCMS,
+        {'w': 1.0, 'sigma': 2.0, 'a': -1.0, 'q': 16.0},
+        3.0,
+        False,
+        2.5,
+        -0.998142211,
+        0.010875544898269139,
+    ),
+    # change well depth to increase the attractiveness
+    PotentialTestCase(
+        hoomd.azplugins.pair.AGCMS,
+        {'w': 1.0, 'sigma': 1.0, 'a': -5.0, 'q': 16.0},
+        3.0,
+        False,
+        1.50,
+        -4.990711055,
+        0.0543777724491345696,
+    ),
+    # change q to increase stiffness
+    PotentialTestCase(
+        hoomd.azplugins.pair.AGCMS,
+        {'w': 1.0, 'sigma': 1.0, 'a': -1.0, 'q': 50.0},
+        3.0,
+        False,
+        1.50,
+        -0.9999999984,
+        5.1583220989569564*10**(-8.0),
+    ),
+]
 
 @pytest.mark.parametrize(
     'potential_test', potential_tests, ids=lambda x: x.potential.__name__
@@ -284,12 +340,14 @@ def test_energy_and_force(
     # test that the energies match reference values, half goes to each particle
     energies = potential.energies
     e = potential_test.energy
+    print(energies, e)
     if sim.device.communicator.rank == 0:
         numpy.testing.assert_array_almost_equal(energies, [0.5 * e, 0.5 * e], decimal=4)
 
     # test that the forces match reference values, should be directed along x
     forces = potential.forces
     f = potential_test.force
+    print(forces, f)
     if sim.device.communicator.rank == 0:
         numpy.testing.assert_array_almost_equal(
             forces, [[-f, 0, 0], [f, 0, 0]], decimal=4
