@@ -63,3 +63,95 @@ class DoubleWell(bond.Bond):
             ),
         )
         self._add_typeparam(params)
+
+
+class Quartic(bond.Bond):
+    r"""Quartic bond potential.
+
+    `Quartic` specifies a quartic potential between the two particles in
+    the simulation state with:
+
+    .. math::
+
+        U(r) &= k (r - \Delta - r_0 - b_1)(r - \Delta - r_0 - b_2)
+                    (r - \Delta -r_0)^2 & \\
+               &+ U_0 + U_{\rm WCA}(r), & r < r_0 + \Delta \\
+             &= U_0 + U_{\rm WCA}(r), & r \ge r_0 + \Delta
+
+    where :math:`r` is the distance from one particle to the other in the
+    bond. The potential :math:`U_{\rm WCA}(r)` is given by:
+
+    .. math::
+
+        U_{\rm WCA}(r) &= 4 \varepsilon \left[
+                \left( \frac{\sigma}{r-\Delta} \right)^{12}
+                - \left( \frac{\sigma}{r-\Delta} \right)^{6}
+            \right] + \varepsilon, & r < 2^{1/6}\sigma + \Delta  \\
+            &= 0,          & r \ge 2^{1/6}\sigma + \Delta
+
+
+    Attributes:
+        params (TypeParameter[``bond type``, dict]):
+            The parameters of the quartic bonds for each particle type.
+            The dictionary has the following keys:
+
+            * ``k`` (`float`, **required**) - quartic attractive force strength
+              :math:`[\mathrm{energy}/\mathrm{length}^4]`.
+
+            * ``r_0`` (`float`, **required**) - Location of the quartic potential
+              cutoff :math:`r_0`. Intended to be larger than the WCA cutoff,
+              :math:`2^{1/6}\sigma`. When true,
+              :math:`U(r_0) = U_{0} + U_{\rm WCA}(r_0)`
+              :math:`[\mathrm{length}]`.
+
+            * ``b_1`` (`float`, **required**) - First quartic potential fitting
+              parameter :math:`b_1` :math:`[\mathrm{length}]`.
+
+            * ``b_2`` (`float`, **required**) - Second quartic potential fitting
+              parameter :math:`b_2` :math:`[\mathrm{length}]`.
+
+            * ``U_0`` (`float`, **required**) - Quartic potential energy barrier height
+              :math:`U_0` at :math:`r_0` when :math:`r_0 > 2^{1/6}\sigma`
+              :math:`[\mathrm{energy}]`.
+
+            * ``epsilon`` (`float`, **required**) - Repulsive WCA interaction energy
+              :math:`\varepsilon` :math:`[\mathrm{energy}]`.
+
+            * ``sigma`` (`float`, **required**) - Repulsive WCA interaction size
+              :math:`\sigma` :math:`[\mathrm{length}]`.
+
+            * ``delta`` (`float`, **optional**) - Shift :math:`\Delta`,
+              defaults to zero :math:`[\mathrm{length}]`.
+
+    .. rubric:: Examples:
+
+    `Tsige and Stevens <https://www.doi.org/10.1021/ma034970t>`_ bond potential.
+
+    .. code-block:: python
+
+        quartic = hoomd.azplugins.bond.Quartic()
+        quartic.params['A-A'] = dict(k=1434.3, r_0=1.5, b_1=-0.7589, b_2=0.0,
+                                    U_0=67.2234, sigma=1, epsilon=1, delta=0.0)
+    """
+
+    _ext_module = _azplugins
+    _cpp_class_name = 'PotentialBondQuartic'
+
+    def __init__(self):
+        super().__init__()
+        params = TypeParameter(
+            'params',
+            'bond_types',
+            TypeParameterDict(
+                k=float,
+                r_0=float,
+                b_1=float,
+                b_2=float,
+                U_0=float,
+                sigma=float,
+                epsilon=float,
+                delta=0.0,
+                len_keys=1,
+            ),
+        )
+        self._add_typeparam(params)

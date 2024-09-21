@@ -51,6 +51,7 @@ namespace detail
     {
 // bond
 void export_PotentialBondDoubleWell(pybind11::module&);
+void export_PotentialBondQuartic(pybind11::module&);
 
 // flow
 void export_ConstantFlow(pybind11::module&);
@@ -68,6 +69,7 @@ void export_PotentialPairDPDThermoGeneralWeight(pybind11::module&);
 #ifdef ENABLE_HIP
 // bond
 void export_PotentialBondDoubleWellGPU(pybind11::module&);
+void export_PotentialBondQuarticGPU(pybind11::module&);
 
 // pair
 void export_AnisoPotentialPairTwoPatchMorseGPU(pybind11::module&);
@@ -91,6 +93,7 @@ PYBIND11_MODULE(_azplugins, m)
 
     // bond
     export_PotentialBondDoubleWell(m);
+    export_PotentialBondQuartic(m);
 
     // flow
     export_ConstantFlow(m);
@@ -108,6 +111,7 @@ PYBIND11_MODULE(_azplugins, m)
 #ifdef ENABLE_HIP
     // bond
     export_PotentialBondDoubleWellGPU(m);
+    export_PotentialBondQuarticGPU(m);
 
     // pair
     export_AnisoPotentialPairTwoPatchMorseGPU(m);
