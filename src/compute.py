@@ -10,147 +10,109 @@ from hoomd.logging import log
 from hoomd.custom import Action
 
 
-class FlowProfile(Action):
-    """Measure average profiles along a spatial dimension.
+class FlowFieldProfiler(Action):
+    """Measure average profiles in 3D.
 
     The average density, velocity, and temperature profiles are computed along
     a given spatial dimension. Both number and mass densities and velocities
     are available.
 
     Args:
-        axis (int): direction for binning (0=*x*, 1=*y*, 2=*z*).
-        bins (int): Number of bins to use along ``axis``.
-        range (tuple): Lower and upper spatial bounds to use along ``axis`` like
-            ``(lo,hi)``.
-        area (float): Cross-sectional area of bins to normalize density
-            (default: 1.0).
+        num_bins (int):
+        bin_ranges (int):
+
 
     Examples::
 
-        flow_profile = hoomd.azplugins.compute.FlowProfile(
-            axis=2, bins=20, range=(-10, 10), area=100)
-        sim.operations.writers.append(flow_profile)
-        sim.run(1e4)
-        if sim.device.communicator.rank == 0:
-            numpy.savetxt('profiles.dat', numpy.column_stack((
-                flow_profile.centers, flow_profile.number_density,
-                flow_profile.number_velocity[:, 2], flow_profile.kT)))
+        flow_profile = hoomd.azplugins.compute.FlowFieldProfiler(...)
+
     """
-
-    def __init__(self, axis, bins, range_, area=1.0):
+    def __init__(self, num_bins, bin_ranges):
         super().__init__()
-        param_dict = ParameterDict(
-            axis=int(axis),
-            bins=int(bins),
-            range=tuple(range_),
-            area=float(area),
-        )
-        self._param_dict.update(param_dict)
 
-        self.edges = numpy.linspace(range_[0], range_[1], bins + 1)
-        self.centers = 0.5 * (self.edges[:-1] + self.edges[1:])
-        self._dx = self.edges[1:] - self.edges[:-1]
-        self.reset()
+        self.bin_ranges = numpy.array(bin_ranges, dtype=float)
+        if self.bin_ranges.shape != (3, 2):
+            raise TypeError("bin_ranges must be (3,2) array")
+        elif numpy.any(self.bin_ranges[:, 1] <= self.bin_ranges[:, 0]):
+            raise ValueError("Bin ranges must be increasing")
 
-        if self.axis not in (0, 1, 2):
-            msg = 'Axis not recognized.'
-            raise ValueError(msg)
+        self.num_bins = numpy.array(num_bins, dtype=int)
+        if self.num_bins.ndim == 0:
+            self.num_bins = numpy.array([num_bins, num_bins, num_bins], dtype=int)
 
-    def attach(self, simulation):
-        self._state = simulation.state
-        super().attach(simulation)
+        if self.num_bins.shape != (3,):
+            raise TypeError("num_bins must be int or 3-tuple")
+
+        if not numpy.all(self.num_bins > 1):
+            raise ValueError("At least 1 bin required per dimension")
+
+        self.bin_sizes = (self.bin_ranges[:, 1] - self.bin_ranges[:, 0]) / self.num_bins
+
+        self.bin_edges = []
+        for dim in range(3):
+            edges = numpy.linspace(
+                start=self.bin_ranges[dim, 0],
+                stop=self.bin_ranges[dim, 1],
+                num=self.num_bins[dim] + 1,
+            )
+            self.bin_edges.append(edges)
+
+        total_bins = numpy.prod(self.num_bins)
+        self._counts = numpy.zeros(total_bins, dtype=int)
+        self._velocity = numpy.zeros((total_bins, 3), dtype=float)
+        self._num_samples = 0
 
     def act(self, timestep):
-        """Compute the flow profile at the given timestep."""
-        state = self._state
+        with self._state.cpu_local_snapshot as snap:
+            type_filter = snap.particles.typeid != 1
+            pos = snap.particles.position[type_filter]
+            vel = snap.particles.velocity[type_filter]
 
-        if self._simulation.device.communicator.rank == 0:
-            positions = state.get_snapshot().particles.position
-            velocities = state.get_snapshot().particles.velocity
-            masses = state.get_snapshot().particles.mass
-
-            x = positions[:, self.axis]
-            v = velocities
-            m = masses
-
-            binids = numpy.digitize(x, self.edges) - 1
-            flags = numpy.logical_and(binids >= 0, binids < self.bins)
-            binids = binids[flags]
-            x = x[flags]
-            v = v[flags]
-            m = m[flags]
-
-            counts = numpy.bincount(binids, minlength=self.bins)
-            self._counts += counts
-
-            mass = numpy.bincount(binids, weights=m, minlength=self.bins)
-            self._bin_mass += mass
-
-            num_vel = numpy.zeros((self.bins, 3))
-            mass_vel = numpy.zeros((self.bins, 3))
-            for dim in range(3):
-                num_vel[:, dim] = numpy.bincount(
-                    binids, weights=v[:, dim], minlength=self.bins
-                )
-                mass_vel[:, dim] = numpy.bincount(
-                    binids, weights=m * v[:, dim], minlength=self.bins
-                )
-            numpy.divide(
-                num_vel, counts[:, None], out=num_vel, where=counts[:, None] > 0
+            in_range_filter = numpy.all(
+                numpy.logical_and(
+                    pos >= self.bin_ranges[:, 0], pos < self.bin_ranges[:, 1]
+                ),
+                axis=1,
             )
-            numpy.divide(mass_vel, mass[:, None], out=mass_vel, where=mass[:, None] > 0)
-            self._number_velocity += num_vel
-            self._mass_velocity += mass_vel
+            binids = numpy.floor(
+                (pos[in_range_filter] - self.bin_ranges[:, 0]) / self.bin_sizes
+            ).astype(int)
 
-            ke = numpy.bincount(
-                binids, weights=0.5 * m * numpy.sum(v**2, axis=1), minlength=self.bins
+            # accumulate
+            binids_1d = numpy.ravel_multi_index(binids.T, self.num_bins)
+            numpy.add.at(self._counts, binids_1d, 1)
+            numpy.add.at(self._velocity, binids_1d, vel[in_range_filter])
+
+            self._num_samples += 1
+
+    @property
+    def density(self):
+        density = numpy.zeros(self._counts.shape, dtype=float)
+        if self._num_samples > 0:
+            bin_volume = numpy.prod(self.bin_sizes)
+            density = self._counts / (self._num_samples * bin_volume)
+        return numpy.reshape(density, self.num_bins)
+
+    @property
+    def velocity(self):
+        velocity = numpy.zeros_like(self._velocity)
+        velocity = numpy.divide(
+            self._velocity, self._counts[:, None], out=velocity, where=self._counts[:, None] > 0
+        )
+        return velocity
+
+    def write(self, filename):
+        bin_centers = []
+        for dim in range(3):
+            bin_centers.append(
+                0.5 * (self.bin_edges[dim][:-1] + self.bin_edges[dim][1:])
             )
-            ke_cm = 0.5 * mass * numpy.sum(mass_vel**2, axis=1)
-            kT = numpy.zeros(self.bins)
-            numpy.divide(2 * (ke - ke_cm), 3 * (counts - 1), out=kT, where=counts > 1)
-            self._kT += kT
-            self.samples += 1
-
-    def reset(self):
-        """Reset the internal averaging counters."""
-        self.samples = 0
-        self._counts = numpy.zeros(self.bins)
-        self._bin_mass = numpy.zeros(self.bins)
-        self._number_velocity = numpy.zeros((self.bins, 3))
-        self._mass_velocity = numpy.zeros((self.bins, 3))
-        self._kT = numpy.zeros(self.bins)
-
-    @log(category='sequence', requires_run=True)
-    def number_density(self):
-        """Return the number density."""
-        if self._simulation.device.communicator.rank == 0 and self.samples > 0:
-            return self._counts / (self._dx * self.area * self.samples)
-        return None
-
-    @log(category='sequence', requires_run=True)
-    def mass_density(self):
-        """Return the mass density."""
-        if self._simulation.device.communicator.rank == 0 and self.samples > 0:
-            return self._bin_mass / (self._dx * self.area * self.samples)
-        return None
-
-    @log(category='sequence', requires_run=True)
-    def number_velocity(self):
-        """Return the number velocity."""
-        if self._simulation.device.communicator.rank == 0 and self.samples > 0:
-            return self._number_velocity / self.samples
-        return None
-
-    @log(category='sequence', requires_run=True)
-    def mass_velocity(self):
-        """Return the mass velocity."""
-        if self._simulation.device.communicator.rank == 0 and self.samples > 0:
-            return self._mass_velocity / self.samples
-        return None
-
-    @log(category='sequence', requires_run=True)
-    def kt(self):
-        """Return the temperature (kT)."""
-        if self._simulation.device.communicator.rank == 0 and self.samples > 0:
-            return self._kT / self.samples
-        return None
+        bin_centers_mesh = numpy.meshgrid(*bin_centers)
+        numpy.savez(
+            filename,
+            X=bin_centers_mesh[0],
+            Y=bin_centers_mesh[1],
+            Z=bin_centers_mesh[2],
+            density=self.density,
+            velocity=self.velocity,
+        )
