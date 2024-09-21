@@ -18,13 +18,20 @@ class FlowFieldProfiler(Action):
     are available.
 
     Args:
-        num_bins (int):
-        bin_ranges (int):
-
+        num_bins: int or 3-tuple - number of bins in all three directions
+        bin_ranges: (3,2) array - ranges for all three directions
 
     Examples::
 
-        flow_profile = hoomd.azplugins.compute.FlowFieldProfiler(...)
+        flow_field = hoomd.azplugins.compute.FlowFieldProfiler(
+                num_bins=(10,10,10),
+                bin_ranges=([-L/2.,L/2.],
+                            [-L/2.,L/2.],
+                            [-L/2.,L/2.])
+                )
+        flow_field_writer = hoomd.write.CustomWriter(action=flow_field,
+                                                    trigger=hoomd.trigger.Periodic(100))
+        simulation.operations.writers.append(flow_field_writer)
 
     """
     def __init__(self, num_bins, bin_ranges):
