@@ -1,0 +1,680 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="License" href="license.html" />
+
+    <!-- Generated with Sphinx 7.4.7 and Furo 2024.07.18 -->
+        <title>Release notes - azplugins 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=613ab9ff" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f0f0f0;
+  --color-code-foreground: black;
+  --color-brand-primary: #406a8c;
+  --color-brand-content: #406a8c;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #5187b2;
+  --color-brand-content: #5187b2;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #5187b2;
+  --color-brand-content: #5187b2;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">azplugins 1.0.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  
+  <span class="sidebar-brand-text">azplugins 1.0.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="module-azplugins-bond.html">azplugins.bond</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module-azplugins-flow.html">azplugins.flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module-azplugins-pair.html">azplugins.pair</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module-azplugins-compute.html">azplugins.compute</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Release notes</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="release-notes">
+<h1>Release notes<a class="headerlink" href="#release-notes" title="Link to this heading">¶</a></h1>
+<section id="v1">
+<h2>v1<a class="headerlink" href="#v1" title="Link to this heading">¶</a></h2>
+<section id="v1-0-0">
+<h3>v1.0.0<a class="headerlink" href="#v1-0-0" title="Link to this heading">¶</a></h3>
+<p>Released 26 July 2024</p>
+<p>This major release is a complete rewrite of azplugins to support HOOMD 4. The
+API and build system have been updated to conform to the HOOMD component
+template. It was decided to remove some features during the porting process
+if they were rarely used or had equivalent implementations in HOOMD. Some other
+features will be ported but are not available in this release. Contributions
+reimplementing features that have not been ported are certainly welcome!</p>
+</section>
+</section>
+<section id="v0">
+<h2>v0<a class="headerlink" href="#v0" title="Link to this heading">¶</a></h2>
+<section id="v0-12-0">
+<h3>v0.12.0<a class="headerlink" href="#v0-12-0" title="Link to this heading">¶</a></h3>
+<p>Released 1 Nov 2022</p>
+<p>This will be the final minor release of azplugins to support HOOMD-blue v2.x.
+The next planned release of azplugins will be a major release to support HOOMD
+v3.x. This will be a breaking change because of the significant rewrite of
+HOOMD-blue’s API. We plan to support bug fixes until this major release is
+ready, and we may support bug fixes targeted toward HOOMD-blue v2.x during a
+transition period.</p>
+<p><em>New features</em></p>
+<ul class="simple">
+<li><p>Add shift parameter and allow sigma &amp; epsilon to be zero in <code class="docutils literal notranslate"><span class="pre">bond.fene</span></code>.</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">analyze.group_velocity</span></code> to compute the center-of-mass velocity of a
+group.</p></li>
+</ul>
+<p><em>Bug fixes</em></p>
+<ul class="simple">
+<li><p>Apply CUDA 11.5 thrust / CUB namespace wrap fix.</p></li>
+</ul>
+</section>
+<section id="v0-11-0">
+<h3>v0.11.0<a class="headerlink" href="#v0-11-0" title="Link to this heading">¶</a></h3>
+<p>Released 1 Feb 2022</p>
+<p><em>New features</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">flow.FlowProfiler</span></code> is generalized to support multiple velocity components,
+mass averaged velocities, and to compute temperature.</p></li>
+<li><p>The documentation has been reorganized, and some tutorials have been added.
+The docs are now hosted on <a class="reference external" href="https://azplugins.readthedocs.io">ReadTheDocs</a>.</p></li>
+<li><p>Support is added for sinusoidal channels and expansion–constriction channels
+in <code class="docutils literal notranslate"><span class="pre">integrate.sinusoidal_channel</span></code> and
+<code class="docutils literal notranslate"><span class="pre">integration.sinusoidal_expansion_constriction</span></code>. Similar support is also
+available for the MPCD solvent.</p></li>
+</ul>
+<p><em>Other changes</em></p>
+<ul class="simple">
+<li><p>Add a code of conduct for contributors.</p></li>
+<li><p>Update copyright. azplugins is now maintained as part of our work at Auburn
+University.</p></li>
+<li><p>The default git branch is renamed <code class="docutils literal notranslate"><span class="pre">main</span></code>. More <a class="reference external" href="https://sfconservancy.org/news/2020/jun/23/gitbranchname">information</a> is available.</p></li>
+<li><p>CI testing has been moved to GitHub Actions.</p></li>
+</ul>
+</section>
+<section id="v0-10-1">
+<h3>v0.10.1<a class="headerlink" href="#v0-10-1" title="Link to this heading">¶</a></h3>
+<p>Released 12 Jan 2021</p>
+<p><em>Bug fixes</em></p>
+<ul class="simple">
+<li><p>Fix normalization of velocity in <code class="docutils literal notranslate"><span class="pre">flow.FlowProfiler</span></code>.</p></li>
+</ul>
+</section>
+<section id="v0-10-0">
+<h3>v0.10.0<a class="headerlink" href="#v0-10-0" title="Link to this heading">¶</a></h3>
+<p>Released 27 Jul 2020</p>
+<p>This is the first release of azplugins to include compilable documentation. The
+<code class="docutils literal notranslate"><span class="pre">docs</span></code> can be built using sphinx. Currently, only the APIs are thoroughly
+documented, but we will be expanding the rest of the documentation in future
+releases with examples and tutorials.</p>
+<p><em>New features</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">restrain.cylinder</span></code> and <code class="docutils literal notranslate"><span class="pre">restrain.sphere</span></code> allow particles to be
+harmonically restrained by their distance relative to a cylinder or sphere,
+respectively. <code class="docutils literal notranslate"><span class="pre">restrain.plane</span></code> has been updated to share a condensed API
+using HOOMD walls.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bond.double_well</span></code> adds a new bond potential having two tunable minima.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">flow.FlowProfiler</span></code> adds a python-level analyzer for averaging 1d density
+and velocity profiles for both HOOMD and MPCD systems.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pair.hertz</span></code> adds the Hertz pair potential.</p></li>
+</ul>
+<p><em>Other changes</em></p>
+<ul class="simple">
+<li><p>The python unit tests have been updated to remove <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">*</span></code>.</p></li>
+</ul>
+</section>
+<section id="v0-9-2">
+<h3>v0.9.2<a class="headerlink" href="#v0-9-2" title="Link to this heading">¶</a></h3>
+<p>Released 3 Mar 2020</p>
+<p><em>Bug fixes</em></p>
+<ul class="simple">
+<li><p>Fix a compilation error on MacOS clang builds.</p></li>
+</ul>
+<p><em>Other changes</em></p>
+<ul class="simple">
+<li><p>Update copyright to 2020.</p></li>
+</ul>
+</section>
+<section id="v0-9-1">
+<h3>v0.9.1<a class="headerlink" href="#v0-9-1" title="Link to this heading">¶</a></h3>
+<p>Released 18 Dec 2019</p>
+<p><em>Bug fixes</em></p>
+<ul class="simple">
+<li><p>Fix a compilation error in CUDA-enabled builds.</p></li>
+</ul>
+</section>
+<section id="v0-9-0">
+<h3>v0.9.0<a class="headerlink" href="#v0-9-0" title="Link to this heading">¶</a></h3>
+<p>Released 15 Dec 2019</p>
+<p><em>New features</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">flow.constant</span></code> implements a constant flow along a vector.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">variant.sphere_area</span></code> adds a new variant that is physically motivated by a
+sphere shrinking with a constant rate of change in area. This may be useful
+with <code class="docutils literal notranslate"><span class="pre">evaporate.implicit</span></code> in the <code class="docutils literal notranslate"><span class="pre">droplet</span></code> geometry.</p></li>
+</ul>
+<p><em>Other changes</em></p>
+<ul class="simple">
+<li><p>Support API changes in HOOMD 2.8.0. Backward compatibility is maintained
+through a new API header.</p></li>
+<li><p>The pair potential evaluators have been updated to support HOOMD 2.8.0. New
+pair potential evaluators should derive from one of the convenience base
+classes.</p></li>
+<li><p>CI testing has been added for HOOMD 2.8.0 in addition to 2.6.0.</p></li>
+</ul>
+</section>
+<section id="v0-8-0">
+<h3>v0.8.0<a class="headerlink" href="#v0-8-0" title="Link to this heading">¶</a></h3>
+<p>Released 5 Nov 2019</p>
+<p><em>New features</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">evaporate.implicit</span></code> now supports evaporation in both film and droplet
+geometries. The default geometry remains the film.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">restrain.plane</span></code> allows particles to be harmonically restrained by their
+distance relative to a plane.</p></li>
+</ul>
+</section>
+<section id="v0-7-1">
+<h3>v0.7.1<a class="headerlink" href="#v0-7-1" title="Link to this heading">¶</a></h3>
+<p>Released 20 Aug 2019</p>
+<p><em>Bug fixes</em></p>
+<ul class="simple">
+<li><p>Silence a warning in CMake &gt;= 3.12.</p></li>
+<li><p>Fix a link error in compiled unit tests.</p></li>
+</ul>
+</section>
+<section id="v0-7-0">
+<h3>v0.7.0<a class="headerlink" href="#v0-7-0" title="Link to this heading">¶</a></h3>
+<p>Released 24 Jun 2019</p>
+<p>This version of the plugin <strong>requires</strong> HOOMD-blue v2.6.0 for compatibility with
+the new streaming geometries in its MPCD component. HOOMD-blue <strong>must</strong> be built
+with the MPCD component.</p>
+<p><em>Bug fixes</em></p>
+<ul class="simple">
+<li><p>Fix compilation errors with HOOMD-blue v2.6.0.</p></li>
+</ul>
+<p><em>Other changes</em></p>
+<ul class="simple">
+<li><p>random123 is used as the random number generator throughout azplugins. This
+API is more robust and stable than Saru, but sequences of random numbers drawn
+for a given seed will change. New features using random numbers should add a
+unique 32-bit identifier to <code class="docutils literal notranslate"><span class="pre">RNGIdentifiers.h</span></code>.</p></li>
+</ul>
+</section>
+<section id="v0-6-2">
+<h3>v0.6.2<a class="headerlink" href="#v0-6-2" title="Link to this heading">¶</a></h3>
+<p>Released 25 Apr 2019</p>
+<p>All commits and pull requests are now automatically tested against HOOMD 2.5.1
+on CircleCI. Unit tests are run for CPU-only build configurations. CUDA-enabled
+builds are tested for compilation, but their unit tests cannot be run on
+CircleCI. The CI test environment is available on Docker Hub
+(<a class="reference external" href="https://hub.docker.com/r/mphoward/ci">https://hub.docker.com/r/mphoward/ci</a>), and tests for new code should be run
+locally on a GPU.</p>
+<p><em>Bug fixes</em></p>
+<ul class="simple">
+<li><p>Fix import statements in azplugins modules for python3.</p></li>
+<li><p>Fix HOOMD version parsing in CMake for external builds.</p></li>
+<li><p>Fix CMake errors in testing for certain build configurations.</p></li>
+</ul>
+</section>
+<section id="v0-6-1">
+<h3>v0.6.1<a class="headerlink" href="#v0-6-1" title="Link to this heading">¶</a></h3>
+<p>Released 28 Mar 2019</p>
+<p><em>Bug fixes</em></p>
+<ul class="simple">
+<li><p>Fix thrust template parameters in <code class="docutils literal notranslate"><span class="pre">mpcd.reverse_perturbation</span></code> for CUDA 9 &amp;
+10.</p></li>
+</ul>
+</section>
+<section id="v0-6-0">
+<h3>v0.6.0<a class="headerlink" href="#v0-6-0" title="Link to this heading">¶</a></h3>
+<p>Released 25 Feb 2019</p>
+<p>This version of the plugin <strong>requires</strong> HOOMD-blue v2.3.0 for compatibility with
+the embedded pybind11 library. Be sure to update your git submodules when
+recompiling and installing HOOMD-blue.</p>
+<p>azplugins is now maintained by Michael P. Howard and will be hosted on GitHub
+(<a class="reference external" href="https://github.com/mphoward/azplugins">https://github.com/mphoward/azplugins</a>).</p>
+<p><em>New features</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mpcd.reverse_perturbation</span></code> implements the reverse perturbation method in
+the optional MPCD module to simulate shear flow.</p></li>
+</ul>
+<p><em>Other changes</em></p>
+<ul class="simple">
+<li><p>The azplugins license and packaging has been updated to reflect the project
+continuation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FindHOOMD.cmake</span></code> has been improved to support <code class="docutils literal notranslate"><span class="pre">find_package</span></code> and detect
+the installed version of HOOOMD.</p></li>
+</ul>
+</section>
+<section id="v0-5-0">
+<h3>v0.5.0<a class="headerlink" href="#v0-5-0" title="Link to this heading">¶</a></h3>
+<p>Released 11 Jun 2018</p>
+<p>This version of the plugin <strong>requires</strong> HOOMD-blue v2.2.2 in order to ensure all
+necessary header files are available.</p>
+<p><em>New features</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">flow.reverse_perturbation</span></code> implements the reverse perturbation method for
+generating shear flow. This implementation is significantly more stable than
+the HOOMD-blue release, but does not currently support MPI.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">integrate.slit</span></code> supports NVE integration with bounce-back rules in the slit
+geometry. Other bounce back geometries can also be configured.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dpd.general</span></code> implements a generalized DPD potential where the exponent of
+the dissipative weight function can be adjusted. A framework is also
+implemented for adding other DPD potentials.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">flow.langevin</span></code> and <code class="docutils literal notranslate"><span class="pre">flow.brownian</span></code> support Langevin and Brownian dynamics
+in external flow fields. Currently, the supported fields are
+<code class="docutils literal notranslate"><span class="pre">flow.quiescent</span></code> and <code class="docutils literal notranslate"><span class="pre">flow.parabolic</span></code>, but additional fields can be
+included by templating.</p></li>
+</ul>
+</section>
+<section id="v0-4-0">
+<h3>v0.4.0<a class="headerlink" href="#v0-4-0" title="Link to this heading">¶</a></h3>
+<p>Released 16 Nov 2017</p>
+<p>This version of the plugin <strong>requires</strong> HOOMD-blue v2.2.1 in order to ensure all
+necessary header files are available.</p>
+<p><em>New features</em></p>
+<ul class="simple">
+<li><p>A framework is configured for developing bond potentials.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bond.fene</span></code> implements a standard FENE potential that is cleaned up compared
+to the version found in HOOMD.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bond.fene24</span></code> implements the FENE potential with the Ashbaugh-Hatch-style
+48-24 Lennard-Jones potential repulsion.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pair.ashbaugh24</span></code> implements a Ashbaugh-Hatch 48-24 Lennard-Jones potential.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pair.spline</span></code> implements a cubic spline potential.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pair.two_patch_morse</span></code> implements the two-patch Morse anisotropic potential.</p></li>
+<li><p>A framework is configured for developing special pair potentials from existing
+pair potentials.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">special_pair.lj96</span></code> implements the LJ 9-6 potential as a special pair.</p></li>
+<li><p>A framework is configured for writing and running compiled unit tests with
+upp11.</p></li>
+<li><p>All source code is now automatically validated for formatting.</p></li>
+</ul>
+<p><em>Bug fixes</em></p>
+<ul class="simple">
+<li><p>Fix path to cub headers.</p></li>
+<li><p>Add missing status line prints.</p></li>
+<li><p>Fix possible linker errors for MPI libraries.</p></li>
+<li><p>Plugins now build when <code class="docutils literal notranslate"><span class="pre">ENABLE_CUDA=OFF</span></code>.</p></li>
+<li><p>CMake exits gracefully when the MD component is not available from hoomd.</p></li>
+<li><p>Plugins now compile with debug flags.</p></li>
+</ul>
+</section>
+<section id="v0-3-0">
+<h3>v0.3.0<a class="headerlink" href="#v0-3-0" title="Link to this heading">¶</a></h3>
+<p>Released 22 Aug 2017</p>
+<p>This version of the plugin is now tested against HOOMD-blue v2.1.9. Users
+running older versions of HOOMD-blue are recommended to upgrade their
+installations in order to ensure compatibility and the latest bug fixes on the
+main code paths.</p>
+<p><em>New features</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pair.lj124</span></code> implements the 12-4 Lennard-Jones potential.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pair.lj96</span></code> implements the 9-6 Lennard-Jones potential.</p></li>
+<li><p>A framework is configured for developing anisotropic pair potentials.</p></li>
+</ul>
+<p><em>Bug fixes</em></p>
+<ul class="simple">
+<li><p>Fix import hoomd.md error in <code class="docutils literal notranslate"><span class="pre">analyze.rdf</span></code>.</p></li>
+<li><p>Adds restraint module to ctest list and warns user about running with
+orientation restraints in single precision.</p></li>
+<li><p>Fix examples in contribution guidelines so that formatting of pull request
+checklist is OK.</p></li>
+<li><p>Remove unused include from particle evaporator which caused compilation errors
+with newer versions of hoomd where the header was removed.</p></li>
+</ul>
+</section>
+<section id="v0-2-0">
+<h3>v0.2.0<a class="headerlink" href="#v0-2-0" title="Link to this heading">¶</a></h3>
+<p>Released 28 Feb 2017</p>
+<p><em>New features</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">analyze.rdf</span></code> implements a radial distribution function calculator between
+particle groups for small problem sizes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">restrain.position</span></code> implements position restraints for particles.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">restrain.orientation</span></code> implements orientation restraints for particles.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pair.slj</span></code> implements a core-shifted Lennard-Jones potential that does not
+read from the particle diameters.</p></li>
+</ul>
+<p><em>Other updates</em></p>
+<ul class="simple">
+<li><p>Source code guidelines and a pull request checklist are discussed in a
+new <code class="docutils literal notranslate"><span class="pre">CONTRIBUTING.md</span></code>.</p></li>
+</ul>
+</section>
+<section id="v0-1-0">
+<h3>v0.1.0<a class="headerlink" href="#v0-1-0" title="Link to this heading">¶</a></h3>
+<p>Released 9 Feb 2017</p>
+<p><em>New features</em></p>
+<ul class="simple">
+<li><p>A framework is configured for developing pair potentials.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pair.ashbaugh</span></code> implements the Ashbaugh-Hatch (Lennard-Jones perturbation)
+potential.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pair.colloid</span></code> implements the colloid (integrated Lennard-Jones) potential
+for colloidal suspensions.</p></li>
+<li><p>A framework is configured for developing wall potentials.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wall.colloid</span></code> implements the integrated Lennard-Jones potential between a
+colloid and a half-plane wall.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wall.lj93</span></code> implements the Lennard-Jones 9-3 potential between a point and a
+half-plane wall.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">update.types</span></code> allows for swapping of particle types based on a slab region
+of the simulation box.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">evaporate.particles</span></code> supports evaporation of single-particle fluids from a
+slab region of the simulation box.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">evaporate.implicit</span></code> provides an implicit model for an evaporating solvent.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          <a class="prev-page" href="license.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">License</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2018-2020, Michael P. Howard. 2021-2024, Auburn University.
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Release notes</a><ul>
+<li><a class="reference internal" href="#v1">v1</a><ul>
+<li><a class="reference internal" href="#v1-0-0">v1.0.0</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#v0">v0</a><ul>
+<li><a class="reference internal" href="#v0-12-0">v0.12.0</a></li>
+<li><a class="reference internal" href="#v0-11-0">v0.11.0</a></li>
+<li><a class="reference internal" href="#v0-10-1">v0.10.1</a></li>
+<li><a class="reference internal" href="#v0-10-0">v0.10.0</a></li>
+<li><a class="reference internal" href="#v0-9-2">v0.9.2</a></li>
+<li><a class="reference internal" href="#v0-9-1">v0.9.1</a></li>
+<li><a class="reference internal" href="#v0-9-0">v0.9.0</a></li>
+<li><a class="reference internal" href="#v0-8-0">v0.8.0</a></li>
+<li><a class="reference internal" href="#v0-7-1">v0.7.1</a></li>
+<li><a class="reference internal" href="#v0-7-0">v0.7.0</a></li>
+<li><a class="reference internal" href="#v0-6-2">v0.6.2</a></li>
+<li><a class="reference internal" href="#v0-6-1">v0.6.1</a></li>
+<li><a class="reference internal" href="#v0-6-0">v0.6.0</a></li>
+<li><a class="reference internal" href="#v0-5-0">v0.5.0</a></li>
+<li><a class="reference internal" href="#v0-4-0">v0.4.0</a></li>
+<li><a class="reference internal" href="#v0-3-0">v0.3.0</a></li>
+<li><a class="reference internal" href="#v0-2-0">v0.2.0</a></li>
+<li><a class="reference internal" href="#v0-1-0">v0.1.0</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=4ebf8126"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=5fa4622c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=c136e461"></script>
+    </body>
+</html>

@@ -12,12 +12,12 @@ azplugins.compute
 .. autosummary::
     :nosignatures:
 
-    FlowProfile
+    FlowFieldProfiler
 
 .. rubric:: Details
 
 .. automodule:: hoomd.azplugins.compute
     :synopsis: Compute operations.
-    :members: FlowProfile
+    :members: FlowFieldProfiler
     :no-inherited-members:
     :show-inheritance:
