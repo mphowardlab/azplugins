@@ -39,7 +39,7 @@ class PYBIND11_EXPORT TypeUpdaterGPU : public TypeUpdater
                    Scalar z_hi);
 
     //! Destructor
-    virtual ~TypeUpdaterGPU() {};
+    virtual ~TypeUpdaterGPU() { };
 
     //! Set autotuner parameters
     /*!

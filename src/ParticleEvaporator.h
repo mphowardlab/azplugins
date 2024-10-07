@@ -56,7 +56,7 @@ class PYBIND11_EXPORT ParticleEvaporator : public TypeUpdater
                        unsigned int seed);
 
     //! Destructor
-    virtual ~ParticleEvaporator() {};
+    virtual ~ParticleEvaporator() { };
 
     //! Get the maximum number of particles to evaporate
     unsigned int getNEvapMax() const

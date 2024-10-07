@@ -84,8 +84,8 @@ template<class evaluator> void export_wall_potential(pybind11::module& m, const 
           &make_wall_params<evaluator>);
     }
 
-    }  // end namespace detail
-    }  // end namespace azplugins
+    } // end namespace detail
+    } // end namespace azplugins
 #endif // NVCC
 
 #endif // AZPLUGINS_WALL_POTENTIALS_H_
