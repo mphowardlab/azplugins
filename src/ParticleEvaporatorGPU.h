@@ -41,7 +41,7 @@ class PYBIND11_EXPORT ParticleEvaporatorGPU : public ParticleEvaporator
                           unsigned int seed);
 
     //! Destructor
-    virtual ~ParticleEvaporatorGPU() {};
+    virtual ~ParticleEvaporatorGPU() { };
 
     //! Set autotuner parameters
     /*!
