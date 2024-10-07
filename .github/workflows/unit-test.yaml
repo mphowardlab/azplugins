@@ -77,7 +77,7 @@ jobs:
           submodules: true
           ref: ${{ env.HOOMD_BLUE_VERSION }}
       - name: Create Python Environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-name: test
           environment-file: hoomd-blue/.github/workflows/environments/py312-conda-lock.yml
