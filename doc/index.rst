@@ -54,6 +54,7 @@ Contents
     module-azplugins-bond
     module-azplugins-flow
     module-azplugins-pair
+    module-azplugins-compute
 
 .. toctree::
     :maxdepth: 1

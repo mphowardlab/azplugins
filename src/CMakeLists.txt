@@ -17,6 +17,7 @@ set(_${COMPONENT_NAME}_cu_sources
 set(python_files
     __init__.py
     conftest.py
+    compute.py
     bond.py
     flow.py
     pair.py
