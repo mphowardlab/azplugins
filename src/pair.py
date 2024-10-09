@@ -466,7 +466,7 @@ class ExpandedYukawa(pair.Pair):
 
     Args:
         nlist (hoomd.md.nlist.NeighborList): Neighbor list.
-        r_cut (float):cDefault cutoff radius :math:`[\mathrm{length}]`.
+        r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
         mode (str): Energy shifting/smoothing mode.
 
     `ExpandedYukawa` is a shifted Yukawa potential. The discontinuity is shifted
@@ -491,12 +491,12 @@ class ExpandedYukawa(pair.Pair):
         The `ExpandedYukawa` potential parameters. The dictionary has the following
         keys:
 
-        * ``epsilon`` (`float`, **required**) - Energy parameter :math:`epsilon`
+        * ``epsilon`` (`float`, **required**) - Energy parameter :math:`\epsilon`
           :math:`[\mathrm{energy}]`
-        * ``kappa`` (`float`, **required**) - Scaling parameter :math:`kappa`
+        * ``kappa`` (`float`, **required**) - Scaling parameter :math:`\kappa`
           :math:`[\mathrm{length}]^{-1}`
         * ``delta`` (`float`, **required**) - Minimum interaction distance
-          :math:`Delta` :math:`[\mathrm{length}]`
+          :math:`\Delta` :math:`[\mathrm{length}]`
 
         Type: :class:`~hoomd.data.typeparam.TypeParameter` [`tuple`
         [``particle_type``, ``particle_type``], `dict`]

@@ -98,7 +98,7 @@ class PairEvaluatorExpandedYukawa : public PairEvaluator
             Scalar r = fast::sqrt(rsq);
             Scalar rinv = 1 / r;
             Scalar delta_dist = r - delta;
-            Scalar rinv_delt = 1 / (r - delta);
+            Scalar rinv_delt = 1 / delta_dist;
             Scalar kappa_delt = kappa * delta_dist;
             Scalar exponent = exp(-kappa_delt);
 
