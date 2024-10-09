@@ -461,17 +461,17 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
         self._add_typeparam(params)
 
 
-class AGCMS(pair.Pair):
-    r"""Adjusted Generalized Continuous Multiple Step potential.
+class ACSW(pair.Pair):
+    r"""Adjusted Continuous Square Well potential.
 
     Args:
         nlist (hoomd.md.nlist.NeighborList): Neighbor list.
         r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
         mode (str): Energy shifting/smoothing mode.
 
-    `AGCMS` is a Generalized Continuous Mutltiple Step potential adjusted such
-    that all :math:`a` and :math:`w` values at a distance of :math:`\sigma` will
-    have a potential value of zero.
+    `ACSW` is a Generalized Continuous Multiple Step potential adjusted such
+    that it is a single continuous square well where all :math:`a` and :math:`w`
+    values at a distance of :math:`\sigma` will have a potential value of zero.
 
 
     The original GCMS potential from |Munguia-Valadez et al.|_ is:
@@ -494,7 +494,7 @@ class AGCMS(pair.Pair):
 
         U_{\rm{step}} = \left(\frac{a_k}{1 + \exp[q_k(r-\sigma_k-w_k)/w_k]}\right)
 
-    The `AGCMS` potential is
+    The `ACSW` potential is
 
     .. math::
 
@@ -526,7 +526,7 @@ class AGCMS(pair.Pair):
 
     .. py:attribute:: params
 
-        The `AGCMS` potential parameters. The dictionary has the following
+        The `ACSW` potential parameters. The dictionary has the following
         keys:
 
         * ``w`` (`float`, **required**) - Well width :math:`w`
@@ -553,7 +553,7 @@ class AGCMS(pair.Pair):
     """
 
     _ext_module = _azplugins
-    _cpp_class_name = 'PotentialPairAGCMS'
+    _cpp_class_name = 'PotentialPairACSW'
 
     def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode='none'):
         super().__init__(nlist, default_r_cut, default_r_on, mode)

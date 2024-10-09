@@ -238,12 +238,12 @@ potential_tests += [
     ),
 ]
 
-# AGCMS
+# ACSW
 potential_tests += [
     # test the calculation of force and potential
     # test goes to zero outside cutoff
     PotentialTestCase(
-        hoomd.azplugins.pair.AGCMS,
+        hoomd.azplugins.pair.ACSW,
         {'w': 1.0, 'sigma': 1.0, 'a': -1.0, 'q': 16.0},
         3.0,
         False,
@@ -254,7 +254,7 @@ potential_tests += [
     # change w to check for changing
     # well width
     PotentialTestCase(
-        hoomd.azplugins.pair.AGCMS,
+        hoomd.azplugins.pair.ACSW,
         {'w': 1.25, 'sigma': 1.0, 'a': -1.0, 'q': 16.0},
         3.0,
         False,
@@ -265,7 +265,7 @@ potential_tests += [
     # change sigma so that now the potential will
     # be shifted to the right
     PotentialTestCase(
-        hoomd.azplugins.pair.AGCMS,
+        hoomd.azplugins.pair.ACSW,
         {'w': 1.0, 'sigma': 2.0, 'a': -1.0, 'q': 16.0},
         3.0,
         False,
@@ -275,7 +275,7 @@ potential_tests += [
     ),
     # change well depth to increase the attractiveness
     PotentialTestCase(
-        hoomd.azplugins.pair.AGCMS,
+        hoomd.azplugins.pair.ACSW,
         {'w': 1.0, 'sigma': 1.0, 'a': -5.0, 'q': 16.0},
         3.0,
         False,
@@ -285,7 +285,7 @@ potential_tests += [
     ),
     # change q to increase stiffness
     PotentialTestCase(
-        hoomd.azplugins.pair.AGCMS,
+        hoomd.azplugins.pair.ACSW,
         {'w': 1.0, 'sigma': 1.0, 'a': -1.0, 'q': 50.0},
         3.0,
         False,

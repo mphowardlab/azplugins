@@ -12,22 +12,22 @@ azplugins.pair
 .. autosummary::
     :nosignatures:
 
+    ACSW
     Colloid
     DPDGeneralWeight
     Hertz
     PerturbedLennardJones
     TwoPatchMorse
-    AGCMS
 
 .. rubric:: Details
 
 .. automodule:: hoomd.azplugins.pair
     :synopsis: Pair potentials.
-    :members: Colloid,
+    :members: ACSW,
+        Colloid,
         DPDGeneralWeight,
         Hertz,
         PerturbedLennardJones,
-        TwoPatchMorse,
-        AGCMS
+        TwoPatchMorse
     :no-inherited-members:
     :show-inheritance:

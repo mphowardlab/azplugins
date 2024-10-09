@@ -32,7 +32,7 @@ set(_pair_evaluators
     Colloid
     Hertz
     PerturbedLennardJones
-    AGCMS
+    ACSW
     )
 
 # TODO: Add names of all dpd evaluators
