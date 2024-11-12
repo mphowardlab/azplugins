@@ -8,6 +8,7 @@ import collections
 
 import hoomd
 import numpy
+
 import pytest
 
 PotentialTestCase = collections.namedtuple(

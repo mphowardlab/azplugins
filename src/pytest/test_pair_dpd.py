@@ -6,6 +6,7 @@
 
 import hoomd
 import numpy
+
 import pytest
 
 

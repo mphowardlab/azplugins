@@ -9,6 +9,7 @@ import collections
 import hoomd
 import hoomd.azplugins
 import numpy
+
 import pytest
 
 PotentialTestCase = collections.namedtuple(
