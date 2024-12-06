@@ -51,13 +51,13 @@ class DoubleWell(bond.Bond):
     """
 
     _ext_module = _azplugins
-    _cpp_class_name = 'PotentialBondDoubleWell'
+    _cpp_class_name = "PotentialBondDoubleWell"
 
     def __init__(self):
         super().__init__()
         params = TypeParameter(
-            'params',
-            'bond_types',
+            "params",
+            "bond_types",
             TypeParameterDict(
                 r_0=float, r_1=float, U_1=float, U_tilt=float, len_keys=1
             ),
@@ -135,13 +135,13 @@ class Quartic(bond.Bond):
     """
 
     _ext_module = _azplugins
-    _cpp_class_name = 'PotentialBondQuartic'
+    _cpp_class_name = "PotentialBondQuartic"
 
     def __init__(self):
         super().__init__()
         params = TypeParameter(
-            'params',
-            'bond_types',
+            "params",
+            "bond_types",
             TypeParameterDict(
                 k=float,
                 r_0=float,

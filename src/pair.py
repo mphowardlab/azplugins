@@ -104,14 +104,14 @@ class Colloid(pair.Pair):
     """
 
     _ext_module = _azplugins
-    _cpp_class_name = 'PotentialPairColloid'
-    _accepted_modes = ('none', 'shift', 'xplor')
+    _cpp_class_name = "PotentialPairColloid"
+    _accepted_modes = ("none", "shift", "xplor")
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode='none'):
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode="none"):
         super().__init__(nlist, default_r_cut, default_r_on, mode)
         params = TypeParameter(
-            'params',
-            'particle_types',
+            "params",
+            "particle_types",
             # TypeParameterDict needs updated still
             TypeParameterDict(A=float, a_1=float, a_2=float, sigma=float, len_keys=2),
         )
@@ -181,9 +181,9 @@ class DPDGeneralWeight(pair.Pair):
 
         nl = nlist.Cell()
         dpd = pair.DPDGeneralWeight(nlist=nl, kT=1.0, default_r_cut=1.0)
-        dpd.params[('A', 'A')] = dict(A=25.0, gamma=4.5, s=0.5)
-        dpd.params[('A', 'B')] = dict(A=50.0, gamma=4.5, s=0.5)
-        dpd.params[('B', 'B')] = dict(A=25.0, gamma=4.5, s=0.5)
+        dpd.params[("A", "A")] = dict(A=25.0, gamma=4.5, s=0.5)
+        dpd.params[("A", "B")] = dict(A=50.0, gamma=4.5, s=0.5)
+        dpd.params[("B", "B")] = dict(A=25.0, gamma=4.5, s=0.5)
 
     .. py:attribute:: params
 
@@ -211,8 +211,8 @@ class DPDGeneralWeight(pair.Pair):
     """
 
     _ext_module = _azplugins
-    _cpp_class_name = 'PotentialPairDPDThermoGeneralWeight'
-    _accepted_modes = ('none',)
+    _cpp_class_name = "PotentialPairDPDThermoGeneralWeight"
+    _accepted_modes = ("none",)
 
     def __init__(
         self,
@@ -221,16 +221,16 @@ class DPDGeneralWeight(pair.Pair):
         default_r_cut=None,
     ):
         super().__init__(
-            nlist=nlist, default_r_cut=default_r_cut, default_r_on=0, mode='none'
+            nlist=nlist, default_r_cut=default_r_cut, default_r_on=0, mode="none"
         )
         params = TypeParameter(
-            'params',
-            'particle_types',
+            "params",
+            "particle_types",
             TypeParameterDict(A=float, gamma=float, s=float, len_keys=2),
         )
         self._add_typeparam(params)
         param_dict = ParameterDict(kT=Variant)
-        param_dict['kT'] = kT
+        param_dict["kT"] = kT
         self._param_dict.update(param_dict)
 
     def _attach_hook(self):
@@ -258,8 +258,8 @@ class Hertz(pair.Pair):
 
         nl = hoomd.md.nlist.cell()
         hertz = azplugins.pair.Hertz(r_cut=3.0, nlist=nl)
-        hertz.params[('A', 'A')] = dict(epsilon=1.0)
-        hertz.r_cut[('A', 'B')] = 3.0
+        hertz.params[("A", "A")] = dict(epsilon=1.0)
+        hertz.r_cut[("A", "B")] = 3.0
 
     .. py:attribute:: params
 
@@ -280,14 +280,14 @@ class Hertz(pair.Pair):
     """
 
     _ext_module = _azplugins
-    _cpp_class_name = 'PotentialPairHertz'
-    _accepted_modes = ('none', 'shift', 'xplor')
+    _cpp_class_name = "PotentialPairHertz"
+    _accepted_modes = ("none", "shift", "xplor")
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode='none'):
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode="none"):
         super().__init__(nlist, default_r_cut, default_r_on, mode)
         params = TypeParameter(
-            'params',
-            'particle_types',
+            "params",
+            "particle_types",
             TypeParameterDict(epsilon=float, len_keys=2),
         )
         self._add_typeparam(params)
@@ -353,14 +353,14 @@ class PerturbedLennardJones(pair.Pair):
     """
 
     _ext_module = _azplugins
-    _cpp_class_name = 'PotentialPairPerturbedLennardJones'
-    _accepted_modes = ('none', 'shift', 'xplor')
+    _cpp_class_name = "PotentialPairPerturbedLennardJones"
+    _accepted_modes = ("none", "shift", "xplor")
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode='none'):
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode="none"):
         super().__init__(nlist, default_r_cut, default_r_on, mode)
         params = TypeParameter(
-            'params',
-            'particle_types',
+            "params",
+            "particle_types",
             TypeParameterDict(
                 epsilon=float, sigma=float, attraction_scale_factor=float, len_keys=2
             ),
@@ -412,9 +412,15 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
 
         nl = hoomd.md.nlist.Cell()
         m2p = azplugins.pair.TwoPatchMorse(nlist=nl)
-        m2p.params[('A', 'A')] = dict(M_d=1.8347, M_r=0.0302, r_eq=1.0043,
-            omega=20, alpha=0.50, repulsion=True)
-        m2p.r_cut[('A', 'A')] = 3.0
+        m2p.params[("A", "A")] = dict(
+            M_d=1.8347,
+            M_r=0.0302,
+            r_eq=1.0043,
+            omega=20,
+            alpha=0.50,
+            repulsion=True,
+        )
+        m2p.r_cut[("A", "A")] = 3.0
 
     .. py:attribute:: params
 
@@ -441,13 +447,13 @@ class TwoPatchMorse(pair.aniso.AnisotropicPair):
     """
 
     _ext_module = _azplugins
-    _cpp_class_name = 'AnisoPotentialPairTwoPatchMorse'
+    _cpp_class_name = "AnisoPotentialPairTwoPatchMorse"
 
-    def __init__(self, nlist, default_r_cut=None, mode='none'):
+    def __init__(self, nlist, default_r_cut=None, mode="none"):
         super().__init__(nlist, default_r_cut, mode)
         params = TypeParameter(
-            'params',
-            'particle_types',
+            "params",
+            "particle_types",
             TypeParameterDict(
                 M_d=float,
                 M_r=float,

@@ -12,8 +12,8 @@ import numpy
 import pytest
 
 PotentialTestCase = collections.namedtuple(
-    'PotentialTestCase',
-    ['potential', 'params', 'distance', 'energy', 'force'],
+    "PotentialTestCase",
+    ["potential", "params", "distance", "energy", "force"],
 )
 
 potential_tests = []
@@ -194,7 +194,7 @@ potential_tests += [
 
 
 @pytest.mark.parametrize(
-    'potential_test', potential_tests, ids=lambda x: x.potential.__name__
+    "potential_test", potential_tests, ids=lambda x: x.potential.__name__
 )
 def test_energy_and_force(
     simulation_factory, bonded_two_particle_snapshot_factory, potential_test
@@ -212,7 +212,7 @@ def test_energy_and_force(
 
     # setup pair potential
     potential = potential_test.potential()
-    potential.params['A-A'] = potential_test.params
+    potential.params["A-A"] = potential_test.params
     integrator.forces = [potential]
 
     # calculate energies and forces
@@ -220,7 +220,7 @@ def test_energy_and_force(
     sim.run(0)
 
     # test that parameters are still correct after attach runs
-    assert potential.params['A-A'] == potential_test.params
+    assert potential.params["A-A"] == potential_test.params
 
     # test that the energies match reference values, half goes to each particle
     energies = potential.energies
