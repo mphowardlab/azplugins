@@ -40,12 +40,9 @@ if os.getenv("READTHEDOCS"):
     autodoc_mock_imports += [
         "hoomd._hoomd",
         "hoomd.version_config",
-        "hoomd.md._md",
-        "hoomd.metal._metal",
-        "hoomd.mpcd._mpcd",
-        "hoomd.minimize._minimize",
-        "hoomd.hpmc._jit",
         "hoomd.hpmc._hpmc",
+        "hoomd.md._md",
+        "hoomd.mpcd._mpcd",
     ]
 
 extensions += ["sphinx.ext.napoleon"]
