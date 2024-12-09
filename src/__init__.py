@@ -6,4 +6,4 @@
 
 from hoomd.azplugins import bond, flow, pair
 
-__version__ = '1.0.0'
+__version__ = "1.0.0"

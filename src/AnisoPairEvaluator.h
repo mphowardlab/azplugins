@@ -196,6 +196,11 @@ class AnisoPairEvaluator
         throw std::runtime_error("Name not defined for this pair potential.");
         }
 
+    static std::string getShapeParamName()
+        {
+        throw std::runtime_error("Shape name not defined for this pair potential.");
+        }
+
     std::string getShapeSpec() const
         {
         throw std::runtime_error("Shape definition not supported for this pair potential.");

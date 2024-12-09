@@ -7,13 +7,13 @@
 import pytest
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def bonded_two_particle_snapshot_factory(two_particle_snapshot_factory):
     """Fixture for a single bond."""
 
     def make_snapshot(bond_types=None, **kwargs):
         if bond_types is None:
-            bond_types = ['A-A']
+            bond_types = ["A-A"]
         snap = two_particle_snapshot_factory(**kwargs)
         if snap.communicator.rank == 0:
             snap.bonds.types = bond_types

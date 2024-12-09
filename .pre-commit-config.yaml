@@ -14,9 +14,6 @@ repos:
   - id: check-json
   - id: check-yaml
   - id: check-case-conflict
-  - id: fix-encoding-pragma
-    args:
-    - --remove
   - id: mixed-line-ending
 - repo: https://github.com/glotzerlab/fix-license-header
   rev: v0.4.1
@@ -48,12 +45,14 @@ repos:
     - --keep-after=.. automodule
     - --comment-prefix=..
 - repo: https://github.com/pre-commit/mirrors-clang-format
-  rev: v19.1.1
+  rev: v19.1.4
   hooks:
   - id: clang-format
     types_or: [c, c++, cuda, inc]
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.6.9
+  rev: v0.8.1
   hooks:
     - id: ruff-format
+      types_or: [python]
     - id: ruff
+      types_or: [python]

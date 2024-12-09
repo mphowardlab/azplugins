@@ -29,14 +29,14 @@ class ConstantFlow(FlowField):
 
     Example::
 
-        u = hoomd.azplugins.flow.ConstantFlow(velocity=(1,0,0))
+        u = hoomd.azplugins.flow.ConstantFlow(velocity=(1, 0, 0))
 
     """
 
     def __init__(self, velocity):
         super().__init__()
         param_dict = ParameterDict(velocity=(float, float, float))
-        param_dict['velocity'] = velocity
+        param_dict["velocity"] = velocity
         self._param_dict.update(param_dict)
 
     def _attach_hook(self):
@@ -67,7 +67,9 @@ class ParabolicFlow(FlowField):
 
     Example::
 
-        u = hoomd.azplugins.flow.ParabolicFlow(mean_velocity=2.0, separation=0.5)
+        u = hoomd.azplugins.flow.ParabolicFlow(
+            mean_velocity=2.0, separation=0.5
+        )
 
     Note:
         Creating a flow profile does **not** imply anything about the simulation

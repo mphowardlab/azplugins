@@ -24,7 +24,7 @@ def test_dpd_temperature(simulation_factory, lattice_snapshot_factory):
     # create DPD with no repulsion to test random part only
     cell = hoomd.md.nlist.Cell(buffer=0.4)
     dpd = hoomd.azplugins.pair.DPDGeneralWeight(nlist=cell, kT=1.5, default_r_cut=1.0)
-    dpd.params[('A', 'A')] = dict(A=0.0, gamma=4.5, s=0.5)
+    dpd.params[("A", "A")] = dict(A=0.0, gamma=4.5, s=0.5)
     integrator.forces.append(dpd)
 
     # set up NVE integration to test thermostatting part of DPD General Weight

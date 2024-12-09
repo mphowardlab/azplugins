@@ -13,13 +13,13 @@ from pathlib import Path
 install_dir = Path(site.getsitepackages()[0])
 
 hoomd_dir = Path(sys.argv[1])
-for file in hoomd_dir.rglob('*.py'):
+for file in hoomd_dir.rglob("*.py"):
     relative_file = file.relative_to(hoomd_dir.parent)
     os.makedirs(install_dir / relative_file.parent, exist_ok=True)
     shutil.copy(file, install_dir / relative_file.parent)
 
 azplugins_dir = Path(sys.argv[2])
-for file in azplugins_dir.rglob('*.py'):
-    relative_file = Path('hoomd') / 'azplugins' / file.relative_to(azplugins_dir)
+for file in azplugins_dir.rglob("*.py"):
+    relative_file = Path("hoomd") / "azplugins" / file.relative_to(azplugins_dir)
     os.makedirs(install_dir / relative_file.parent, exist_ok=True)
     shutil.copy(file, install_dir / relative_file.parent)

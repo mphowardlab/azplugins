@@ -220,6 +220,11 @@ class AnisoPairEvaluatorTwoPatchMorse : public AnisoPairEvaluator
         {
         return std::string("TwoPatchMorse");
         }
+
+    static std::string getShapeParamName()
+        {
+        return std::string("");
+        }
 #endif
 
     private:
