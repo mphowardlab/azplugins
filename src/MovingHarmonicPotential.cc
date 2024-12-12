@@ -25,17 +25,9 @@ MovingHarmonicPotential::MovingHarmonicPotential(std::shared_ptr<SystemDefinitio
     // allocate memory per type for parameters
     GPUArray<Scalar4> params(m_pdata->getNTypes(), m_exec_conf);
     m_params.swap(params);
-
-    // connect to type change to resize type data arrays
-//    m_pdata->getNumTypesChangeSignal()
-//        .connect<MovingHarmonicPotential, &MovingHarmonicPotential::reallocateParams>(this);
     }
 
-MovingHarmonicPotential::~MovingHarmonicPotential()
-    {
-//    m_pdata->getNumTypesChangeSignal()
-//        .disconnect<MovingHarmonicPotential, &MovingHarmonicPotential::reallocateParams>(this);
-    }
+MovingHarmonicPotential::~MovingHarmonicPotential() { };
 
 /*!
  * \param timestep Current timestep
