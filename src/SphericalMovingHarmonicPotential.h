@@ -3,8 +3,8 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file ImplicitDropletEvaporator.h
- * \brief Declaration of ImplicitDropletEvaporator
+ * \file SphericalMovingHarmonicPotential.h
+ * \brief Declaration of SphericalMovingHarmonicPotential
  */
 
 #ifndef AZPLUGINS_IMPLICIT_DROPLET_EVAPORATOR_H_
@@ -14,9 +14,12 @@
 #error This header cannot be compiled by nvcc
 #endif
 
-#include "ImplicitEvaporator.h"
+#include "MovingHarmonicPotential.h"
 
-#include "hoomd/extern/pybind/include/pybind11/pybind11.h"
+#include <pybind11/pybind11.h>
+
+namespace hoomd
+    {
 
 namespace azplugins
     {
@@ -25,26 +28,21 @@ namespace azplugins
 /*
  * The interface normal is that of a sphere, and its origin is (0,0,0).
  */
-class PYBIND11_EXPORT ImplicitDropletEvaporator : public ImplicitEvaporator
+class PYBIND11_EXPORT SphericalMovingHarmonicPotential : public MovingHarmonicPotential
     {
     public:
     //! Constructor
-    ImplicitDropletEvaporator(std::shared_ptr<SystemDefinition> sysdef,
+    SphericalMovingHarmonicPotential(std::shared_ptr<SystemDefinition> sysdef,
                               std::shared_ptr<Variant> interf);
 
-    virtual ~ImplicitDropletEvaporator();
+    virtual ~SphericalMovingHarmonicPotential();
 
     protected:
     //! Implements the force calculation
     virtual void computeForces(unsigned int timestep);
     };
 
-namespace detail
-    {
-//! Exports the ImplicitDropletEvaporator to python
-void export_ImplicitDropletEvaporator(pybind11::module& m);
-    } // end namespace detail
-
     } // end namespace azplugins
 
+    } // end namespace hoomd
 #endif // AZPLUGINS_IMPLICIT_DROPLET_EVAPORATOR_H_

@@ -3,28 +3,31 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file ImplicitEvaporator.h
- * \brief Declaration of ImplicitEvaporator
+ * \file MovingHarmonicPotential.h
+ * \brief Declaration of MovingHarmonicPotential
  */
 
-#ifndef AZPLUGINS_IMPLICIT_EVAPORATOR_H_
-#define AZPLUGINS_IMPLICIT_EVAPORATOR_H_
+#ifndef AZPLUGINS_MOVING_HARMONIC_POTENTIAL_H_
+#define AZPLUGINS_MOVING_HARMONIC_POTENTIAL_H_
 
-#ifdef NVCC
+#ifdef __HIPCC__
 #error This header cannot be compiled by nvcc
 #endif
 
 #include "hoomd/ForceCompute.h"
 #include "hoomd/Variant.h"
 
-#include "hoomd/extern/pybind/include/pybind11/pybind11.h"
+#include <pybind11/pybind11.h>
+
+namespace hoomd
+    {
 
 namespace azplugins
     {
 
-//! Implicit solvent evaporator
+//! Moving Harmonic Potential
 /*!
- * Implicitly models the effect of solvent evaporation as a moving interface.
+ * Models moving interface with harmonic potential
  * The moving interface compute acts on particles along the inward normal.
  * The interface potential is harmonic. It does not include an attractive
  * part (i.e., it is truncated at its minimum, and is zero for any negative
@@ -64,14 +67,14 @@ namespace azplugins
  *          will be raised the first time it is requested.
  *
  */
-class PYBIND11_EXPORT ImplicitEvaporator : public ForceCompute
+class PYBIND11_EXPORT MovingHarmonicPotential : public ForceCompute
     {
     public:
     //! Constructor
-    ImplicitEvaporator(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> interf);
+    MovingHarmonicPotential(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> interf);
 
     //! Destructor
-    virtual ~ImplicitEvaporator();
+    virtual ~MovingHarmonicPotential();
 
     //! Set the per-type potential parameters
     /*!
@@ -106,12 +109,8 @@ class PYBIND11_EXPORT ImplicitEvaporator : public ForceCompute
         }
     };
 
-namespace detail
-    {
-//! Exports the ImplicitEvaporator to python
-void export_ImplicitEvaporator(pybind11::module& m);
-    } // end namespace detail
-
     } // end namespace azplugins
 
-#endif // AZPLUGINS_IMPLICIT_EVAPORATOR_H_
+    } // end namespace hoomd
+
+#endif // AZPLUGINS_MOVING_HARMONIC_POTENTIAL_H_

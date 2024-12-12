@@ -3,11 +3,14 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file ImplicitPlaneEvaporator.cc
- * \brief Definition of ImplicitPlaneEvaporator
+ * \file PlanarMovingHarmonicBarrier.cc
+ * \brief Definition of PlanarMovingHarmonicBarrier
  */
 
-#include "ImplicitPlaneEvaporator.h"
+#include "PlanarMovingHarmonicBarrier.h"
+
+namespace hoomd
+    {
 
 namespace azplugins
     {
@@ -15,33 +18,33 @@ namespace azplugins
  * \param sysdef System definition
  * \param interf Position of the interface
  */
-ImplicitPlaneEvaporator::ImplicitPlaneEvaporator(std::shared_ptr<SystemDefinition> sysdef,
-                                                 std::shared_ptr<Variant> interf)
-    : ImplicitEvaporator(sysdef, interf)
+PlanarMovingHarmonicBarrier::PlanarMovingHarmonicBarrier(std::shared_ptr<SystemDefinition> sysdef,
+                                                         std::shared_ptr<Variant> interf)
+    : MovingHarmonicPotential(sysdef, interf)
     {
-    m_exec_conf->msg->notice(5) << "Constructing ImplicitPlaneEvaporator" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing PlanarMovingHarmonicBarrier" << std::endl;
     }
 
-ImplicitPlaneEvaporator::~ImplicitPlaneEvaporator()
+PlanarMovingHarmonicBarrier::~PlanarMovingHarmonicBarrier()
     {
-    m_exec_conf->msg->notice(5) << "Destroying ImplicitPlaneEvaporator" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying PlanarMovingHarmonicBarrier" << std::endl;
     }
 
 /*!
  * \param timestep Current timestep
  */
-void ImplicitPlaneEvaporator::computeForces(unsigned int timestep)
+void PlanarMovingHarmonicBarrier::computeForces(unsigned int timestep)
     {
-    ImplicitEvaporator::computeForces(timestep);
+    MovingHarmonicPotential::computeForces(timestep);
 
     const BoxDim& box = m_pdata->getGlobalBox();
-    const Scalar interf_origin = m_interf->getValue(timestep);
+    const Scalar interf_origin = m_interf->operator()(timestep);
     if (interf_origin > box.getHi().z || interf_origin < box.getLo().z)
         {
         m_exec_conf->msg->error()
-            << "ImplicitPlaneEvaporator interface must be inside the simulation box" << std::endl;
+            << "PlanarMovingHarmonicBarrier interface must be inside the simulation box" << std::endl;
         throw std::runtime_error(
-            "ImplicitPlaneEvaporator interface must be inside the simulation box");
+            "PlanarMovingHarmonicBarrier interface must be inside the simulation box");
         }
 
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
@@ -88,16 +91,18 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_ImplicitPlaneEvaporator(pybind11::module& m)
+void export_PlanarMovingHarmonicBarrier(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ImplicitPlaneEvaporator, std::shared_ptr<ImplicitPlaneEvaporator>>(
+    py::class_<PlanarMovingHarmonicBarrier, std::shared_ptr<PlanarMovingHarmonicBarrier>>(
         m,
-        "ImplicitPlaneEvaporator",
-        py::base<ImplicitEvaporator>())
+        "PlanarMovingHarmonicBarrier",
+        py::base<MovingHarmonicPotential>())
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     ;
     }
     } // end namespace detail
 
     } // end namespace azplugins
+
+    } // end namespace hoomd

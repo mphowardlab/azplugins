@@ -6,7 +6,10 @@ set(_${COMPONENT_NAME}_sources
     ConstantFlow.cc
     GroupVelocityCompute.cc
     module.cc
+    MovingHarmonicPotential.cc
     ParabolicFlow.cc
+    PlanarMovingHarmonicBarrier.cc
+    SphericalMovingHarmonicPotential.cc
     )
 
 # TODO: List all GPU C++ source code files in _${COMPONENT_NAME}_cu_sources.

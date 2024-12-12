@@ -53,6 +53,11 @@ namespace detail
 void export_PotentialBondDoubleWell(pybind11::module&);
 void export_PotentialBondQuartic(pybind11::module&);
 
+// external
+void export_MovingHarmonicPotential(pybind11::module&);
+void export_PlanarMovingHarmonicBarrier(pybind11::module&);
+void export_SphericalMovingHarmonicPotential(pybind11::module&);
+
 // flow
 void export_ConstantFlow(pybind11::module&);
 void export_ParabolicFlow(pybind11::module&);

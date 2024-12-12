@@ -3,11 +3,14 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file ImplicitDropletEvaporator.cc
- * \brief Definition of ImplicitDropletEvaporator
+ * \file SphericalMovingHarmonicPotential.cc
+ * \brief Definition of SphericalMovingHarmonicPotential
  */
 
-#include "ImplicitDropletEvaporator.h"
+#include "SphericalMovingHarmonicPotential.h"
+
+namespace hoomd
+    {
 
 namespace azplugins
     {
@@ -15,27 +18,27 @@ namespace azplugins
  * \param sysdef System definition
  * \param interf Position of the interface
  */
-ImplicitDropletEvaporator::ImplicitDropletEvaporator(std::shared_ptr<SystemDefinition> sysdef,
-                                                     std::shared_ptr<Variant> interf)
-    : ImplicitEvaporator(sysdef, interf)
+SphericalMovingHarmonicPotential::SphericalMovingHarmonicPotential(std::shared_ptr<SystemDefinition> sysdef,
+                                                                   std::shared_ptr<Variant> interf)
+    : MovingHarmonicPotential(sysdef, interf)
     {
-    m_exec_conf->msg->notice(5) << "Constructing ImplicitDropletEvaporator" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing SphericalMovingHarmonicPotential" << std::endl;
     }
 
-ImplicitDropletEvaporator::~ImplicitDropletEvaporator()
+SphericalMovingHarmonicPotential::~SphericalMovingHarmonicPotential()
     {
-    m_exec_conf->msg->notice(5) << "Destroying ImplicitDropletEvaporator" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying SphericalMovingHarmonicPotential" << std::endl;
     }
 
 /*!
  * \param timestep Current timestep
  */
-void ImplicitDropletEvaporator::computeForces(unsigned int timestep)
+void SphericalMovingHarmonicPotential::computeForces(unsigned int timestep)
     {
-    ImplicitEvaporator::computeForces(timestep);
+    MovingHarmonicPotential::computeForces(timestep);
 
     // check radius fits in box
-    const Scalar interf_origin = m_interf->getValue(timestep);
+    const Scalar interf_origin = m_interf->operator()(timestep);
         {
         const BoxDim& box = m_pdata->getGlobalBox();
         const Scalar3 hi = box.getHi();
@@ -44,10 +47,10 @@ void ImplicitDropletEvaporator::computeForces(unsigned int timestep)
             || interf_origin < lo.y || interf_origin > hi.z || interf_origin < lo.z)
             {
             m_exec_conf->msg->error()
-                << "ImplicitDropletEvaporator interface must be inside the simulation box"
+                << "SphericalMovingHarmonicPotential interface must be inside the simulation box"
                 << std::endl;
             throw std::runtime_error(
-                "ImplicitDropletEvaporator interface must be inside the simulation box");
+                "SphericalMovingHarmonicPotential interface must be inside the simulation box");
             }
         }
 
@@ -102,16 +105,18 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_ImplicitDropletEvaporator(pybind11::module& m)
+void export_SphericalMovingHarmonicPotential(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ImplicitDropletEvaporator, std::shared_ptr<ImplicitDropletEvaporator>>(
+    py::class_<SphericalMovingHarmonicPotential, std::shared_ptr<SphericalMovingHarmonicPotential>>(
         m,
-        "ImplicitDropletEvaporator",
-        py::base<ImplicitEvaporator>())
+        "SphericalMovingHarmonicPotential",
+        py::base<MovingHarmonicPotential>())
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     ;
     }
     } // end namespace detail
 
     } // end namespace azplugins
+
+    } // end namespace hoomd
