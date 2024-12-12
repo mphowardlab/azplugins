@@ -7,10 +7,10 @@
  * \brief Declaration of SphericalMovingHarmonicPotential
  */
 
-#ifndef AZPLUGINS_IMPLICIT_DROPLET_EVAPORATOR_H_
-#define AZPLUGINS_IMPLICIT_DROPLET_EVAPORATOR_H_
+#ifndef AZPLUGINS_SPHERICAL_MOVING_HARMONIC_POTENTIAL_H_
+#define AZPLUGINS_SPHERICAL_MOVING_HARMONIC_POTENTIAL_H_
 
-#ifdef NVCC
+#ifdef __HIPCC__
 #error This header cannot be compiled by nvcc
 #endif
 
@@ -24,7 +24,7 @@ namespace hoomd
 namespace azplugins
     {
 
-//! Implicit solvent evaporator in a spherical (droplet) geometry
+//! Moving Harmonic Potential in a spherical (droplet) geometry
 /*
  * The interface normal is that of a sphere, and its origin is (0,0,0).
  */
@@ -33,7 +33,7 @@ class PYBIND11_EXPORT SphericalMovingHarmonicPotential : public MovingHarmonicPo
     public:
     //! Constructor
     SphericalMovingHarmonicPotential(std::shared_ptr<SystemDefinition> sysdef,
-                              std::shared_ptr<Variant> interf);
+                                     std::shared_ptr<Variant> interf);
 
     virtual ~SphericalMovingHarmonicPotential();
 
@@ -45,4 +45,4 @@ class PYBIND11_EXPORT SphericalMovingHarmonicPotential : public MovingHarmonicPo
     } // end namespace azplugins
 
     } // end namespace hoomd
-#endif // AZPLUGINS_IMPLICIT_DROPLET_EVAPORATOR_H_
+#endif // AZPLUGINS_SPHERICAL_MOVING_HARMONIC_POTENTIAL_H_

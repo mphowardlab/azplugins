@@ -34,7 +34,7 @@ class PYBIND11_EXPORT PlanarMovingHarmonicBarrier : public MovingHarmonicPotenti
     public:
     //! Constructor
     PlanarMovingHarmonicBarrier(std::shared_ptr<SystemDefinition> sysdef,
-                            std::shared_ptr<Variant> interf);
+                                std::shared_ptr<Variant> interf);
 
     virtual ~PlanarMovingHarmonicBarrier();
 

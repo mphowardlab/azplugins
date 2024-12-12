@@ -3,12 +3,15 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file ImplicitDropletEvaporatorGPU.cc
- * \brief Definition of ImplicitDropletEvaporatorGPU
+ * \file SphericalMovingHarmonicPotentialGPU.cc
+ * \brief Definition of SphericalMovingHarmonicPotentialGPU
  */
 
-#include "ImplicitDropletEvaporatorGPU.h"
-#include "ImplicitDropletEvaporatorGPU.cuh"
+#include "SphericalMovingHarmonicPotentialGPU.h"
+#include "SphericalMovingHarmonicPotentialGPU.cuh"
+
+namespace hoomd
+    {
 
 namespace azplugins
     {
@@ -17,24 +20,24 @@ namespace azplugins
  * \param sysdef System definition
  * \param interf Position of the interface
  */
-ImplicitDropletEvaporatorGPU::ImplicitDropletEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
-                                                           std::shared_ptr<Variant> interf)
-    : ImplicitEvaporatorGPU(sysdef, interf)
+SphericalMovingHarmonicPotentialGPU::SphericalMovingHarmonicPotentialGPU(std::shared_ptr<SystemDefinition> sysdef,
+                                                                         std::shared_ptr<Variant> interf)
+    : MovingHarmonicPotentialGPU(sysdef, interf)
     {
-    m_exec_conf->msg->notice(5) << "Constructing ImplicitDropletEvaporatorGPU" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing SphericalMovingHarmonicPotentialGPU" << std::endl;
     }
 
-ImplicitDropletEvaporatorGPU::~ImplicitDropletEvaporatorGPU()
+SphericalMovingHarmonicPotentialGPU::~SphericalMovingHarmonicPotentialGPU()
     {
-    m_exec_conf->msg->notice(5) << "Destroying ImplicitDropletEvaporatorGPU" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying SphericalMovingHarmonicPotentialGPU" << std::endl;
     }
 
 /*!
  * \param timestep Current timestep
  */
-void ImplicitDropletEvaporatorGPU::computeForces(unsigned int timestep)
+void SphericalMovingHarmonicPotentialGPU::computeForces(unsigned int timestep)
     {
-    ImplicitEvaporatorGPU::computeForces(timestep);
+    MovingHarmonicPotentialGPU::computeForces(timestep);
 
     // check radius fits in box
     const Scalar interf_origin = m_interf->getValue(timestep);
@@ -46,10 +49,10 @@ void ImplicitDropletEvaporatorGPU::computeForces(unsigned int timestep)
             || interf_origin < lo.y || interf_origin > hi.z || interf_origin < lo.z)
             {
             m_exec_conf->msg->error()
-                << "ImplicitDropletEvaporator interface must be inside the simulation box"
+                << "SphericalMovingHarmonicPotential interface must be inside the simulation box"
                 << std::endl;
             throw std::runtime_error(
-                "ImplicitDropletEvaporator interface must be inside the simulation box");
+                "SphericalMovingHarmonicPotential interface must be inside the simulation box");
             }
         }
 
@@ -77,15 +80,17 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_ImplicitDropletEvaporatorGPU(pybind11::module& m)
+void export_SphericalMovingHarmonicPotentialGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ImplicitDropletEvaporatorGPU, std::shared_ptr<ImplicitDropletEvaporatorGPU>>(
+    py::class_<SphericalMovingHarmonicPotentialGPU, std::shared_ptr<SphericalMovingHarmonicPotentialGPU>>(
         m,
-        "ImplicitDropletEvaporatorGPU",
-        py::base<ImplicitEvaporatorGPU>())
+        "SphericalMovingHarmonicPotentialGPU",
+        py::base<MovingHarmonicPotentialGPU>())
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     }
     } // end namespace detail
 
     } // end namespace azplugins
+
+    } // end namespace hoomd

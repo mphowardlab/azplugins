@@ -3,11 +3,14 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file ImplicitEvaporatorGPU.cc
- * \brief Definition of ImplicitEvaporatorGPU
+ * \file MovingHarmonicPotentialGPU.cc
+ * \brief Definition of MovingHarmonicPotentialGPU
  */
 
-#include "ImplicitEvaporatorGPU.h"
+#include "MovingHarmonicPotentialGPU.h"
+
+namespace hoomd
+    {
 
 namespace azplugins
     {
@@ -16,9 +19,9 @@ namespace azplugins
  * \param sysdef System definition
  * \param interf Position of the interface
  */
-ImplicitEvaporatorGPU::ImplicitEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
-                                             std::shared_ptr<Variant> interf)
-    : ImplicitEvaporator(sysdef, interf)
+MovingHarmonicPotentialGPU::MovingHarmonicPotentialGPU(std::shared_ptr<SystemDefinition> sysdef,
+                                                       std::shared_ptr<Variant> interf)
+    : MovingHarmonicPotential(sysdef, interf)
     {
     m_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "implicit_evap", m_exec_conf));
     }
@@ -28,15 +31,17 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_ImplicitEvaporatorGPU(pybind11::module& m)
+void export_MovingHarmonicPotentialGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ImplicitEvaporatorGPU, std::shared_ptr<ImplicitEvaporatorGPU>>(
+    py::class_<MovingHarmonicPotentialGPU, std::shared_ptr<MovingHarmonicPotentialGPU>>(
         m,
-        "ImplicitEvaporatorGPU",
-        py::base<ImplicitEvaporator>())
+        "MovingHarmonicPotentialGPU",
+        py::base<MovingHarmonicPotential>())
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     }
     } // end namespace detail
 
     } // end namespace azplugins
+
+    } // end namespace hoomd

@@ -3,36 +3,39 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file ImplicitEvaporatorGPU.h
- * \brief Declaration of ImplicitEvaporatorGPU
+ * \file MovingHarmonicPotentialGPU.h
+ * \brief Declaration of MovingHarmonicPotentialGPU
  */
 
-#ifndef AZPLUGINS_IMPLICIT_EVAPORATOR_GPU_H_
-#define AZPLUGINS_IMPLICIT_EVAPORATOR_GPU_H_
+#ifndef AZPLUGINS_MOVING_HARMONIC_POTENTIAL_GPU_H_
+#define AZPLUGINS_MOVING_HARMONIC_POTENTIAL_GPU_H_
 
 #ifdef NVCC
 #error This header cannot be compiled by nvcc
 #endif
 
-#include "ImplicitEvaporator.h"
+#include "MovingHarmonicPotential.h"
 
 #include "hoomd/Autotuner.h"
+
+namespace hoomd
+    {
 
 namespace azplugins
     {
 
-//! Implicit solvent evaporator on the GPU
+//! Moving Harmonic potential on the GPU
 /*!
  * This class does not implement any force evaluation on its own, as the geometry should be
- * implemented by deriving classes. It exists as a thin layer between ImplicitEvaporator
+ * implemented by deriving classes. It exists as a thin layer between MovingHarmonicPotential
  * to remove some boilerplate of setting up the autotuners.
  */
-class PYBIND11_EXPORT ImplicitEvaporatorGPU : public ImplicitEvaporator
+class PYBIND11_EXPORT MovingHarmonicPotentialGPU : public MovingHarmonicPotential
     {
     public:
     //! Constructor
-    ImplicitEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
-                          std::shared_ptr<Variant> interf);
+    MovingHarmonicPotentialGPU(std::shared_ptr<SystemDefinition> sysdef,
+                               std::shared_ptr<Variant> interf);
 
     //! Set autotuner parameters
     /*!
@@ -41,7 +44,7 @@ class PYBIND11_EXPORT ImplicitEvaporatorGPU : public ImplicitEvaporator
      */
     virtual void setAutotunerParams(bool enable, unsigned int period)
         {
-        ImplicitEvaporator::setAutotunerParams(enable, period);
+        MovingHarmonicPotential::setAutotunerParams(enable, period);
         m_tuner->setPeriod(period);
         m_tuner->setEnabled(enable);
         }
@@ -50,12 +53,8 @@ class PYBIND11_EXPORT ImplicitEvaporatorGPU : public ImplicitEvaporator
     std::unique_ptr<Autotuner> m_tuner; //!< Autotuner for block size
     };
 
-namespace detail
-    {
-//! Exports the ImplicitEvaporatorGPU to python
-void export_ImplicitEvaporatorGPU(pybind11::module& m);
-    } // end namespace detail
-
     } // end namespace azplugins
 
-#endif // AZPLUGINS_IMPLICIT_EVAPORATOR_GPU_H_
+    } // end namespace hoomd
+
+#endif // AZPLUGINS_MOVING_HARMONIC_POTENTIAL_GPU_H_

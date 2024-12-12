@@ -3,12 +3,14 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file ImplicitDropletEvaporatorGPU.cu
- * \brief Definition of kernel drivers and kernels for ImplicitDropletEvaporatorGPU
+ * \file SphericalMovingHarmonicPotentialGPU.cu
+ * \brief Definition of kernel drivers and kernels for SphericalMovingHarmonicPotentialGPU
  */
 
-#include "ImplicitDropletEvaporatorGPU.cuh"
+#include "SphericalMovingHarmonicPotentialGPU.cuh"
 
+namespace hoomd
+    {
 namespace azplugins
     {
 namespace gpu
@@ -142,3 +144,4 @@ cudaError_t compute_implicit_evap_droplet_force(Scalar4* d_force,
 
     } // end namespace gpu
     } // end namespace azplugins
+    } // end namespace hoomd

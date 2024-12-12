@@ -3,44 +3,43 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file ImplicitPlaneEvaporatorGPU.h
- * \brief Declaration of ImplicitPlaneEvaporatorGPU
+ * \file PlanarMovingHarmonicBarrierGPU.h
+ * \brief Declaration of PlanarMovingHarmonicBarrierGPU
  */
 
-#ifndef AZPLUGINS_IMPLICIT_PLANE_EVAPORATOR_GPU_H_
-#define AZPLUGINS_IMPLICIT_PLANE_EVAPORATOR_GPU_H_
+#ifndef AZPLUGINS_PLANAR_MOVING_HARMONIC_BARRIER_GPU_H_
+#define AZPLUGINS_PLANAR_MOVING_HARMONIC_BARRIER_GPU_H_
 
-#ifdef NVCC
+#ifdef __HIPCC__
 #error This header cannot be compiled by nvcc
 #endif
 
-#include "ImplicitEvaporatorGPU.h"
+#include "MovingHarmonicPotentialGPU.h"
+
+namespace hoomd
+    {
 
 namespace azplugins
     {
 
-//! Implicit solvent evaporator in a planar (thin film) geometry (on the GPU)
-class PYBIND11_EXPORT ImplicitPlaneEvaporatorGPU : public ImplicitEvaporatorGPU
+//! Moving Harmonic Potential in a planar (thin film) geometry (on the GPU)
+class PYBIND11_EXPORT PlanarMovingHarmonicBarrierGPU : public MovingHarmonicPotentialGPU
     {
     public:
     //! Constructor
-    ImplicitPlaneEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
-                               std::shared_ptr<Variant> interf);
+    PlanarMovingHarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef,
+                                   std::shared_ptr<Variant> interf);
 
     //! Destructor
-    virtual ~ImplicitPlaneEvaporatorGPU();
+    virtual ~PlanarMovingHarmonicBarrierGPU();
 
     protected:
     //! Implements the force calculation
     virtual void computeForces(unsigned int timestep);
     };
 
-namespace detail
-    {
-//! Exports the ImplicitPlaneEvaporatorGPU to python
-void export_ImplicitPlaneEvaporatorGPU(pybind11::module& m);
-    } // end namespace detail
-
     } // end namespace azplugins
 
-#endif // AZPLUGINS_IMPLICIT_PLANE_EVAPORATOR_GPU_H_
+    } // end namespace hoomd
+
+#endif // AZPLUGINS_PLANAR_MOVING_HARMONIC_BARRIER_GPU_H_
