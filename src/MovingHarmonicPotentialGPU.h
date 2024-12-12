@@ -10,7 +10,7 @@
 #ifndef AZPLUGINS_MOVING_HARMONIC_POTENTIAL_GPU_H_
 #define AZPLUGINS_MOVING_HARMONIC_POTENTIAL_GPU_H_
 
-#ifdef NVCC
+#ifdef __HIPCC__
 #error This header cannot be compiled by nvcc
 #endif
 

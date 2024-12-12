@@ -76,6 +76,11 @@ void export_PotentialPairDPDThermoGeneralWeight(pybind11::module&);
 void export_PotentialBondDoubleWellGPU(pybind11::module&);
 void export_PotentialBondQuarticGPU(pybind11::module&);
 
+// external
+void export_MovingHarmonicPotentialGPU(pybind11::module&);
+void export_PlanarMovingHarmonicBarrierGPU(pybind11::module&);
+void export_SphericalMovingHarmonicPotentialGPU(pybind11::module&);
+
 // pair
 void export_AnisoPotentialPairTwoPatchMorseGPU(pybind11::module&);
 void export_PotentialPairColloidGPU(pybind11::module&);
@@ -100,6 +105,11 @@ PYBIND11_MODULE(_azplugins, m)
     export_PotentialBondDoubleWell(m);
     export_PotentialBondQuartic(m);
 
+    // external
+    export_MovingHarmonicPotential(m);
+    export_PlanarMovingHarmonicBarrier(m);
+    export_SphericalMovingHarmonicPotential(m);
+
     // flow
     export_ConstantFlow(m);
     export_ParabolicFlow(m);
@@ -117,6 +127,11 @@ PYBIND11_MODULE(_azplugins, m)
     // bond
     export_PotentialBondDoubleWellGPU(m);
     export_PotentialBondQuarticGPU(m);
+
+    // external
+    export_MovingHarmonicPotentialGPU(m);
+    export_PlanarMovingHarmonicBarrierGPU(m);
+    export_SphericalMovingHarmonicPotentialGPU(m);
 
     // pair
     export_AnisoPotentialPairTwoPatchMorseGPU(m);
