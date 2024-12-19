@@ -3,12 +3,15 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file ImplicitDropletEvaporatorGPU.cc
- * \brief Definition of ImplicitDropletEvaporatorGPU
+ * \file SphericalHarmonicBarrierGPU.cc
+ * \brief Definition of SphericalHarmonicBarrierGPU
  */
 
-#include "ImplicitDropletEvaporatorGPU.h"
-#include "ImplicitDropletEvaporatorGPU.cuh"
+#include "SphericalHarmonicBarrierGPU.h"
+#include "SphericalHarmonicBarrierGPU.cuh"
+
+namespace hoomd
+    {
 
 namespace azplugins
     {
@@ -17,24 +20,24 @@ namespace azplugins
  * \param sysdef System definition
  * \param interf Position of the interface
  */
-ImplicitDropletEvaporatorGPU::ImplicitDropletEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
-                                                           std::shared_ptr<Variant> interf)
-    : ImplicitEvaporatorGPU(sysdef, interf)
+SphericalHarmonicBarrierGPU::SphericalHarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef,
+                                                         std::shared_ptr<Variant> interf)
+    : HarmonicBarrierGPU(sysdef, interf)
     {
-    m_exec_conf->msg->notice(5) << "Constructing ImplicitDropletEvaporatorGPU" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing SphericalHarmonicBarrierGPU" << std::endl;
     }
 
-ImplicitDropletEvaporatorGPU::~ImplicitDropletEvaporatorGPU()
+SphericalHarmonicBarrierGPU::~SphericalHarmonicBarrierGPU()
     {
-    m_exec_conf->msg->notice(5) << "Destroying ImplicitDropletEvaporatorGPU" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying SphericalHarmonicBarrierGPU" << std::endl;
     }
 
 /*!
  * \param timestep Current timestep
  */
-void ImplicitDropletEvaporatorGPU::computeForces(unsigned int timestep)
+void SphericalHarmonicBarrierGPU::computeForces(uint64_t timestep)
     {
-    ImplicitEvaporatorGPU::computeForces(timestep);
+    HarmonicBarrierGPU::computeForces(timestep);
 
     // check radius fits in box
     const Scalar interf_origin = m_interf->getValue(timestep);
@@ -46,10 +49,10 @@ void ImplicitDropletEvaporatorGPU::computeForces(unsigned int timestep)
             || interf_origin < lo.y || interf_origin > hi.z || interf_origin < lo.z)
             {
             m_exec_conf->msg->error()
-                << "ImplicitDropletEvaporator interface must be inside the simulation box"
+                << "SphericalHarmonicBarrier interface must be inside the simulation box"
                 << std::endl;
             throw std::runtime_error(
-                "ImplicitDropletEvaporator interface must be inside the simulation box");
+                "SphericalHarmonicBarrier interface must be inside the simulation box");
             }
         }
 
@@ -66,7 +69,7 @@ void ImplicitDropletEvaporatorGPU::computeForces(unsigned int timestep)
                                              interf_origin,
                                              m_pdata->getN(),
                                              m_pdata->getNTypes(),
-                                             m_tuner->getParam());
+                                             m_tuner->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
     m_tuner->end();
@@ -77,15 +80,16 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_ImplicitDropletEvaporatorGPU(pybind11::module& m)
+void export_SphericalHarmonicBarrierGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ImplicitDropletEvaporatorGPU, std::shared_ptr<ImplicitDropletEvaporatorGPU>>(
+    py::class_<SphericalHarmonicBarrierGPU, std::shared_ptr<SphericalHarmonicBarrierGPU>, HarmonicBarrierGPU>(
         m,
-        "ImplicitDropletEvaporatorGPU",
-        py::base<ImplicitEvaporatorGPU>())
+        "SphericalHarmonicBarrierGPU")
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     }
     } // end namespace detail
 
     } // end namespace azplugins
+
+    } // end namespace hoomd

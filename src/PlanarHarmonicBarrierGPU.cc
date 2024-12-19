@@ -3,12 +3,15 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file ImplicitPlaneEvaporatorGPU.cc
- * \brief Definition of ImplicitPlaneEvaporatorGPU
+ * \file PlanarHarmonicBarrierGPU.cc
+ * \brief Definition of PlanarHarmonicBarrierGPU
  */
 
-#include "ImplicitPlaneEvaporatorGPU.h"
-#include "ImplicitPlaneEvaporatorGPU.cuh"
+#include "PlanarHarmonicBarrierGPU.h"
+#include "PlanarHarmonicBarrierGPU.cuh"
+
+namespace hoomd
+    {
 
 namespace azplugins
     {
@@ -17,32 +20,32 @@ namespace azplugins
  * \param sysdef System definition
  * \param interf Position of the interface
  */
-ImplicitPlaneEvaporatorGPU::ImplicitPlaneEvaporatorGPU(std::shared_ptr<SystemDefinition> sysdef,
-                                                       std::shared_ptr<Variant> interf)
-    : ImplicitEvaporatorGPU(sysdef, interf)
+PlanarHarmonicBarrierGPU::PlanarHarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef,
+                                                   std::shared_ptr<Variant> interf)
+    : HarmonicBarrierGPU(sysdef, interf)
     {
-    m_exec_conf->msg->notice(5) << "Constructing ImplicitPlaneEvaporatorGPU" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing PlanarHarmonicBarrierGPU" << std::endl;
     }
 
-ImplicitPlaneEvaporatorGPU::~ImplicitPlaneEvaporatorGPU()
+PlanarHarmonicBarrierGPU::~PlanarHarmonicBarrierGPU()
     {
-    m_exec_conf->msg->notice(5) << "Destroying ImplicitPlaneEvaporatorGPU" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying PlanarHarmonicBarrierGPU" << std::endl;
     }
 
 /*!
  * \param timestep Current timestep
  */
-void ImplicitPlaneEvaporatorGPU::computeForces(unsigned int timestep)
+void PlanarHarmonicBarrierGPU::computeForces(uint64_t timestep)
     {
-    ImplicitEvaporatorGPU::computeForces(timestep);
+    HarmonicBarrierGPU::computeForces(timestep);
 
     const BoxDim& box = m_pdata->getGlobalBox();
     const Scalar interf_origin = m_interf->getValue(timestep);
     if (interf_origin > box.getHi().z || interf_origin < box.getLo().z)
         {
         m_exec_conf->msg->error()
-            << "ImplicitEvaporator interface must be inside the simulation box" << std::endl;
-        throw std::runtime_error("ImplicitEvaporator interface must be inside the simulation box");
+            << "HarmonicBarrier interface must be inside the simulation box" << std::endl;
+        throw std::runtime_error("HarmonicBarrier interface must be inside the simulation box");
         }
 
     ArrayHandle<Scalar4> d_force(m_force, access_location::device, access_mode::overwrite);
@@ -58,7 +61,7 @@ void ImplicitPlaneEvaporatorGPU::computeForces(unsigned int timestep)
                                      interf_origin,
                                      m_pdata->getN(),
                                      m_pdata->getNTypes(),
-                                     m_tuner->getParam());
+                                     m_tuner->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
     m_tuner->end();
@@ -69,15 +72,16 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_ImplicitPlaneEvaporatorGPU(pybind11::module& m)
+void export_PlanarHarmonicBarrierGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<ImplicitPlaneEvaporatorGPU, std::shared_ptr<ImplicitPlaneEvaporatorGPU>>(
+    py::class_<PlanarHarmonicBarrierGPU, std::shared_ptr<PlanarHarmonicBarrierGPU>, HarmonicBarrierGPU>(
         m,
-        "ImplicitPlaneEvaporatorGPU",
-        py::base<ImplicitEvaporatorGPU>())
+        "PlanarHarmonicBarrierGPU")
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     }
     } // end namespace detail
 
     } // end namespace azplugins
+
+    } // end namespace hoomd
