@@ -3,11 +3,11 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file PlanarMovingHarmonicBarrier.cc
- * \brief Definition of PlanarMovingHarmonicBarrier
+ * \file PlanarHarmonicBarrier.cc
+ * \brief Definition of PlanarHarmonicBarrier
  */
 
-#include "PlanarMovingHarmonicBarrier.h"
+#include "PlanarHarmonicBarrier.h"
 
 namespace hoomd
     {
@@ -18,33 +18,33 @@ namespace azplugins
  * \param sysdef System definition
  * \param interf Position of the interface
  */
-PlanarMovingHarmonicBarrier::PlanarMovingHarmonicBarrier(std::shared_ptr<SystemDefinition> sysdef,
-                                                         std::shared_ptr<Variant> interf)
-    : MovingHarmonicPotential(sysdef, interf)
+PlanarHarmonicBarrier::PlanarHarmonicBarrier(std::shared_ptr<SystemDefinition> sysdef,
+                                             std::shared_ptr<Variant> interf)
+    : HarmonicBarrier(sysdef, interf)
     {
-    m_exec_conf->msg->notice(5) << "Constructing PlanarMovingHarmonicBarrier" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing PlanarHarmonicBarrier" << std::endl;
     }
 
-PlanarMovingHarmonicBarrier::~PlanarMovingHarmonicBarrier()
+PlanarHarmonicBarrier::~PlanarHarmonicBarrier()
     {
-    m_exec_conf->msg->notice(5) << "Destroying PlanarMovingHarmonicBarrier" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying PlanarHarmonicBarrier" << std::endl;
     }
 
 /*!
  * \param timestep Current timestep
  */
-void PlanarMovingHarmonicBarrier::computeForces(unsigned int timestep)
+void PlanarHarmonicBarrier::computeForces(uint64_t timestep)
     {
-    MovingHarmonicPotential::computeForces(timestep);
+    HarmonicBarrier::computeForces(timestep);
 
     const BoxDim& box = m_pdata->getGlobalBox();
     const Scalar interf_origin = m_interf->operator()(timestep);
     if (interf_origin > box.getHi().z || interf_origin < box.getLo().z)
         {
         m_exec_conf->msg->error()
-            << "PlanarMovingHarmonicBarrier interface must be inside the simulation box" << std::endl;
+            << "PlanarHarmonicBarrier interface must be inside the simulation box" << std::endl;
         throw std::runtime_error(
-            "PlanarMovingHarmonicBarrier interface must be inside the simulation box");
+            "PlanarHarmonicBarrier interface must be inside the simulation box");
         }
 
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
@@ -91,13 +91,12 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_PlanarMovingHarmonicBarrier(pybind11::module& m)
+void export_PlanarHarmonicBarrier(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<PlanarMovingHarmonicBarrier, std::shared_ptr<PlanarMovingHarmonicBarrier>>(
+    py::class_<PlanarHarmonicBarrier, std::shared_ptr<PlanarHarmonicBarrier>, HarmonicBarrier>(
         m,
-        "PlanarMovingHarmonicBarrier",
-        py::base<MovingHarmonicPotential>())
+        "PlanarHarmonicBarrier")
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     ;
     }

@@ -3,12 +3,12 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file PlanarMovingHarmonicBarrierGPU.cuh
- * \brief Declaration of kernel drivers for PlanarMovingHarmonicBarrierGPU
+ * \file PlanarHarmonicBarrierGPU.cuh
+ * \brief Declaration of kernel drivers for PlanarHarmonicBarrierGPU
  */
 
-#ifndef AZPLUGINS_PLANAR_MOVING_HARMONIC_BARRIER_GPU_CUH_
-#define AZPLUGINS_PLANAR_MOVING_HARMONIC_BARRIER_GPU_CUH_
+#ifndef AZPLUGINS_PLANAR_HARMONIC_BARRIER_GPU_CUH_
+#define AZPLUGINS_PLANAR_HARMONIC_BARRIER_GPU_CUH_
 
 #include "hoomd/HOOMDMath.h"
 #include <cuda_runtime.h>
@@ -20,7 +20,7 @@ namespace azplugins
 namespace gpu
     {
 
-//! Kernel driver to evaluate PlanarMovingHarmonicBarrierGPU force
+//! Kernel driver to evaluate PlanarHarmonicBarrierGPU force
 cudaError_t compute_implicit_evap_force(Scalar4* d_force,
                                         Scalar* d_virial,
                                         const Scalar4* d_pos,
@@ -34,4 +34,4 @@ cudaError_t compute_implicit_evap_force(Scalar4* d_force,
     } // end namespace azplugins
     } // end namespace hoomd
 
-#endif // AZPLUGINS_PLANAR_MOVING_HARMONIC_BARRIER_GPU_CUH_
+#endif // AZPLUGINS_PLANAR_HARMONIC_BARRIER_GPU_CUH_

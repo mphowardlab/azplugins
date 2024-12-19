@@ -3,12 +3,12 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file MovingHarmonicPotential.h
- * \brief Declaration of MovingHarmonicPotential
+ * \file HarmonicBarrier.h
+ * \brief Declaration of HarmonicBarrier
  */
 
-#ifndef AZPLUGINS_MOVING_HARMONIC_POTENTIAL_H_
-#define AZPLUGINS_MOVING_HARMONIC_POTENTIAL_H_
+#ifndef AZPLUGINS_HARMONIC_BARRIER_H_
+#define AZPLUGINS_HARMONIC_BARRIER_H_
 
 #ifdef __HIPCC__
 #error This header cannot be compiled by nvcc
@@ -25,7 +25,7 @@ namespace hoomd
 namespace azplugins
     {
 
-//! Moving Harmonic Potential
+//! Harmonic Barrier
 /*!
  * Models moving interface with harmonic potential
  * The moving interface compute acts on particles along the inward normal.
@@ -67,14 +67,42 @@ namespace azplugins
  *          will be raised the first time it is requested.
  *
  */
-class PYBIND11_EXPORT MovingHarmonicPotential : public ForceCompute
+class PYBIND11_EXPORT HarmonicBarrier : public ForceCompute
     {
     public:
     //! Constructor
-    MovingHarmonicPotential(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> interf);
+    HarmonicBarrier(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> interf);
 
     //! Destructor
-    virtual ~MovingHarmonicPotential();
+    virtual ~HarmonicBarrier();
+
+    struct param_type
+        {
+        Scalar k;
+        Scalar offset;
+        Scalar g;
+        Scalar cutoff;
+
+        param_type() : k(0), offset(0), g(0), cutoff(0) { }
+
+        param_type(pybind11::dict params)
+            {
+            k = pybind11::cast<Scalar>(params["k"]);
+            offset = pybind11::cast<Scalar>(params["offset"]);
+            g = pybind11::cast<Scalar>(params["g"]);
+            cutoff = pybind11::cast<Scalar>(params["cutoff"]);
+            }
+
+        pybind11::dict toPython()
+            {
+            pybind11::dict d;
+            d["k"] = pybind11::cast(k);
+            d["offset"] = pybind11::cast(offset);
+            d["g"] = pybind11::cast(g);
+            d["cutoff"] = pybind11::cast(cutoff);
+            return d;
+            }
+        } __attribute__((aligned(16)));
 
     //! Set the per-type potential parameters
     /*!
@@ -85,11 +113,39 @@ class PYBIND11_EXPORT MovingHarmonicPotential : public ForceCompute
      * \param cutoff Distance from potential minimum to cutoff harmonic potential and switch to
      * linear
      */
-    void setParams(unsigned int type, Scalar k, Scalar offset, Scalar g, Scalar cutoff)
+    void setParams(unsigned int type, const param_type& params)
         {
         assert(type < m_pdata->getNTypes());
         ArrayHandle<Scalar4> h_params(m_params, access_location::host, access_mode::readwrite);
-        h_params.data[type] = make_scalar4(k, offset, g, cutoff);
+        h_params.data[type] = make_scalar4(params.k, params.offset, params.g, params.cutoff);
+        }
+
+    void setParamsPython(std::string type_name, pybind11::dict params)
+        {
+        unsigned int type_idx = m_pdata->getTypeByName(type_name);
+        param_type h_params(params);
+        setParams(type_idx, h_params);
+        }
+
+    pybind11::dict getParams(std::string type_name)
+        {
+        // Get the type index using the type name
+        unsigned int type_idx = m_pdata->getTypeByName(type_name);
+        assert(type_idx < m_pdata->getNTypes());
+
+        // Access the parameter array in read mode
+        ArrayHandle<Scalar4> h_params(m_params, access_location::host, access_mode::read);
+        Scalar4 param_values = h_params.data[type_idx];
+
+        // Convert the Scalar4 back into a param_type object
+        param_type h_params_obj;
+        h_params_obj.k = param_values.x;
+        h_params_obj.offset = param_values.y;
+        h_params_obj.g = param_values.z;
+        h_params_obj.cutoff = param_values.w;
+
+        // Return the Python dictionary representation
+        return h_params_obj.toPython();
         }
 
     protected:
@@ -97,7 +153,7 @@ class PYBIND11_EXPORT MovingHarmonicPotential : public ForceCompute
     GPUArray<Scalar4> m_params;        //!< Per-type array of parameters for the potential
 
     //! Method to compute the forces
-    virtual void computeForces(unsigned int timestep);
+    virtual void computeForces(uint64_t timestep);
 
     private:
     bool m_has_warned; //!< Flag if a warning has been issued about the virial
@@ -113,4 +169,4 @@ class PYBIND11_EXPORT MovingHarmonicPotential : public ForceCompute
 
     } // end namespace hoomd
 
-#endif // AZPLUGINS_MOVING_HARMONIC_POTENTIAL_H_
+#endif // AZPLUGINS_HARMONIC_BARRIER_H_

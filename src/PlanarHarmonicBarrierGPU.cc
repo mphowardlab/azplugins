@@ -3,12 +3,12 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file PlanarMovingHarmonicBarrierGPU.cc
- * \brief Definition of PlanarMovingHarmonicBarrierGPU
+ * \file PlanarHarmonicBarrierGPU.cc
+ * \brief Definition of PlanarHarmonicBarrierGPU
  */
 
-#include "PlanarMovingHarmonicBarrierGPU.h"
-#include "PlanarMovingHarmonicBarrierGPU.cuh"
+#include "PlanarHarmonicBarrierGPU.h"
+#include "PlanarHarmonicBarrierGPU.cuh"
 
 namespace hoomd
     {
@@ -20,32 +20,32 @@ namespace azplugins
  * \param sysdef System definition
  * \param interf Position of the interface
  */
-PlanarMovingHarmonicBarrierGPU::PlanarMovingHarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef,
-                                                               std::shared_ptr<Variant> interf)
-    : MovingHarmonicPotentialGPU(sysdef, interf)
+PlanarHarmonicBarrierGPU::PlanarHarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef,
+                                                   std::shared_ptr<Variant> interf)
+    : HarmonicBarrierGPU(sysdef, interf)
     {
-    m_exec_conf->msg->notice(5) << "Constructing PlanarMovingHarmonicBarrierGPU" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing PlanarHarmonicBarrierGPU" << std::endl;
     }
 
-PlanarMovingHarmonicBarrierGPU::~PlanarMovingHarmonicBarrierGPU()
+PlanarHarmonicBarrierGPU::~PlanarHarmonicBarrierGPU()
     {
-    m_exec_conf->msg->notice(5) << "Destroying PlanarMovingHarmonicBarrierGPU" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying PlanarHarmonicBarrierGPU" << std::endl;
     }
 
 /*!
  * \param timestep Current timestep
  */
-void PlanarMovingHarmonicBarrierGPU::computeForces(unsigned int timestep)
+void PlanarHarmonicBarrierGPU::computeForces(uint64_t timestep)
     {
-    MovingHarmonicPotentialGPU::computeForces(timestep);
+    HarmonicBarrierGPU::computeForces(timestep);
 
     const BoxDim& box = m_pdata->getGlobalBox();
     const Scalar interf_origin = m_interf->getValue(timestep);
     if (interf_origin > box.getHi().z || interf_origin < box.getLo().z)
         {
         m_exec_conf->msg->error()
-            << "MovingHarmonicPotential interface must be inside the simulation box" << std::endl;
-        throw std::runtime_error("MovingHarmonicPotential interface must be inside the simulation box");
+            << "HarmonicBarrier interface must be inside the simulation box" << std::endl;
+        throw std::runtime_error("HarmonicBarrier interface must be inside the simulation box");
         }
 
     ArrayHandle<Scalar4> d_force(m_force, access_location::device, access_mode::overwrite);
@@ -61,7 +61,7 @@ void PlanarMovingHarmonicBarrierGPU::computeForces(unsigned int timestep)
                                      interf_origin,
                                      m_pdata->getN(),
                                      m_pdata->getNTypes(),
-                                     m_tuner->getParam());
+                                     m_tuner->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
     m_tuner->end();
@@ -72,13 +72,12 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_PlanarMovingHarmonicBarrierGPU(pybind11::module& m)
+void export_PlanarHarmonicBarrierGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<PlanarMovingHarmonicBarrierGPU, std::shared_ptr<PlanarMovingHarmonicBarrierGPU>>(
+    py::class_<PlanarHarmonicBarrierGPU, std::shared_ptr<PlanarHarmonicBarrierGPU>, HarmonicBarrierGPU>(
         m,
-        "PlanarMovingHarmonicBarrierGPU",
-        py::base<MovingHarmonicPotentialGPU>())
+        "PlanarHarmonicBarrierGPU")
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     }
     } // end namespace detail

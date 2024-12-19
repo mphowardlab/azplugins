@@ -3,11 +3,11 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file MovingHarmonicPotential.cc
- * \brief Definition of MovingHarmonicPotential
+ * \file HarmonicBarrier.cc
+ * \brief Definition of HarmonicBarrier
  */
 
-#include "MovingHarmonicPotential.h"
+#include "HarmonicBarrier.h"
 
 namespace hoomd
     {
@@ -18,8 +18,8 @@ namespace azplugins
  * \param sysdef System definition
  * \param interf Position of the interface
  */
-MovingHarmonicPotential::MovingHarmonicPotential(std::shared_ptr<SystemDefinition> sysdef,
-                                                 std::shared_ptr<Variant> interf)
+HarmonicBarrier::HarmonicBarrier(std::shared_ptr<SystemDefinition> sysdef,
+                                 std::shared_ptr<Variant> interf)
     : ForceCompute(sysdef), m_interf(interf), m_has_warned(false)
     {
     // allocate memory per type for parameters
@@ -27,7 +27,7 @@ MovingHarmonicPotential::MovingHarmonicPotential(std::shared_ptr<SystemDefinitio
     m_params.swap(params);
     }
 
-MovingHarmonicPotential::~MovingHarmonicPotential() { };
+HarmonicBarrier::~HarmonicBarrier() { }
 
 /*!
  * \param timestep Current timestep
@@ -35,13 +35,13 @@ MovingHarmonicPotential::~MovingHarmonicPotential() { };
  * This method only checks for warnings about the virial.
  * Deriving classes should implement the actual force compute method.
  */
-void MovingHarmonicPotential::computeForces(unsigned int timestep)
+void HarmonicBarrier::computeForces(uint64_t timestep)
     {
     PDataFlags flags = m_pdata->getFlags();
     if (!m_has_warned
         && flags[pdata_flag::pressure_tensor])
         {
-        m_exec_conf->msg->warning() << "MovingHarmonicPotential does not compute its virial "
+        m_exec_conf->msg->warning() << "HarmonicBarrier does not compute its virial "
                                        "contribution, pressure may be inaccurate"
                                     << std::endl;
         m_has_warned = true;
@@ -53,14 +53,14 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_MovingHarmonicPotential(pybind11::module& m)
+void export_HarmonicBarrier(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<MovingHarmonicPotential, std::shared_ptr<MovingHarmonicPotential>>(m,
-                                                                                  "MovingHarmonicPotential",
-                                                                                  py::base<ForceCompute>())
+    py::class_<HarmonicBarrier, std::shared_ptr<HarmonicBarrier>, ForceCompute>(m,
+                                                                                "HarmonicBarrier")
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>())
-        .def("setParams", &MovingHarmonicPotential::setParams);
+        .def("setParams", &HarmonicBarrier::setParamsPython)
+        .def("getParams", &HarmonicBarrier::getParams);
     }
     } // end namespace detail
 

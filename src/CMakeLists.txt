@@ -5,17 +5,17 @@ set(COMPONENT_NAME azplugins)
 set(_${COMPONENT_NAME}_sources
     ConstantFlow.cc
     GroupVelocityCompute.cc
+    HarmonicBarrier.cc
     module.cc
-    MovingHarmonicPotential.cc
     ParabolicFlow.cc
-    PlanarMovingHarmonicBarrier.cc
-    SphericalMovingHarmonicPotential.cc
+    PlanarHarmonicBarrier.cc
+    SphericalHarmonicBarrier.cc
     )
 
 # TODO: List all GPU C++ source code files in _${COMPONENT_NAME}_cu_sources.
 set(_${COMPONENT_NAME}_cu_sources
-    PlanarMovingHarmonicBarrierGPU.cu
-    SphericalMovingHarmonicPotentialGPU.cu
+    PlanarHarmonicBarrierGPU.cu
+    SphericalHarmonicBarrierGPU.cu
     )
 
 # TODO: List all Python modules in python_files.

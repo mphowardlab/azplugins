@@ -3,18 +3,18 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file PlanarMovingHarmonicBarrier.h
- * \brief Declaration of PlanarMovingHarmonicBarrier
+ * \file PlanarHarmonicBarrier.h
+ * \brief Declaration of PlanarHarmonicBarrier
  */
 
-#ifndef AZPLUGINS_PLANAR_MOVING_HARMONIC_BARRIER_H_
-#define AZPLUGINS_PLANAR_MOVING_HARMONIC_BARRIER_H_
+#ifndef AZPLUGINS_PLANAR_HARMONIC_BARRIER_H_
+#define AZPLUGINS_PLANAR_HARMONIC_BARRIER_H_
 
 #ifdef __HIPCC__
 #error This header cannot be compiled by nvcc
 #endif
 
-#include "MovingHarmonicPotential.h"
+#include "HarmonicBarrier.h"
 
 #include <pybind11/pybind11.h>
 
@@ -29,22 +29,22 @@ namespace azplugins
  * The interface normal is defined along +z going from the liquid into the vapor phase,
  * and the origin is z = 0. This effectively models a drying thin film.
  */
-class PYBIND11_EXPORT PlanarMovingHarmonicBarrier : public MovingHarmonicPotential
+class PYBIND11_EXPORT PlanarHarmonicBarrier : public HarmonicBarrier
     {
     public:
     //! Constructor
-    PlanarMovingHarmonicBarrier(std::shared_ptr<SystemDefinition> sysdef,
-                                std::shared_ptr<Variant> interf);
+    PlanarHarmonicBarrier(std::shared_ptr<SystemDefinition> sysdef,
+                          std::shared_ptr<Variant> interf);
 
-    virtual ~PlanarMovingHarmonicBarrier();
+    virtual ~PlanarHarmonicBarrier();
 
     protected:
     //! Implements the force calculation
-    virtual void computeForces(unsigned int timestep);
+    virtual void computeForces(uint64_t timestep);
     };
 
     } // end namespace azplugins
 
     } // end namespace hoomd
 
-#endif // AZPLUGINS_PLANAR_MOVING_HARMONIC_BARRIER_H_
+#endif // AZPLUGINS_PLANAR_HARMONIC_BARRIER_H_

@@ -3,11 +3,11 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file SphericalMovingHarmonicPotential.cc
- * \brief Definition of SphericalMovingHarmonicPotential
+ * \file SphericalHarmonicBarrier.cc
+ * \brief Definition of SphericalHarmonicBarrier
  */
 
-#include "SphericalMovingHarmonicPotential.h"
+#include "SphericalHarmonicBarrier.h"
 
 namespace hoomd
     {
@@ -18,24 +18,24 @@ namespace azplugins
  * \param sysdef System definition
  * \param interf Position of the interface
  */
-SphericalMovingHarmonicPotential::SphericalMovingHarmonicPotential(std::shared_ptr<SystemDefinition> sysdef,
-                                                                   std::shared_ptr<Variant> interf)
-    : MovingHarmonicPotential(sysdef, interf)
+SphericalHarmonicBarrier::SphericalHarmonicBarrier(std::shared_ptr<SystemDefinition> sysdef,
+                                                   std::shared_ptr<Variant> interf)
+    : HarmonicBarrier(sysdef, interf)
     {
-    m_exec_conf->msg->notice(5) << "Constructing SphericalMovingHarmonicPotential" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing SphericalHarmonicBarrier" << std::endl;
     }
 
-SphericalMovingHarmonicPotential::~SphericalMovingHarmonicPotential()
+SphericalHarmonicBarrier::~SphericalHarmonicBarrier()
     {
-    m_exec_conf->msg->notice(5) << "Destroying SphericalMovingHarmonicPotential" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying SphericalHarmonicBarrier" << std::endl;
     }
 
 /*!
  * \param timestep Current timestep
  */
-void SphericalMovingHarmonicPotential::computeForces(unsigned int timestep)
+void SphericalHarmonicBarrier::computeForces(uint64_t timestep)
     {
-    MovingHarmonicPotential::computeForces(timestep);
+    HarmonicBarrier::computeForces(timestep);
 
     // check radius fits in box
     const Scalar interf_origin = m_interf->operator()(timestep);
@@ -47,10 +47,10 @@ void SphericalMovingHarmonicPotential::computeForces(unsigned int timestep)
             || interf_origin < lo.y || interf_origin > hi.z || interf_origin < lo.z)
             {
             m_exec_conf->msg->error()
-                << "SphericalMovingHarmonicPotential interface must be inside the simulation box"
+                << "SphericalHarmonicBarrier interface must be inside the simulation box"
                 << std::endl;
             throw std::runtime_error(
-                "SphericalMovingHarmonicPotential interface must be inside the simulation box");
+                "SphericalHarmonicBarrier interface must be inside the simulation box");
             }
         }
 
@@ -105,13 +105,12 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_SphericalMovingHarmonicPotential(pybind11::module& m)
+void export_SphericalHarmonicBarrier(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<SphericalMovingHarmonicPotential, std::shared_ptr<SphericalMovingHarmonicPotential>>(
+    py::class_<SphericalHarmonicBarrier, std::shared_ptr<SphericalHarmonicBarrier>, HarmonicBarrier>(
         m,
-        "SphericalMovingHarmonicPotential",
-        py::base<MovingHarmonicPotential>())
+        "SphericalHarmonicBarrier")
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     ;
     }

@@ -54,9 +54,9 @@ void export_PotentialBondDoubleWell(pybind11::module&);
 void export_PotentialBondQuartic(pybind11::module&);
 
 // external
-void export_MovingHarmonicPotential(pybind11::module&);
-void export_PlanarMovingHarmonicBarrier(pybind11::module&);
-void export_SphericalMovingHarmonicPotential(pybind11::module&);
+void export_HarmonicBarrier(pybind11::module&);
+void export_PlanarHarmonicBarrier(pybind11::module&);
+void export_SphericalHarmonicBarrier(pybind11::module&);
 
 // flow
 void export_ConstantFlow(pybind11::module&);
@@ -77,9 +77,9 @@ void export_PotentialBondDoubleWellGPU(pybind11::module&);
 void export_PotentialBondQuarticGPU(pybind11::module&);
 
 // external
-void export_MovingHarmonicPotentialGPU(pybind11::module&);
-void export_PlanarMovingHarmonicBarrierGPU(pybind11::module&);
-void export_SphericalMovingHarmonicPotentialGPU(pybind11::module&);
+void export_HarmonicBarrierGPU(pybind11::module&);
+void export_PlanarHarmonicBarrierGPU(pybind11::module&);
+void export_SphericalHarmonicBarrierGPU(pybind11::module&);
 
 // pair
 void export_AnisoPotentialPairTwoPatchMorseGPU(pybind11::module&);
@@ -106,9 +106,9 @@ PYBIND11_MODULE(_azplugins, m)
     export_PotentialBondQuartic(m);
 
     // external
-    export_MovingHarmonicPotential(m);
-    export_PlanarMovingHarmonicBarrier(m);
-    export_SphericalMovingHarmonicPotential(m);
+    export_HarmonicBarrier(m);
+    export_PlanarHarmonicBarrier(m);
+    export_SphericalHarmonicBarrier(m);
 
     // flow
     export_ConstantFlow(m);
@@ -129,9 +129,9 @@ PYBIND11_MODULE(_azplugins, m)
     export_PotentialBondQuarticGPU(m);
 
     // external
-    export_MovingHarmonicPotentialGPU(m);
-    export_PlanarMovingHarmonicBarrierGPU(m);
-    export_SphericalMovingHarmonicPotentialGPU(m);
+    export_HarmonicBarrierGPU(m);
+    export_PlanarHarmonicBarrierGPU(m);
+    export_SphericalHarmonicBarrierGPU(m);
 
     // pair
     export_AnisoPotentialPairTwoPatchMorseGPU(m);

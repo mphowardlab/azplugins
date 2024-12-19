@@ -3,12 +3,12 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file SphericalMovingHarmonicPotentialGPU.cc
- * \brief Definition of SphericalMovingHarmonicPotentialGPU
+ * \file SphericalHarmonicBarrierGPU.cc
+ * \brief Definition of SphericalHarmonicBarrierGPU
  */
 
-#include "SphericalMovingHarmonicPotentialGPU.h"
-#include "SphericalMovingHarmonicPotentialGPU.cuh"
+#include "SphericalHarmonicBarrierGPU.h"
+#include "SphericalHarmonicBarrierGPU.cuh"
 
 namespace hoomd
     {
@@ -20,24 +20,24 @@ namespace azplugins
  * \param sysdef System definition
  * \param interf Position of the interface
  */
-SphericalMovingHarmonicPotentialGPU::SphericalMovingHarmonicPotentialGPU(std::shared_ptr<SystemDefinition> sysdef,
-                                                                         std::shared_ptr<Variant> interf)
-    : MovingHarmonicPotentialGPU(sysdef, interf)
+SphericalHarmonicBarrierGPU::SphericalHarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef,
+                                                         std::shared_ptr<Variant> interf)
+    : HarmonicBarrierGPU(sysdef, interf)
     {
-    m_exec_conf->msg->notice(5) << "Constructing SphericalMovingHarmonicPotentialGPU" << std::endl;
+    m_exec_conf->msg->notice(5) << "Constructing SphericalHarmonicBarrierGPU" << std::endl;
     }
 
-SphericalMovingHarmonicPotentialGPU::~SphericalMovingHarmonicPotentialGPU()
+SphericalHarmonicBarrierGPU::~SphericalHarmonicBarrierGPU()
     {
-    m_exec_conf->msg->notice(5) << "Destroying SphericalMovingHarmonicPotentialGPU" << std::endl;
+    m_exec_conf->msg->notice(5) << "Destroying SphericalHarmonicBarrierGPU" << std::endl;
     }
 
 /*!
  * \param timestep Current timestep
  */
-void SphericalMovingHarmonicPotentialGPU::computeForces(unsigned int timestep)
+void SphericalHarmonicBarrierGPU::computeForces(uint64_t timestep)
     {
-    MovingHarmonicPotentialGPU::computeForces(timestep);
+    HarmonicBarrierGPU::computeForces(timestep);
 
     // check radius fits in box
     const Scalar interf_origin = m_interf->getValue(timestep);
@@ -49,10 +49,10 @@ void SphericalMovingHarmonicPotentialGPU::computeForces(unsigned int timestep)
             || interf_origin < lo.y || interf_origin > hi.z || interf_origin < lo.z)
             {
             m_exec_conf->msg->error()
-                << "SphericalMovingHarmonicPotential interface must be inside the simulation box"
+                << "SphericalHarmonicBarrier interface must be inside the simulation box"
                 << std::endl;
             throw std::runtime_error(
-                "SphericalMovingHarmonicPotential interface must be inside the simulation box");
+                "SphericalHarmonicBarrier interface must be inside the simulation box");
             }
         }
 
@@ -69,7 +69,7 @@ void SphericalMovingHarmonicPotentialGPU::computeForces(unsigned int timestep)
                                              interf_origin,
                                              m_pdata->getN(),
                                              m_pdata->getNTypes(),
-                                             m_tuner->getParam());
+                                             m_tuner->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
     m_tuner->end();
@@ -80,13 +80,12 @@ namespace detail
 /*!
  * \param m Python module to export to
  */
-void export_SphericalMovingHarmonicPotentialGPU(pybind11::module& m)
+void export_SphericalHarmonicBarrierGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<SphericalMovingHarmonicPotentialGPU, std::shared_ptr<SphericalMovingHarmonicPotentialGPU>>(
+    py::class_<SphericalHarmonicBarrierGPU, std::shared_ptr<SphericalHarmonicBarrierGPU>, HarmonicBarrierGPU>(
         m,
-        "SphericalMovingHarmonicPotentialGPU",
-        py::base<MovingHarmonicPotentialGPU>())
+        "SphericalHarmonicBarrierGPU")
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     }
     } // end namespace detail
