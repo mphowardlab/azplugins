@@ -4,6 +4,7 @@ set(COMPONENT_NAME azplugins)
 # TODO: List all host C++ source code files in _${COMPONENT_NAME}_sources.
 set(_${COMPONENT_NAME}_sources
     ConstantFlow.cc
+    CylindricalFlowProfileCompute.cc
     GroupVelocityCompute.cc
     module.cc
     ParabolicFlow.cc
@@ -16,6 +17,7 @@ set(_${COMPONENT_NAME}_cu_sources
 # TODO: List all Python modules in python_files.
 set(python_files
     __init__.py
+    compute.py
     conftest.py
     bond.py
     flow.py

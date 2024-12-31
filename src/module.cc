@@ -53,6 +53,9 @@ namespace detail
 void export_PotentialBondDoubleWell(pybind11::module&);
 void export_PotentialBondQuartic(pybind11::module&);
 
+// compute
+void export_CylindricalFlowProfileCompute(pybind11::module&);
+
 // flow
 void export_ConstantFlow(pybind11::module&);
 void export_ParabolicFlow(pybind11::module&);
@@ -94,6 +97,9 @@ PYBIND11_MODULE(_azplugins, m)
     // bond
     export_PotentialBondDoubleWell(m);
     export_PotentialBondQuartic(m);
+
+    // compute
+    export_CylindricalFlowProfileCompute(m);
 
     // flow
     export_ConstantFlow(m);
