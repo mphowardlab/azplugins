@@ -4,6 +4,8 @@
 
 """Compute unit tests."""
 
+import itertools
+
 import hoomd
 import numpy
 
@@ -36,9 +38,9 @@ class TestVelocityField:
         field = cls(
             num_bins=[2, 0, 1], lower_bounds=lower_bounds, upper_bounds=upper_bounds
         )
-        numpy.testing.assert_array_equal(field.num_bins, (2, 0, 1))
-        numpy.testing.assert_array_almost_equal(field.lower_bounds, lower_bounds)
-        numpy.testing.assert_array_almost_equal(field.upper_bounds, upper_bounds)
+        numpy.testing.assert_equal(field.num_bins, (2, 0, 1))
+        numpy.testing.assert_allclose(field.lower_bounds, lower_bounds)
+        numpy.testing.assert_allclose(field.upper_bounds, upper_bounds)
         assert field.filter is None
         assert field.include_mpcd_particles is False
 
@@ -53,16 +55,16 @@ class TestVelocityField:
         sim.run(0)
 
         # make sure values did not change
-        numpy.testing.assert_array_equal(field.num_bins, (2, 0, 1))
-        numpy.testing.assert_array_almost_equal(field.lower_bounds, lower_bounds)
-        numpy.testing.assert_array_almost_equal(field.upper_bounds, upper_bounds)
+        numpy.testing.assert_equal(field.num_bins, (2, 0, 1))
+        numpy.testing.assert_allclose(field.lower_bounds, lower_bounds)
+        numpy.testing.assert_allclose(field.upper_bounds, upper_bounds)
         assert field.filter is None
         assert field.include_mpcd_particles is False
 
         # computed quantities are now accessible
         vel = field.velocities
         assert vel.shape == (2, 1, 3)
-        numpy.testing.assert_array_equal(vel, 0)
+        numpy.testing.assert_equal(vel, 0)
 
         # detach from simulation and test properties again
         sim.operations.remove(field)
@@ -134,40 +136,67 @@ class TestVelocityField:
     ):
         sim = simulation_factory(two_particle_snapshot_factory(L=20))
 
+        # make reference coordinates
+        num_bins = [2, 3, 4]
+        ref_coords = []
+        for lo, hi, n in zip(lower_bounds, upper_bounds, num_bins):
+            x, dx = numpy.linspace(lo, hi, n, endpoint=False, retstep=True)
+            x += 0.5 * dx
+            ref_coords.append(x.tolist())
+
+        def reshape_ref_coords(*coords):
+            shape = [len(x) for x in coords] + [len(coords)]
+            return numpy.reshape(numpy.array(list(itertools.product(*coords))), shape)
+
         # start with all bins on
         field = cls(
-            num_bins=[2, 3, 4], lower_bounds=lower_bounds, upper_bounds=upper_bounds
+            num_bins=num_bins, lower_bounds=lower_bounds, upper_bounds=upper_bounds
         )
         sim.operations.add(field)
         sim.run(0)
         assert field.velocities.shape == (2, 3, 4, 3)
         assert field.coordinates.shape == (2, 3, 4, 3)
+        numpy.testing.assert_allclose(
+            field.coordinates, reshape_ref_coords(*ref_coords)
+        )
 
         # bin only 2 dimensions
         field.num_bins = [2, 3, 0]
         assert field.velocities.shape == (2, 3, 3)
         assert field.coordinates.shape == (2, 3, 2)
+        numpy.testing.assert_allclose(
+            field.coordinates, reshape_ref_coords(ref_coords[0], ref_coords[1])
+        )
 
         field.num_bins = [2, 0, 4]
         assert field.velocities.shape == (2, 4, 3)
         assert field.coordinates.shape == (2, 4, 2)
+        numpy.testing.assert_allclose(
+            field.coordinates, reshape_ref_coords(ref_coords[0], ref_coords[2])
+        )
 
         field.num_bins = [0, 3, 4]
         assert field.velocities.shape == (3, 4, 3)
         assert field.coordinates.shape == (3, 4, 2)
+        numpy.testing.assert_allclose(
+            field.coordinates, reshape_ref_coords(ref_coords[1], ref_coords[2])
+        )
 
         # bin only 1 dimensions
         field.num_bins = [2, 0, 0]
         assert field.velocities.shape == (2, 3)
         assert field.coordinates.shape == (2,)
+        numpy.testing.assert_allclose(field.coordinates, ref_coords[0])
 
         field.num_bins = [0, 3, 0]
         assert field.velocities.shape == (3, 3)
         assert field.coordinates.shape == (3,)
+        numpy.testing.assert_allclose(field.coordinates, ref_coords[1])
 
         field.num_bins = [0, 0, 4]
         assert field.velocities.shape == (4, 3)
         assert field.coordinates.shape == (4,)
+        numpy.testing.assert_allclose(field.coordinates, ref_coords[2])
 
         # bin 0 dimensions (weird case)
         field.num_bins = [0, 0, 0]
@@ -210,32 +239,31 @@ class TestCylindricalVelocityField:
         sim.run(0)
 
         # HOOMD particle is in one bin, MPCD is in another
+        # these reference velocities are in cylindrical coordinates
         hoomd_velocity = [0, numpy.sqrt(2), 2]
         mpcd_velocity = [3, 0, -2]
         vel = field.velocities
-        numpy.testing.assert_array_almost_equal(vel[1, 0, 2], hoomd_velocity)
-        numpy.testing.assert_array_almost_equal(vel[0, 2, 1], mpcd_velocity)
+        numpy.testing.assert_allclose(vel[1, 0, 2], hoomd_velocity)
+        numpy.testing.assert_allclose(vel[0, 2, 1], mpcd_velocity)
         # remaining entries should be zero
         mask = numpy.ones(vel.shape, dtype=bool)
         mask[1, 0, 2] = False
         mask[0, 2, 1] = False
-        numpy.testing.assert_array_equal(vel[mask], 0)
+        numpy.testing.assert_equal(vel[mask], 0)
 
         # only bin in r
         field.num_bins = [2, 0, 0]
-        numpy.testing.assert_array_almost_equal(
-            field.velocities, [mpcd_velocity, hoomd_velocity]
-        )
+        numpy.testing.assert_allclose(field.velocities, [mpcd_velocity, hoomd_velocity])
 
         # only bin in theta
         field.num_bins = [0, 3, 0]
-        numpy.testing.assert_array_almost_equal(
+        numpy.testing.assert_allclose(
             field.velocities, [hoomd_velocity, [0, 0, 0], mpcd_velocity]
         )
 
         # only bin in z
         field.num_bins = [0, 0, 4]
-        numpy.testing.assert_array_almost_equal(
+        numpy.testing.assert_allclose(
             field.velocities, [[0, 0, 0], mpcd_velocity, hoomd_velocity, [0, 0, 0]]
         )
 
@@ -243,4 +271,19 @@ class TestCylindricalVelocityField:
         field.num_bins = [1, 1, 1]
         field.lower_bounds = [1, numpy.pi, -1]
         field.upper_bounds = [2, 3 * numpy.pi / 2, 1]
-        numpy.testing.assert_array_equal(field.velocities, 0)
+        numpy.testing.assert_equal(field.velocities, 0)
+
+    def test_no_particles(self, simulation_factory):
+        sim = simulation_factory(self._make_snapshot())
+
+        field = hoomd.azplugins.compute.CylindricalVelocityField(
+            num_bins=[1, 1, 1],
+            lower_bounds=(0, 0, -1),
+            upper_bounds=(2, 3 * numpy.pi / 2, 1),
+            filter=None,
+            include_mpcd_particles=False,
+        )
+        sim.operations.add(field)
+        sim.run(0)
+
+        numpy.testing.assert_equal(field.velocities, 0)
