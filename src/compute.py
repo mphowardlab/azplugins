@@ -14,54 +14,10 @@ from hoomd.data.parameterdicts import ParameterDict
 from hoomd.data.typeconverter import OnlyTypes
 
 
-class CylindricalVelocityField(hoomd.operation.Compute):
-    r"""Compute velocity field in cylindrical coordinates.
+class VelocityFieldCompute(hoomd.operation.Compute):
+    r"""Compute velocity field.
 
-    Args:
-        num_bins (tuple[int]): Number of bins along each of the 3 cylindrical
-            coordinates. A value of zero indicates the
-        lower_bounds (tuple[float]): Lower bounds for each coordinate. The
-            value of this bound is ignored if the number of bins is zero.
-        upper_bounds (tuple[float]): Upper bounds for each coordinate. The
-            value of this bound is ignored if the number of bins is zero.
-        filter (hoomd.filter.ParticleFilter): HOOMD particles to include in calculation.
-            The default value of `None` means no HOOMD particles are included.
-        include_mpcd_particles (bool): If `True`, include MPCD particles in
-            the calculation. This argument only takes effect if HOOMD was
-            compiled with the MPCD component.
-
-    `CylindricalVelocityField` calculates the mass-averaged velocity in a
-    bin using the cylindrical coordinate system :math:`(r, \theta, z)`, where
-    :math:`0 \le \theta < 2\pi`. The cylindrical position coordinates are
-    related to the Cartesian coordinates :math:`(x, y, z)` by
-
-    .. math::
-
-        r = \sqrt{x^2 + y^2} \\
-        \theta = \arctan\left(\frac{y}{x}\right) \\
-        z = z
-
-    Before averaging, Cartesian velocity vectors are converted to the
-    cylindrical coordinate system using the change-of-basis matrix:
-
-    .. math::
-
-        \left(\begin{array}{ccc}
-        \cos \theta & \sin \theta & 0 \\
-        -\sin \theta & \cos \theta & 0 \\
-        0 & 0 & 1
-        \end{array}\right)
-
-    Particles that lie outside the lower and upper bounds are ignored.
-
-    Example::
-
-        velocity_field = hoomd.azplugins.compute.CylindricalVelocityField(
-            num_bins=(10, 8, 0),
-            lower_bounds=(0, 0, 0),
-            upper_bounds=(10, 2*numpy.pi, 0)
-            filter=hoomd.filter.All()
-            )
+    This class should not be instantiated directly. Use a derived type.
 
     """
 
@@ -95,10 +51,7 @@ class CylindricalVelocityField(hoomd.operation.Compute):
     def _attach_hook(self):
         sim = self._simulation
 
-        if isinstance(sim.device, hoomd.device.GPU):
-            cpp_class = _azplugins.CylindricalVelocityFieldComputeGPU
-        else:
-            cpp_class = _azplugins.CylindricalVelocityFieldCompute
+        cpp_class = getattr(_azplugins, self._make_cpp_class_name())
 
         num_bins = hoomd._hoomd.uint3()
         num_bins.x = self.num_bins[0]
@@ -125,6 +78,12 @@ class CylindricalVelocityField(hoomd.operation.Compute):
             group,
             self.include_mpcd_particles,
         )
+
+    def _make_cpp_class_name(self):
+        cpp_class_name = self.__class__.__name__
+        if isinstance(self._simulation.device, hoomd.device.GPU):
+            cpp_class_name += "GPU"
+        return cpp_class_name
 
     @property
     def coordinates(self):
@@ -165,3 +124,87 @@ class CylindricalVelocityField(hoomd.operation.Compute):
         """
         self._cpp_obj.compute(self._simulation.timestep)
         return self._cpp_obj.velocities
+
+
+class CartesianVelocityFieldCompute(VelocityFieldCompute):
+    r"""Compute velocity field in Cartesian coordinates.
+
+    Args:
+        num_bins (tuple[int]): Number of bins along each of the 3 cylindrical
+            coordinates. A value of zero indicates the
+        lower_bounds (tuple[float]): Lower bounds for each coordinate. The
+            value of this bound is ignored if the number of bins is zero.
+        upper_bounds (tuple[float]): Upper bounds for each coordinate. The
+            value of this bound is ignored if the number of bins is zero.
+        filter (hoomd.filter.ParticleFilter): HOOMD particles to include in calculation.
+            The default value of `None` means no HOOMD particles are included.
+        include_mpcd_particles (bool): If `True`, include MPCD particles in
+            the calculation. This argument only takes effect if HOOMD was
+            compiled with the MPCD component.
+
+    `CartesianVelocityFieldCompute` calculates the mass-averaged velocity in a
+    bin using the Cartesian coordinate system :math:`(x, y, z)`. Particles
+    that lie outside the lower and upper bounds are ignored.
+
+    Example::
+
+        velocity_field = hoomd.azplugins.compute.CartesianVelocityFieldCompute(
+            num_bins=(10, 8, 0),
+            lower_bounds=(-5, 0, 0),
+            upper_bounds=(5, 5, 0)
+            filter=hoomd.filter.All()
+            )
+
+    """
+
+
+class CylindricalVelocityFieldCompute(VelocityFieldCompute):
+    r"""Compute velocity field in cylindrical coordinates.
+
+    Args:
+        num_bins (tuple[int]): Number of bins along each of the 3 cylindrical
+            coordinates. A value of zero indicates the
+        lower_bounds (tuple[float]): Lower bounds for each coordinate. The
+            value of this bound is ignored if the number of bins is zero.
+        upper_bounds (tuple[float]): Upper bounds for each coordinate. The
+            value of this bound is ignored if the number of bins is zero.
+        filter (hoomd.filter.ParticleFilter): HOOMD particles to include in calculation.
+            The default value of `None` means no HOOMD particles are included.
+        include_mpcd_particles (bool): If `True`, include MPCD particles in
+            the calculation. This argument only takes effect if HOOMD was
+            compiled with the MPCD component.
+
+    `CylindricalVelocityFieldCompute` calculates the mass-averaged velocity in a
+    bin using the cylindrical coordinate system :math:`(r, \theta, z)`, where
+    :math:`0 \le \theta < 2\pi`. The cylindrical position coordinates are
+    related to the Cartesian coordinates :math:`(x, y, z)` by
+
+    .. math::
+
+        r = \sqrt{x^2 + y^2} \\
+        \theta = \arctan\left(\frac{y}{x}\right) \\
+        z = z
+
+    Before averaging, Cartesian velocity vectors are converted to the
+    cylindrical coordinate system using the change-of-basis matrix:
+
+    .. math::
+
+        \left(\begin{array}{ccc}
+        \cos \theta & \sin \theta & 0 \\
+        -\sin \theta & \cos \theta & 0 \\
+        0 & 0 & 1
+        \end{array}\right)
+
+    Particles that lie outside the lower and upper bounds are ignored.
+
+    Example::
+
+        velocity_field = hoomd.azplugins.compute.CylindricalVelocityFieldCompute(
+            num_bins=(10, 8, 0),
+            lower_bounds=(0, 0, 0),
+            upper_bounds=(10, 2*numpy.pi, 0)
+            filter=hoomd.filter.All()
+            )
+
+    """

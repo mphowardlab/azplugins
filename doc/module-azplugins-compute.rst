@@ -12,12 +12,16 @@ azplugins.compute
 .. autosummary::
     :nosignatures:
 
-    CylindricalVelocityField
+    CartesianVelocityFieldCompute
+    CylindricalVelocityFieldCompute
+    VelocityFieldCompute
 
 .. rubric:: Details
 
 .. automodule:: hoomd.azplugins.compute
     :synopsis: Computes.
-    :members: CylindricalVelocityField
+    :members: CartesianVelocityFieldCompute,
+        CylindricalVelocityFieldCompute,
+        VelocityFieldCompute
     :no-inherited-members:
     :show-inheritance:

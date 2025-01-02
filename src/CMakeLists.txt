@@ -125,6 +125,7 @@ endforeach()
 
 # process velocity field geometries
 set(_binning_geometries
+    Cartesian
     Cylindrical
     )
 foreach(_geometry ${_binning_geometries})

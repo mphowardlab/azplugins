@@ -16,13 +16,19 @@ import pytest
     "cls,lower_bounds,upper_bounds",
     [
         (
-            hoomd.azplugins.compute.CylindricalVelocityField,
+            hoomd.azplugins.compute.CartesianVelocityFieldCompute,
+            (-10, -10, -10),
+            (10, 10, 10),
+        ),
+        (
+            hoomd.azplugins.compute.CylindricalVelocityFieldCompute,
             (0, 0, -10),
             (10, 2 * numpy.pi, 10),
         ),
     ],
     ids=[
-        "CylindricalVelocityField",
+        "CartesianVelocityFieldCompute",
+        "CylindricalVelocityFieldCompute",
     ],
 )
 class TestVelocityField:
@@ -204,7 +210,109 @@ class TestVelocityField:
         assert field.coordinates is None
 
 
-class TestCylindricalVelocityField:
+class TestCartesianVelocityFieldCompute:
+    def _make_snapshot(self):
+        snap = hoomd.Snapshot()
+        if snap.communicator.rank == 0:
+            snap.configuration.box = [20, 20, 20, 0, 0, 0]
+
+            if hoomd.version.mpcd_built:
+                # HOOMD particle
+                snap.particles.N = 1
+                snap.particles.types = ["A"]
+                snap.particles.position[0] = [6, -4, 0.1]
+                snap.particles.velocity[0] = [1, 2, 3]
+                snap.particles.mass[0] = 5
+
+                # MPCD particle
+                snap.mpcd.N = 1
+                snap.mpcd.types = ["A"]
+                snap.mpcd.position[0] = [-4, 2, -0.1]
+                snap.mpcd.velocity[0] = [-3, -2, -1]
+                snap.mpcd.mass = 1
+            else:
+                snap.particles.N = 2
+                snap.particles.types = ["A"]
+                snap.particles.position[:] = [[6, -4, 0.1], [-4, 2, -0.1]]
+                snap.particles.velocity[:] = [
+                    [1, 2, 3],
+                    [-3, -2, -1],
+                ]
+                snap.particles.mass[:] = [5, 1]
+
+        return snap
+
+    def test_basic(self, simulation_factory):
+        sim = simulation_factory(self._make_snapshot())
+
+        field = hoomd.azplugins.compute.CartesianVelocityFieldCompute(
+            num_bins=[4, 3, 2],
+            lower_bounds=(-10, -6, -5),
+            upper_bounds=(10, 3, 5),
+            filter=hoomd.filter.All(),
+            include_mpcd_particles=True,
+        )
+        sim.operations.add(field)
+        sim.run(0)
+
+        # HOOMD particle is in one bin, MPCD is in another
+        # these reference velocities are in cylindrical coordinates
+        hoomd_velocity = [1, 2, 3]
+        mpcd_velocity = [-3, -2, -1]
+        vel = field.velocities
+        numpy.testing.assert_allclose(vel[3, 0, 1], hoomd_velocity)
+        numpy.testing.assert_allclose(vel[1, 2, 0], mpcd_velocity)
+        # remaining entries should be zero
+        mask = numpy.ones(vel.shape, dtype=bool)
+        mask[3, 0, 1] = False
+        mask[1, 2, 0] = False
+        numpy.testing.assert_equal(vel[mask], 0)
+
+        # only bin in x
+        field.num_bins = [4, 0, 0]
+        numpy.testing.assert_allclose(
+            field.velocities, [[0, 0, 0], mpcd_velocity, [0, 0, 0], hoomd_velocity]
+        )
+
+        # only bin in y
+        field.num_bins = [0, 3, 0]
+        numpy.testing.assert_allclose(
+            field.velocities, [hoomd_velocity, [0, 0, 0], mpcd_velocity]
+        )
+
+        # only bin in z
+        field.num_bins = [0, 0, 2]
+        numpy.testing.assert_allclose(field.velocities, [mpcd_velocity, hoomd_velocity])
+
+        # reset bin counts and omit particles based on bounds
+        field.num_bins = [1, 1, 1]
+        field.lower_bounds = [-1, -1, -1]
+        field.upper_bounds = [1, 1, 1]
+        numpy.testing.assert_equal(field.velocities, 0)
+
+        # expand to capture whole box in one bin, which is the COM velocity
+        field.lower_bounds = [-10, -10, -10]
+        field.upper_bounds = [10, 10, 10]
+        vel_cm = (5 * numpy.array(hoomd_velocity) + mpcd_velocity) / 6
+        numpy.testing.assert_equal(numpy.reshape(field.velocities, (3,)), vel_cm)
+
+    def test_no_particles(self, simulation_factory):
+        sim = simulation_factory(self._make_snapshot())
+
+        field = hoomd.azplugins.compute.CylindricalVelocityFieldCompute(
+            num_bins=[1, 1, 1],
+            lower_bounds=(-10, -10, -10),
+            upper_bounds=(10, 10, 10),
+            filter=None,
+            include_mpcd_particles=False,
+        )
+        sim.operations.add(field)
+        sim.run(0)
+
+        numpy.testing.assert_equal(field.velocities, 0)
+
+
+class TestCylindricalVelocityFieldCompute:
     def _make_snapshot(self):
         snap = hoomd.Snapshot()
         if snap.communicator.rank == 0:
@@ -239,7 +347,7 @@ class TestCylindricalVelocityField:
     def test_basic(self, simulation_factory):
         sim = simulation_factory(self._make_snapshot())
 
-        field = hoomd.azplugins.compute.CylindricalVelocityField(
+        field = hoomd.azplugins.compute.CylindricalVelocityFieldCompute(
             num_bins=[2, 3, 4],
             lower_bounds=(0, 0, -1),
             upper_bounds=(2, 3 * numpy.pi / 2, 1),
@@ -288,10 +396,18 @@ class TestCylindricalVelocityField:
         field.upper_bounds = [2, 3 * numpy.pi / 2, 1]
         numpy.testing.assert_equal(field.velocities, 0)
 
+        # expand to capture whole box in one bin, which is the COM velocity
+        field.lower_bounds = [0, 0, -10]
+        field.upper_bounds = [10, 2 * numpy.pi, 10]
+        vel_cm = (5 * numpy.array(hoomd_velocity) + mpcd_velocity) / 6
+        numpy.testing.assert_allclose(
+            numpy.reshape(field.velocities, (3,)), vel_cm, atol=1e-15
+        )
+
     def test_no_particles(self, simulation_factory):
         sim = simulation_factory(self._make_snapshot())
 
-        field = hoomd.azplugins.compute.CylindricalVelocityField(
+        field = hoomd.azplugins.compute.CylindricalVelocityFieldCompute(
             num_bins=[1, 1, 1],
             lower_bounds=(0, 0, -1),
             upper_bounds=(2, 3 * numpy.pi / 2, 1),

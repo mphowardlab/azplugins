@@ -54,6 +54,7 @@ void export_PotentialBondDoubleWell(pybind11::module&);
 void export_PotentialBondQuartic(pybind11::module&);
 
 // compute
+void export_CartesianVelocityFieldCompute(pybind11::module&);
 void export_CylindricalVelocityFieldCompute(pybind11::module&);
 
 // flow
@@ -75,6 +76,7 @@ void export_PotentialBondDoubleWellGPU(pybind11::module&);
 void export_PotentialBondQuarticGPU(pybind11::module&);
 
 // compute
+void export_CartesianVelocityFieldComputeGPU(pybind11::module&);
 void export_CylindricalVelocityFieldComputeGPU(pybind11::module&);
 
 // pair
@@ -102,6 +104,7 @@ PYBIND11_MODULE(_azplugins, m)
     export_PotentialBondQuartic(m);
 
     // compute
+    export_CartesianVelocityFieldCompute(m);
     export_CylindricalVelocityFieldCompute(m);
 
     // flow
@@ -123,6 +126,7 @@ PYBIND11_MODULE(_azplugins, m)
     export_PotentialBondQuarticGPU(m);
 
     // compute
+    export_CartesianVelocityFieldComputeGPU(m);
     export_CylindricalVelocityFieldComputeGPU(m);
 
     // pair
