@@ -98,7 +98,7 @@ class CylindricalVelocityField(Compute):
     def _attach_hook(self):
         sim = self._simulation
 
-        cpp_class = _azplugins.CylindricalFlowProfileCompute
+        cpp_class = _azplugins.CylindricalVelocityFieldCompute
 
         num_bins = _hoomd.uint3()
         num_bins.x = self.num_bins[0]

@@ -3,20 +3,20 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 #include "CylindricalBinningOperation.h"
-#include "FlowProfileCompute.h"
+#include "VelocityFieldCompute.h"
 
 namespace hoomd
     {
 namespace azplugins
     {
 
-template class FlowProfileCompute<CylindricalBinningOperation>;
+template class VelocityFieldCompute<CylindricalBinningOperation>;
 
 namespace detail
     {
-void export_CylindricalFlowProfileCompute(pybind11::module& m)
+void export_CylindricalVelocityFieldCompute(pybind11::module& m)
     {
-    export_FlowProfileCompute<CylindricalBinningOperation>(m, "CylindricalFlowProfileCompute");
+    export_VelocityFieldCompute<CylindricalBinningOperation>(m, "CylindricalVelocityFieldCompute");
     }
     } // end namespace detail
 

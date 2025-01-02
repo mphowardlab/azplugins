@@ -4,7 +4,7 @@ set(COMPONENT_NAME azplugins)
 # TODO: List all host C++ source code files in _${COMPONENT_NAME}_sources.
 set(_${COMPONENT_NAME}_sources
     ConstantFlow.cc
-    CylindricalFlowProfileCompute.cc
+    CylindricalVelocityFieldCompute.cc
     GroupVelocityCompute.cc
     module.cc
     ParabolicFlow.cc
