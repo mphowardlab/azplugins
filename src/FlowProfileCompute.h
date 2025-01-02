@@ -40,10 +40,18 @@ template<class BinOpT> class PYBIND11_EXPORT FlowProfileCompute : public Compute
           m_upper_bounds(upper_bounds), m_group(group),
           m_include_mpcd_particles(include_mpcd_particles)
         {
+#ifdef ENABLE_MPI
+        MPI_Op_create(&FlowProfileCompute<BinOpT>::reduceScalar3, true, &m_reduce_scalar3);
+#endif // ENABLE_MPI
         }
 
     //! Destructor
-    virtual ~FlowProfileCompute() { }
+    virtual ~FlowProfileCompute()
+        {
+#ifdef ENABLE_MPI
+        MPI_Op_free(&m_reduce_scalar3);
+#endif // ENABLE_MPI
+        }
 
     //! Compute center-of-mass velocity of group
     void compute(uint64_t timestep) override;
@@ -162,6 +170,19 @@ template<class BinOpT> class PYBIND11_EXPORT FlowProfileCompute : public Compute
 
     private:
     std::shared_ptr<BinOpT> m_binning_op; //!< Binning operation
+
+#ifdef ENABLE_MPI
+    MPI_Op m_reduce_scalar3; //!< MPI operation to reduce a vector
+    static void reduceScalar3(void* in, void* out, int* len, MPI_Datatype* datatype)
+        {
+        Scalar3* a = static_cast<Scalar3*>(in);
+        Scalar3* b = static_cast<Scalar3*>(out);
+        for (int i = 0; i < *len; ++i)
+            {
+            b[i] += a[i];
+            }
+        }
+#endif // ENABLE_MPI
     };
 
 template<class BinOpT> void FlowProfileCompute<BinOpT>::compute(uint64_t timestep)
@@ -188,8 +209,8 @@ template<class BinOpT> void FlowProfileCompute<BinOpT>::compute(uint64_t timeste
 
     // calculate the mass and momentum in each bin
     const BinOpT& bin_op = *m_binning_op;
-    ArrayHandle<Scalar> h_mass(m_mass, access_location::host, access_mode::readwrite);
-    ArrayHandle<Scalar3> h_momentum(m_momentum, access_location::host, access_mode::readwrite);
+    ArrayHandle<Scalar> h_mass(m_mass, access_location::host, access_mode::overwrite);
+    ArrayHandle<Scalar3> h_momentum(m_momentum, access_location::host, access_mode::overwrite);
 
     const size_t total_num_bins = bin_op.getTotalNumBins();
     memset(h_mass.data, 0, sizeof(Scalar) * total_num_bins);
@@ -277,17 +298,17 @@ template<class BinOpT> void FlowProfileCompute<BinOpT>::compute(uint64_t timeste
             }
 
         const auto mpi_comm = m_exec_conf->getMPICommunicator();
-        MPI_Allreduce(h_mass.data,
-                      MPI_IN_PLACE,
+        MPI_Allreduce(MPI_IN_PLACE,
+                      h_mass.data,
                       static_cast<int>(total_num_bins),
                       MPI_HOOMD_SCALAR,
                       MPI_SUM,
                       mpi_comm);
-        MPI_Allreduce(h_momentum.data,
-                      MPI_IN_PLACE,
+        MPI_Allreduce(MPI_IN_PLACE,
+                      h_momentum.data,
                       static_cast<int>(total_num_bins),
                       m_exec_conf->getMPIConfig()->getScalar3Datatype(),
-                      MPI_SUM,
+                      m_reduce_scalar3,
                       mpi_comm);
         }
 #endif // ENABLE_MPI
