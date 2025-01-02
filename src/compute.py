@@ -27,7 +27,7 @@ class CylindricalVelocityField(Compute):
             value of this bound is ignored if the number of bins is zero.
         upper_bounds (tuple[float]): Upper bounds for each coordinate. The
             value of this bound is ignored if the number of bins is zero.
-        filter (ParticleFilter): HOOMD particles to include in calculation.
+        filter (hoomd.filter.ParticleFilter): HOOMD particles to include in calculation.
             The default value of `None` means no HOOMD particles are included.
         include_mpcd_particles (bool): If `True`, include MPCD particles in
             the calculation. This argument only takes effect if HOOMD was
@@ -41,7 +41,7 @@ class CylindricalVelocityField(Compute):
     .. math::
 
         r = \sqrt{x^2 + y^2} \\
-        \theta = \arctan(\frac{y}{x}) \\
+        \theta = \arctan\left(\frac{y}{x}\right) \\
         z = z
 
     Before averaging, Cartesian velocity vectors are converted to the
@@ -49,11 +49,11 @@ class CylindricalVelocityField(Compute):
 
     .. math::
 
-        \begin{pmatrix}
+        \left(\begin{array}{ccc}
         \cos \theta & \sin \theta & 0 \\
         -\sin \theta & \cos \theta & 0 \\
         0 & 0 & 1
-        \end{\pmatrix}
+        \end{array}\right)
 
     Particles that lie outside the lower and upper bounds are ignored.
 
