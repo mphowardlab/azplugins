@@ -18,7 +18,55 @@ from hoomd.operation import Compute
 
 
 class CylindricalVelocityField(Compute):
-    """Compute velocity field in cylindrical coordinates."""
+    r"""Compute velocity field in cylindrical coordinates.
+
+    Args:
+        num_bins (tuple[int]): Number of bins along each of the 3 cylindrical
+            coordinates. A value of zero indicates the
+        lower_bounds (tuple[float]): Lower bounds for each coordinate. The
+            value of this bound is ignored if the number of bins is zero.
+        upper_bounds (tuple[float]): Upper bounds for each coordinate. The
+            value of this bound is ignored if the number of bins is zero.
+        filter (ParticleFilter): HOOMD particles to include in calculation.
+            The default value of `None` means no HOOMD particles are included.
+        include_mpcd_particles (bool): If `True`, include MPCD particles in
+            the calculation. This argument only takes effect if HOOMD was
+            compiled with the MPCD component.
+
+    `CylindricalVelocityField` calculates the mass-averaged velocity in a
+    bin using the cylindrical coordinate system :math:`(r, \theta, z)`, where
+    :math:`0 \le \theta < 2\pi`. The cylindrical position coordinates are
+    related to the Cartesian coordinates :math:`(x, y, z)` by
+
+    .. math::
+
+        r = \sqrt{x^2 + y^2} \\
+        \theta = \arctan(\frac{y}{x}) \\
+        z = z
+
+    Before averaging, Cartesian velocity vectors are converted to the
+    cylindrical coordinate system using the change-of-basis matrix:
+
+    .. math::
+
+        \begin{pmatrix}
+        \cos \theta & \sin \theta & 0 \\
+        -\sin \theta & \cos \theta & 0 \\
+        0 & 0 & 1
+        \end{\pmatrix}
+
+    Particles that lie outside the lower and upper bounds are ignored.
+
+    Example::
+
+        velocity_field = hoomd.azplugins.compute.CylindricalVelocityField(
+            num_bins=(10, 8, 0),
+            lower_bounds=(0, 0, 0),
+            upper_bounds=(10, 2*numpy.pi, 0)
+            filter=hoomd.filter.All()
+            )
+
+    """
 
     def __init__(
         self,
@@ -80,13 +128,21 @@ class CylindricalVelocityField(Compute):
 
     @property
     def coordinates(self):
-        """numpy.ndarray: Coordinates of bin centers."""
+        """numpy.ndarray: Coordinates of bin centers.
+
+        If binning is performed in more than 1 dimension, a multidimensional
+        array is returned.
+
+        If binning is performed in 1 dimension, a 1 dimensional array is
+        returned.
+
+        """
         coords = []
         shape = []
         for num, lo, hi in zip(self.num_bins, self.lower_bounds, self.upper_bounds):
             if num > 0:
-                dx = (hi - lo) / num
-                x = lo + dx * (numpy.arange(num) + 0.5)
+                x, dx = numpy.linspace(lo, hi, num, endpoint=False, retstep=True)
+                x += 0.5 * dx
                 coords.append(x)
                 shape.append(num)
 
@@ -100,6 +156,12 @@ class CylindricalVelocityField(Compute):
 
     @log(category="sequence", requires_run=True)
     def velocities(self):
-        """numpy.ndarray: Mass-averaged velocity of bin."""
+        """numpy.ndarray: Mass-averaged velocity vector of bin.
+
+        The velocities are returned as an array of 3-dimensional vectors
+        matching the binning shape. This quantity is only available after the
+        simulation has been run.
+
+        """
         self._cpp_obj.compute(self._simulation.timestep)
         return self._cpp_obj.velocities

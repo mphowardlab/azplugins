@@ -210,19 +210,30 @@ class TestCylindricalVelocityField:
         if snap.communicator.rank == 0:
             snap.configuration.box = [20, 20, 20, 0, 0, 0]
 
-            # HOOMD particle
-            snap.particles.N = 1
-            snap.particles.types = ["A"]
-            snap.particles.position[0] = [1, 1, 0.1]
-            snap.particles.velocity[0] = [-1, 1, 2]
-            snap.particles.mass[0] = 5
+            if hoomd.version.mpcd_built:
+                # HOOMD particle
+                snap.particles.N = 1
+                snap.particles.types = ["A"]
+                snap.particles.position[0] = [1, 1, 0.1]
+                snap.particles.velocity[0] = [-1, 1, 2]
+                snap.particles.mass[0] = 5
 
-            # MPCD particle
-            snap.mpcd.N = 1
-            snap.mpcd.types = ["A"]
-            snap.mpcd.position[0] = [-0.5, -0.5, -0.1]
-            snap.mpcd.velocity[0] = [-numpy.sqrt(4.5), -numpy.sqrt(4.5), -2]
-            snap.mpcd.mass = 1
+                # MPCD particle
+                snap.mpcd.N = 1
+                snap.mpcd.types = ["A"]
+                snap.mpcd.position[0] = [-0.5, -0.5, -0.1]
+                snap.mpcd.velocity[0] = [-numpy.sqrt(4.5), -numpy.sqrt(4.5), -2]
+                snap.mpcd.mass = 1
+            else:
+                snap.particles.N = 2
+                snap.particles.types = ["A"]
+                snap.particles.position[:] = [[1, 1, 0.1], [-0.5, -0.5, -0.1]]
+                snap.particles.velocity[:] = [
+                    [-1, 1, 2],
+                    [-numpy.sqrt(4.5), -numpy.sqrt(4.5), -2],
+                ]
+                snap.particles.mass[:] = [5, 1]
+
         return snap
 
     def test_basic(self, simulation_factory):
