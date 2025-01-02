@@ -163,12 +163,17 @@ template<class BinOpT> class PYBIND11_EXPORT VelocityFieldCompute : public Compu
                                  Scalar3* momenta,
                                  const LoadOpT& load_op,
                                  const BinOpT& bin_op,
+                                 const BoxDim& global_box,
                                  unsigned int idx)
         {
         Scalar3 position, momentum;
         Scalar mass;
         load_op(position, momentum, mass, idx);
         momentum *= mass;
+
+        // ensure particle is inside global box
+        int3 img;
+        global_box.wrap(position, img);
 
         uint3 bin = make_uint3(0, 0, 0);
         Scalar3 transformed_momentum = make_scalar3(0, 0, 0);
@@ -292,10 +297,11 @@ template<class BinOpT> void VelocityFieldCompute<BinOpT>::binParticles()
                                    access_location::host,
                                    access_mode::read);
         detail::LoadHOOMDGroupPositionVelocityMass load_op(h_pos.data, h_vel.data, h_index.data);
+        const BoxDim& global_box = m_pdata->getGlobalBox();
 
         for (unsigned int idx = 0; idx < N; ++idx)
             {
-            addParticleToBin(h_mass.data, h_momentum.data, load_op, bin_op, idx);
+            addParticleToBin(h_mass.data, h_momentum.data, load_op, bin_op, global_box, idx);
             }
         }
 
@@ -311,10 +317,11 @@ template<class BinOpT> void VelocityFieldCompute<BinOpT>::binParticles()
                                    access_location::host,
                                    access_mode::read);
         detail::LoadMPCDPositionVelocityMass load_op(h_pos.data, h_vel.data, mpcd_pdata->getMass());
+        const BoxDim& global_box = m_pdata->getGlobalBox();
 
         for (unsigned int idx = 0; idx < N; ++idx)
             {
-            addParticleToBin(h_mass.data, h_momentum.data, load_op, bin_op, idx);
+            addParticleToBin(h_mass.data, h_momentum.data, load_op, bin_op, global_box, idx);
             }
         }
 #endif // BUILD_MPCD

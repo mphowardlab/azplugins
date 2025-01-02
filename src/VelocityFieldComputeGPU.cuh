@@ -7,6 +7,7 @@
 
 #include <cuda_runtime.h>
 
+#include "hoomd/BoxDim.h"
 #include "hoomd/HOOMDMath.h"
 
 namespace hoomd
@@ -23,6 +24,7 @@ cudaError_t bin_velocity_field(Scalar* d_mass,
                                Scalar3* d_momentum,
                                const LoadOpT& load_op,
                                const BinOpT& bin_op,
+                               const BoxDim& global_box,
                                const unsigned int N,
                                const unsigned int block_size);
 
@@ -34,6 +36,7 @@ __global__ void bin_velocity_field(Scalar* d_mass,
                                    Scalar3* d_momentum,
                                    const LoadOpT load_op,
                                    const BinOpT bin_op,
+                                   const BoxDim global_box,
                                    const unsigned int N)
     {
     // one thread per particle
@@ -45,6 +48,10 @@ __global__ void bin_velocity_field(Scalar* d_mass,
     Scalar mass;
     load_op(position, momentum, mass, idx);
     momentum *= mass;
+
+    // ensure particle is inside global box
+    int3 img;
+    global_box.wrap(position, img);
 
     uint3 bin = make_uint3(0, 0, 0);
     Scalar3 transformed_momentum = make_scalar3(0, 0, 0);
@@ -70,6 +77,7 @@ cudaError_t bin_velocity_field(Scalar* d_mass,
                                Scalar3* d_momentum,
                                const LoadOpT& load_op,
                                const BinOpT& bin_op,
+                               const BoxDim& global_box,
                                const unsigned int N,
                                const unsigned int block_size)
     {
@@ -81,7 +89,12 @@ cudaError_t bin_velocity_field(Scalar* d_mass,
     unsigned int run_block_size = min(block_size, max_block_size);
     dim3 grid(N / run_block_size + 1);
 
-    kernel::bin_velocity_field<<<grid, run_block_size>>>(d_mass, d_momentum, load_op, bin_op, N);
+    kernel::bin_velocity_field<<<grid, run_block_size>>>(d_mass,
+                                                         d_momentum,
+                                                         load_op,
+                                                         bin_op,
+                                                         global_box,
+                                                         N);
 
     return cudaSuccess;
     }

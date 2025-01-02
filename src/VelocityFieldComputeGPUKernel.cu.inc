@@ -26,6 +26,7 @@ bin_velocity_field<detail::LoadHOOMDGroupPositionVelocityMass, BINNING_OPERATION
     Scalar3* d_momentum,
     const detail::LoadHOOMDGroupPositionVelocityMass& load_op,
     const BINNING_OPERATION& bin_op,
+    const BoxDim& global_box,
     const unsigned int N,
     const unsigned int block_size);
 
@@ -35,6 +36,7 @@ bin_velocity_field<detail::LoadMPCDPositionVelocityMass, BINNING_OPERATION>(
     Scalar3* d_momentum,
     const detail::LoadMPCDPositionVelocityMass& load_op,
     const BINNING_OPERATION& bin_op,
+    const BoxDim& global_box,
     const unsigned int N,
     const unsigned int block_size);
 

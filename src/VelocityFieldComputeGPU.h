@@ -92,12 +92,14 @@ template<class BinOpT> void VelocityFieldComputeGPU<BinOpT>::binParticles()
                                    access_location::device,
                                    access_mode::read);
         detail::LoadHOOMDGroupPositionVelocityMass load_op(d_pos.data, d_vel.data, d_index.data);
+        const BoxDim& global_box = this->m_pdata->getGlobalBox();
 
         m_tuner_hoomd->begin();
         gpu::bin_velocity_field(d_mass.data,
                                 d_momentum.data,
                                 load_op,
                                 bin_op,
+                                global_box,
                                 this->m_group->getNumMembers(),
                                 m_tuner_hoomd->getParam()[0]);
         if (this->m_exec_conf->isCUDAErrorCheckingEnabled())
@@ -116,12 +118,14 @@ template<class BinOpT> void VelocityFieldComputeGPU<BinOpT>::binParticles()
                                    access_location::device,
                                    access_mode::read);
         detail::LoadMPCDPositionVelocityMass load_op(d_pos.data, d_vel.data, mpcd_pdata->getMass());
+        const BoxDim& global_box = this->m_pdata->getGlobalBox();
 
         m_tuner_mpcd->begin();
         gpu::bin_velocity_field(d_mass.data,
                                 d_momentum.data,
                                 load_op,
                                 bin_op,
+                                global_box,
                                 mpcd_pdata->getN(),
                                 m_tuner_mpcd->getParam()[0]);
         if (this->m_exec_conf->isCUDAErrorCheckingEnabled())
