@@ -254,8 +254,8 @@ class TestCylindricalVelocityField:
         hoomd_velocity = [0, numpy.sqrt(2), 2]
         mpcd_velocity = [3, 0, -2]
         vel = field.velocities
-        numpy.testing.assert_allclose(vel[1, 0, 2], hoomd_velocity)
-        numpy.testing.assert_allclose(vel[0, 2, 1], mpcd_velocity)
+        numpy.testing.assert_allclose(vel[1, 0, 2], hoomd_velocity, atol=1e-15)
+        numpy.testing.assert_allclose(vel[0, 2, 1], mpcd_velocity, atol=1e-15)
         # remaining entries should be zero
         mask = numpy.ones(vel.shape, dtype=bool)
         mask[1, 0, 2] = False
@@ -264,18 +264,22 @@ class TestCylindricalVelocityField:
 
         # only bin in r
         field.num_bins = [2, 0, 0]
-        numpy.testing.assert_allclose(field.velocities, [mpcd_velocity, hoomd_velocity])
+        numpy.testing.assert_allclose(
+            field.velocities, [mpcd_velocity, hoomd_velocity], atol=1e-15
+        )
 
         # only bin in theta
         field.num_bins = [0, 3, 0]
         numpy.testing.assert_allclose(
-            field.velocities, [hoomd_velocity, [0, 0, 0], mpcd_velocity]
+            field.velocities, [hoomd_velocity, [0, 0, 0], mpcd_velocity], atol=1e-15
         )
 
         # only bin in z
         field.num_bins = [0, 0, 4]
         numpy.testing.assert_allclose(
-            field.velocities, [[0, 0, 0], mpcd_velocity, hoomd_velocity, [0, 0, 0]]
+            field.velocities,
+            [[0, 0, 0], mpcd_velocity, hoomd_velocity, [0, 0, 0]],
+            atol=1e-15,
         )
 
         # reset bin counts and omit particles based on bounds

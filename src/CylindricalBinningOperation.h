@@ -7,7 +7,7 @@
 
 #include "BinningOperation.h"
 
-#ifndef __HIPCC__
+#ifdef __HIPCC__
 #define HOSTDEVICE __host__ __device__
 #else
 #define HOSTDEVICE

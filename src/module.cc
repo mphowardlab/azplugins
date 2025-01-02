@@ -74,6 +74,9 @@ void export_PotentialPairDPDThermoGeneralWeight(pybind11::module&);
 void export_PotentialBondDoubleWellGPU(pybind11::module&);
 void export_PotentialBondQuarticGPU(pybind11::module&);
 
+// compute
+void export_CylindricalVelocityFieldComputeGPU(pybind11::module&);
+
 // pair
 void export_AnisoPotentialPairTwoPatchMorseGPU(pybind11::module&);
 void export_PotentialPairColloidGPU(pybind11::module&);
@@ -118,6 +121,9 @@ PYBIND11_MODULE(_azplugins, m)
     // bond
     export_PotentialBondDoubleWellGPU(m);
     export_PotentialBondQuarticGPU(m);
+
+    // compute
+    export_CylindricalVelocityFieldComputeGPU(m);
 
     // pair
     export_AnisoPotentialPairTwoPatchMorseGPU(m);

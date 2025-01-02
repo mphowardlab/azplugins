@@ -8,16 +8,13 @@ import itertools
 
 import numpy
 
-from hoomd import _hoomd
+import hoomd
 from hoomd.azplugins import _azplugins
 from hoomd.data.parameterdicts import ParameterDict
 from hoomd.data.typeconverter import OnlyTypes
-from hoomd.filter import ParticleFilter
-from hoomd.logging import log
-from hoomd.operation import Compute
 
 
-class CylindricalVelocityField(Compute):
+class CylindricalVelocityField(hoomd.operation.Compute):
     r"""Compute velocity field in cylindrical coordinates.
 
     Args:
@@ -82,7 +79,7 @@ class CylindricalVelocityField(Compute):
             num_bins=(int, int, int),
             lower_bounds=(float, float, float),
             upper_bounds=(float, float, float),
-            filter=OnlyTypes(ParticleFilter, allow_none=True),
+            filter=OnlyTypes(hoomd.filter.ParticleFilter, allow_none=True),
             include_mpcd_particles=bool(include_mpcd_particles),
         )
         param_dict.update(
@@ -98,17 +95,20 @@ class CylindricalVelocityField(Compute):
     def _attach_hook(self):
         sim = self._simulation
 
-        cpp_class = _azplugins.CylindricalVelocityFieldCompute
+        if isinstance(sim.device, hoomd.device.GPU):
+            cpp_class = _azplugins.CylindricalVelocityFieldComputeGPU
+        else:
+            cpp_class = _azplugins.CylindricalVelocityFieldCompute
 
-        num_bins = _hoomd.uint3()
+        num_bins = hoomd._hoomd.uint3()
         num_bins.x = self.num_bins[0]
         num_bins.y = self.num_bins[1]
         num_bins.z = self.num_bins[2]
 
-        lower_bounds = _hoomd.make_scalar3(
+        lower_bounds = hoomd._hoomd.make_scalar3(
             self.lower_bounds[0], self.lower_bounds[1], self.lower_bounds[2]
         )
-        upper_bounds = _hoomd.make_scalar3(
+        upper_bounds = hoomd._hoomd.make_scalar3(
             self.upper_bounds[0], self.upper_bounds[1], self.upper_bounds[2]
         )
 
@@ -154,7 +154,7 @@ class CylindricalVelocityField(Compute):
 
         return numpy.reshape(list(itertools.product(*coords)), shape)
 
-    @log(category="sequence", requires_run=True)
+    @hoomd.logging.log(category="sequence", requires_run=True)
     def velocities(self):
         """numpy.ndarray: Mass-averaged velocity vector of bin.
 

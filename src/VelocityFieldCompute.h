@@ -9,6 +9,8 @@
 #error This header cannot be compiled by nvcc
 #endif
 
+#include "ParticleDataLoader.h"
+
 #include "hoomd/Compute.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/ParticleGroup.h"
@@ -20,6 +22,7 @@ namespace hoomd
     {
 namespace azplugins
     {
+
 //! Compute a velocity field in a region of space using histograms
 template<class BinOpT> class PYBIND11_EXPORT VelocityFieldCompute : public Compute
     {
@@ -99,22 +102,10 @@ template<class BinOpT> class PYBIND11_EXPORT VelocityFieldCompute : public Compu
         return m_group;
         }
 
-    void setGroup(std::shared_ptr<ParticleGroup> group)
-        {
-        m_group = group;
-        m_force_compute = true;
-        }
-
     //! Whether to include MPCD particles in calculation
     bool includeMPCDParticles() const
         {
         return m_include_mpcd_particles;
-        }
-
-    void setIncludeMPCDParticles(bool include_mpcd_particles)
-        {
-        m_include_mpcd_particles = include_mpcd_particles;
-        m_force_compute = true;
         }
 
     const GPUArray<Scalar>& getMasses() const
@@ -158,13 +149,39 @@ template<class BinOpT> class PYBIND11_EXPORT VelocityFieldCompute : public Compu
     std::shared_ptr<ParticleGroup> m_group; //!< Particle group
     bool m_include_mpcd_particles;          //!< If true, include the MPCD particles
 
-    GPUArray<Scalar> m_mass;      //!< Total mass in bin
-    GPUArray<Scalar3> m_momentum; //!< Total momentum in bin
+    std::shared_ptr<BinOpT> m_binning_op; //!< Binning operation
+    GPUArray<Scalar> m_mass;              //!< Total mass in bin
+    GPUArray<Scalar3> m_momentum;         //!< Total momentum in bin
+    std::vector<Scalar3> m_velocity;      //!< Mass averaged velocity in bin
 
-    std::vector<Scalar3> m_velocity; //!< Mass averaged velocity in bin
+    //! Bin particles
+    virtual void binParticles();
 
     private:
-    std::shared_ptr<BinOpT> m_binning_op; //!< Binning operation
+    template<class LoadOpT>
+    static void addParticleToBin(Scalar* masses,
+                                 Scalar3* momenta,
+                                 const LoadOpT& load_op,
+                                 const BinOpT& bin_op,
+                                 unsigned int idx)
+        {
+        Scalar3 position, momentum;
+        Scalar mass;
+        load_op(position, momentum, mass, idx);
+        momentum *= mass;
+
+        uint3 bin = make_uint3(0, 0, 0);
+        Scalar3 transformed_momentum = make_scalar3(0, 0, 0);
+        const bool binned = bin_op.bin(bin, transformed_momentum, position, momentum);
+        if (!binned)
+            {
+            return;
+            }
+        const auto bin_idx = bin_op.ravelBin(bin);
+
+        masses[bin_idx] += mass;
+        momenta[bin_idx] += transformed_momentum;
+        }
 
 #ifdef ENABLE_MPI
     MPI_Op m_reduce_scalar3; //!< MPI operation to reduce a vector
@@ -182,7 +199,6 @@ template<class BinOpT> class PYBIND11_EXPORT VelocityFieldCompute : public Compu
 
 template<class BinOpT> void VelocityFieldCompute<BinOpT>::compute(uint64_t timestep)
     {
-    Compute::compute(timestep);
     if (!shouldCompute(timestep))
         return;
 
@@ -202,7 +218,59 @@ template<class BinOpT> void VelocityFieldCompute<BinOpT>::compute(uint64_t times
         m_velocity.resize(total_num_bins);
         }
 
-    // calculate the mass and momentum in each bin
+    // assign particle quantities to bins
+    binParticles();
+
+    // reduce the sums in MPI
+#ifdef ENABLE_MPI
+    if (m_exec_conf->getNRanks() > 1)
+        {
+        const size_t total_num_bins = m_binning_op->getTotalNumBins();
+        if (total_num_bins > std::numeric_limits<int>::max())
+            {
+            throw std::runtime_error("Number of bins exceeds maximum value of integer");
+            }
+
+        ArrayHandle<Scalar> h_mass(m_mass, access_location::host, access_mode::readwrite);
+        ArrayHandle<Scalar3> h_momentum(m_momentum, access_location::host, access_mode::readwrite);
+
+        const auto mpi_comm = m_exec_conf->getMPICommunicator();
+        MPI_Allreduce(MPI_IN_PLACE,
+                      h_mass.data,
+                      static_cast<int>(total_num_bins),
+                      MPI_HOOMD_SCALAR,
+                      MPI_SUM,
+                      mpi_comm);
+        MPI_Allreduce(MPI_IN_PLACE,
+                      h_momentum.data,
+                      static_cast<int>(total_num_bins),
+                      m_exec_conf->getMPIConfig()->getScalar3Datatype(),
+                      m_reduce_scalar3,
+                      mpi_comm);
+        }
+#endif // ENABLE_MPI
+
+        // normalize total momentum of bin by mass to get mass-averaged velocity
+        {
+        ArrayHandle<Scalar> h_mass(m_mass, access_location::host, access_mode::read);
+        ArrayHandle<Scalar3> h_momentum(m_momentum, access_location::host, access_mode::read);
+        for (size_t idx = 0; idx < m_binning_op->getTotalNumBins(); ++idx)
+            {
+            const Scalar bin_mass = h_mass.data[idx];
+            if (bin_mass > Scalar(0))
+                {
+                m_velocity[idx] = h_momentum.data[idx] / bin_mass;
+                }
+            else
+                {
+                m_velocity[idx] = make_scalar3(0, 0, 0);
+                }
+            }
+        }
+    }
+
+template<class BinOpT> void VelocityFieldCompute<BinOpT>::binParticles()
+    {
     const BinOpT& bin_op = *m_binning_op;
     ArrayHandle<Scalar> h_mass(m_mass, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar3> h_momentum(m_momentum, access_location::host, access_mode::overwrite);
@@ -223,27 +291,11 @@ template<class BinOpT> void VelocityFieldCompute<BinOpT>::compute(uint64_t times
         ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(),
                                    access_location::host,
                                    access_mode::read);
+        detail::LoadHOOMDGroupPositionVelocityMass load_op(h_pos.data, h_vel.data, h_index.data);
+
         for (unsigned int idx = 0; idx < N; ++idx)
             {
-            const Scalar4 postype = h_pos.data[h_index.data[idx]];
-            const Scalar3 pos = make_scalar3(postype.x, postype.y, postype.z);
-
-            const Scalar4 velmass = h_vel.data[h_index.data[idx]];
-            const Scalar mass = velmass.w;
-            const Scalar3 momentum
-                = make_scalar3(mass * velmass.x, mass * velmass.y, mass * velmass.z);
-
-            uint3 bin = make_uint3(0, 0, 0);
-            Scalar3 transformed_momentum = make_scalar3(0, 0, 0);
-            const bool binned = bin_op.bin(bin, transformed_momentum, pos, momentum);
-            if (!binned)
-                {
-                continue;
-                }
-
-            const auto bin_idx = bin_op.ravelBin(bin);
-            h_mass.data[bin_idx] += mass;
-            h_momentum.data[bin_idx] += transformed_momentum;
+            addParticleToBin(h_mass.data, h_momentum.data, load_op, bin_op, idx);
             }
         }
 
@@ -258,69 +310,14 @@ template<class BinOpT> void VelocityFieldCompute<BinOpT>::compute(uint64_t times
         ArrayHandle<Scalar4> h_vel(mpcd_pdata->getVelocities(),
                                    access_location::host,
                                    access_mode::read);
-        const Scalar mass = mpcd_pdata->getMass();
+        detail::LoadMPCDPositionVelocityMass load_op(h_pos.data, h_vel.data, mpcd_pdata->getMass());
+
         for (unsigned int idx = 0; idx < N; ++idx)
             {
-            const Scalar4 postype = h_pos.data[idx];
-            const Scalar3 pos = make_scalar3(postype.x, postype.y, postype.z);
-
-            const Scalar4 velcell = h_vel.data[idx];
-            const Scalar3 momentum
-                = make_scalar3(mass * velcell.x, mass * velcell.y, mass * velcell.z);
-
-            uint3 bin = make_uint3(0, 0, 0);
-            Scalar3 transformed_momentum = make_scalar3(0, 0, 0);
-            const bool binned = bin_op.bin(bin, transformed_momentum, pos, momentum);
-            if (!binned)
-                {
-                continue;
-                }
-
-            const auto bin_idx = bin_op.ravelBin(bin);
-            h_mass.data[bin_idx] += mass;
-            h_momentum.data[bin_idx] += transformed_momentum;
+            addParticleToBin(h_mass.data, h_momentum.data, load_op, bin_op, idx);
             }
         }
 #endif // BUILD_MPCD
-
-    // reduce the sums onto the root rank
-#ifdef ENABLE_MPI
-    if (m_exec_conf->getNRanks() > 1)
-        {
-        if (total_num_bins > std::numeric_limits<int>::max())
-            {
-            throw std::runtime_error("Number of bins exceeds maximum value of integer");
-            }
-
-        const auto mpi_comm = m_exec_conf->getMPICommunicator();
-        MPI_Allreduce(MPI_IN_PLACE,
-                      h_mass.data,
-                      static_cast<int>(total_num_bins),
-                      MPI_HOOMD_SCALAR,
-                      MPI_SUM,
-                      mpi_comm);
-        MPI_Allreduce(MPI_IN_PLACE,
-                      h_momentum.data,
-                      static_cast<int>(total_num_bins),
-                      m_exec_conf->getMPIConfig()->getScalar3Datatype(),
-                      m_reduce_scalar3,
-                      mpi_comm);
-        }
-#endif // ENABLE_MPI
-
-    // normalize total momentum of bin by mass to get mass-averaged velocity
-    for (size_t idx = 0; idx < total_num_bins; ++idx)
-        {
-        const Scalar bin_mass = h_mass.data[idx];
-        if (bin_mass > Scalar(0))
-            {
-            m_velocity[idx] = h_momentum.data[idx] / bin_mass;
-            }
-        else
-            {
-            m_velocity[idx] = make_scalar3(0, 0, 0);
-            }
-        }
     }
 
 namespace detail
