@@ -12,6 +12,76 @@ import numpy
 import pytest
 
 
+class TestVelocityCompute:
+    def test_attach_detach(self, simulation_factory, two_particle_snapshot_factory):
+        # test creation of object
+        vel = hoomd.azplugins.compute.VelocityCompute()
+        assert vel.filter is None
+        assert vel.include_mpcd_particles is False
+
+        # computed quantities are inaccessible before a run
+        with pytest.raises(hoomd.error.DataAccessError):
+            getattr(vel, "velocity")
+
+        # make simulation and attach compute
+        sim = simulation_factory(two_particle_snapshot_factory())
+        sim.operations.add(vel)
+        assert len(sim.operations.computes) == 1
+        sim.run(0)
+
+        # make sure values did not change
+        assert vel.filter is None
+        assert vel.include_mpcd_particles is False
+
+        # computed quantities are now accessible
+        numpy.testing.assert_equal(vel.velocity, [0, 0, 0])
+
+        # detach from simulation and test properties again
+        sim.operations.remove(vel)
+        assert len(sim.operations.computes) == 0
+        with pytest.raises(hoomd.error.DataAccessError):
+            getattr(vel, "velocity")
+
+    def test_hoomd_particles(self, simulation_factory, two_particle_snapshot_factory):
+        snap = two_particle_snapshot_factory(particle_types=["A", "B"])
+        if snap.communicator.rank == 0:
+            snap.particles.typeid[:] = [0, 1]
+            snap.particles.position[:] = [[0, 0, -1], [0, 0, 1]]
+            snap.particles.velocity[:] = [[1, -2, 3], [-2, 4, -6]]
+            snap.particles.mass[:] = [1, 2]
+        sim = simulation_factory(snap)
+        sim.run(0)
+
+        # calculate on all particles
+        vel_all = hoomd.azplugins.compute.VelocityCompute(filter=hoomd.filter.All())
+        sim.operations.add(vel_all)
+        numpy.testing.assert_allclose(vel_all.velocity, [-1, 2, -3])
+
+        # calculate on A and B particles separately
+        vel_A = hoomd.azplugins.compute.VelocityCompute(filter=hoomd.filter.Type("A"))
+        vel_B = hoomd.azplugins.compute.VelocityCompute(filter=hoomd.filter.Type("B"))
+        sim.operations.computes.extend([vel_A, vel_B])
+        numpy.testing.assert_allclose(vel_A.velocity, [1, -2, 3])
+        numpy.testing.assert_allclose(vel_B.velocity, [-2, 4, -6])
+
+    def test_mpcd_particles(self, simulation_factory, two_particle_snapshot_factory):
+        snap = two_particle_snapshot_factory()
+        if snap.communicator.rank == 0:
+            snap.particles.N = 0
+
+            snap.mpcd.N = 2
+            snap.mpcd.types = ["A"]
+            snap.mpcd.position[:] = [[0, 0, -1], [0, 0, 1]]
+            snap.mpcd.velocity[:] = [[1, -2, 3], [-3, 6, -9]]
+        sim = simulation_factory(snap)
+        sim.run(0)
+
+        # calculate on all particles
+        vel_all = hoomd.azplugins.compute.VelocityCompute(include_mpcd_particles=True)
+        sim.operations.add(vel_all)
+        numpy.testing.assert_allclose(vel_all.velocity, [-1, 2, -3])
+
+
 @pytest.mark.parametrize(
     "cls,lower_bounds,upper_bounds",
     [

@@ -56,6 +56,7 @@ void export_PotentialBondQuartic(pybind11::module&);
 // compute
 void export_CartesianVelocityFieldCompute(pybind11::module&);
 void export_CylindricalVelocityFieldCompute(pybind11::module&);
+void export_VelocityCompute(pybind11::module&);
 
 // flow
 void export_ConstantFlow(pybind11::module&);
@@ -106,6 +107,7 @@ PYBIND11_MODULE(_azplugins, m)
     // compute
     export_CartesianVelocityFieldCompute(m);
     export_CylindricalVelocityFieldCompute(m);
+    export_VelocityCompute(m);
 
     // flow
     export_ConstantFlow(m);
