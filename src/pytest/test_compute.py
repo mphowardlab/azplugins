@@ -81,6 +81,27 @@ class TestVelocityCompute:
         sim.operations.add(vel_all)
         numpy.testing.assert_allclose(vel_all.velocity, [-1, 2, -3])
 
+    def test_both_particles(self, simulation_factory, two_particle_snapshot_factory):
+        snap = two_particle_snapshot_factory()
+        if snap.communicator.rank == 0:
+            snap.particles.position[:] = [[0, 0, -1], [0, 0, 1]]
+            snap.particles.velocity[:] = [[1, 2, 3], [2, 4, 6]]
+            snap.particles.mass[:] = [2, 1]
+
+            snap.mpcd.N = 2
+            snap.mpcd.types = ["A"]
+            snap.mpcd.position[:] = [[0, 0, -1], [0, 0, 1]]
+            snap.mpcd.velocity[:] = [[-2, -4, -6], [-2, -4, -6]]
+        sim = simulation_factory(snap)
+        sim.run(0)
+
+        # calculate on all particles
+        vel_all = hoomd.azplugins.compute.VelocityCompute(
+            filter=hoomd.filter.All(), include_mpcd_particles=True
+        )
+        sim.operations.add(vel_all)
+        numpy.testing.assert_allclose(vel_all.velocity, [0, 0, 0])
+
 
 @pytest.mark.parametrize(
     "cls,lower_bounds,upper_bounds",
