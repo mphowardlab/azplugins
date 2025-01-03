@@ -59,7 +59,10 @@ class VelocityCompute(hoomd.operation.Compute):
     def _attach_hook(self):
         sim = self._simulation
 
-        cpp_class = _azplugins.VelocityCompute
+        if isinstance(sim.device, hoomd.device.GPU):
+            cpp_class = _azplugins.VelocityComputeGPU
+        else:
+            cpp_class = _azplugins.VelocityCompute
 
         if self.filter is not None:
             group = sim.state._get_group(self.filter)

@@ -56,6 +56,8 @@ class PYBIND11_EXPORT VelocityCompute : public Compute
     std::shared_ptr<ParticleGroup> m_group; //!< Particle group
     bool m_include_mpcd_particles;          //!< Whether to include MPCD particles
     Scalar3 m_velocity;                     //!< Last computed velocity
+
+    virtual void sumMomentumAndMass(Scalar3& momentum, Scalar& mass);
     };
 
     } // end namespace azplugins

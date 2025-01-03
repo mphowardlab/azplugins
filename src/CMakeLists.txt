@@ -8,9 +8,15 @@ set(_${COMPONENT_NAME}_sources
     ParabolicFlow.cc
     VelocityCompute.cc
     )
+if (ENABLE_HIP)
+    list(APPEND _${COMPONENT_NAME}_sources
+    VelocityComputeGPU.cc
+    )
+endif()
 
 # TODO: List all GPU C++ source code files in _${COMPONENT_NAME}_cu_sources.
 set(_${COMPONENT_NAME}_cu_sources
+    VelocityComputeGPU.cu
     VelocityFieldComputeGPU.cu
     )
 
