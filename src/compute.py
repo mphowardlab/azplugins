@@ -19,6 +19,44 @@ class VelocityFieldCompute(hoomd.operation.Compute):
 
     This class should not be instantiated directly. Use a derived type.
 
+    Args:
+        num_bins (tuple[int]): Number of bins along each of the 3 cylindrical
+            coordinates. A value of zero indicates the coordinate is ignored.
+        lower_bounds (tuple[float]): Lower bounds for each coordinate. The
+            value of this bound is ignored if the number of bins is zero.
+        upper_bounds (tuple[float]): Upper bounds for each coordinate. The
+            value of this bound is ignored if the number of bins is zero.
+        filter (hoomd.filter.ParticleFilter): HOOMD particles to include in calculation.
+            The default value of `None` means no HOOMD particles are included.
+        include_mpcd_particles (bool): If `True`, include MPCD particles in
+            the calculation. This argument only takes effect if HOOMD was
+            compiled with the MPCD component.
+
+    Args:
+        num_bins (tuple[int]): Number of bins along each of the 3 cylindrical
+            coordinates.
+
+            A value of zero indicates the coordinate is ignored.
+
+        lower_bounds (tuple[float]): Lower bounds for each coordinate.
+
+            The value of this bound is ignored if the number of bins is zero.
+
+        upper_bounds (tuple[float]): Upper bounds for each coordinate.
+
+            The value of this bound is ignored if the number of bins is zero.
+
+        filter (hoomd.filter.ParticleFilter): HOOMD particles to include in
+            calculation (*read only*).
+
+            `None` means no HOOMD particles are included.
+
+        include_mpcd_particles (bool): If `True`, include MPCD particles in
+            the calculation (*read only*).
+
+            This property only has meaning effect if HOOMD was compiled with
+            the MPCD component.
+
     """
 
     def __init__(
@@ -79,6 +117,8 @@ class VelocityFieldCompute(hoomd.operation.Compute):
             self.include_mpcd_particles,
         )
 
+        super()._attach_hook()
+
     def _make_cpp_class_name(self):
         cpp_class_name = self.__class__.__name__
         if isinstance(self._simulation.device, hoomd.device.GPU):
@@ -131,7 +171,7 @@ class CartesianVelocityFieldCompute(VelocityFieldCompute):
 
     Args:
         num_bins (tuple[int]): Number of bins along each of the 3 cylindrical
-            coordinates. A value of zero indicates the
+            coordinates. A value of zero indicates the coordinate is ignored.
         lower_bounds (tuple[float]): Lower bounds for each coordinate. The
             value of this bound is ignored if the number of bins is zero.
         upper_bounds (tuple[float]): Upper bounds for each coordinate. The
@@ -163,7 +203,7 @@ class CylindricalVelocityFieldCompute(VelocityFieldCompute):
 
     Args:
         num_bins (tuple[int]): Number of bins along each of the 3 cylindrical
-            coordinates. A value of zero indicates the
+            coordinates. A value of zero indicates the coordinate is ignored.
         lower_bounds (tuple[float]): Lower bounds for each coordinate. The
             value of this bound is ignored if the number of bins is zero.
         upper_bounds (tuple[float]): Upper bounds for each coordinate. The
