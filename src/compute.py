@@ -25,7 +25,7 @@ class VelocityCompute(hoomd.operation.Compute):
             the calculation. This argument only takes effect if HOOMD was
             compiled with the MPCD component.
 
-    `GroupVelocityCompute` calculates the center-of-mass velocity
+    `VelocityCompute` calculates the center-of-mass velocity
     :math:`\mathbf{v}_{\rm cm}` of a group of particles:
 
     .. math::
@@ -34,7 +34,14 @@ class VelocityCompute(hoomd.operation.Compute):
 
     where :math:`\mathbf{v}_i` is the velocity and and :math:`m_i` is the mass
     of particle *i*. These particles include regular HOOMD particles (specified
-    with `filter`)
+    with `filter`) and MPCD particles (specified with `include_mpcd_particles`).
+
+    Example::
+
+        v_com = hoomd.azplugins.compute.VelocityCompute(
+            filter=hoomd.filter.All()
+        )
+        v_com.velocity
 
     Attributes:
         filter (hoomd.filter.filter_like): HOOMD particles to include

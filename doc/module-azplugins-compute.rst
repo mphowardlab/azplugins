@@ -14,6 +14,7 @@ azplugins.compute
 
     CartesianVelocityFieldCompute
     CylindricalVelocityFieldCompute
+    VelocityCompute
     VelocityFieldCompute
 
 .. rubric:: Details
@@ -22,6 +23,7 @@ azplugins.compute
     :synopsis: Computes.
     :members: CartesianVelocityFieldCompute,
         CylindricalVelocityFieldCompute,
+        VelocityCompute,
         VelocityFieldCompute
     :no-inherited-members:
     :show-inheritance:
