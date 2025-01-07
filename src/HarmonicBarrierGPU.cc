@@ -25,7 +25,7 @@ HarmonicBarrierGPU::HarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef,
     {
     m_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(this->m_exec_conf)},
                                    this->m_exec_conf,
-                                   "implicit_evap"));
+                                   "harmonic_barrier"));
     this->m_autotuners.push_back(m_tuner);
     }
 

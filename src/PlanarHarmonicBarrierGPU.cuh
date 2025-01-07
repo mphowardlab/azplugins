@@ -21,14 +21,14 @@ namespace gpu
     {
 
 //! Kernel driver to evaluate PlanarHarmonicBarrierGPU force
-cudaError_t compute_implicit_evap_force(Scalar4* d_force,
-                                        Scalar* d_virial,
-                                        const Scalar4* d_pos,
-                                        const Scalar4* d_params,
-                                        const Scalar interf_origin,
-                                        const unsigned int N,
-                                        const unsigned int ntypes,
-                                        const unsigned int block_size);
+cudaError_t compute_harmonic_force(Scalar4* d_force,
+                                   Scalar* d_virial,
+                                   const Scalar4* d_pos,
+                                   const Scalar4* d_params,
+                                   const Scalar interf_origin,
+                                   const unsigned int N,
+                                   const unsigned int ntypes,
+                                   const unsigned int block_size);
 
     } // end namespace gpu
     } // end namespace azplugins

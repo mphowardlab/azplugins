@@ -129,22 +129,18 @@ class PYBIND11_EXPORT HarmonicBarrier : public ForceCompute
 
     pybind11::dict getParams(std::string type_name)
         {
-        // Get the type index using the type name
         unsigned int type_idx = m_pdata->getTypeByName(type_name);
         assert(type_idx < m_pdata->getNTypes());
 
-        // Access the parameter array in read mode
         ArrayHandle<Scalar4> h_params(m_params, access_location::host, access_mode::read);
         Scalar4 param_values = h_params.data[type_idx];
 
-        // Convert the Scalar4 back into a param_type object
         param_type h_params_obj;
         h_params_obj.k = param_values.x;
         h_params_obj.offset = param_values.y;
         h_params_obj.g = param_values.z;
         h_params_obj.cutoff = param_values.w;
 
-        // Return the Python dictionary representation
         return h_params_obj.toPython();
         }
 

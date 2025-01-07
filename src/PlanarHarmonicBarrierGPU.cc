@@ -40,7 +40,7 @@ void PlanarHarmonicBarrierGPU::computeForces(uint64_t timestep)
     HarmonicBarrierGPU::computeForces(timestep);
 
     const BoxDim& box = m_pdata->getGlobalBox();
-    const Scalar interf_origin = m_interf->getValue(timestep);
+    const Scalar interf_origin = m_interf->operator()(timestep);
     if (interf_origin > box.getHi().z || interf_origin < box.getLo().z)
         {
         m_exec_conf->msg->error()
@@ -54,14 +54,14 @@ void PlanarHarmonicBarrierGPU::computeForces(uint64_t timestep)
     ArrayHandle<Scalar4> d_params(m_params, access_location::device, access_mode::read);
 
     m_tuner->begin();
-    gpu::compute_implicit_evap_force(d_force.data,
-                                     d_virial.data,
-                                     d_pos.data,
-                                     d_params.data,
-                                     interf_origin,
-                                     m_pdata->getN(),
-                                     m_pdata->getNTypes(),
-                                     m_tuner->getParam()[0]);
+    gpu::compute_harmonic_force(d_force.data,
+                                d_virial.data,
+                                d_pos.data,
+                                d_params.data,
+                                interf_origin,
+                                m_pdata->getN(),
+                                m_pdata->getNTypes(),
+                                m_tuner->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
     m_tuner->end();

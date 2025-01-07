@@ -14,8 +14,11 @@ set(_${COMPONENT_NAME}_sources
 
 # TODO: List all GPU C++ source code files in _${COMPONENT_NAME}_cu_sources.
 set(_${COMPONENT_NAME}_cu_sources
+    HarmonicBarrierGPU.cc
     PlanarHarmonicBarrierGPU.cu
+    PlanarHarmonicBarrierGPU.cc
     SphericalHarmonicBarrierGPU.cu
+    SphericalHarmonicBarrierGPU.cc
     )
 
 # TODO: List all Python modules in python_files.
@@ -23,6 +26,7 @@ set(python_files
     __init__.py
     conftest.py
     bond.py
+    external.py
     flow.py
     pair.py
     )
