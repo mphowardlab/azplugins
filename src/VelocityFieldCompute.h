@@ -36,7 +36,7 @@ template<class BinOpT> class PYBIND11_EXPORT VelocityFieldCompute : public Compu
                          bool include_mpcd_particles)
         : Compute(sysdef), m_num_bins(num_bins), m_lower_bounds(lower_bounds),
           m_upper_bounds(upper_bounds), m_group(group),
-          m_include_mpcd_particles(include_mpcd_particles)
+          m_include_mpcd_particles(include_mpcd_particles), m_request_compute(false)
         {
 #ifdef ENABLE_MPI
         MPI_Op_create(&VelocityFieldCompute<BinOpT>::reduceScalar3, true, &m_reduce_scalar3);
@@ -65,7 +65,7 @@ template<class BinOpT> class PYBIND11_EXPORT VelocityFieldCompute : public Compu
         {
         m_num_bins = num_bins;
         m_binning_op.reset();
-        m_force_compute = true;
+        m_request_compute = true;
         }
 
     //! Get lower bounds for binning
@@ -79,7 +79,7 @@ template<class BinOpT> class PYBIND11_EXPORT VelocityFieldCompute : public Compu
         {
         m_lower_bounds = lower_bounds;
         m_binning_op.reset();
-        m_force_compute = true;
+        m_request_compute = true;
         }
 
     //! Get upper bounds for binning
@@ -93,7 +93,7 @@ template<class BinOpT> class PYBIND11_EXPORT VelocityFieldCompute : public Compu
         {
         m_upper_bounds = upper_bounds;
         m_binning_op.reset();
-        m_force_compute = true;
+        m_request_compute = true;
         }
 
     //! Get group of HOOMD particles in calculation (may be nullptr)
@@ -154,10 +154,14 @@ template<class BinOpT> class PYBIND11_EXPORT VelocityFieldCompute : public Compu
     GPUArray<Scalar3> m_momentum;         //!< Total momentum in bin
     std::vector<Scalar3> m_velocity;      //!< Mass averaged velocity in bin
 
+    bool shouldCompute(uint64_t timestep) override;
+
     //! Bin particles
     virtual void binParticles();
 
     private:
+    bool m_request_compute;
+
     template<class LoadOpT>
     static void addParticleToBin(Scalar* masses,
                                  Scalar3* momenta,
@@ -272,6 +276,25 @@ template<class BinOpT> void VelocityFieldCompute<BinOpT>::compute(uint64_t times
                 }
             }
         }
+    }
+
+template<class BinOpT> bool VelocityFieldCompute<BinOpT>::shouldCompute(uint64_t timestep)
+    {
+    bool result = Compute::shouldCompute(timestep);
+
+    if (result)
+        {
+        // request has been satisfed already
+        m_request_compute = false;
+        }
+    else if (m_request_compute)
+        {
+        m_request_compute = false;
+        m_last_computed = timestep;
+        result = true;
+        }
+
+    return result;
     }
 
 template<class BinOpT> void VelocityFieldCompute<BinOpT>::binParticles()

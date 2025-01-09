@@ -12,6 +12,7 @@ import hoomd
 from hoomd.azplugins import _azplugins
 from hoomd.data.parameterdicts import ParameterDict
 from hoomd.data.typeconverter import OnlyTypes
+from hoomd.error import DataAccessError
 
 
 class VelocityFieldCompute(hoomd.operation.Compute):
@@ -153,7 +154,7 @@ class VelocityFieldCompute(hoomd.operation.Compute):
 
         return numpy.reshape(list(itertools.product(*coords)), shape)
 
-    @hoomd.logging.log(category="sequence", requires_run=True)
+    @property
     def velocities(self):
         """numpy.ndarray: Mass-averaged velocity vector of bin.
 
@@ -162,6 +163,8 @@ class VelocityFieldCompute(hoomd.operation.Compute):
         simulation has been run.
 
         """
+        if not self._attached:
+            raise DataAccessError("velocities")
         self._cpp_obj.compute(self._simulation.timestep)
         return self._cpp_obj.velocities
 
@@ -191,9 +194,9 @@ class CartesianVelocityFieldCompute(VelocityFieldCompute):
         velocity_field = hoomd.azplugins.compute.CartesianVelocityFieldCompute(
             num_bins=(10, 8, 0),
             lower_bounds=(-5, 0, 0),
-            upper_bounds=(5, 5, 0)
-            filter=hoomd.filter.All()
-            )
+            upper_bounds=(5, 5, 0),
+            filter=hoomd.filter.All(),
+        )
 
     """
 
@@ -243,8 +246,8 @@ class CylindricalVelocityFieldCompute(VelocityFieldCompute):
         velocity_field = hoomd.azplugins.compute.CylindricalVelocityFieldCompute(
             num_bins=(10, 8, 0),
             lower_bounds=(0, 0, 0),
-            upper_bounds=(10, 2*numpy.pi, 0)
-            filter=hoomd.filter.All()
+            upper_bounds=(10, 2*numpy.pi, 0),
+            filter=hoomd.filter.All(),
             )
 
     """
