@@ -23,7 +23,7 @@ HarmonicBarrier::HarmonicBarrier(std::shared_ptr<SystemDefinition> sysdef,
     : ForceCompute(sysdef), m_interf(interf), m_has_warned(false)
     {
     // allocate memory per type for parameters
-    GPUArray<Scalar4> params(m_pdata->getNTypes(), m_exec_conf);
+    GPUArray<Scalar2> params(m_pdata->getNTypes(), m_exec_conf);
     m_params.swap(params);
     }
 
@@ -60,7 +60,7 @@ void export_HarmonicBarrier(pybind11::module& m)
                                                                                 "HarmonicBarrier")
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>())
         .def("setParams", &HarmonicBarrier::setParamsPython)
-        .def("getParams", &HarmonicBarrier::getParams);
+        .def("getParams", &HarmonicBarrier::getParamsPython);
     }
     } // end namespace detail
 

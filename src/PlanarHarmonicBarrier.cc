@@ -53,34 +53,25 @@ void PlanarHarmonicBarrier::computeForces(uint64_t timestep)
     memset((void*)h_virial.data, 0, sizeof(Scalar) * m_virial.getNumElements());
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
-    ArrayHandle<Scalar4> h_params(m_params, access_location::host, access_mode::read);
+    ArrayHandle<Scalar2> h_params(m_params, access_location::host, access_mode::read);
     for (unsigned int idx = 0; idx < m_pdata->getN(); ++idx)
         {
         const Scalar4 postype_i = h_pos.data[idx];
         const Scalar z_i = postype_i.z;
         const unsigned int type_i = __scalar_as_int(postype_i.w);
 
-        const Scalar4 params = h_params.data[type_i];
+        const Scalar2 params = h_params.data[type_i];
         const Scalar k = params.x;
         const Scalar offset = params.y;
-        const Scalar g = params.z;
-        const Scalar cutoff = params.w;
 
         const Scalar dz = z_i - (interf_origin + offset);
-        if (cutoff < Scalar(0.0) || dz < Scalar(0.0))
+        if (dz < Scalar(0.0))
             continue;
 
         Scalar fz(0.0), e(0.0);
-        if (dz < cutoff) // harmonic
-            {
-            fz = -k * dz;
-            e = Scalar(-0.5) * fz * dz; // (k/2) dz^2
-            }
-        else // linear
-            {
-            fz = -g;
-            e = Scalar(0.5) * k * cutoff * cutoff + g * (dz - cutoff);
-            }
+        // harmonic
+        fz = -k * dz;
+        e = Scalar(-0.5) * fz * dz; // (k/2) dz^2
 
         h_force.data[idx] = make_scalar4(0.0, 0.0, fz, e);
         }

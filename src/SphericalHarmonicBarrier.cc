@@ -60,21 +60,16 @@ void SphericalHarmonicBarrier::computeForces(uint64_t timestep)
     memset((void*)h_virial.data, 0, sizeof(Scalar) * m_virial.getNumElements());
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
-    ArrayHandle<Scalar4> h_params(m_params, access_location::host, access_mode::read);
+    ArrayHandle<Scalar2> h_params(m_params, access_location::host, access_mode::read);
     for (unsigned int idx = 0; idx < m_pdata->getN(); ++idx)
         {
         const Scalar4 postype_i = h_pos.data[idx];
         const Scalar3 pos_i = make_scalar3(postype_i.x, postype_i.y, postype_i.z);
         const unsigned int type_i = __scalar_as_int(postype_i.w);
 
-        const Scalar4 params = h_params.data[type_i];
+        const Scalar2 params = h_params.data[type_i];
         const Scalar k = params.x;
         const Scalar offset = params.y;
-        const Scalar g = params.z;
-        const Scalar cutoff = params.w;
-        // continue if interaction is off
-        if (cutoff < Scalar(0.0))
-            continue;
 
         // get distances and direction of force
         const Scalar r_i = fast::sqrt(dot(pos_i, pos_i));
@@ -85,16 +80,9 @@ void SphericalHarmonicBarrier::computeForces(uint64_t timestep)
 
         Scalar3 f;
         Scalar e;
-        if (dr < cutoff) // harmonic
-            {
-            f = -k * dr * rhat;
-            e = Scalar(0.5) * k * (dr * dr); // (k/2) dr^2
-            }
-        else // linear
-            {
-            f = -g * rhat;
-            e = Scalar(0.5) * k * cutoff * cutoff + g * (dr - cutoff);
-            }
+        // harmonic
+        f = -k * dr * rhat;
+        e = Scalar(0.5) * k * (dr * dr); // (k/2) dr^2
 
         h_force.data[idx] = make_scalar4(f.x, f.y, f.z, e);
         }

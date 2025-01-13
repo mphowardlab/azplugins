@@ -23,10 +23,10 @@ HarmonicBarrierGPU::HarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef,
                                        std::shared_ptr<Variant> interf)
     : HarmonicBarrier(sysdef, interf)
     {
-    m_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(this->m_exec_conf)},
-                                   this->m_exec_conf,
+    m_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                   m_exec_conf,
                                    "harmonic_barrier"));
-    this->m_autotuners.push_back(m_tuner);
+    m_autotuners.push_back(m_tuner);
     }
 
 namespace detail

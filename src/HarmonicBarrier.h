@@ -33,25 +33,18 @@ namespace azplugins
  * part (i.e., it is truncated at its minimum, and is zero for any negative
  * displacements relative to the minimum). The position of the minimum can be
  * adjusted with an offset, which controls an effective contact angle.
- * The potential is cutoff at a certain distance above the interface, at which
- * point it switches to a linear potential with a fixed force constant. This models
- * the gravitational force experienced by particles once the interface has moved
- * past the particles. In practice, this cutoff should be roughly the particle radius.
  *
  * The specific form of the potential is:
  *
  *      \f{eqnarray*}{
  *      V(z) = & 0 & z < H \\
- *             & \frac{\kappa}{2} (z-H)^2 & H \le z < H_{\rm c} \\
- *             & \frac{\kappa}{2} (H_{\rm c} - H)^2 - F_g (z - H_{\rm c}) & z \ge H_{\rm c}
+ *             & \frac{\kappa}{2} (z-H)^2 & z > H \\
  *      \f}
  *
  * with the following parameters:
  *
  *  - \f$\kappa\f$ - \a k (energy per distance squared) - spring constant
  *  - \a offset (distance) - per-particle-type amount to shift \a H, default: 0.0
- *  - \f$F_g\f$ - \a g (force) - force to apply above \f$H_{\rm c}\f$
- *  - \f$\Delta\f$ - \a cutoff (distance) - sets cutoff at \f$H_{\rm c} = H + \Delta\f$
  *
  * The meaning of \f$z\f$ is the distance from some origin, and \f$H\f$ is the distance of
  * the interface (e.g., a plane, sphere, etc.) from that same origin. This class doesn't
@@ -80,17 +73,13 @@ class PYBIND11_EXPORT HarmonicBarrier : public ForceCompute
         {
         Scalar k;
         Scalar offset;
-        Scalar g;
-        Scalar cutoff;
 
-        param_type() : k(0), offset(0), g(0), cutoff(0) { }
+        param_type() : k(0), offset(0) { }
 
         param_type(pybind11::dict params)
             {
             k = pybind11::cast<Scalar>(params["k"]);
             offset = pybind11::cast<Scalar>(params["offset"]);
-            g = pybind11::cast<Scalar>(params["g"]);
-            cutoff = pybind11::cast<Scalar>(params["cutoff"]);
             }
 
         pybind11::dict toPython()
@@ -98,26 +87,26 @@ class PYBIND11_EXPORT HarmonicBarrier : public ForceCompute
             pybind11::dict d;
             d["k"] = pybind11::cast(k);
             d["offset"] = pybind11::cast(offset);
-            d["g"] = pybind11::cast(g);
-            d["cutoff"] = pybind11::cast(cutoff);
             return d;
             }
-        } __attribute__((aligned(16)));
+        }
+#if HOOMD_LONGREAL_SIZE == 32
+        __attribute__((aligned(8)));
+#else
+        __attribute__((aligned(16)));
+#endif
 
     //! Set the per-type potential parameters
     /*!
      * \param type Particle type id
      * \param k Spring constant
      * \param offset Distance to shift potential minimum from interface
-     * \param g Linear potential force constant
-     * \param cutoff Distance from potential minimum to cutoff harmonic potential and switch to
-     * linear
      */
     void setParams(unsigned int type, const param_type& params)
         {
         assert(type < m_pdata->getNTypes());
-        ArrayHandle<Scalar4> h_params(m_params, access_location::host, access_mode::readwrite);
-        h_params.data[type] = make_scalar4(params.k, params.offset, params.g, params.cutoff);
+        ArrayHandle<Scalar2> h_params(m_params, access_location::host, access_mode::readwrite);
+        h_params.data[type] = make_scalar2(params.k, params.offset);
         }
 
     void setParamsPython(std::string type_name, pybind11::dict params)
@@ -127,26 +116,35 @@ class PYBIND11_EXPORT HarmonicBarrier : public ForceCompute
         setParams(type_idx, h_params);
         }
 
-    pybind11::dict getParams(std::string type_name)
+    param_type getParams(std::string type_name)
         {
         unsigned int type_idx = m_pdata->getTypeByName(type_name);
         assert(type_idx < m_pdata->getNTypes());
 
-        ArrayHandle<Scalar4> h_params(m_params, access_location::host, access_mode::read);
-        Scalar4 param_values = h_params.data[type_idx];
+        ArrayHandle<Scalar2> h_params(m_params, access_location::host, access_mode::read);
+        Scalar2 param_values = h_params.data[type_idx];
 
         param_type h_params_obj;
         h_params_obj.k = param_values.x;
         h_params_obj.offset = param_values.y;
-        h_params_obj.g = param_values.z;
-        h_params_obj.cutoff = param_values.w;
 
-        return h_params_obj.toPython();
+        return h_params_obj;
+        }
+
+    pybind11::dict getParamsPython(std::string type_name)
+        {
+        param_type params = getParams(type_name);
+
+        pybind11::dict params_dict;
+        params_dict["k"] = params.k;
+        params_dict["offset"] = params.offset;
+
+        return params_dict;
         }
 
     protected:
     std::shared_ptr<Variant> m_interf; //!< Current location of the interface
-    GPUArray<Scalar4> m_params;        //!< Per-type array of parameters for the potential
+    GPUArray<Scalar2> m_params;        //!< Per-type array of parameters for the potential
 
     //! Method to compute the forces
     virtual void computeForces(uint64_t timestep);

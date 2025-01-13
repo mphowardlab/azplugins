@@ -59,17 +59,17 @@ void SphericalHarmonicBarrierGPU::computeForces(uint64_t timestep)
     ArrayHandle<Scalar4> d_force(m_force, access_location::device, access_mode::overwrite);
     ArrayHandle<Scalar> d_virial(m_virial, access_location::device, access_mode::overwrite);
     ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
-    ArrayHandle<Scalar4> d_params(m_params, access_location::device, access_mode::read);
+    ArrayHandle<Scalar2> d_params(m_params, access_location::device, access_mode::read);
 
     m_tuner->begin();
-    gpu::compute_harmonic_droplet_force(d_force.data,
-                                        d_virial.data,
-                                        d_pos.data,
-                                        d_params.data,
-                                        interf_origin,
-                                        m_pdata->getN(),
-                                        m_pdata->getNTypes(),
-                                        m_tuner->getParam()[0]);
+    gpu::compute_force_spherical_harmonic_barrier(d_force.data,
+                                                  d_virial.data,
+                                                  d_pos.data,
+                                                  d_params.data,
+                                                  interf_origin,
+                                                  m_pdata->getN(),
+                                                  m_pdata->getNTypes(),
+                                                  m_tuner->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
     m_tuner->end();

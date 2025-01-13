@@ -32,16 +32,16 @@ namespace kernel
  * This method does not compute the virial.
  *
  */
-__global__ void compute_harmonic_droplet_force(Scalar4* d_force,
-                                               Scalar* d_virial,
-                                               const Scalar4* d_pos,
-                                               const Scalar4* d_params,
-                                               const Scalar interf_origin,
-                                               const unsigned int N,
-                                               const unsigned int ntypes)
+__global__ void compute_force_spherical_harmonic_barrier(Scalar4* d_force,
+                                                         Scalar* d_virial,
+                                                         const Scalar4* d_pos,
+                                                         const Scalar2* d_params,
+                                                         const Scalar interf_origin,
+                                                         const unsigned int N,
+                                                         const unsigned int ntypes)
     {
     // load per-type parameters into shared memory
-    extern __shared__ Scalar4 s_params[];
+    extern __shared__ Scalar2 s_params[];
     for (unsigned int cur_offset = 0; cur_offset < ntypes; cur_offset += blockDim.x)
         {
         if (cur_offset + threadIdx.x < ntypes)
@@ -60,14 +60,9 @@ __global__ void compute_harmonic_droplet_force(Scalar4* d_force,
     const Scalar3 pos_i = make_scalar3(postype_i.x, postype_i.y, postype_i.z);
     const unsigned int type_i = __scalar_as_int(postype_i.w);
 
-    const Scalar4 params = s_params[type_i];
+    const Scalar2 params = s_params[type_i];
     const Scalar k = params.x;
     const Scalar offset = params.y;
-    const Scalar g = params.z;
-    const Scalar cutoff = params.w;
-    // exit if interaction is off
-    if (cutoff < Scalar(0.0))
-        return;
 
     // get distances and direction of force
     const Scalar r_i = fast::sqrt(dot(pos_i, pos_i));
@@ -78,17 +73,9 @@ __global__ void compute_harmonic_droplet_force(Scalar4* d_force,
 
     Scalar3 f;
     Scalar e;
-    if (dr < cutoff) // harmonic
-        {
-        f = -k * dr * rhat;
-        e = Scalar(0.5) * k * (dr * dr); // (k/2) dr^2
-        }
-    else // linear
-        {
-        f = -g * rhat;
-        e = Scalar(0.5) * k * cutoff * cutoff + g * (dr - cutoff);
-        }
-
+    // harmonic
+    f = -k * dr * rhat;
+    e = Scalar(0.5) * k * (dr * dr); // (k/2) dr^2
     d_force[idx] = make_scalar4(f.x, f.y, f.z, e);
     }
     } // end namespace kernel
@@ -103,17 +90,17 @@ __global__ void compute_harmonic_droplet_force(Scalar4* d_force,
  * \param ntypes Number of types
  * \param block_size Number of threads per block
  *
- * This kernel driver is a wrapper around kernel::compute_harmonic_force.
+ * This kernel driver is a wrapper around kernel::compute_force_spherical_harmonic_barrier.
  * The forces and virial are both set to zero before calculation.
  */
-cudaError_t compute_harmonic_droplet_force(Scalar4* d_force,
-                                           Scalar* d_virial,
-                                           const Scalar4* d_pos,
-                                           const Scalar4* d_params,
-                                           const Scalar interf_origin,
-                                           const unsigned int N,
-                                           const unsigned int ntypes,
-                                           const unsigned int block_size)
+cudaError_t compute_force_spherical_harmonic_barrier(Scalar4* d_force,
+                                                     Scalar* d_virial,
+                                                     const Scalar4* d_pos,
+                                                     const Scalar2* d_params,
+                                                     const Scalar interf_origin,
+                                                     const unsigned int N,
+                                                     const unsigned int ntypes,
+                                                     const unsigned int block_size)
     {
     // zero the force and virial datasets before launch
     cudaMemset(d_force, 0, sizeof(Scalar4) * N);
@@ -121,14 +108,14 @@ cudaError_t compute_harmonic_droplet_force(Scalar4* d_force,
 
     unsigned int max_block_size;
     cudaFuncAttributes attr;
-    cudaFuncGetAttributes(&attr, (const void*)kernel::compute_harmonic_droplet_force);
+    cudaFuncGetAttributes(&attr, (const void*)kernel::compute_force_spherical_harmonic_barrier);
     max_block_size = attr.maxThreadsPerBlock;
 
     unsigned int run_block_size = min(block_size, max_block_size);
     unsigned int shared_size = sizeof(Scalar4) * ntypes;
 
     dim3 grid(N / run_block_size + 1);
-    kernel::compute_harmonic_droplet_force<<<grid, run_block_size, shared_size>>>(
+    kernel::compute_force_spherical_harmonic_barrier<<<grid, run_block_size, shared_size>>>(
         d_force,
         d_virial,
         d_pos,
