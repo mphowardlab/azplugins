@@ -100,7 +100,7 @@ class PlanarHarmonicBarrier(HarmonicBarrier):
     
     Example::
 
-        interf = hoomd.variant.Ramp(A=0.0, B=50.0, t_start=100, t_ramp=1e6)
+        interf = hoomd.variant.Ramp(A=50.0, B=25.0, t_start=100, t_ramp=1e6)
         evap = hoomd.azplugins.external.PlanarHarmonicBarrier(interface = interf)
 
         evap.params['S'] = dict(k=50.0, offset=0.0)
@@ -159,7 +159,7 @@ class SphericalHarmonicBarrier(HarmonicBarrier):
     that determines the strength of the interface (:math:`\kappa` is a proxy for surface tension).
 
     Example::
-        interf = hoomd.variant.Ramp(A=10.0, B=25.0, t_start=0, t_ramp=1e6)
+        interf = hoomd.variant.Ramp(A=25.0, B=10.0, t_start=0, t_ramp=1e6)
         barrier = hoomd.azplugins.external.SphericalHarmonicBarrier(interface=interf)
         barrier.params['A'] = dict(k=100.0, offset=0.0)
         barrier.params['B'] = dict(k=150.0, offset=2.0)
