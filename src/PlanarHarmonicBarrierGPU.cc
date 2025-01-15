@@ -43,8 +43,8 @@ void PlanarHarmonicBarrierGPU::computeForces(uint64_t timestep)
     const Scalar interf_origin = m_interf->operator()(timestep);
     if (interf_origin > box.getHi().z || interf_origin < box.getLo().z)
         {
-        m_exec_conf->msg->error()
-            << "HarmonicBarrier interface must be inside the simulation box" << std::endl;
+        m_exec_conf->msg->error() << "HarmonicBarrier interface must be inside the simulation box"
+                                  << std::endl;
         throw std::runtime_error("HarmonicBarrier interface must be inside the simulation box");
         }
 
@@ -75,9 +75,9 @@ namespace detail
 void export_PlanarHarmonicBarrierGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<PlanarHarmonicBarrierGPU, std::shared_ptr<PlanarHarmonicBarrierGPU>, HarmonicBarrierGPU>(
-        m,
-        "PlanarHarmonicBarrierGPU")
+    py::class_<PlanarHarmonicBarrierGPU,
+               std::shared_ptr<PlanarHarmonicBarrierGPU>,
+               HarmonicBarrierGPU>(m, "PlanarHarmonicBarrierGPU")
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     }
     } // end namespace detail

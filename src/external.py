@@ -1,7 +1,8 @@
 # Copyright (c) 2018-2020, Michael P. Howard
-# Copyright (c) 2021-2022, Auburn University
-# This file is part of the azplugins project, released under the Modified BSD License.
+# Copyright (c) 2021-2024, Auburn University
+# Part of azplugins, released under the BSD 3-Clause License.
 
+"""External harmonic potentials."""
 
 import hoomd
 
@@ -9,11 +10,10 @@ from hoomd.azplugins import _azplugins
 from hoomd.data.parameterdicts import TypeParameterDict
 from hoomd.data.typeparam import TypeParameter
 from hoomd.data.parameterdicts import ParameterDict
-from hoomd.data.typeconverter import OnlyTypes, variant_preprocessing
 from hoomd.md import force
 
-class HarmonicBarrier(force.Force):
 
+class HarmonicBarrier(force.Force):
     r"""Applies Harmonic Potential.
 
     This class should not be instantiated directly. Use a derived type.
@@ -32,22 +32,24 @@ class HarmonicBarrier(force.Force):
     def __init__(self, interface=None, geometry=None):
         super().__init__()
 
-        if geometry not in ('film', 'droplet'):
+        if geometry not in ("film", "droplet"):
             raise ValueError(f"Unrecognized geometry: {geometry}")
 
-        param_dict = ParameterDict(interface=hoomd.variant.Variant,
-                                   geometry=str)
+        param_dict = ParameterDict(interface=hoomd.variant.Variant, geometry=str)
         param_dict["interface"] = interface
-        param_dict["geometry"]= geometry
-        param_dict.update(dict(interface=interface, geometry=geometry,))
+        param_dict["geometry"] = geometry
+        param_dict.update(
+            dict(
+                interface=interface,
+                geometry=geometry,
+            )
+        )
         self._param_dict.update(param_dict)
 
         params = TypeParameter(
             "params",
             "particle_types",
-            TypeParameterDict(
-                k=float, offset=float, len_keys=1
-            ),
+            TypeParameterDict(k=float, offset=float, len_keys=1),
         )
         self._add_typeparam(params)
 
@@ -56,13 +58,10 @@ class HarmonicBarrier(force.Force):
 
         cpp_class = getattr(_azplugins, self._make_cpp_class_name())
 
-        if self.geometry not in ('film', 'droplet'):
+        if self.geometry not in ("film", "droplet"):
             raise ValueError(f"Unrecognized geometry: {self.geometry}")
 
-        self._cpp_obj = cpp_class(
-            sim.state._cpp_sys_def,
-            self.interface
-        )
+        self._cpp_obj = cpp_class(sim.state._cpp_sys_def, self.interface)
 
         super()._attach_hook()
 
@@ -72,11 +71,10 @@ class HarmonicBarrier(force.Force):
             cpp_class_name += "GPU"
         return cpp_class_name
 
-class PlanarHarmonicBarrier(HarmonicBarrier):
-    def __init__(self, interface=None):
-        super().__init__(interface=interface, geometry='film')
 
-    r"""Applies a purely repulsive harmonic potential to particles near an interface in planar geometry..
+class PlanarHarmonicBarrier(HarmonicBarrier):
+    r"""Applies a purely repulsive harmonic potential to particles
+        near an interface in planar geometry..
 
     Args:
         interface (`hoomd.variant`) : `z` position of the interface
@@ -89,15 +87,15 @@ class PlanarHarmonicBarrier(HarmonicBarrier):
 
         \begin{eqnarray*}
         V(d) = & 0 & d < H \\
-               & \frac{\kappa}{2} (d-H)^2 & d > H 
+               & \frac{\kappa}{2} (d-H)^2 & H < d
         \end{eqnarray*}
 
     Here, the interface is located at height *H*, and may change with time.
-    The effective interface position *H* may be modified per-particle-type using a *offset*
-    (*offset* is added to *H* to determine the effective *H*)
+    The effective interface position *H* may be modified per-particle-type
+    using a *offset* (*offset* is added to *H* to determine the effective *H*)
     :math:`\kappa` is a spring constant setting the strength of the interface
     (:math:`\kappa` is a proxy for the surface tension).
-    
+
     Example::
 
         interf = hoomd.variant.Ramp(A=50.0, B=25.0, t_start=100, t_ramp=1e6)
@@ -113,7 +111,7 @@ class PlanarHarmonicBarrier(HarmonicBarrier):
 
         * ``k`` (`float`, **required**) - Spring constant :math:`k`
           :math:`[\mathrm{energy} \cdot \mathrm{length}^{-2}]`
-        * ``offset`` (`float`, **required**) - per-particle-type amount to shift :math:`H`
+        * ``offset`` (`float`, **required**) - Shift amount per-particle-type :math:`H`
           :math:`[\mathrm{length}]`
 
 
@@ -129,21 +127,22 @@ class PlanarHarmonicBarrier(HarmonicBarrier):
 
     """
 
+    def __init__(self, interface=None):
+        super().__init__(interface=interface, geometry="film")
+
 
 class SphericalHarmonicBarrier(HarmonicBarrier):
-    def __init__(self, interface=None):
-        super().__init__(interface=interface, geometry='droplet')
     r"""Apply pure repulsive Harmonic Potential in a spherical geometry.
 
-    SphericalHarmonicBarrier applies a purely repulsive harmonic potential to particles 
+    SphericalHarmonicBarrier applies a purely repulsive harmonic potential to particles
     near a spherical interface.
 
     Args:
         interface (`hoomd.variant`): The radial position of the spherical interface.
 
-    The `SphericalHarmonicBarrier` applies a purely harmonic potential in spherical geometry 
-    that pushes particles inward toward the center of the sphere. The potential is truncated 
-    at its minimum and has the following form:
+    The `SphericalHarmonicBarrier` applies a purely harmonic potential in spherical
+    geometry that pushes particles inward toward the center of the sphere. The
+    potential is truncated at its minimum and has the following form:
 
     .. math::
 
@@ -153,10 +152,11 @@ class SphericalHarmonicBarrier(HarmonicBarrier):
             \frac{\kappa}{2} (r-R)^2, & \text{if } r > R
         \end{cases}
 
-    Here, the interface is located at radius :math:`R`, and may change with time. The effective 
-    interface position :math:`R` may be modified per-particle-type using an *offset* 
-    (added to :math:`R` to determine the effective position). :math:`\kappa` is a spring constant 
-    that determines the strength of the interface (:math:`\kappa` is a proxy for surface tension).
+    Here, the interface is located at radius :math:`R`, and may change with time.
+    The effective interface position :math:`R` may be modified per-particle-type
+    using an *offset*(added to :math:`R` to determine the effective position).
+    :math:`\kappa` is a spring constant that determines the strength of the interface
+    (:math:`\kappa` is a proxy for surface tension).
 
     Example::
         interf = hoomd.variant.Ramp(A=25.0, B=10.0, t_start=0, t_ramp=1e6)
@@ -166,19 +166,23 @@ class SphericalHarmonicBarrier(HarmonicBarrier):
 
     .. py:attribute:: params
 
-        The `SphericalHarmonicBarrier` parameters. The dictionary has the following keys:
+        The `SphericalHarmonicBarrier` parameters.
+        The dictionary has the following keys:
 
         * ``k`` (`float`, **required**) - Spring constant :math:`k`
           :math:`[\mathrm{energy} \cdot \mathrm{length}^{-2}]`
-        * ``offset`` (`float`, **required**) - Per-particle-type amount to shift :math:`R`
+        * ``offset`` (`float`, **required**) - Shift per-particle-type :math:`R`
           :math:`[\mathrm{length}]`
 
         Type: :class:`~hoomd.data.typeparam.TypeParameter` [`particle_type`, `dict`]
 
     .. warning::
-        Virial calculation has not been implemented for this model because it is 
-        nonequilibrium. A warning will be raised if any calls to 
-        :py:class:`hoomd.logging.Logger` are made because the logger always requests 
-        the virial flags. However, this warning can be safely ignored if the 
+        Virial calculation has not been implemented for this model because it is
+        nonequilibrium. A warning will be raised if any calls to
+        :py:class:`hoomd.logging.Logger` are made because the logger always requests
+        the virial flags. However, this warning can be safely ignored if the
         pressure (tensor) is not being logged or the pressure is not of interest.
     """
+
+    def __init__(self, interface=None):
+        super().__init__(interface=interface, geometry="droplet")

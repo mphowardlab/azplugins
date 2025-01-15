@@ -96,9 +96,9 @@ namespace detail
 void export_SphericalHarmonicBarrier(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<SphericalHarmonicBarrier, std::shared_ptr<SphericalHarmonicBarrier>, HarmonicBarrier>(
-        m,
-        "SphericalHarmonicBarrier")
+    py::class_<SphericalHarmonicBarrier,
+               std::shared_ptr<SphericalHarmonicBarrier>,
+               HarmonicBarrier>(m, "SphericalHarmonicBarrier")
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     ;
     }

@@ -112,13 +112,14 @@ cudaError_t compute_force_planar_harmonic_barrier(Scalar4* d_force,
     unsigned int shared_size = sizeof(Scalar4) * ntypes;
 
     dim3 grid(N / run_block_size + 1);
-    kernel::compute_force_planar_harmonic_barrier<<<grid, run_block_size, shared_size>>>(d_force,
-                                                                                         d_virial,
-                                                                                         d_pos,
-                                                                                         d_params,
-                                                                                         interf_origin,
-                                                                                         N,
-                                                                                         ntypes);
+    kernel::compute_force_planar_harmonic_barrier<<<grid, run_block_size, shared_size>>>(
+        d_force,
+        d_virial,
+        d_pos,
+        d_params,
+        interf_origin,
+        N,
+        ntypes);
     return cudaSuccess;
     }
 

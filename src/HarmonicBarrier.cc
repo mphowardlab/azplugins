@@ -38,8 +38,7 @@ HarmonicBarrier::~HarmonicBarrier() { }
 void HarmonicBarrier::computeForces(uint64_t timestep)
     {
     PDataFlags flags = m_pdata->getFlags();
-    if (!m_has_warned
-        && flags[pdata_flag::pressure_tensor])
+    if (!m_has_warned && flags[pdata_flag::pressure_tensor])
         {
         m_exec_conf->msg->warning() << "HarmonicBarrier does not compute its virial "
                                        "contribution, pressure may be inaccurate"

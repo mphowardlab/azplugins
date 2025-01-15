@@ -83,9 +83,9 @@ namespace detail
 void export_SphericalHarmonicBarrierGPU(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_<SphericalHarmonicBarrierGPU, std::shared_ptr<SphericalHarmonicBarrierGPU>, HarmonicBarrierGPU>(
-        m,
-        "SphericalHarmonicBarrierGPU")
+    py::class_<SphericalHarmonicBarrierGPU,
+               std::shared_ptr<SphericalHarmonicBarrierGPU>,
+               HarmonicBarrierGPU>(m, "SphericalHarmonicBarrierGPU")
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
     }
     } // end namespace detail

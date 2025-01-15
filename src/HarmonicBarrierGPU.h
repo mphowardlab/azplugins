@@ -34,8 +34,7 @@ class PYBIND11_EXPORT HarmonicBarrierGPU : public HarmonicBarrier
     {
     public:
     //! Constructor
-    HarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef,
-                       std::shared_ptr<Variant> interf);
+    HarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> interf);
 
     protected:
     std::shared_ptr<Autotuner<1>> m_tuner; //!< Autotuner for block size
