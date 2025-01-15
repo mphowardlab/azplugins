@@ -2,6 +2,7 @@
 set(test_files
     __init__.py
     test_bond.py
+    test_external.py
     test_flow.py
     test_pair.py
     test_pair_aniso.py
