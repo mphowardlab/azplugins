@@ -52,6 +52,7 @@ Contents
     :caption: API
 
     module-azplugins-bond
+    module-azplugins-external
     module-azplugins-flow
     module-azplugins-pair
 

@@ -41,10 +41,10 @@ void SphericalHarmonicBarrier::computeForces(uint64_t timestep)
     const Scalar interf_origin = m_interf->operator()(timestep);
         {
         const BoxDim& box = m_pdata->getGlobalBox();
-        const Scalar3 hi = box.getHi();
-        const Scalar3 lo = box.getLo();
-        if (interf_origin > hi.x || interf_origin < lo.x || interf_origin > hi.y
-            || interf_origin < lo.y || interf_origin > hi.z || interf_origin < lo.z)
+        Scalar3 nearest_plane_distance = box.getNearestPlaneDistance();
+        if (nearest_plane_distance.x < 2.0 * interf_origin
+            || nearest_plane_distance.y < 2.0 * interf_origin
+            || nearest_plane_distance.z < 2.0 * interf_origin)
             {
             m_exec_conf->msg->error()
                 << "SphericalHarmonicBarrier interface must be inside the simulation box"
