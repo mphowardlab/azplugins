@@ -12,6 +12,7 @@ azplugins.pair
 .. autosummary::
     :nosignatures:
 
+    ACSW
     Colloid
     DPDGeneralWeight
     Hertz
@@ -22,7 +23,8 @@ azplugins.pair
 
 .. automodule:: hoomd.azplugins.pair
     :synopsis: Pair potentials.
-    :members: Colloid,
+    :members: ACSW,
+        Colloid,
         DPDGeneralWeight,
         Hertz,
         PerturbedLennardJones,
