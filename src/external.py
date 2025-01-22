@@ -14,19 +14,19 @@ from hoomd.md import force
 
 
 class HarmonicBarrier(force.Force):
-    r"""Applies harmonic barrier.
+    r"""Repulsive barrier implemented as a harmonic potential.
 
     This class should not be instantiated directly. Use a derived type.
 
     Args:
-        interface (`hoomd.variant.variant_like`): position of the interface
+        interface (`hoomd.variant.variant_like`): Position of the interface
 
     .. py:attribute:: params
 
         The parameters of the harmonic barrier for each particle type.
-        The dictionary has the following:
-        keys:
+        The dictionary has the following keys:
 
+        * ``interface`` (`hoomd.variant.variant_like`, **required**) - Interface
         * ``k`` (`float`, **required**) - Spring constant :math:`k`
           :math:`[\mathrm{energy} \cdot \mathrm{length}^{-2}]`
         * ``offset`` (`float`, **required**) - Shift amount per-particle-type :math:`H`
@@ -37,11 +37,7 @@ class HarmonicBarrier(force.Force):
         [``particle_type``], `dict`]
 
     .. warning::
-        Virial calculation has not been implemented for this model because it is
-        nonequilibrium. A warning will be raised if any calls to
-        :py:class:`hoomd.logging.Logger` are made because the logger always requests
-        the virial flags. However, this warning can be safely ignored if the
-        pressure (tensor) is not being logged or the pressure is not of interest.
+        Virial calculation has not been implemented for this external field.
 
     """
 
@@ -82,8 +78,9 @@ class PlanarHarmonicBarrier(HarmonicBarrier):
     Args:
         interface (`hoomd.variant.variant_like`) : *z* position of the interface
 
-    `PlanarHarmonicBarrier` apply a purely harmonic potential in planar geometry
-    with a normal in the :math:`+z` direction:
+    `PlanarHarmonicBarrier` applies a purely harmonic potential in a planar
+    geometry with a normal in the :math:`z` direction. Particles are pushed
+    in the :math:`-z` direction when they are above the `interface`:
 
     .. math::
 
@@ -93,7 +90,7 @@ class PlanarHarmonicBarrier(HarmonicBarrier):
         \end{cases}
 
     Here, the interface is located at height *H*, which may change with time.
-    ``interface`` specifies the nominal *H*, which may then be modified
+    `interface` specifies the nominal *H*, which may then be modified
     per-particle-type by adding an ``offset``. :math:`\kappa` is a spring
     constant setting the strength of the interface, similar to a surface tension.
 
@@ -103,9 +100,9 @@ class PlanarHarmonicBarrier(HarmonicBarrier):
         interf = hoomd.variant.Ramp(A=50.0, B=25.0, t_start=100, t_ramp=1e6)
         evap = hoomd.azplugins.external.PlanarHarmonicBarrier(interface=interf)
         # small particle has diameter 1.0
-        evap.params['S'] = dict(k=50.0, offset=0.0)
-        # big particle is twice as large (diameter 2.0), so coefficient is scaled
-        evap.params['B'] = dict(k=50.0*2*2, offset=0.0)
+        evap.params['S'] = dict(k=50.0, offset=-0.5)
+        # big particle is twice as large (diameter 2.0), so coefficients are scaled
+        evap.params['B'] = dict(k=50.0*2*2, offset=-1.0)
 
     """
 
@@ -116,32 +113,32 @@ class SphericalHarmonicBarrier(HarmonicBarrier):
     r"""Spherical harmonic barrier.
 
     Args:
-        interface (`hoomd.variant.variant_like`) : Radius of spherical interface.
+        interface (`hoomd.variant.variant_like`) : Radius of sphere.
 
     `SphericalHarmonicBarrier` applies a purely harmonic potential to particles
-    near a spherical interface that pushes particles inward toward the center
-    of the sphere. The potential is truncated at its minimum
-    and has the following form:
+    outside the radius of a sphere, acting to push them inward:
 
     .. math::
 
-        V(r) = \begin{cases}
-            0, & \text{if } r < R \\
-            \frac{\kappa}{2} (r-R)^2, & \text{if } r > R
+        U(r) = \begin{cases}
+         0 & r \le R \\
+         \dfrac{\kappa}{2} (r-R)^2 & r > R
         \end{cases}
 
-    Here, the interface is located at radius *R*, and may change with time.
-    The effective interface position *R* may be modified per-particle-type
-    using an ``offset`` (added to *R* to determine the effective position).
-    :math:`\kappa` is a spring constant that determines the strength of the interface
-    (:math:`\kappa` is a proxy for surface tension).
+    Here, the interface is located at radius *R*, which may change with time.
+    `interface` specifies the nominal *R*, which may then be modified
+    per-particle-type by adding an ``offset``. :math:`\kappa` is a spring
+    constant setting the strength of the interface, similar to a surface tension.
 
     Example::
 
-        # moving interface from R = 25. to R = 10.
-        interf = hoomd.variant.Ramp(A=25.0, B=10.0, t_start=0, t_ramp=1e6)
-        barrier = hoomd.azplugins.external.SphericalHarmonicBarrier(interface=interf)
-        barrier.params['A', 'B'] = dict(k=50.0, offset=0.0)
+        # moving interface from R = 50. to R = 25.
+        interf = hoomd.variant.Ramp(A=50.0, B=25.0, t_start=100, t_ramp=1e6)
+        evap = hoomd.azplugins.external.SphericalHarmonicBarrier(interface=interf)
+        # small particle has diameter 1.0
+        evap.params['S'] = dict(k=50.0, offset=-0.5)
+        # big particle is twice as large (diameter 2.0), so coefficients are scaled
+        evap.params['B'] = dict(k=50.0*2*2, offset=-1.0)
     """
 
     pass
