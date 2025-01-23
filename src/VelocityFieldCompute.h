@@ -319,7 +319,7 @@ template<class BinOpT> void VelocityFieldCompute<BinOpT>::binParticles()
         ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(),
                                    access_location::host,
                                    access_mode::read);
-        detail::LoadHOOMDGroupPositionVelocityMass load_op(h_pos.data, h_vel.data, h_index.data);
+        detail::LoadParticleGroupPositionVelocityMass load_op(h_pos.data, h_vel.data, h_index.data);
         const BoxDim& global_box = m_pdata->getGlobalBox();
 
         for (unsigned int idx = 0; idx < N; ++idx)
@@ -339,7 +339,9 @@ template<class BinOpT> void VelocityFieldCompute<BinOpT>::binParticles()
         ArrayHandle<Scalar4> h_vel(mpcd_pdata->getVelocities(),
                                    access_location::host,
                                    access_mode::read);
-        detail::LoadMPCDPositionVelocityMass load_op(h_pos.data, h_vel.data, mpcd_pdata->getMass());
+        detail::LoadMPCDParticlePositionVelocityMass load_op(h_pos.data,
+                                                             h_vel.data,
+                                                             mpcd_pdata->getMass());
         const BoxDim& global_box = m_pdata->getGlobalBox();
 
         for (unsigned int idx = 0; idx < N; ++idx)

@@ -21,13 +21,13 @@ namespace detail
     {
 
 //! Load HOOMD particle in a group from an index
-class LoadHOOMDGroupPositionVelocityMass
+class LoadParticleGroupPositionVelocityMass
     {
     public:
     HOSTDEVICE
-    LoadHOOMDGroupPositionVelocityMass(const Scalar4* positions,
-                                       const Scalar4* velocities,
-                                       const unsigned int* indexes)
+    LoadParticleGroupPositionVelocityMass(const Scalar4* positions,
+                                          const Scalar4* velocities,
+                                          const unsigned int* indexes)
         : m_positions(positions), m_velocities(velocities), m_indexes(indexes)
         {
         }
@@ -50,14 +50,37 @@ class LoadHOOMDGroupPositionVelocityMass
     const unsigned int* const m_indexes;
     };
 
-//! Load MPCD particle from an index
-class LoadMPCDPositionVelocityMass
+//! Load HOOMD particle in a group from an index
+class LoadParticleGroupVelocityMass
     {
     public:
     HOSTDEVICE
-    LoadMPCDPositionVelocityMass(const Scalar4* positions,
-                                 const Scalar4* velocities,
-                                 const Scalar mass)
+    LoadParticleGroupVelocityMass(const Scalar4* velocities, const unsigned int* indexes)
+        : m_velocities(velocities), m_indexes(indexes)
+        {
+        }
+
+    HOSTDEVICE void operator()(Scalar3& velocity, Scalar& mass, unsigned int idx) const
+        {
+        const unsigned int pidx = m_indexes[idx];
+        const Scalar4 velmass = m_velocities[pidx];
+        velocity = make_scalar3(velmass.x, velmass.y, velmass.z);
+        mass = velmass.w;
+        }
+
+    private:
+    const Scalar4* const m_velocities;
+    const unsigned int* const m_indexes;
+    };
+
+//! Load MPCD particle from an index
+class LoadMPCDParticlePositionVelocityMass
+    {
+    public:
+    HOSTDEVICE
+    LoadMPCDParticlePositionVelocityMass(const Scalar4* positions,
+                                         const Scalar4* velocities,
+                                         const Scalar mass)
         : m_positions(positions), m_velocities(velocities), m_mass(mass)
         {
         }
@@ -75,6 +98,28 @@ class LoadMPCDPositionVelocityMass
 
     private:
     const Scalar4* const m_positions;
+    const Scalar4* const m_velocities;
+    const Scalar m_mass;
+    };
+
+//! Load MPCD particle from an index
+class LoadMPCDParticleVelocityMass
+    {
+    public:
+    HOSTDEVICE
+    LoadMPCDParticleVelocityMass(const Scalar4* velocities, const Scalar mass)
+        : m_velocities(velocities), m_mass(mass)
+        {
+        }
+
+    HOSTDEVICE void operator()(Scalar3& velocity, Scalar& mass, unsigned int idx) const
+        {
+        const Scalar4 velcell = m_velocities[idx];
+        velocity = make_scalar3(velcell.x, velcell.y, velcell.z);
+        mass = m_mass;
+        }
+
+    private:
     const Scalar4* const m_velocities;
     const Scalar m_mass;
     };

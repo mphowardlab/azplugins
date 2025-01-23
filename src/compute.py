@@ -15,6 +15,82 @@ from hoomd.data.typeconverter import OnlyTypes
 from hoomd.error import DataAccessError
 
 
+class VelocityCompute(hoomd.operation.Compute):
+    r"""Center-of-mass velocity compute.
+
+    Args:
+        filter (hoomd.filter.ParticleFilter): HOOMD particles to include.
+            The default value of `None` means no HOOMD particles are included.
+        include_mpcd_particles (bool): If `True`, include MPCD particles in
+            the calculation. This argument only takes effect if HOOMD was
+            compiled with the MPCD component.
+
+    `VelocityCompute` calculates the center-of-mass velocity
+    :math:`\mathbf{v}_{\rm cm}` of a group of particles:
+
+    .. math::
+
+        \mathbf{v}_{\rm cm} = \dfrac{\sum_i m_i \mathbf{v}_i}{\sum_i m_i}
+
+    where :math:`\mathbf{v}_i` is the velocity and and :math:`m_i` is the mass
+    of particle *i*. These particles include regular HOOMD particles (specified
+    with `filter`) and MPCD particles (specified with `include_mpcd_particles`).
+
+    Example::
+
+        v_com = hoomd.azplugins.compute.VelocityCompute(
+            filter=hoomd.filter.All()
+        )
+        v_com.velocity
+
+    Attributes:
+        filter (hoomd.filter.filter_like): HOOMD particles to include
+            (*read only*).
+
+        include_mpcd_particles(bool): If `True`, include MPCD particles in the
+            calculation (*read only*).
+
+    """
+
+    def __init__(self, filter=None, include_mpcd_particles=False):
+        super().__init__()
+
+        param_dict = ParameterDict(
+            filter=OnlyTypes(hoomd.filter.ParticleFilter, allow_none=True),
+            include_mpcd_particles=bool(include_mpcd_particles),
+        )
+        param_dict["filter"] = filter
+
+        self._param_dict.update(param_dict)
+
+    def _attach_hook(self):
+        sim = self._simulation
+
+        if isinstance(sim.device, hoomd.device.GPU):
+            cpp_class = _azplugins.VelocityComputeGPU
+        else:
+            cpp_class = _azplugins.VelocityCompute
+
+        if self.filter is not None:
+            group = sim.state._get_group(self.filter)
+        else:
+            group = None
+
+        self._cpp_obj = cpp_class(
+            sim.state._cpp_sys_def,
+            group,
+            self.include_mpcd_particles,
+        )
+
+        super()._attach_hook()
+
+    @hoomd.logging.log(category="sequence", requires_run=True)
+    def velocity(self):
+        """tuple[float]: Center-of-mass velocity of group."""
+        self._cpp_obj.compute(self._simulation.timestep)
+        return self._cpp_obj.velocity
+
+
 class VelocityFieldCompute(hoomd.operation.Compute):
     r"""Compute velocity field.
 
@@ -33,7 +109,8 @@ class VelocityFieldCompute(hoomd.operation.Compute):
             the calculation. This argument only takes effect if HOOMD was
             compiled with the MPCD component.
 
-    Args:
+
+    Attributes:
         num_bins (tuple[int]): Number of bins along each of the 3 cylindrical
             coordinates.
 
