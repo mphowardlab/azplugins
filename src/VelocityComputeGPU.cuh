@@ -21,13 +21,13 @@ namespace gpu
 //! Specialization to HOOMD group
 void sum_momentum_and_mass(Scalar3& momentum,
                            Scalar& mass,
-                           const detail::LoadHOOMDGroupVelocityMass& load_op,
+                           const detail::LoadParticleGroupVelocityMass& load_op,
                            unsigned int N);
 
 //! Specialization to MPCD group
 void sum_momentum_and_mass(Scalar3& momentum,
                            Scalar& mass,
-                           const detail::LoadMPCDVelocityMass& load_op,
+                           const detail::LoadMPCDParticleVelocityMass& load_op,
                            unsigned int N);
 
     } // end namespace gpu

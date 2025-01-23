@@ -91,7 +91,7 @@ template<class BinOpT> void VelocityFieldComputeGPU<BinOpT>::binParticles()
         ArrayHandle<Scalar4> d_vel(this->m_pdata->getVelocities(),
                                    access_location::device,
                                    access_mode::read);
-        detail::LoadHOOMDGroupPositionVelocityMass load_op(d_pos.data, d_vel.data, d_index.data);
+        detail::LoadParticleGroupPositionVelocityMass load_op(d_pos.data, d_vel.data, d_index.data);
         const BoxDim& global_box = this->m_pdata->getGlobalBox();
 
         m_tuner_hoomd->begin();
@@ -117,7 +117,9 @@ template<class BinOpT> void VelocityFieldComputeGPU<BinOpT>::binParticles()
         ArrayHandle<Scalar4> d_vel(mpcd_pdata->getVelocities(),
                                    access_location::device,
                                    access_mode::read);
-        detail::LoadMPCDPositionVelocityMass load_op(d_pos.data, d_vel.data, mpcd_pdata->getMass());
+        detail::LoadMPCDParticlePositionVelocityMass load_op(d_pos.data,
+                                                             d_vel.data,
+                                                             mpcd_pdata->getMass());
         const BoxDim& global_box = this->m_pdata->getGlobalBox();
 
         m_tuner_mpcd->begin();

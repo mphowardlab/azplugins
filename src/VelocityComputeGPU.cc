@@ -23,7 +23,7 @@ void VelocityComputeGPU::sumMomentumAndMass(Scalar3& momentum, Scalar& mass)
         ArrayHandle<Scalar4> d_vel(m_pdata->getVelocities(),
                                    access_location::device,
                                    access_mode::read);
-        detail::LoadHOOMDGroupVelocityMass load_op(d_vel.data, d_index.data);
+        detail::LoadParticleGroupVelocityMass load_op(d_vel.data, d_index.data);
 
         Scalar3 group_momentum = make_scalar3(0, 0, 0);
         Scalar group_mass(0);
@@ -40,7 +40,7 @@ void VelocityComputeGPU::sumMomentumAndMass(Scalar3& momentum, Scalar& mass)
         ArrayHandle<Scalar4> d_vel(mpcd_pdata->getVelocities(),
                                    access_location::device,
                                    access_mode::read);
-        detail::LoadMPCDVelocityMass load_op(d_vel.data, mpcd_pdata->getMass());
+        detail::LoadMPCDParticleVelocityMass load_op(d_vel.data, mpcd_pdata->getMass());
 
         Scalar3 mpcd_momentum = make_scalar3(0, 0, 0);
         Scalar mpcd_mass(0);

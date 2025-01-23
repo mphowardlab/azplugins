@@ -21,20 +21,20 @@ namespace gpu
     {
 
 template __attribute__((visibility("default"))) cudaError_t
-bin_velocity_field<detail::LoadHOOMDGroupPositionVelocityMass, BINNING_OPERATION>(
+bin_velocity_field<detail::LoadParticleGroupPositionVelocityMass, BINNING_OPERATION>(
     Scalar* d_mass,
     Scalar3* d_momentum,
-    const detail::LoadHOOMDGroupPositionVelocityMass& load_op,
+    const detail::LoadParticleGroupPositionVelocityMass& load_op,
     const BINNING_OPERATION& bin_op,
     const BoxDim& global_box,
     const unsigned int N,
     const unsigned int block_size);
 
 template __attribute__((visibility("default"))) cudaError_t
-bin_velocity_field<detail::LoadMPCDPositionVelocityMass, BINNING_OPERATION>(
+bin_velocity_field<detail::LoadMPCDParticlePositionVelocityMass, BINNING_OPERATION>(
     Scalar* d_mass,
     Scalar3* d_momentum,
-    const detail::LoadMPCDPositionVelocityMass& load_op,
+    const detail::LoadMPCDParticlePositionVelocityMass& load_op,
     const BINNING_OPERATION& bin_op,
     const BoxDim& global_box,
     const unsigned int N,

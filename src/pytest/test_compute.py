@@ -102,6 +102,18 @@ class TestVelocityCompute:
         sim.operations.add(vel_all)
         numpy.testing.assert_allclose(vel_all.velocity, [0, 0, 0])
 
+    def test_logging(self):
+        hoomd.conftest.logging_check(
+            hoomd.azplugins.compute.VelocityCompute,
+            ("azplugins", "compute"),
+            {
+                "velocity": {
+                    "category": hoomd.logging.LoggerCategories.sequence,
+                    "default": True,
+                }
+            },
+        )
+
 
 @pytest.mark.parametrize(
     "cls,lower_bounds,upper_bounds",

@@ -66,7 +66,7 @@ void thrust_sum_momentum_and_mass(Scalar3& momentum,
 
 void sum_momentum_and_mass(Scalar3& momentum,
                            Scalar& mass,
-                           const detail::LoadHOOMDGroupVelocityMass& load_op,
+                           const detail::LoadParticleGroupVelocityMass& load_op,
                            unsigned int N)
     {
     thrust_sum_momentum_and_mass(momentum, mass, load_op, N);
@@ -74,7 +74,7 @@ void sum_momentum_and_mass(Scalar3& momentum,
 
 void sum_momentum_and_mass(Scalar3& momentum,
                            Scalar& mass,
-                           const detail::LoadMPCDVelocityMass& load_op,
+                           const detail::LoadMPCDParticleVelocityMass& load_op,
                            unsigned int N)
     {
     thrust_sum_momentum_and_mass(momentum, mass, load_op, N);

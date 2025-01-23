@@ -87,7 +87,7 @@ void VelocityCompute::sumMomentumAndMass(Scalar3& momentum, Scalar& mass)
         ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(),
                                    access_location::host,
                                    access_mode::read);
-        detail::LoadHOOMDGroupVelocityMass load_op(h_vel.data, h_index.data);
+        detail::LoadParticleGroupVelocityMass load_op(h_vel.data, h_index.data);
 
         for (unsigned int i = 0; i < N; ++i)
             {
@@ -103,7 +103,7 @@ void VelocityCompute::sumMomentumAndMass(Scalar3& momentum, Scalar& mass)
         ArrayHandle<Scalar4> h_vel(mpcd_pdata->getVelocities(),
                                    access_location::host,
                                    access_mode::read);
-        detail::LoadMPCDVelocityMass load_op(h_vel.data, mpcd_pdata->getMass());
+        detail::LoadMPCDParticleVelocityMass load_op(h_vel.data, mpcd_pdata->getMass());
 
         for (unsigned int i = 0; i < N; ++i)
             {

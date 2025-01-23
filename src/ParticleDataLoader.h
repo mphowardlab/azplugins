@@ -21,13 +21,13 @@ namespace detail
     {
 
 //! Load HOOMD particle in a group from an index
-class LoadHOOMDGroupPositionVelocityMass
+class LoadParticleGroupPositionVelocityMass
     {
     public:
     HOSTDEVICE
-    LoadHOOMDGroupPositionVelocityMass(const Scalar4* positions,
-                                       const Scalar4* velocities,
-                                       const unsigned int* indexes)
+    LoadParticleGroupPositionVelocityMass(const Scalar4* positions,
+                                          const Scalar4* velocities,
+                                          const unsigned int* indexes)
         : m_positions(positions), m_velocities(velocities), m_indexes(indexes)
         {
         }
@@ -51,11 +51,11 @@ class LoadHOOMDGroupPositionVelocityMass
     };
 
 //! Load HOOMD particle in a group from an index
-class LoadHOOMDGroupVelocityMass
+class LoadParticleGroupVelocityMass
     {
     public:
     HOSTDEVICE
-    LoadHOOMDGroupVelocityMass(const Scalar4* velocities, const unsigned int* indexes)
+    LoadParticleGroupVelocityMass(const Scalar4* velocities, const unsigned int* indexes)
         : m_velocities(velocities), m_indexes(indexes)
         {
         }
@@ -74,13 +74,13 @@ class LoadHOOMDGroupVelocityMass
     };
 
 //! Load MPCD particle from an index
-class LoadMPCDPositionVelocityMass
+class LoadMPCDParticlePositionVelocityMass
     {
     public:
     HOSTDEVICE
-    LoadMPCDPositionVelocityMass(const Scalar4* positions,
-                                 const Scalar4* velocities,
-                                 const Scalar mass)
+    LoadMPCDParticlePositionVelocityMass(const Scalar4* positions,
+                                         const Scalar4* velocities,
+                                         const Scalar mass)
         : m_positions(positions), m_velocities(velocities), m_mass(mass)
         {
         }
@@ -103,11 +103,11 @@ class LoadMPCDPositionVelocityMass
     };
 
 //! Load MPCD particle from an index
-class LoadMPCDVelocityMass
+class LoadMPCDParticleVelocityMass
     {
     public:
     HOSTDEVICE
-    LoadMPCDVelocityMass(const Scalar4* velocities, const Scalar mass)
+    LoadMPCDParticleVelocityMass(const Scalar4* velocities, const Scalar mass)
         : m_velocities(velocities), m_mass(mass)
         {
         }
