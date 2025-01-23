@@ -26,8 +26,8 @@ class PYBIND11_EXPORT HarmonicBarrierGPU : public HarmonicBarrier<BarrierEvaluat
     {
     public:
     //! Constructor
-    HarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> interf)
-        : HarmonicBarrier<BarrierEvaluatorT>(sysdef, interf)
+    HarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> location)
+        : HarmonicBarrier<BarrierEvaluatorT>(sysdef, location)
         {
         m_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(this->m_exec_conf)},
                                        this->m_exec_conf,

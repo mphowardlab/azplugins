@@ -40,6 +40,47 @@ def integrator():
     return ig
 
 
+@pytest.mark.parametrize(
+    "cls",
+    [
+        hoomd.azplugins.external.PlanarHarmonicBarrier,
+        hoomd.azplugins.external.SphericalHarmonicBarrier,
+    ],
+    ids=[
+        "PlanarHarmonicBarrier",
+        "SphericalHarmonicBarrier",
+    ],
+)
+class TestHarmonicBarrier:
+    def test_create(
+        self,
+        simulation_factory,
+        two_particle_snapshot_factory,
+        integrator,
+        custom_variant_fixture,
+        cls,
+    ):
+        # create object
+        barrier = cls(location=3.0)
+        barrier.params["A"].update(dict(k=10.0, offset=0.5))
+
+        # make simulation and attach compute to integrator
+        sim = simulation_factory(two_particle_snapshot_factory())
+        sim.operations.integrator = integrator
+        integrator.forces.append(barrier)
+
+        # make sure values are initial ones
+        assert isinstance(barrier.location, hoomd.variant.Constant)
+        assert barrier.location(0) == 3.0
+        assert barrier.params["A"] == dict(k=10.0, offset=0.5)
+
+        # make sure values did not change on run
+        sim.run(0)
+        assert isinstance(barrier.location, hoomd.variant.Constant)
+        assert barrier.location(0) == 3.0
+        assert barrier.params["A"] == dict(k=10.0, offset=0.5)
+
+
 def test_spherical_harmonic_barrier(
     simulation_factory, integrator, custom_variant_fixture
 ):
@@ -61,7 +102,7 @@ def test_spherical_harmonic_barrier(
     sim.operations.integrator = integrator
 
     barrier = hoomd.azplugins.external.SphericalHarmonicBarrier(
-        interface=custom_variant_fixture
+        location=custom_variant_fixture
     )
     kA = 50.0
     dB = 2.0
@@ -71,7 +112,7 @@ def test_spherical_harmonic_barrier(
     barrier.params["B"] = dict(k=kB, offset=-0.1)
 
     sim.operations.add(barrier)
-    #  at first step the interface will not move
+    #  at first step the barrier will not move
     sim.run(1)
 
     # Test forces on particles
@@ -93,7 +134,7 @@ def test_spherical_harmonic_barrier(
 
         # disable B interactions for the next test
         barrier.params["B"] = dict(k=0.0, offset=-0.1)
-        # advance the simulation two steps so that now the interface is at 4.0
+        # advance the simulation two steps so that now the barrier is at 4.0
         # in both verlet steps
         sim.run(2)
 
@@ -105,7 +146,7 @@ def test_spherical_harmonic_barrier(
         # particle 1 (type B) should now be ignored because of the K
         assert numpy.isclose(energies[1], 0.0, atol=1e-4)
         numpy.testing.assert_allclose(forces[1], [0, 0, 0], atol=1e-4)
-        # particle 2 (type A) is 1.5 distance away from the interface now
+        # particle 2 (type A) is 1.5 distance away from the barrier now
         assert numpy.isclose(energies[2], 0.5 * kA * 1.5**2, atol=1e-4)
         numpy.testing.assert_allclose(forces[2], [0.0, -kA * 1.5, 0.0], atol=1e-4)
         # particle 3 (type A) is still experiencing force in -x but with larger strength
@@ -132,7 +173,7 @@ def test_planar_harmonic_barrier(
     sim.operations.integrator = integrator
 
     barrier = hoomd.azplugins.external.PlanarHarmonicBarrier(
-        interface=custom_variant_fixture
+        location=custom_variant_fixture
     )
     kA = 50.0
     dB = 2.0
@@ -142,7 +183,7 @@ def test_planar_harmonic_barrier(
     barrier.params["B"] = dict(k=kB, offset=-0.1)
 
     sim.operations.add(barrier)
-    #  at first step the interface will not move
+    #  at first step the barrier will not move
     sim.run(1)
 
     # Test forces on particles
@@ -168,7 +209,7 @@ def test_planar_harmonic_barrier(
 
         # disable B interactions for the next test
         barrier.params["B"] = dict(k=0.0, offset=-0.1)
-        # advance the simulation two steps so that now the interface is at 4.0
+        # advance the simulation two steps so that now the barrier is at 4.0
         # in both verlet steps
         sim.run(2)
 
@@ -180,7 +221,7 @@ def test_planar_harmonic_barrier(
         # particle 1 (type B) should now be ignored because of the K
         assert numpy.isclose(energies[1], 0.0, atol=1e-4)
         numpy.testing.assert_allclose(forces[1], [0, 0, 0], atol=1e-4)
-        # particle 2 (type A) is 1.5 distance away from the interface now
+        # particle 2 (type A) is 1.5 distance away from the barrier now
         assert numpy.isclose(energies[2], 0.5 * kA * 1.5**2, atol=1e-4)
         numpy.testing.assert_allclose(
             forces[2],

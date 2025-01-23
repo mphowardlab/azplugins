@@ -22,36 +22,12 @@ namespace azplugins
     {
 
 //! Harmonic barrier
-/*!
- * Models moving interface with harmonic potential
- * The moving interface compute acts on particles along the inward normal.
- * The interface potential is harmonic. It does not include an attractive
- * part (i.e., it is truncated at its minimum, and is zero for any negative
- * displacements relative to the minimum). The position of the minimum can be
- * adjusted with an offset, which controls an effective contact angle.
- *
- * The specific form of the potential is:
- *
- *      \f{eqnarray*}{
- *      V(z) = & 0 & z < H \\
- *             & \frac{\kappa}{2} (z-H)^2 & z > H \\
- *      \f}
- *
- * with the following parameters:
- *
- *  - \f$\kappa\f$ - \a k (energy per distance squared) - spring constant
- *  - \a offset (distance) - per-particle-type amount to shift \a H, default: 0.0
- *
- * The meaning of \f$z\f$ is the distance from some origin, and \f$H\f$ is the distance of
- * the interface (e.g., a plane, sphere, etc.) from that same origin. This is
- * specified by a template.
- */
 template<class BarrierEvaluatorT> class PYBIND11_EXPORT HarmonicBarrier : public ForceCompute
     {
     public:
     //! Constructor
-    HarmonicBarrier(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> interf)
-        : ForceCompute(sysdef), m_interf(interf), m_has_warned(false)
+    HarmonicBarrier(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> location)
+        : ForceCompute(sysdef), m_location(location), m_has_warned(false)
         {
         // allocate memory per type for parameters
         GPUArray<Scalar2> params(m_pdata->getNTypes(), m_exec_conf);
@@ -61,6 +37,7 @@ template<class BarrierEvaluatorT> class PYBIND11_EXPORT HarmonicBarrier : public
     //! Destructor
     virtual ~HarmonicBarrier() { }
 
+    //! Harmonic potential parameters
     struct param_type
         {
         Scalar k;
@@ -92,6 +69,18 @@ template<class BarrierEvaluatorT> class PYBIND11_EXPORT HarmonicBarrier : public
         __attribute__((aligned(16)));
 #endif
 
+    //! Get location of barrier
+    std::shared_ptr<Variant> getLocation() const
+        {
+        return m_location;
+        }
+
+    //! Set location of barrier
+    void setLocation(std::shared_ptr<Variant> location)
+        {
+        m_location = location;
+        }
+
     //! Get the per-type potential parameters
     param_type getParams(std::string type_name)
         {
@@ -120,8 +109,8 @@ template<class BarrierEvaluatorT> class PYBIND11_EXPORT HarmonicBarrier : public
         }
 
     protected:
-    std::shared_ptr<Variant> m_interf; //!< Current location of the interface
-    GPUArray<Scalar2> m_params;        //!< Per-type array of parameters for the potential
+    std::shared_ptr<Variant> m_location; //!< Current location of the barrier
+    GPUArray<Scalar2> m_params;          //!< Per-type array of parameters for the potential
 
     //! Method to compute the forces
     void computeForces(uint64_t timestep) override;
@@ -130,8 +119,8 @@ template<class BarrierEvaluatorT> class PYBIND11_EXPORT HarmonicBarrier : public
     BarrierEvaluatorT makeEvaluator(uint64_t timestep) const
         {
         // make evaluator and check box
-        const Scalar interface = m_interf->operator()(timestep);
-        BarrierEvaluatorT evaluator(interface);
+        const Scalar location = m_location->operator()(timestep);
+        BarrierEvaluatorT evaluator(location);
         if (!evaluator.valid(m_pdata->getGlobalBox()))
             {
             throw std::runtime_error("Barrier position is invalid");
@@ -192,8 +181,11 @@ void export_HarmonicBarrier(pybind11::module& m, const std::string& name)
                ForceCompute,
                std::shared_ptr<HarmonicBarrier<BarrierEvaluatorT>>>(m, name.c_str())
         .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>())
-        .def("setParams", &HarmonicBarrier<BarrierEvaluatorT>::setParamsPython)
-        .def("getParams", &HarmonicBarrier<BarrierEvaluatorT>::getParamsPython);
+        .def_property("location",
+                      &HarmonicBarrier<BarrierEvaluatorT>::getLocation,
+                      &HarmonicBarrier<BarrierEvaluatorT>::setLocation)
+        .def("getParams", &HarmonicBarrier<BarrierEvaluatorT>::getParamsPython)
+        .def("setParams", &HarmonicBarrier<BarrierEvaluatorT>::setParamsPython);
     }
     } // end namespace detail
 
