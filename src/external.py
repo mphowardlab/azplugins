@@ -33,9 +33,9 @@ class HarmonicBarrier(force.Force):
         The parameters of the harmonic barrier for each particle type.
         The dictionary has the following keys:
 
-        * ``k`` (`float`, **required**) - Spring constant :math:`k`
+        * ``k`` (`float`, **required**) - Spring constant
           :math:`[\mathrm{energy} \cdot \mathrm{length}^{-2}]`
-        * ``offset`` (`float`, **required**) - Shift amount per-particle-type :math:`H`
+        * ``offset`` (`float`, **required**) - Amount added to ``location``
           :math:`[\mathrm{length}]`
 
 
@@ -44,7 +44,7 @@ class HarmonicBarrier(force.Force):
 
     .. warning::
 
-        Virial calculation has not been implemented for this external field.
+        The contribution to the virial is not calculated!
 
     """
 
@@ -81,7 +81,7 @@ class HarmonicBarrier(force.Force):
 
 
 class PlanarHarmonicBarrier(HarmonicBarrier):
-    r"""Planar harmonic barrier normal to *z*.
+    r"""Planar harmonic barrier normal to *y*.
 
     Args:
         location (`hoomd.variant.variant_like`): *y* position of the
@@ -108,7 +108,7 @@ class PlanarHarmonicBarrier(HarmonicBarrier):
         barrier = hoomd.variant.Ramp(A=50.0, B=25.0, t_start=100, t_ramp=1e6)
         evap = hoomd.azplugins.external.PlanarHarmonicBarrier(location=barrier)
 
-        # small particle has diameter 1.0
+        # small particle has diameter 1.0, offset by -0.5 to keep fully inside
         evap.params['S'] = dict(k=50.0, offset=-0.5)
 
         # big particle is twice as large (diameter 2.0)
