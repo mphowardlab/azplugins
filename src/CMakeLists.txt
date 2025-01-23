@@ -4,26 +4,34 @@ set(COMPONENT_NAME azplugins)
 # TODO: List all host C++ source code files in _${COMPONENT_NAME}_sources.
 set(_${COMPONENT_NAME}_sources
     ConstantFlow.cc
-    GroupVelocityCompute.cc
     HarmonicBarrier.cc
     module.cc
     ParabolicFlow.cc
     PlanarHarmonicBarrier.cc
     SphericalHarmonicBarrier.cc
+    VelocityCompute.cc
     )
+if (ENABLE_HIP)
+    list(APPEND _${COMPONENT_NAME}_sources
+    HarmonicBarrierGPU.cc
+    PlanarHarmonicBarrierGPU.cc
+    SphericalHarmonicBarrierGPU.cc
+    VelocityComputeGPU.cc
+    )
+endif()
 
 # TODO: List all GPU C++ source code files in _${COMPONENT_NAME}_cu_sources.
 set(_${COMPONENT_NAME}_cu_sources
-    HarmonicBarrierGPU.cc
     PlanarHarmonicBarrierGPU.cu
-    PlanarHarmonicBarrierGPU.cc
     SphericalHarmonicBarrierGPU.cu
-    SphericalHarmonicBarrierGPU.cc
+    VelocityComputeGPU.cu
+    VelocityFieldComputeGPU.cu
     )
 
 # TODO: List all Python modules in python_files.
 set(python_files
     __init__.py
+    compute.py
     conftest.py
     bond.py
     external.py
@@ -127,6 +135,29 @@ foreach(_evaluator ${_aniso_pair_evaluators})
                        @ONLY)
         set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_AnisoPotentialPair${_evaluator}GPU.cc)
         set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} AnisoPotentialPair${_evaluator}GPUKernel.cu)
+    endif()
+endforeach()
+
+# process velocity field geometries
+set(_binning_geometries
+    Cartesian
+    Cylindrical
+    )
+foreach(_geometry ${_binning_geometries})
+    configure_file(export_VelocityFieldCompute.cc.inc
+                   export_${_geometry}VelocityFieldCompute.cc
+                   @ONLY)
+    set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_${_geometry}VelocityFieldCompute.cc)
+
+    if (ENABLE_HIP)
+        configure_file(export_VelocityFieldComputeGPU.cc.inc
+                       export_${_geometry}VelocityFieldComputeGPU.cc
+                       @ONLY)
+        configure_file(VelocityFieldComputeGPUKernel.cu.inc
+                       ${_geometry}VelocityFieldComputeGPUKernel.cu
+                       @ONLY)
+        set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_${_geometry}VelocityFieldComputeGPU.cc)
+        set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} ${_geometry}VelocityFieldComputeGPUKernel.cu)
     endif()
 endforeach()
 

@@ -53,6 +53,11 @@ namespace detail
 void export_PotentialBondDoubleWell(pybind11::module&);
 void export_PotentialBondQuartic(pybind11::module&);
 
+// compute
+void export_CartesianVelocityFieldCompute(pybind11::module&);
+void export_CylindricalVelocityFieldCompute(pybind11::module&);
+void export_VelocityCompute(pybind11::module&);
+
 // external
 void export_HarmonicBarrier(pybind11::module&);
 void export_PlanarHarmonicBarrier(pybind11::module&);
@@ -75,6 +80,11 @@ void export_PotentialPairDPDThermoGeneralWeight(pybind11::module&);
 // bond
 void export_PotentialBondDoubleWellGPU(pybind11::module&);
 void export_PotentialBondQuarticGPU(pybind11::module&);
+
+// compute
+void export_CartesianVelocityFieldComputeGPU(pybind11::module&);
+void export_CylindricalVelocityFieldComputeGPU(pybind11::module&);
+void export_VelocityComputeGPU(pybind11::module&);
 
 // external
 void export_HarmonicBarrierGPU(pybind11::module&);
@@ -105,6 +115,11 @@ PYBIND11_MODULE(_azplugins, m)
     export_PotentialBondDoubleWell(m);
     export_PotentialBondQuartic(m);
 
+    // compute
+    export_CartesianVelocityFieldCompute(m);
+    export_CylindricalVelocityFieldCompute(m);
+    export_VelocityCompute(m);
+
     // external
     export_HarmonicBarrier(m);
     export_PlanarHarmonicBarrier(m);
@@ -127,6 +142,11 @@ PYBIND11_MODULE(_azplugins, m)
     // bond
     export_PotentialBondDoubleWellGPU(m);
     export_PotentialBondQuarticGPU(m);
+
+    // compute
+    export_CartesianVelocityFieldComputeGPU(m);
+    export_CylindricalVelocityFieldComputeGPU(m);
+    export_VelocityComputeGPU(m);
 
     // external
     export_HarmonicBarrierGPU(m);
