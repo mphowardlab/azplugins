@@ -80,7 +80,7 @@ class PlanarHarmonicBarrier(HarmonicBarrier):
 
     `PlanarHarmonicBarrier` applies a purely harmonic potential in a planar
     geometry with a normal in the :math:`z` direction. Particles are pushed
-    in the :math:`-z` direction when they are above the `interface`:
+    in the :math:`-z` direction when they are above the ``interface``:
 
     .. math::
 
@@ -90,7 +90,7 @@ class PlanarHarmonicBarrier(HarmonicBarrier):
         \end{cases}
 
     Here, the interface is located at height *H*, which may change with time.
-    `interface` specifies the nominal *H*, which may then be modified
+    ``interface`` specifies the nominal *H*, which may then be modified
     per-particle-type by adding an ``offset``. :math:`\kappa` is a spring
     constant setting the strength of the interface, similar to a surface tension.
 
@@ -126,7 +126,7 @@ class SphericalHarmonicBarrier(HarmonicBarrier):
         \end{cases}
 
     Here, the interface is located at radius *R*, which may change with time.
-    `interface` specifies the nominal *R*, which may then be modified
+    ``interface`` specifies the nominal *R*, which may then be modified
     per-particle-type by adding an ``offset``. :math:`\kappa` is a spring
     constant setting the strength of the interface, similar to a surface tension.
 
