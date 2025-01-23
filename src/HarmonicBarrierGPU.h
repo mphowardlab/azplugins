@@ -2,11 +2,6 @@
 // Copyright (c) 2021-2024, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-/*!
- * \file HarmonicBarrierGPU.h
- * \brief Declaration of HarmonicBarrierGPU
- */
-
 #ifndef AZPLUGINS_HARMONIC_BARRIER_GPU_H_
 #define AZPLUGINS_HARMONIC_BARRIER_GPU_H_
 
@@ -15,6 +10,7 @@
 #endif
 
 #include "HarmonicBarrier.h"
+#include "HarmonicBarrierGPU.cuh"
 
 #include "hoomd/Autotuner.h"
 
@@ -24,21 +20,72 @@ namespace hoomd
 namespace azplugins
     {
 
-//! Moving Harmonic potential on the GPU
-/*!
- * This class does not implement any force evaluation on its own, as the geometry should be
- * implemented by deriving classes. It exists as a thin layer between HarmonicBarrier
- * to remove some boilerplate of setting up the autotuners.
- */
-class PYBIND11_EXPORT HarmonicBarrierGPU : public HarmonicBarrier
+//! Harmonic barrier on the GPU
+template<class BarrierEvaluatorT>
+class PYBIND11_EXPORT HarmonicBarrierGPU : public HarmonicBarrier<BarrierEvaluatorT>
     {
     public:
     //! Constructor
-    HarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> interf);
+    HarmonicBarrierGPU(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> interf)
+        : HarmonicBarrier<BarrierEvaluatorT>(sysdef, interf)
+        {
+        m_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(this->m_exec_conf)},
+                                       this->m_exec_conf,
+                                       "harmonic_barrier"));
+        this->m_autotuners.push_back(m_tuner);
+        }
 
     protected:
     std::shared_ptr<Autotuner<1>> m_tuner; //!< Autotuner for block size
+
+    //! Method to compute the forces
+    void computeForces(uint64_t timestep) override;
     };
+
+template<class BarrierEvaluatorT>
+void HarmonicBarrierGPU<BarrierEvaluatorT>::computeForces(uint64_t timestep)
+    {
+    const BarrierEvaluatorT evaluator = this->makeEvaluator(timestep);
+
+    ArrayHandle<Scalar4> d_force(this->m_force, access_location::device, access_mode::overwrite);
+    ArrayHandle<Scalar> d_virial(this->m_virial, access_location::device, access_mode::overwrite);
+
+    ArrayHandle<Scalar4> d_pos(this->m_pdata->getPositions(),
+                               access_location::device,
+                               access_mode::read);
+    ArrayHandle<Scalar2> d_params(this->m_params, access_location::device, access_mode::read);
+
+    m_tuner->begin();
+    gpu::compute_harmonic_barrier(d_force.data,
+                                  d_virial.data,
+                                  d_pos.data,
+                                  d_params.data,
+                                  evaluator,
+                                  this->m_pdata->getN(),
+                                  this->m_pdata->getNTypes(),
+                                  m_tuner->getParam()[0]);
+    if (this->m_exec_conf->isCUDAErrorCheckingEnabled())
+        CHECK_CUDA_ERROR();
+    m_tuner->end();
+
+    // virial is zeroed by GPU function, warn here
+    this->warnVirialOnce();
+    }
+
+namespace detail
+    {
+
+template<class BarrierEvaluatorT>
+void export_HarmonicBarrierGPU(pybind11::module& m, const std::string& name)
+    {
+    namespace py = pybind11;
+    py::class_<HarmonicBarrierGPU<BarrierEvaluatorT>,
+               HarmonicBarrier<BarrierEvaluatorT>,
+               std::shared_ptr<HarmonicBarrierGPU<BarrierEvaluatorT>>>(m, name.c_str())
+        .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>());
+    }
+
+    } // end namespace detail
 
     } // end namespace azplugins
 

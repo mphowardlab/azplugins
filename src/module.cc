@@ -59,7 +59,6 @@ void export_CylindricalVelocityFieldCompute(pybind11::module&);
 void export_VelocityCompute(pybind11::module&);
 
 // external
-void export_HarmonicBarrier(pybind11::module&);
 void export_PlanarHarmonicBarrier(pybind11::module&);
 void export_SphericalHarmonicBarrier(pybind11::module&);
 
@@ -87,7 +86,6 @@ void export_CylindricalVelocityFieldComputeGPU(pybind11::module&);
 void export_VelocityComputeGPU(pybind11::module&);
 
 // external
-void export_HarmonicBarrierGPU(pybind11::module&);
 void export_PlanarHarmonicBarrierGPU(pybind11::module&);
 void export_SphericalHarmonicBarrierGPU(pybind11::module&);
 
@@ -121,7 +119,6 @@ PYBIND11_MODULE(_azplugins, m)
     export_VelocityCompute(m);
 
     // external
-    export_HarmonicBarrier(m);
     export_PlanarHarmonicBarrier(m);
     export_SphericalHarmonicBarrier(m);
 
@@ -149,7 +146,6 @@ PYBIND11_MODULE(_azplugins, m)
     export_VelocityComputeGPU(m);
 
     // external
-    export_HarmonicBarrierGPU(m);
     export_PlanarHarmonicBarrierGPU(m);
     export_SphericalHarmonicBarrierGPU(m);
 

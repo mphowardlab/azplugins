@@ -4,26 +4,18 @@ set(COMPONENT_NAME azplugins)
 # TODO: List all host C++ source code files in _${COMPONENT_NAME}_sources.
 set(_${COMPONENT_NAME}_sources
     ConstantFlow.cc
-    HarmonicBarrier.cc
     module.cc
     ParabolicFlow.cc
-    PlanarHarmonicBarrier.cc
-    SphericalHarmonicBarrier.cc
     VelocityCompute.cc
     )
 if (ENABLE_HIP)
     list(APPEND _${COMPONENT_NAME}_sources
-    HarmonicBarrierGPU.cc
-    PlanarHarmonicBarrierGPU.cc
-    SphericalHarmonicBarrierGPU.cc
     VelocityComputeGPU.cc
     )
 endif()
 
 # TODO: List all GPU C++ source code files in _${COMPONENT_NAME}_cu_sources.
 set(_${COMPONENT_NAME}_cu_sources
-    PlanarHarmonicBarrierGPU.cu
-    SphericalHarmonicBarrierGPU.cu
     VelocityComputeGPU.cu
     VelocityFieldComputeGPU.cu
     )
@@ -160,6 +152,30 @@ foreach(_geometry ${_binning_geometries})
         set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} ${_geometry}VelocityFieldComputeGPUKernel.cu)
     endif()
 endforeach()
+
+# process harmonic barriers
+set(_barrier_geometries
+    Planar
+    Spherical
+    )
+foreach(_geometry ${_barrier_geometries})
+    configure_file(export_HarmonicBarrier.cc.inc
+                   export_${_geometry}HarmonicBarrier.cc
+                   @ONLY)
+    set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_${_geometry}HarmonicBarrier.cc)
+
+    if (ENABLE_HIP)
+        configure_file(export_HarmonicBarrierGPU.cc.inc
+                       export_${_geometry}HarmonicBarrierGPU.cc
+                       @ONLY)
+        configure_file(HarmonicBarrierGPUKernel.cu.inc
+                       ${_geometry}HarmonicBarrierGPUKernel.cu
+                       @ONLY)
+        set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_${_geometry}HarmonicBarrierGPU.cc)
+        set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} ${_geometry}HarmonicBarrierGPUKernel.cu)
+    endif()
+endforeach()
+
 
 if (ENABLE_HIP)
 set(_cuda_sources ${_${COMPONENT_NAME}_cu_sources})
