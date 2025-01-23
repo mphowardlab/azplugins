@@ -5,6 +5,7 @@
 #ifndef AZPLUGINS_HARMONIC_BARRIER_GPU_CUH_
 #define AZPLUGINS_HARMONIC_BARRIER_GPU_CUH_
 
+#include "hoomd/BoxDim.h"
 #include "hoomd/HOOMDMath.h"
 #include <cuda_runtime.h>
 
@@ -15,12 +16,13 @@ namespace azplugins
 namespace gpu
     {
 
-//! Kernel driver to evaluate PlanarHarmonicBarrierGPU force
+//! Kernel driver to evaluate HarmonicBarrierGPU force
 template<class BarrierEvaluatorT>
 cudaError_t compute_harmonic_barrier(Scalar4* d_force,
                                      Scalar* d_virial,
                                      const Scalar4* d_pos,
                                      const Scalar2* d_params,
+                                     const BoxDim& global_box,
                                      const BarrierEvaluatorT& evaluator,
                                      const unsigned int N,
                                      const unsigned int ntypes,
@@ -34,6 +36,7 @@ namespace kernel
  * \param d_force Particle forces
  * \param d_pos Particle positions
  * \param d_params Per-type parameters
+ * \param global_box Global simulation box
  * \param evaluator Barrier evaluator
  * \param N Number of particles
  * \param ntypes Number of types
@@ -47,6 +50,7 @@ template<class BarrierEvaluatorT>
 __global__ void compute_harmonic_barrier(Scalar4* d_force,
                                          const Scalar4* d_pos,
                                          const Scalar2* d_params,
+                                         const BoxDim global_box,
                                          const BarrierEvaluatorT evaluator,
                                          const unsigned int N,
                                          const unsigned int ntypes)
@@ -68,10 +72,13 @@ __global__ void compute_harmonic_barrier(Scalar4* d_force,
         return;
 
     const Scalar4 postype = d_pos[idx];
-    const Scalar3 pos = make_scalar3(postype.x, postype.y, postype.z);
+    Scalar3 pos = make_scalar3(postype.x, postype.y, postype.z);
     const unsigned int type = __scalar_as_int(postype.w);
-
     const Scalar2 params = s_params[type];
+
+    // wrap position back into box in case particles have drifted outside
+    int3 img = make_int3(0, 0, 0);
+    global_box.wrap(pos, img);
 
     d_force[idx] = evaluator(pos, params.x, params.y);
     }
@@ -82,6 +89,7 @@ __global__ void compute_harmonic_barrier(Scalar4* d_force,
  * \param d_virial Particle virial
  * \param d_pos Particle positions
  * \param d_params Per-type parameters
+ * \param global_box Global simulation box
  * \param evaluator Barrier evaluator
  * \param N Number of particles
  * \param ntypes Number of types
@@ -94,6 +102,7 @@ cudaError_t compute_harmonic_barrier(Scalar4* d_force,
                                      Scalar* d_virial,
                                      const Scalar4* d_pos,
                                      const Scalar2* d_params,
+                                     const BoxDim& global_box,
                                      const BarrierEvaluatorT& evaluator,
                                      const unsigned int N,
                                      const unsigned int ntypes,
@@ -111,6 +120,7 @@ cudaError_t compute_harmonic_barrier(Scalar4* d_force,
     kernel::compute_harmonic_barrier<<<grid, run_block_size, shared_size>>>(d_force,
                                                                             d_pos,
                                                                             d_params,
+                                                                            global_box,
                                                                             evaluator,
                                                                             N,
                                                                             ntypes);

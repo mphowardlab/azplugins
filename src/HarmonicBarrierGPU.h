@@ -60,6 +60,7 @@ void HarmonicBarrierGPU<BarrierEvaluatorT>::computeForces(uint64_t timestep)
                                   d_virial.data,
                                   d_pos.data,
                                   d_params.data,
+                                  this->m_pdata->getGlobalBox(),
                                   evaluator,
                                   this->m_pdata->getN(),
                                   this->m_pdata->getNTypes(),

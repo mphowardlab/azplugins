@@ -19,11 +19,20 @@ namespace hoomd
 namespace azplugins
     {
 
+//! Spherical barrier
+/*!
+ * The barrier is a sphere. The harmonic potential
+ * acts to move particles that are outside the sphere inward, with the radius
+ * of the sphere being optionally shifted by an offset. The sphere must lie
+ * inside the global simulation box. The coordinates are assumed to be
+ * wrapped into the global box.
+ */
 class SphericalBarrierEvaluator
     {
     public:
     HOSTDEVICE SphericalBarrierEvaluator(Scalar R) : m_R(R) { }
 
+    //! Evaluate the harmonic barrier force and energy
     HOSTDEVICE Scalar4 operator()(const Scalar3& pos, Scalar k, Scalar offset) const
         {
         const Scalar r = fast::sqrt(dot(pos, pos));
@@ -41,6 +50,7 @@ class SphericalBarrierEvaluator
         return make_scalar4(f.x, f.y, f.z, e);
         }
 
+    //! Validate the harmonic barrier location is inside the global box
     HOSTDEVICE bool valid(const BoxDim& box) const
         {
         const Scalar3 nearest_plane_distance = box.getNearestPlaneDistance();

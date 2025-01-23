@@ -155,13 +155,19 @@ void HarmonicBarrier<BarrierEvaluatorT>::computeForces(uint64_t timestep)
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<Scalar2> h_params(m_params, access_location::host, access_mode::read);
+
+    const BoxDim& global_box = m_pdata->getGlobalBox();
+
     for (unsigned int idx = 0; idx < m_pdata->getN(); ++idx)
         {
         const Scalar4 postype = h_pos.data[idx];
-        const Scalar3 pos = make_scalar3(postype.x, postype.y, postype.z);
+        Scalar3 pos = make_scalar3(postype.x, postype.y, postype.z);
         const unsigned int type = __scalar_as_int(postype.w);
-
         const Scalar2 params = h_params.data[type];
+
+        // wrap position back into box in case particles have drifted outside
+        int3 img = make_int3(0, 0, 0);
+        global_box.wrap(pos, img);
 
         h_force.data[idx] = evaluator(pos, params.x, params.y);
         }

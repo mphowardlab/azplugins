@@ -19,11 +19,20 @@ namespace hoomd
 namespace azplugins
     {
 
+//! Planar barrier
+/*!
+ * The barrier is a plane with normal in the +y direction. The harmonic potential
+ * acts to move particles that are above y = H down, with H optionally being
+ * shifted by an offset. The plane must lie inside the axis-aligned bounding
+ * box enclosing the global simulation box. The coordinates are assumed to be
+ * wrapped into the global box.
+ */
 class PlanarBarrierEvaluator
     {
     public:
     HOSTDEVICE PlanarBarrierEvaluator(Scalar H) : m_H(H) { }
 
+    //! Evaluate the harmonic barrier force and energy
     HOSTDEVICE Scalar4 operator()(const Scalar3& pos, Scalar k, Scalar offset) const
         {
         const Scalar dy = pos.y - (m_H + offset);
@@ -38,6 +47,7 @@ class PlanarBarrierEvaluator
         return make_scalar4(0, f, 0, e);
         }
 
+    //! Validate the harmonic barrier location is inside the global box
     HOSTDEVICE bool valid(const BoxDim& box) const
         {
         const Scalar3 lo = box.makeCoordinates(make_scalar3(0, 0, 0));
@@ -46,7 +56,7 @@ class PlanarBarrierEvaluator
         }
 
     private:
-    Scalar m_H; // z position of interface
+    Scalar m_H; // y position of interface
     };
 
     } // end namespace azplugins
