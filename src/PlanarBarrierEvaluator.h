@@ -26,23 +26,23 @@ class PlanarBarrierEvaluator
 
     HOSTDEVICE Scalar4 operator()(const Scalar3& pos, Scalar k, Scalar offset) const
         {
-        const Scalar dz = pos.z - (m_H + offset);
+        const Scalar dy = pos.y - (m_H + offset);
         // don't compute if below minimum of potential
-        if (dz <= Scalar(0.0))
+        if (dy <= Scalar(0.0))
             {
             return make_scalar4(0, 0, 0, 0);
             }
 
-        const Scalar f = -k * dz;               // z component of force
-        const Scalar e = Scalar(-0.5) * f * dz; // U = 0.5 k dx^2
-        return make_scalar4(0, 0, f, e);
+        const Scalar f = -k * dy;               // z component of force
+        const Scalar e = Scalar(-0.5) * f * dy; // U = 0.5 k dx^2
+        return make_scalar4(0, f, 0, e);
         }
 
     HOSTDEVICE bool valid(const BoxDim& box) const
         {
         const Scalar3 lo = box.makeCoordinates(make_scalar3(0, 0, 0));
         const Scalar3 hi = box.makeCoordinates(make_scalar3(1, 1, 1));
-        return (m_H >= lo.z && m_H < hi.z);
+        return (m_H >= lo.y && m_H < hi.y);
         }
 
     private:

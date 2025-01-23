@@ -40,27 +40,23 @@ def integrator():
     return ig
 
 
-@pytest.fixture
-def snap():
-    snap_ = hoomd.Snapshot()
-    if snap_.communicator.rank == 0:
-        snap_.configuration.box = [20, 20, 20, 0, 0, 0]
-        snap_.particles.N = 4
-        snap_.particles.types = ["A", "B"]
-        snap_.particles.position[:] = [
+def test_spherical_harmonic_barrier(
+    simulation_factory, integrator, custom_variant_fixture
+):
+    snap = hoomd.Snapshot()
+    if snap.communicator.rank == 0:
+        snap.configuration.box = [20, 20, 20, 0, 0, 0]
+        snap.particles.N = 4
+        snap.particles.types = ["A", "B"]
+        snap.particles.position[:] = [
             [0, 0, 4.6],
             [0, 0, -5.4],
             [0, 5.6, 0],
             [6.6, 0, 0],
         ]
-        snap_.particles.velocity[:] = [[0, 0, 0]] * 4
-        snap_.particles.typeid[:] = [0, 1, 0, 0]
-    return snap_
+        snap.particles.velocity[:] = [[0, 0, 0]] * 4
+        snap.particles.typeid[:] = [0, 1, 0, 0]
 
-
-def test_spherical_harmonic_barrier(
-    simulation_factory, integrator, snap, custom_variant_fixture
-):
     sim = simulation_factory(snap)
     sim.operations.integrator = integrator
 
@@ -126,12 +122,11 @@ def test_planar_harmonic_barrier(
         snap.particles.N = 4
         snap.particles.types = ["A", "B"]
         snap.particles.position[:] = [
-            [1, 1, 4.6],
-            [-1, 1, 5.4],
-            [1, -1, 5.6],
-            [-1, -1, 6.6],
+            [1, 4.6, 1],
+            [-1, 5.4, 1],
+            [1, 5.6, -1],
+            [-1, 6.6, -1],
         ]
-        snap.particles.velocity[:] = [[0, 0, 0]] * 4
         snap.particles.typeid[:] = [0, 1, 0, 0]
     sim = simulation_factory(snap)
     sim.operations.integrator = integrator
@@ -159,19 +154,15 @@ def test_planar_harmonic_barrier(
         numpy.testing.assert_allclose(forces[0], [0, 0, 0], atol=1e-4)
         # particle 1 (type B) is experiencing the harmonic potential
         assert numpy.isclose(energies[1], 0.5 * kB * 0.5**2, atol=1e-4)
-        numpy.testing.assert_allclose(forces[1], [0.0, 0.0, -kB * 0.5], atol=1e-4)
+        numpy.testing.assert_allclose(forces[1], [0.0, -kB * 0.5, 0.0], atol=1e-4)
         # particle 2 (type A) is also experiencing the harmonic potential
         assert numpy.isclose(energies[2], 0.5 * kA * 0.5**2, atol=1e-4)
-        numpy.testing.assert_allclose(forces[2], [0.0, 0.0, -kA * 0.5], atol=1e-4)
+        numpy.testing.assert_allclose(forces[2], [0.0, -kA * 0.5, 0.0], atol=1e-4)
         # particle 3 (type A) is experiencing the harmonic potential
         assert numpy.isclose(energies[3], 0.5 * kA * 1.5**2, atol=1e-4)
         numpy.testing.assert_allclose(
             forces[3],
-            [
-                0.0,
-                0.0,
-                -kA * 1.5,
-            ],
+            [0.0, -kA * 1.5, 0.0],
             atol=1e-4,
         )
 
@@ -185,7 +176,7 @@ def test_planar_harmonic_barrier(
         energies = barrier.energies
         # particle 0 is now inside the harmonic region, -x
         assert numpy.isclose(energies[0], 0.5 * kA * 0.5**2, atol=1e-4)
-        numpy.testing.assert_allclose(forces[0], [0.0, 0.0, -kA * 0.5], atol=1e-4)
+        numpy.testing.assert_allclose(forces[0], [0.0, -kA * 0.5, 0.0], atol=1e-4)
         # particle 1 (type B) should now be ignored because of the K
         assert numpy.isclose(energies[1], 0.0, atol=1e-4)
         numpy.testing.assert_allclose(forces[1], [0, 0, 0], atol=1e-4)
@@ -193,13 +184,9 @@ def test_planar_harmonic_barrier(
         assert numpy.isclose(energies[2], 0.5 * kA * 1.5**2, atol=1e-4)
         numpy.testing.assert_allclose(
             forces[2],
-            [
-                0.0,
-                0.0,
-                -kA * 1.5,
-            ],
+            [0.0, -kA * 1.5, 0.0],
             atol=1e-4,
         )
         # particle 3 (type A) is still experiencing force in -x but with larger strength
         assert numpy.isclose(energies[3], 0.5 * kA * 2.5**2, atol=1e-4)
-        numpy.testing.assert_allclose(forces[3], [0.0, 0.0, -kA * 2.5], atol=1e-4)
+        numpy.testing.assert_allclose(forces[3], [0.0, -kA * 2.5, 0.0], atol=1e-4)

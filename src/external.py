@@ -87,14 +87,14 @@ class PlanarHarmonicBarrier(HarmonicBarrier):
             interface.
 
     `PlanarHarmonicBarrier` applies a purely harmonic potential in a planar
-    geometry with a normal in the :math:`z` direction. Particles are pushed
-    in the :math:`-z` direction when they are above the ``interface``:
+    geometry with a normal in the :math:`y` direction. Particles are pushed
+    in the :math:`-y` direction when they are above the ``interface``:
 
     .. math::
 
-        U(z) = \begin{cases}
-            0, & z \le H \\
-            \dfrac{\kappa}{2} (z-H)^2, & z > H
+        U(y) = \begin{cases}
+            0, & y \le H \\
+            \dfrac{\kappa}{2} (y-H)^2, & y > H
         \end{cases}
 
     Here, the interface is located at height *H*, which may change with time.
@@ -151,4 +151,5 @@ class SphericalHarmonicBarrier(HarmonicBarrier):
         # big particle is twice as large (diameter 2.0)
         # spring constant scales with diameter squared, offset with diameter
         evap.params['B'] = dict(k=200.0, offset=-1.0)
+
     """
