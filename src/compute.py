@@ -109,7 +109,8 @@ class VelocityFieldCompute(hoomd.operation.Compute):
             the calculation. This argument only takes effect if HOOMD was
             compiled with the MPCD component.
 
-    Args:
+
+    Attributes:
         num_bins (tuple[int]): Number of bins along each of the 3 cylindrical
             coordinates.
 
