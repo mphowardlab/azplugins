@@ -44,7 +44,7 @@ struct PairParametersExpandedYukawa : public PairParameters
 
     Scalar epsilon; //!< energy parameter [energy]
     Scalar kappa;   //!< scaling parameter [length]^-1
-    Scalar delta;   //!< minimum interaction distance [length]
+    Scalar delta;   //!< shifting parameter [length]
     }
 #if HOOMD_LONGREAL_SIZE == 32
     __attribute__((aligned(16)));
@@ -55,7 +55,7 @@ struct PairParametersExpandedYukawa : public PairParameters
 //! Class for evaluating the expanded yukawa pair potential
 /*!
  * This is the typical Yukawa potential modified to shift the potential
- * to account for particle diameters not equal to 1.
+ * to account for different particle diameters.
  */
 class PairEvaluatorExpandedYukawa : public PairEvaluator
     {
@@ -89,7 +89,6 @@ class PairEvaluatorExpandedYukawa : public PairEvaluator
      * The calculation does not occur if the pair distance is greater than the cutoff
      * or if the potential is scaled to zero.
      */
-
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
         {
         // compute the force divided by r in force_divr
@@ -126,7 +125,7 @@ class PairEvaluatorExpandedYukawa : public PairEvaluator
     protected:
     Scalar epsilon; //!< Energy parameter
     Scalar kappa;   //!< Scaling parameter
-    Scalar delta;   //!< Minimum interaction distance
+    Scalar delta;   //!< Shifting parameter
     };
 
     } // end namespace detail

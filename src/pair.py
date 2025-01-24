@@ -266,8 +266,8 @@ class ExpandedYukawa(pair.Pair):
         The `ExpandedYukawa` potential parameters. The dictionary has the
         following keys:
 
-        * ``epsilon`` (`float`, **required**) - Energy parameter :math:`\epsilon`
-          :math:`[\mathrm{energy}]`
+        * ``epsilon`` (`float`, **required**) - Energy parameter
+          :math:`\varepsilon` :math:`[\mathrm{energy}]`
         * ``kappa`` (`float`, **required**) - Scaling parameter :math:`\kappa`
           :math:`[\mathrm{length}]^{-1}`
         * ``delta`` (`float`, **required**) - Shifting parameter :math:`\Delta`
