@@ -53,6 +53,7 @@ Contents
 
     module-azplugins-bond
     module-azplugins-compute
+    module-azplugins-external
     module-azplugins-flow
     module-azplugins-pair
 

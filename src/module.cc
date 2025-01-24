@@ -58,6 +58,10 @@ void export_CartesianVelocityFieldCompute(pybind11::module&);
 void export_CylindricalVelocityFieldCompute(pybind11::module&);
 void export_VelocityCompute(pybind11::module&);
 
+// external
+void export_PlanarHarmonicBarrier(pybind11::module&);
+void export_SphericalHarmonicBarrier(pybind11::module&);
+
 // flow
 void export_ConstantFlow(pybind11::module&);
 void export_ParabolicFlow(pybind11::module&);
@@ -80,6 +84,10 @@ void export_PotentialBondQuarticGPU(pybind11::module&);
 void export_CartesianVelocityFieldComputeGPU(pybind11::module&);
 void export_CylindricalVelocityFieldComputeGPU(pybind11::module&);
 void export_VelocityComputeGPU(pybind11::module&);
+
+// external
+void export_PlanarHarmonicBarrierGPU(pybind11::module&);
+void export_SphericalHarmonicBarrierGPU(pybind11::module&);
 
 // pair
 void export_AnisoPotentialPairTwoPatchMorseGPU(pybind11::module&);
@@ -110,6 +118,10 @@ PYBIND11_MODULE(_azplugins, m)
     export_CylindricalVelocityFieldCompute(m);
     export_VelocityCompute(m);
 
+    // external
+    export_PlanarHarmonicBarrier(m);
+    export_SphericalHarmonicBarrier(m);
+
     // flow
     export_ConstantFlow(m);
     export_ParabolicFlow(m);
@@ -132,6 +144,10 @@ PYBIND11_MODULE(_azplugins, m)
     export_CartesianVelocityFieldComputeGPU(m);
     export_CylindricalVelocityFieldComputeGPU(m);
     export_VelocityComputeGPU(m);
+
+    // external
+    export_PlanarHarmonicBarrierGPU(m);
+    export_SphericalHarmonicBarrierGPU(m);
 
     // pair
     export_AnisoPotentialPairTwoPatchMorseGPU(m);
