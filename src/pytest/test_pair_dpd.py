@@ -1,11 +1,12 @@
 # Copyright (c) 2018-2020, Michael P. Howard
-# Copyright (c) 2021-2024, Auburn University
+# Copyright (c) 2021-2025, Auburn University
 # Part of azplugins, released under the BSD 3-Clause License.
 
 """Test DPD pair potentials."""
 
 import hoomd
 import numpy
+
 import pytest
 
 
@@ -23,7 +24,7 @@ def test_dpd_temperature(simulation_factory, lattice_snapshot_factory):
     # create DPD with no repulsion to test random part only
     cell = hoomd.md.nlist.Cell(buffer=0.4)
     dpd = hoomd.azplugins.pair.DPDGeneralWeight(nlist=cell, kT=1.5, default_r_cut=1.0)
-    dpd.params[('A', 'A')] = dict(A=0.0, gamma=4.5, s=0.5)
+    dpd.params[("A", "A")] = dict(A=0.0, gamma=4.5, s=0.5)
     integrator.forces.append(dpd)
 
     # set up NVE integration to test thermostatting part of DPD General Weight

@@ -1,5 +1,5 @@
 # Copyright (c) 2018-2020, Michael P. Howard
-# Copyright (c) 2021-2024, Auburn University
+# Copyright (c) 2021-2025, Auburn University
 # Part of azplugins, released under the BSD 3-Clause License.
 
 """Bond potential unit tests."""
@@ -8,11 +8,12 @@ import collections
 
 import hoomd
 import numpy
+
 import pytest
 
 PotentialTestCase = collections.namedtuple(
-    'PotentialTestCase',
-    ['potential', 'params', 'distance', 'energy', 'force'],
+    "PotentialTestCase",
+    ["potential", "params", "distance", "energy", "force"],
 )
 
 potential_tests = []
@@ -68,9 +69,132 @@ potential_tests += [
     ),
 ]
 
+# bond.Quartic
+potential_tests += [
+    # test potential with sigma = epsilon = 0
+    PotentialTestCase(
+        hoomd.azplugins.bond.Quartic,
+        dict(
+            k=1434.3,
+            r_0=1.5,
+            b_1=-0.7589,
+            b_2=0,
+            U_0=67.2234,
+            sigma=0.0,
+            epsilon=0.0,
+            delta=0.0,
+        ),
+        1,
+        20.80586625,
+        -99.2177025,
+    ),
+    # test potential with k == 0
+    PotentialTestCase(
+        hoomd.azplugins.bond.Quartic,
+        dict(
+            epsilon=1.0,
+            sigma=1.0,
+            k=0.0,
+            r_0=1.5,
+            b_1=-0.7589,
+            b_2=0,
+            U_0=67.2234,
+            delta=0,
+        ),
+        1,
+        68.2234,
+        24,
+    ),
+    # test potential with delta passed
+    PotentialTestCase(
+        hoomd.azplugins.bond.Quartic,
+        dict(
+            epsilon=1.0,
+            sigma=1.0,
+            k=1434.3,
+            r_0=1.5,
+            b_1=-0.7589,
+            b_2=0,
+            U_0=67.2234,
+            delta=0.0,
+        ),
+        1,
+        21.80586625,
+        -75.2177025,
+    ),
+    # test potential with nonzero delta passed
+    PotentialTestCase(
+        hoomd.azplugins.bond.Quartic,
+        dict(
+            epsilon=1.0,
+            sigma=1.0,
+            k=1434.3,
+            r_0=1.5,
+            b_1=-0.7589,
+            b_2=0,
+            U_0=67.2234,
+            delta=0.5,
+        ),
+        1.5,
+        21.80586625,
+        -75.2177025,
+    ),
+    # test potential at breaking point
+    PotentialTestCase(
+        hoomd.azplugins.bond.Quartic,
+        dict(
+            epsilon=1.0,
+            sigma=1.0,
+            k=1434.3,
+            r_0=1.5,
+            b_1=-0.7589,
+            b_2=0,
+            U_0=67.2234,
+            delta=0.0,
+        ),
+        1.5,
+        67.2234,
+        0,
+    ),
+    # test potential beyond breaking point
+    PotentialTestCase(
+        hoomd.azplugins.bond.Quartic,
+        dict(
+            epsilon=1.0,
+            sigma=1.0,
+            k=1434.3,
+            r_0=1.5,
+            b_1=-0.7589,
+            b_2=0,
+            U_0=67.2234,
+            delta=0.0,
+        ),
+        1.5,
+        67.2234,
+        0,
+    ),
+    # test potential b_1 = b_2 = 0
+    PotentialTestCase(
+        hoomd.azplugins.bond.Quartic,
+        dict(
+            epsilon=1.0,
+            sigma=1.0,
+            k=1434.3,
+            r_0=1.5,
+            b_1=0,
+            b_2=0,
+            U_0=67.2234,
+            delta=0.0,
+        ),
+        1.25,
+        72.82613438,
+        89.64375,
+    ),
+]
+
 
 @pytest.mark.parametrize(
-    'potential_test', potential_tests, ids=lambda x: x.potential.__name__
+    "potential_test", potential_tests, ids=lambda x: x.potential.__name__
 )
 def test_energy_and_force(
     simulation_factory, bonded_two_particle_snapshot_factory, potential_test
@@ -88,7 +212,7 @@ def test_energy_and_force(
 
     # setup pair potential
     potential = potential_test.potential()
-    potential.params['A-A'] = potential_test.params
+    potential.params["A-A"] = potential_test.params
     integrator.forces = [potential]
 
     # calculate energies and forces
@@ -96,7 +220,7 @@ def test_energy_and_force(
     sim.run(0)
 
     # test that parameters are still correct after attach runs
-    assert potential.params['A-A'] == potential_test.params
+    assert potential.params["A-A"] == potential_test.params
 
     # test that the energies match reference values, half goes to each particle
     energies = potential.energies

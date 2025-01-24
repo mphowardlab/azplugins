@@ -1,5 +1,5 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2024, Auburn University
+// Copyright (c) 2021-2025, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
@@ -56,7 +56,7 @@ class PYBIND11_EXPORT ParticleEvaporator : public TypeUpdater
                        unsigned int seed);
 
     //! Destructor
-    virtual ~ParticleEvaporator() {};
+    virtual ~ParticleEvaporator() { };
 
     //! Get the maximum number of particles to evaporate
     unsigned int getNEvapMax() const

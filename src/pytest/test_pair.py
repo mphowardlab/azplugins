@@ -1,5 +1,5 @@
 # Copyright (c) 2018-2020, Michael P. Howard
-# Copyright (c) 2021-2024, Auburn University
+# Copyright (c) 2021-2025, Auburn University
 # Part of azplugins, released under the BSD 3-Clause License.
 
 """Pair potential unit tests."""
@@ -9,11 +9,12 @@ import collections
 import hoomd
 import hoomd.azplugins
 import numpy
+
 import pytest
 
 PotentialTestCase = collections.namedtuple(
-    'PotentialTestCase',
-    ['potential', 'params', 'r_cut', 'shift', 'distance', 'energy', 'force'],
+    "PotentialTestCase",
+    ["potential", "params", "r_cut", "shift", "distance", "energy", "force"],
 )
 
 potential_tests = []
@@ -22,7 +23,7 @@ potential_tests += [
     # test the calculation of force and potential
     PotentialTestCase(
         hoomd.azplugins.pair.Hertz,
-        {'epsilon': 2.0},
+        {"epsilon": 2.0},
         1.5,
         False,
         1.05,
@@ -31,7 +32,7 @@ potential_tests += [
     ),
     PotentialTestCase(
         hoomd.azplugins.pair.Hertz,
-        {'epsilon': 3.0},
+        {"epsilon": 3.0},
         2.05,
         False,
         1.05,
@@ -42,7 +43,7 @@ potential_tests += [
     # outside cutoff
     PotentialTestCase(
         hoomd.azplugins.pair.Hertz,
-        {'epsilon': 1.0},
+        {"epsilon": 1.0},
         1.0,
         False,
         1.05,
@@ -52,7 +53,7 @@ potential_tests += [
     # inside cutoff but epsilon = 0
     PotentialTestCase(
         hoomd.azplugins.pair.Hertz,
-        {'epsilon': 0.0},
+        {"epsilon": 0.0},
         3.0,
         False,
         1.05,
@@ -66,7 +67,7 @@ potential_tests += [
     # test when it's in the wca part, no potential shifting
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
-        {'epsilon': 2.0, 'sigma': 1.05, 'attraction_scale_factor': 0.0},
+        {"epsilon": 2.0, "sigma": 1.05, "attraction_scale_factor": 0.0},
         3.0,
         False,
         1.05,
@@ -77,7 +78,7 @@ potential_tests += [
     # of energy (force stays the same)
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
-        {'epsilon': 2.0, 'sigma': 1.05, 'attraction_scale_factor': 0.5},
+        {"epsilon": 2.0, "sigma": 1.05, "attraction_scale_factor": 0.5},
         3.0,
         False,
         1.05,
@@ -88,7 +89,7 @@ potential_tests += [
     # when attraction_scale_factor = 0, then the potential and force are zero
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
-        {'epsilon': 2.0, 'sigma': 0.5, 'attraction_scale_factor': 0.0},
+        {"epsilon": 2.0, "sigma": 0.5, "attraction_scale_factor": 0.0},
         3.0,
         False,
         1.05,
@@ -98,7 +99,7 @@ potential_tests += [
     # partially switch on the LJ with attraction_scale_factor = 0.5
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
-        {'epsilon': 2.0, 'sigma': 0.5, 'attraction_scale_factor': 0.5},
+        {"epsilon": 2.0, "sigma": 0.5, "attraction_scale_factor": 0.5},
         3.0,
         False,
         1.05,
@@ -110,7 +111,7 @@ potential_tests += [
     # check wca is shifted first
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
-        {'epsilon': 2.0, 'sigma': 1.05, 'attraction_scale_factor': 0.5},
+        {"epsilon": 2.0, "sigma": 1.05, "attraction_scale_factor": 0.5},
         3.0,
         True,
         1.05,
@@ -120,7 +121,7 @@ potential_tests += [
     # and check lj
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
-        {'epsilon': 2.0, 'sigma': 0.85, 'attraction_scale_factor': 0.5},
+        {"epsilon": 2.0, "sigma": 0.85, "attraction_scale_factor": 0.5},
         3.0,
         True,
         1.05,
@@ -131,7 +132,7 @@ potential_tests += [
     # outside cutoff
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
-        {'epsilon': 1.0, 'sigma': 1.0, 'attraction_scale_factor': 0.5},
+        {"epsilon": 1.0, "sigma": 1.0, "attraction_scale_factor": 0.5},
         1.0,
         False,
         1.05,
@@ -141,7 +142,7 @@ potential_tests += [
     # inside cutoff but epsilon = 0
     PotentialTestCase(
         hoomd.azplugins.pair.PerturbedLennardJones,
-        {'epsilon': 0.0, 'sigma': 1.0, 'attraction_scale_factor': 0.5},
+        {"epsilon": 0.0, "sigma": 1.0, "attraction_scale_factor": 0.5},
         3.0,
         False,
         1.05,
@@ -155,7 +156,7 @@ potential_tests += [
     # test the calculation of force and potential for Solvent-Solvent
     PotentialTestCase(
         hoomd.azplugins.pair.Colloid,
-        {'A': 100.0, 'a_1': 0, 'a_2': 0, 'sigma': 2.0},
+        {"A": 100.0, "a_1": 0, "a_2": 0, "sigma": 2.0},
         6.0,
         False,
         3.0,
@@ -165,7 +166,7 @@ potential_tests += [
     # test the calculation of force and potential for Colloid-Solvent
     PotentialTestCase(
         hoomd.azplugins.pair.Colloid,
-        {'A': 100.0, 'a_1': 1.5, 'a_2': 0, 'sigma': 1.05},
+        {"A": 100.0, "a_1": 1.5, "a_2": 0, "sigma": 1.05},
         6.0,
         False,
         3.0,
@@ -174,7 +175,7 @@ potential_tests += [
     ),
     PotentialTestCase(
         hoomd.azplugins.pair.Colloid,
-        {'A': 100.0, 'a_1': 0, 'a_2': 1.5, 'sigma': 1.05},
+        {"A": 100.0, "a_1": 0, "a_2": 1.5, "sigma": 1.05},
         6.0,
         False,
         3.0,
@@ -184,7 +185,7 @@ potential_tests += [
     # test the calculation of force and potential for Colloid-Colloid
     PotentialTestCase(
         hoomd.azplugins.pair.Colloid,
-        {'A': 100.0, 'a_1': 1.5, 'a_2': 0.75, 'sigma': 1.05},
+        {"A": 100.0, "a_1": 1.5, "a_2": 0.75, "sigma": 1.05},
         6.0,
         False,
         3.0,
@@ -194,7 +195,7 @@ potential_tests += [
     # test the calculation of force and potential outside r_cut
     PotentialTestCase(
         hoomd.azplugins.pair.Colloid,
-        {'A': 100.0, 'a_1': 1.5, 'a_2': 0.75, 'sigma': 1.05},
+        {"A": 100.0, "a_1": 1.5, "a_2": 0.75, "sigma": 1.05},
         6.0,
         False,
         7.0,
@@ -208,7 +209,7 @@ potential_tests += [
     # test the calculation of force and potential (needs kT=0 for zero random force)
     PotentialTestCase(
         hoomd.azplugins.pair.DPDGeneralWeight,
-        {'A': 2.0, 'gamma': 4.5, 's': 0.5},
+        {"A": 2.0, "gamma": 4.5, "s": 0.5},
         1.0,
         False,
         0.5,
@@ -219,7 +220,7 @@ potential_tests += [
     # outside cutoff
     PotentialTestCase(
         hoomd.azplugins.pair.DPDGeneralWeight,
-        {'A': 25.0, 'gamma': 4.5, 's': 2},
+        {"A": 25.0, "gamma": 4.5, "s": 2},
         1.0,
         False,
         1.05,
@@ -229,7 +230,7 @@ potential_tests += [
     # inside cutoff but A = 0
     PotentialTestCase(
         hoomd.azplugins.pair.DPDGeneralWeight,
-        {'A': 0.0, 'gamma': 4.5, 's': 2},
+        {"A": 0.0, "gamma": 4.5, "s": 2},
         1.0,
         False,
         0.5,
@@ -287,7 +288,7 @@ potential_tests += [
 
 
 @pytest.mark.parametrize(
-    'potential_test', potential_tests, ids=lambda x: x.potential.__name__
+    "potential_test", potential_tests, ids=lambda x: x.potential.__name__
 )
 def test_energy_and_force(
     simulation_factory, two_particle_snapshot_factory, potential_test
@@ -309,16 +310,16 @@ def test_energy_and_force(
     # setup pair potential
     extra_args = {}
     if potential_test.potential is hoomd.azplugins.pair.DPDGeneralWeight:
-        extra_args['kT'] = 0.0
+        extra_args["kT"] = 0.0
     else:
-        extra_args['mode'] = 'shift' if potential_test.shift else 'none'
+        extra_args["mode"] = "shift" if potential_test.shift else "none"
 
     potential = potential_test.potential(
         nlist=hoomd.md.nlist.Cell(buffer=r_buff),
         default_r_cut=potential_test.r_cut,
         **extra_args,
     )
-    potential.params[('A', 'A')] = potential_test.params
+    potential.params[("A", "A")] = potential_test.params
     integrator.forces = [potential]
 
     # calculate energies and forces
@@ -326,7 +327,7 @@ def test_energy_and_force(
     sim.run(0)
 
     # test that parameters are still correct after attach runs
-    assert potential.params[('A', 'A')] == potential_test.params
+    assert potential.params[("A", "A")] == potential_test.params
 
     # test that the energies match reference values, half goes to each particle
     energies = potential.energies

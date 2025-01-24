@@ -1,5 +1,5 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2024, Auburn University
+// Copyright (c) 2021-2025, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
@@ -39,7 +39,7 @@ class PYBIND11_EXPORT TypeUpdaterGPU : public TypeUpdater
                    Scalar z_hi);
 
     //! Destructor
-    virtual ~TypeUpdaterGPU() {};
+    virtual ~TypeUpdaterGPU() { };
 
     //! Set autotuner parameters
     /*!

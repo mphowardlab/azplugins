@@ -1,5 +1,5 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2024, Auburn University
+// Copyright (c) 2021-2025, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
 #include <pybind11/pybind11.h>
@@ -51,6 +51,16 @@ namespace detail
     {
 // bond
 void export_PotentialBondDoubleWell(pybind11::module&);
+void export_PotentialBondQuartic(pybind11::module&);
+
+// compute
+void export_CartesianVelocityFieldCompute(pybind11::module&);
+void export_CylindricalVelocityFieldCompute(pybind11::module&);
+void export_VelocityCompute(pybind11::module&);
+
+// external
+void export_PlanarHarmonicBarrier(pybind11::module&);
+void export_SphericalHarmonicBarrier(pybind11::module&);
 
 // flow
 void export_ConstantFlow(pybind11::module&);
@@ -69,6 +79,16 @@ void export_PotentialPairDPDThermoGeneralWeight(pybind11::module&);
 #ifdef ENABLE_HIP
 // bond
 void export_PotentialBondDoubleWellGPU(pybind11::module&);
+void export_PotentialBondQuarticGPU(pybind11::module&);
+
+// compute
+void export_CartesianVelocityFieldComputeGPU(pybind11::module&);
+void export_CylindricalVelocityFieldComputeGPU(pybind11::module&);
+void export_VelocityComputeGPU(pybind11::module&);
+
+// external
+void export_PlanarHarmonicBarrierGPU(pybind11::module&);
+void export_SphericalHarmonicBarrierGPU(pybind11::module&);
 
 // pair
 void export_AnisoPotentialPairTwoPatchMorseGPU(pybind11::module&);
@@ -93,6 +113,16 @@ PYBIND11_MODULE(_azplugins, m)
 
     // bond
     export_PotentialBondDoubleWell(m);
+    export_PotentialBondQuartic(m);
+
+    // compute
+    export_CartesianVelocityFieldCompute(m);
+    export_CylindricalVelocityFieldCompute(m);
+    export_VelocityCompute(m);
+
+    // external
+    export_PlanarHarmonicBarrier(m);
+    export_SphericalHarmonicBarrier(m);
 
     // flow
     export_ConstantFlow(m);
@@ -111,6 +141,16 @@ PYBIND11_MODULE(_azplugins, m)
 #ifdef ENABLE_HIP
     // bond
     export_PotentialBondDoubleWellGPU(m);
+    export_PotentialBondQuarticGPU(m);
+
+    // compute
+    export_CartesianVelocityFieldComputeGPU(m);
+    export_CylindricalVelocityFieldComputeGPU(m);
+    export_VelocityComputeGPU(m);
+
+    // external
+    export_PlanarHarmonicBarrierGPU(m);
+    export_SphericalHarmonicBarrierGPU(m);
 
     // pair
     export_AnisoPotentialPairTwoPatchMorseGPU(m);

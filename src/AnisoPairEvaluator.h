@@ -1,5 +1,5 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2024, Auburn University
+// Copyright (c) 2021-2025, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
 #ifndef AZPLUGINS_ANISO_PAIR_EVALUATOR_H_
@@ -194,6 +194,11 @@ class AnisoPairEvaluator
     static std::string getName()
         {
         throw std::runtime_error("Name not defined for this pair potential.");
+        }
+
+    static std::string getShapeParamName()
+        {
+        throw std::runtime_error("Shape name not defined for this pair potential.");
         }
 
     std::string getShapeSpec() const

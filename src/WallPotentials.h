@@ -1,5 +1,5 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2024, Auburn University
+// Copyright (c) 2021-2025, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
@@ -84,8 +84,8 @@ template<class evaluator> void export_wall_potential(pybind11::module& m, const 
           &make_wall_params<evaluator>);
     }
 
-    }  // end namespace detail
-    }  // end namespace azplugins
+    } // end namespace detail
+    } // end namespace azplugins
 #endif // NVCC
 
 #endif // AZPLUGINS_WALL_POTENTIALS_H_

@@ -1,5 +1,5 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2024, Auburn University
+// Copyright (c) 2021-2025, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
@@ -50,7 +50,7 @@ class PYBIND11_EXPORT TwoStepLangevinFlowGPU : public azplugins::TwoStepLangevin
         }
 
     //! Destructor
-    virtual ~TwoStepLangevinFlowGPU() {};
+    virtual ~TwoStepLangevinFlowGPU() { };
 
     //! Performs the second step of the integration
     virtual void integrateStepOne(unsigned int timestep);
@@ -216,6 +216,6 @@ void export_TwoStepLangevinFlowGPU(pybind11::module& m, const std::string& name)
                       Scalar,
                       bool>());
     }
-    }  // end namespace detail
-    }  // namespace azplugins
+    } // end namespace detail
+    } // namespace azplugins
 #endif // AZPLUGINS_TWO_STEP_LANGEVIN_FLOW_GPU_H_

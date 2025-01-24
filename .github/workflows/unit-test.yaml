@@ -8,7 +8,7 @@ env:
 
   #############################################################################################
   # HOOMD-blue version to build.
-  HOOMD_BLUE_VERSION: v4.8.0
+  HOOMD_BLUE_VERSION: v5.0.1
   # prevent deadlocked MPI tests from causing the job to cancel
   MPIEXEC_TIMEOUT: 3000
   # allow mpirun to execute as root in the tests
@@ -19,10 +19,6 @@ env:
   OMPI_MCA_rmaps_base_oversubscribe: "true"
   # prevent errors from mis-configured openib systems
   OMPI_MCA_btl: "vader,self"
-  # skip running the CPU tests in GPU builds
-  _HOOMD_SKIP_CPU_TESTS_WHEN_GPUS_PRESENT_: 1
-  # Require GPU tests in GPU builds.
-  # _HOOMD_REQUIRE_GPU_TESTS_IN_GPU_BUILDS_: 1
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -49,89 +45,90 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - name: 'CPU'
-          enable_gpu: 'OFF'
-          enable_mpi: 'OFF'
-        - name: 'CPU, MPI'
-          enable_gpu: 'OFF'
-          enable_mpi: 'ON'
-        - name: 'GPU'
-          enable_gpu: 'ON'
-          enable_mpi: 'OFF'
-        - name: 'GPU, MPI'
-          enable_gpu: 'ON'
-          enable_mpi: 'ON'
+          - name: "CPU"
+            enable_gpu: "OFF"
+            enable_mpi: "OFF"
+          - name: "CPU, MPI"
+            enable_gpu: "OFF"
+            enable_mpi: "ON"
+          - name: "GPU"
+            enable_gpu: "ON"
+            enable_mpi: "OFF"
+          - name: "GPU, MPI"
+            enable_gpu: "ON"
+            enable_mpi: "ON"
 
     steps:
-    - name: Restore cached HOOMD-blue build
-      id: cache
-      uses: actions/cache/restore@v4
-      with:
-        path: install
-        key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
-    - name: Install git
-      run: |
-        apt-get update
-        apt-get install git --yes
-    - name: Checkout HOOMD-blue
-      uses: actions/checkout@v4
-      with:
-        repository: glotzerlab/hoomd-blue
-        path: hoomd-blue
-        submodules: true
-        ref: ${{ env.HOOMD_BLUE_VERSION }}
-    - name: Create Python Environment
-      uses: mamba-org/setup-micromamba@v1
-      with:
-        environment-name: test
-        environment-file: hoomd-blue/.github/workflows/environments/py312-conda-lock.yml
-        micromamba-root-path: ${{ github.workspace }}/micromamba
+      - name: Restore cached HOOMD-blue build
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: install
+          key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-mpi-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
+      - name: Install git
+        run: |
+          apt-get update
+          apt-get install git --yes
+      - name: Checkout HOOMD-blue
+        uses: actions/checkout@v4
+        with:
+          repository: glotzerlab/hoomd-blue
+          path: hoomd-blue
+          submodules: true
+          ref: ${{ env.HOOMD_BLUE_VERSION }}
+      - name: Create Python Environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: test
+          environment-file: hoomd-blue/.github/workflows/environments/py312-conda-lock.yml
+          micromamba-root-path: ${{ github.workspace }}/micromamba
 
-    - name: Configure conda environment variables
-      run: |
-        echo "PYTHONPATH=$GITHUB_WORKSPACE/install" >> $GITHUB_ENV
-        echo "CONDA_PREFIX=$MAMBA_ROOT_PREFIX/envs/test" >> $GITHUB_ENV
-        echo "CMAKE_PREFIX_PATH=$MAMBA_ROOT_PREFIX/envs/test" >> $GITHUB_ENV
-        echo "$MAMBA_ROOT_PREFIX/envs/test/bin" >> $GITHUB_PATH
+      - name: Configure conda environment variables
+        run: |
+          echo "PYTHONPATH=$GITHUB_WORKSPACE/install" >> $GITHUB_ENV
+          echo "CONDA_PREFIX=$MAMBA_ROOT_PREFIX/envs/test" >> $GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH=$MAMBA_ROOT_PREFIX/envs/test" >> $GITHUB_ENV
+          echo "$MAMBA_ROOT_PREFIX/envs/test/bin" >> $GITHUB_PATH
 
-    - name: Configure HOOMD-blue
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: |
-        cmake -B build-hoomd-blue -S hoomd-blue \
-              -GNinja \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DENABLE_GPU=${ENABLE_GPU} \
-              -DENABLE_MPI=${ENABLE_MPI} \
-              -DCUDA_ARCH_LIST="70" \
-              -DBUILD_TESTING=OFF \
-              -DPLUGINS="" \
-              -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/install
-      env:
-        ENABLE_GPU: ${{ matrix.enable_gpu }}
-        ENABLE_MPI: ${{ matrix.enable_mpi }}
-    - name: Build HOOMD-blue
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: ninja install -j $(($(getconf _NPROCESSORS_ONLN) + 2))
-      working-directory: build-hoomd-blue
-    - name: Cache HOOMD-blue build
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        path: install
-        key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-${{ job.container.image }}-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
+      - name: Configure HOOMD-blue
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          cmake -B build-hoomd-blue -S hoomd-blue \
+                -GNinja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DENABLE_GPU=${ENABLE_GPU} \
+                -DENABLE_MPI=${ENABLE_MPI} \
+                -DCUDA_ARCH_LIST="70" \
+                -DBUILD_TESTING=OFF \
+                -DBUILD_HPMC=OFF \
+                -DPLUGINS="" \
+                -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/install
+        env:
+          ENABLE_GPU: ${{ matrix.enable_gpu }}
+          ENABLE_MPI: ${{ matrix.enable_mpi }}
+      - name: Build HOOMD-blue
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: ninja install -j $(($(getconf _NPROCESSORS_ONLN) + 2))
+        working-directory: build-hoomd-blue
+      - name: Cache HOOMD-blue build
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: install
+          key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-mpi-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
 
-    - name: Checkout component
-      uses: actions/checkout@v4
-      with:
-        path: component
-    - name: Configure component
-      run: CMAKE_PREFIX_PATH=${GITHUB_WORKSPACE}/install cmake -S component -B build-component -GNinja -DCMAKE_BUILD_TYPE=Release
-    - name: Build component
-      run: ninja install -j $(($(getconf _NPROCESSORS_ONLN) + 2))
-      working-directory: build-component
+      - name: Checkout component
+        uses: actions/checkout@v4
+        with:
+          path: component
+      - name: Configure component
+        run: CMAKE_PREFIX_PATH=${GITHUB_WORKSPACE}/install cmake -S component -B build-component -GNinja -DCMAKE_BUILD_TYPE=Release
+      - name: Build component
+        run: ninja install -j $(($(getconf _NPROCESSORS_ONLN) + 2))
+        working-directory: build-component
 
-    - name: Run pytest (serial)
-      run: python3 -m pytest --pyargs hoomd.${COMPONENT_NAME} -x -v -ra --durations=0 --durations-min=0.1
-    - name: Run pytest (MPI)
-      if: ${{ matrix.enable_mpi == 'ON' }}
-      run: mpirun -n 2 ${GITHUB_WORKSPACE}/install/hoomd/pytest/pytest-openmpi.sh --pyargs hoomd.${COMPONENT_NAME} -x -v -ra --durations=0 --durations-min=0.1 || (( cat pytest.out.1 && exit 1 ))
+      - name: Run pytest (serial)
+        run: python3 -m pytest --pyargs hoomd.${COMPONENT_NAME} -x -v -ra --durations=0 --durations-min=0.1
+      - name: Run pytest (MPI)
+        if: ${{ matrix.enable_mpi == 'ON' }}
+        run: mpirun -n 2 ${GITHUB_WORKSPACE}/install/hoomd/pytest/pytest-openmpi.sh --pyargs hoomd.${COMPONENT_NAME} -x -v -ra --durations=0 --durations-min=0.1 || (( cat pytest.out.1 && exit 1 ))
