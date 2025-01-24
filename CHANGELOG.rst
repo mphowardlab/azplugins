@@ -8,6 +8,33 @@ Release notes
 v1
 ---
 
+v1.1.0
+^^^^^^
+Released 24 January 2024
+
+*New features*
+
+* ``bond.Quartic`` is a new bond potential with tunable quartic form.
+* ``compute.CartesianVelocityFieldCompute`` computes the 3D velocity field in
+  1, 2, or 3 spatial dimensions using Cartesian coordinates.
+* ``compute.CylindricalVelocityFieldCompute`` computes the 3D velocity field in
+  1, 2, or 3 spatial dimensions using cylindrical coordinates.
+* ``compute.VelocityCompute`` computes the mass-averaged velocity of a group of
+  particles.
+* ``external.PlanarHarmonicBarrier`` is a harmonic barrier in a planar geometry.
+  Note that this is a reimplementation of ``evaporate.implicit`` with
+  ``geometry="film"`` in v0.12.0.
+* ``external.SphericalHarmonicBarrier`` is a harmonic barrier in a spherical
+  geometry. Note that this is a reimplementation of ``evaporate.implicit`` with
+  ``geometry="droplet"`` in v0.12.0.
+* ``pair.ExpandedYukawa`` is a pair potential that extends
+  ``hoomd.md.pair.Yukawa`` to account for particles with different diameters.
+
+*Other changes*
+
+* HOOMD 5 is now the minimum dependency.
+* Update copyright year.
+
 v1.0.0
 ^^^^^^
 Released 26 July 2024
@@ -42,7 +69,6 @@ transition period.
 *Bug fixes*
 
 * Apply CUDA 11.5 thrust / CUB namespace wrap fix.
-
 
 v0.11.0
 ^^^^^^^

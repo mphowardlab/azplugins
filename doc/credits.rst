@@ -14,7 +14,10 @@ Contributors
 ------------
 * Mohammadreza Fakhraei
 * Arjun Goswami
+* Brandon Jeong
 * Sally Jiao
+* Ashley Knoerdel
+* Kritika
 * Mayukh Kundu
 * C. Levi Petix
 * Wes Reinhart
