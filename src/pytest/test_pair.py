@@ -18,138 +18,6 @@ PotentialTestCase = collections.namedtuple(
 )
 
 potential_tests = []
-# Hertz
-potential_tests += [
-    # test the calculation of force and potential
-    PotentialTestCase(
-        hoomd.azplugins.pair.Hertz,
-        {"epsilon": 2.0},
-        1.5,
-        False,
-        1.05,
-        0.0985,
-        0.5477,
-    ),
-    PotentialTestCase(
-        hoomd.azplugins.pair.Hertz,
-        {"epsilon": 3.0},
-        2.05,
-        False,
-        1.05,
-        0.4985,
-        1.2464,
-    ),
-    # test the cases where the potential should be zero
-    # outside cutoff
-    PotentialTestCase(
-        hoomd.azplugins.pair.Hertz,
-        {"epsilon": 1.0},
-        1.0,
-        False,
-        1.05,
-        0,
-        0,
-    ),
-    # inside cutoff but epsilon = 0
-    PotentialTestCase(
-        hoomd.azplugins.pair.Hertz,
-        {"epsilon": 0.0},
-        3.0,
-        False,
-        1.05,
-        0,
-        0,
-    ),
-]
-# PerturbedLennardJones
-potential_tests += [
-    # test the calculation of force and potential
-    # test when it's in the wca part, no potential shifting
-    PotentialTestCase(
-        hoomd.azplugins.pair.PerturbedLennardJones,
-        {"epsilon": 2.0, "sigma": 1.05, "attraction_scale_factor": 0.0},
-        3.0,
-        False,
-        1.05,
-        2.0,
-        45.7143,
-    ),
-    # change attraction_scale_factor to check for shifting
-    # of energy (force stays the same)
-    PotentialTestCase(
-        hoomd.azplugins.pair.PerturbedLennardJones,
-        {"epsilon": 2.0, "sigma": 1.05, "attraction_scale_factor": 0.5},
-        3.0,
-        False,
-        1.05,
-        1.0,
-        45.7143,
-    ),
-    # change sigma so that now the particle is in the LJ region
-    # when attraction_scale_factor = 0, then the potential and force are zero
-    PotentialTestCase(
-        hoomd.azplugins.pair.PerturbedLennardJones,
-        {"epsilon": 2.0, "sigma": 0.5, "attraction_scale_factor": 0.0},
-        3.0,
-        False,
-        1.05,
-        0,
-        0,
-    ),
-    # partially switch on the LJ with attraction_scale_factor = 0.5
-    PotentialTestCase(
-        hoomd.azplugins.pair.PerturbedLennardJones,
-        {"epsilon": 2.0, "sigma": 0.5, "attraction_scale_factor": 0.5},
-        3.0,
-        False,
-        1.05,
-        -0.0460947,
-        -0.260291,
-    ),
-    # test that energy shifting works (bump up sigma so that at
-    # rcut = 3 the shift is reasonable)
-    # check wca is shifted first
-    PotentialTestCase(
-        hoomd.azplugins.pair.PerturbedLennardJones,
-        {"epsilon": 2.0, "sigma": 1.05, "attraction_scale_factor": 0.5},
-        3.0,
-        True,
-        1.05,
-        1.00734,
-        45.7143,
-    ),
-    # and check lj
-    PotentialTestCase(
-        hoomd.azplugins.pair.PerturbedLennardJones,
-        {"epsilon": 2.0, "sigma": 0.85, "attraction_scale_factor": 0.5},
-        3.0,
-        True,
-        1.05,
-        -0.806849,
-        -2.81197,
-    ),
-    # test the cases where the potential should be zero
-    # outside cutoff
-    PotentialTestCase(
-        hoomd.azplugins.pair.PerturbedLennardJones,
-        {"epsilon": 1.0, "sigma": 1.0, "attraction_scale_factor": 0.5},
-        1.0,
-        False,
-        1.05,
-        0,
-        0,
-    ),
-    # inside cutoff but epsilon = 0
-    PotentialTestCase(
-        hoomd.azplugins.pair.PerturbedLennardJones,
-        {"epsilon": 0.0, "sigma": 1.0, "attraction_scale_factor": 0.5},
-        3.0,
-        False,
-        1.05,
-        0,
-        0,
-    ),
-]
 
 # Colloid
 potential_tests += [
@@ -242,47 +110,198 @@ potential_tests += [
 # ExpandedYukawa
 potential_tests += [
     # test the calculation of force and potential
-    # test goes to zero outside cutoff
     PotentialTestCase(
         hoomd.azplugins.pair.ExpandedYukawa,
-        {'epsilon': 1.0, 'kappa': 1.0, 'delta': 1.0},
+        {"epsilon": 1.0, "kappa": 1.0, "delta": 1.0},
+        3.0,
+        False,
+        1.05,
+        19.024588490014263,
+        399.5163582902992,
+    ),
+    # change epsilon
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {"epsilon": 3.0, "kappa": 1.0, "delta": 1.0},
+        3.0,
+        False,
+        1.05,
+        57.07376547004279,
+        1198.5490748708976,
+    ),
+    # change delta so that now the potential will be shifted to the right
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {"epsilon": 1.0, "kappa": 1.0, "delta": 3.0},
+        9.0,
+        False,
+        3.05,
+        19.024588490014263,
+        399.5163582902992,
+    ),
+    # change kappa
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {"epsilon": 1.0, "kappa": 3.0, "delta": 1.0},
+        5.0,
+        False,
+        1.05,
+        17.21415952850114,
+        395.9256691555259,
+    ),
+    # test that energy shifting works
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {"epsilon": 1.0, "kappa": 1.0, "delta": 1.0},
+        1.5,
+        True,
+        1.05,
+        17.811527170588995,
+        399.5163583,
+    ),
+    # test the calculation of force and potential outside rcut
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {"epsilon": 1.0, "kappa": 1.0, "delta": 1.0},
         3.0,
         False,
         4.0,
         0.0,
         0.0,
     ),
-    # change epsilon to check for changing
-    # steepness of potential
+]
+
+# Hertz
+potential_tests += [
+    # test the calculation of force and potential
     PotentialTestCase(
-        hoomd.azplugins.pair.ExpandedYukawa,
-        {'epsilon': 3.0, 'kappa': 1.0, 'delta': 1.0},
+        hoomd.azplugins.pair.Hertz,
+        {"epsilon": 2.0},
+        1.5,
+        False,
+        1.05,
+        0.0985,
+        0.5477,
+    ),
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {"epsilon": 3.0},
+        2.05,
+        False,
+        1.05,
+        0.4985,
+        1.2464,
+    ),
+    # test the cases where the potential should be zero
+    # outside cutoff
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {"epsilon": 1.0},
+        1.0,
+        False,
+        1.05,
+        0,
+        0,
+    ),
+    # inside cutoff but epsilon = 0
+    PotentialTestCase(
+        hoomd.azplugins.pair.Hertz,
+        {"epsilon": 0.0},
         3.0,
         False,
         1.05,
-        57.07376547,
-        1198.549075,
+        0,
+        0,
     ),
-    # change delta so that now the potential will
-    # be shifted to the right
+]
+
+# PerturbedLennardJones
+potential_tests += [
+    # test the calculation of force and potential
+    # test when it's in the wca part, no potential shifting
     PotentialTestCase(
-        hoomd.azplugins.pair.ExpandedYukawa,
-        {'epsilon': 1.0, 'kappa': 1.0, 'delta': 3.0},
-        9.0,
-        False,
-        3.05,
-        19.02458849,
-        399.5163583,
-    ),
-    # change kappa to check scaling
-    PotentialTestCase(
-        hoomd.azplugins.pair.ExpandedYukawa,
-        {'epsilon': 1.0, 'kappa': 3.0, 'delta': 1.0},
-        5.0,
+        hoomd.azplugins.pair.PerturbedLennardJones,
+        {"epsilon": 2.0, "sigma": 1.05, "attraction_scale_factor": 0.0},
+        3.0,
         False,
         1.05,
-        17.21415953,
-        395.9256692,
+        2.0,
+        45.7143,
+    ),
+    # change attraction_scale_factor to check for shifting
+    # of energy (force stays the same)
+    PotentialTestCase(
+        hoomd.azplugins.pair.PerturbedLennardJones,
+        {"epsilon": 2.0, "sigma": 1.05, "attraction_scale_factor": 0.5},
+        3.0,
+        False,
+        1.05,
+        1.0,
+        45.7143,
+    ),
+    # change sigma so that now the particle is in the LJ region
+    # when attraction_scale_factor = 0, then the potential and force are zero
+    PotentialTestCase(
+        hoomd.azplugins.pair.PerturbedLennardJones,
+        {"epsilon": 2.0, "sigma": 0.5, "attraction_scale_factor": 0.0},
+        3.0,
+        False,
+        1.05,
+        0,
+        0,
+    ),
+    # partially switch on the LJ with attraction_scale_factor = 0.5
+    PotentialTestCase(
+        hoomd.azplugins.pair.PerturbedLennardJones,
+        {"epsilon": 2.0, "sigma": 0.5, "attraction_scale_factor": 0.5},
+        3.0,
+        False,
+        1.05,
+        -0.0460947,
+        -0.260291,
+    ),
+    # test that energy shifting works (bump up sigma so that at
+    # rcut = 3 the shift is reasonable)
+    # check wca is shifted first
+    PotentialTestCase(
+        hoomd.azplugins.pair.PerturbedLennardJones,
+        {"epsilon": 2.0, "sigma": 1.05, "attraction_scale_factor": 0.5},
+        3.0,
+        True,
+        1.05,
+        1.00734,
+        45.7143,
+    ),
+    # and check lj
+    PotentialTestCase(
+        hoomd.azplugins.pair.PerturbedLennardJones,
+        {"epsilon": 2.0, "sigma": 0.85, "attraction_scale_factor": 0.5},
+        3.0,
+        True,
+        1.05,
+        -0.806849,
+        -2.81197,
+    ),
+    # test the cases where the potential should be zero
+    # outside cutoff
+    PotentialTestCase(
+        hoomd.azplugins.pair.PerturbedLennardJones,
+        {"epsilon": 1.0, "sigma": 1.0, "attraction_scale_factor": 0.5},
+        1.0,
+        False,
+        1.05,
+        0,
+        0,
+    ),
+    # inside cutoff but epsilon = 0
+    PotentialTestCase(
+        hoomd.azplugins.pair.PerturbedLennardJones,
+        {"epsilon": 0.0, "sigma": 1.0, "attraction_scale_factor": 0.5},
+        3.0,
+        False,
+        1.05,
+        0,
+        0,
     ),
 ]
 

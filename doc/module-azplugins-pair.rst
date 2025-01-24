@@ -14,10 +14,10 @@ azplugins.pair
 
     Colloid
     DPDGeneralWeight
+    ExpandedYukawa
     Hertz
     PerturbedLennardJones
     TwoPatchMorse
-    ExpandedYukawa
 
 .. rubric:: Details
 
@@ -25,9 +25,9 @@ azplugins.pair
     :synopsis: Pair potentials.
     :members: Colloid,
         DPDGeneralWeight,
+        ExpandedYukawa,
         Hertz,
         PerturbedLennardJones,
-        TwoPatchMorse,
-        ExpandedYukawa
+        TwoPatchMorse
     :no-inherited-members:
     :show-inheritance:

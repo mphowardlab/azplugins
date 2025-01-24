@@ -1,9 +1,9 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2024, Auburn University
+// Copyright (c) 2021-2025, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-#ifndef AZPLUGINS_PAIR_EVALUATOR_EXPANDEDYUKAWA_H_
-#define AZPLUGINS_PAIR_EVALUATOR_EXPANDEDYUKAWA_H_
+#ifndef AZPLUGINS_PAIR_EVALUATOR_EXPANDED_YUKAWA_H_
+#define AZPLUGINS_PAIR_EVALUATOR_EXPANDED_YUKAWA_H_
 
 #include "PairEvaluator.h"
 
@@ -95,15 +95,19 @@ class PairEvaluatorExpandedYukawa : public PairEvaluator
         // compute the force divided by r in force_divr
         if (rsq < rcutsq && epsilon != Scalar(0))
             {
-            Scalar r = fast::sqrt(rsq);
-            Scalar rinv = 1 / r;
-            Scalar delta_dist = r - delta;
-            Scalar rinv_delt = 1 / delta_dist;
-            Scalar kappa_delt = kappa * delta_dist;
-            Scalar exponent = exp(-kappa_delt);
+            const Scalar r = fast::sqrt(rsq);
+            const Scalar r_delta = r - delta;
+            const Scalar r_delta_inv = Scalar(1.0) / r_delta;
 
-            force_divr = epsilon * exponent * (1 + kappa_delt) * rinv_delt * rinv_delt * rinv;
-            pair_eng = epsilon * exponent * rinv_delt;
+            pair_eng = epsilon * fast::exp(-kappa * r_delta) * r_delta_inv;
+            force_divr = pair_eng * (kappa + r_delta_inv) / r;
+
+            if (energy_shift)
+                {
+                const Scalar rcut = fast::sqrt(rcutsq);
+                const Scalar rcut_delta = rcut - delta;
+                pair_eng -= epsilon * fast::exp(-kappa * rcut_delta) / rcut_delta;
+                }
 
             return true;
             }
@@ -112,13 +116,10 @@ class PairEvaluatorExpandedYukawa : public PairEvaluator
         }
 
 #ifndef __HIPCC__
-    //! Get the name of this potential
-    /*! \returns The potential name. Must be short and all lowercase, as this is the name energies
-       will be logged as via analyze.log.
-    */
+    //! Return the name of this potential
     static std::string getName()
         {
-        return std::string("exyuk");
+        return std::string("ExpandedYukawa");
         }
 #endif
 
@@ -134,4 +135,4 @@ class PairEvaluatorExpandedYukawa : public PairEvaluator
 
 #undef DEVICE
 
-#endif // AZPLUGINS_PAIR_EVALUATOR_EXPANDEDYUKAWA_H_
+#endif // AZPLUGINS_PAIR_EVALUATOR_EXPANDED_YUKAWA_H_
