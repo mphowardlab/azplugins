@@ -18,6 +18,159 @@ PotentialTestCase = collections.namedtuple(
 )
 
 potential_tests = []
+
+# Colloid
+potential_tests += [
+    # test the calculation of force and potential for Solvent-Solvent
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {"A": 100.0, "a_1": 0, "a_2": 0, "sigma": 2.0},
+        6.0,
+        False,
+        3.0,
+        -0.2224,
+        -0.4020,
+    ),
+    # test the calculation of force and potential for Colloid-Solvent
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {"A": 100.0, "a_1": 1.5, "a_2": 0, "sigma": 1.05},
+        6.0,
+        False,
+        3.0,
+        -0.2757,
+        -0.7107,
+    ),
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {"A": 100.0, "a_1": 0, "a_2": 1.5, "sigma": 1.05},
+        6.0,
+        False,
+        3.0,
+        -0.2757,
+        -0.7107,
+    ),
+    # test the calculation of force and potential for Colloid-Colloid
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {"A": 100.0, "a_1": 1.5, "a_2": 0.75, "sigma": 1.05},
+        6.0,
+        False,
+        3.0,
+        -1.0366,
+        -1.8267,
+    ),
+    # test the calculation of force and potential outside r_cut
+    PotentialTestCase(
+        hoomd.azplugins.pair.Colloid,
+        {"A": 100.0, "a_1": 1.5, "a_2": 0.75, "sigma": 1.05},
+        6.0,
+        False,
+        7.0,
+        0,
+        0,
+    ),
+]
+
+# DPDGeneralWeight
+potential_tests += [
+    # test the calculation of force and potential (needs kT=0 for zero random force)
+    PotentialTestCase(
+        hoomd.azplugins.pair.DPDGeneralWeight,
+        {"A": 2.0, "gamma": 4.5, "s": 0.5},
+        1.0,
+        False,
+        0.5,
+        0.25,
+        1.0,
+    ),
+    # test the cases where the potential should be zero
+    # outside cutoff
+    PotentialTestCase(
+        hoomd.azplugins.pair.DPDGeneralWeight,
+        {"A": 25.0, "gamma": 4.5, "s": 2},
+        1.0,
+        False,
+        1.05,
+        0,
+        0,
+    ),
+    # inside cutoff but A = 0
+    PotentialTestCase(
+        hoomd.azplugins.pair.DPDGeneralWeight,
+        {"A": 0.0, "gamma": 4.5, "s": 2},
+        1.0,
+        False,
+        0.5,
+        0,
+        0,
+    ),
+]
+
+# ExpandedYukawa
+potential_tests += [
+    # test the calculation of force and potential
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {"epsilon": 1.0, "kappa": 1.0, "delta": 1.0},
+        3.0,
+        False,
+        1.05,
+        19.024588490014263,
+        399.5163582902992,
+    ),
+    # change epsilon
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {"epsilon": 3.0, "kappa": 1.0, "delta": 1.0},
+        3.0,
+        False,
+        1.05,
+        57.07376547004279,
+        1198.5490748708976,
+    ),
+    # change delta so that now the potential will be shifted to the right
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {"epsilon": 1.0, "kappa": 1.0, "delta": 3.0},
+        9.0,
+        False,
+        3.05,
+        19.024588490014263,
+        399.5163582902992,
+    ),
+    # change kappa
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {"epsilon": 1.0, "kappa": 3.0, "delta": 1.0},
+        5.0,
+        False,
+        1.05,
+        17.21415952850114,
+        395.9256691555259,
+    ),
+    # test that energy shifting works
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {"epsilon": 1.0, "kappa": 1.0, "delta": 1.0},
+        1.5,
+        True,
+        1.05,
+        17.811527170588995,
+        399.5163583,
+    ),
+    # test the calculation of force and potential outside rcut
+    PotentialTestCase(
+        hoomd.azplugins.pair.ExpandedYukawa,
+        {"epsilon": 1.0, "kappa": 1.0, "delta": 1.0},
+        3.0,
+        False,
+        4.0,
+        0.0,
+        0.0,
+    ),
+]
+
 # Hertz
 potential_tests += [
     # test the calculation of force and potential
@@ -61,6 +214,7 @@ potential_tests += [
         0,
     ),
 ]
+
 # PerturbedLennardJones
 potential_tests += [
     # test the calculation of force and potential
@@ -146,94 +300,6 @@ potential_tests += [
         3.0,
         False,
         1.05,
-        0,
-        0,
-    ),
-]
-
-# Colloid
-potential_tests += [
-    # test the calculation of force and potential for Solvent-Solvent
-    PotentialTestCase(
-        hoomd.azplugins.pair.Colloid,
-        {"A": 100.0, "a_1": 0, "a_2": 0, "sigma": 2.0},
-        6.0,
-        False,
-        3.0,
-        -0.2224,
-        -0.4020,
-    ),
-    # test the calculation of force and potential for Colloid-Solvent
-    PotentialTestCase(
-        hoomd.azplugins.pair.Colloid,
-        {"A": 100.0, "a_1": 1.5, "a_2": 0, "sigma": 1.05},
-        6.0,
-        False,
-        3.0,
-        -0.2757,
-        -0.7107,
-    ),
-    PotentialTestCase(
-        hoomd.azplugins.pair.Colloid,
-        {"A": 100.0, "a_1": 0, "a_2": 1.5, "sigma": 1.05},
-        6.0,
-        False,
-        3.0,
-        -0.2757,
-        -0.7107,
-    ),
-    # test the calculation of force and potential for Colloid-Colloid
-    PotentialTestCase(
-        hoomd.azplugins.pair.Colloid,
-        {"A": 100.0, "a_1": 1.5, "a_2": 0.75, "sigma": 1.05},
-        6.0,
-        False,
-        3.0,
-        -1.0366,
-        -1.8267,
-    ),
-    # test the calculation of force and potential outside r_cut
-    PotentialTestCase(
-        hoomd.azplugins.pair.Colloid,
-        {"A": 100.0, "a_1": 1.5, "a_2": 0.75, "sigma": 1.05},
-        6.0,
-        False,
-        7.0,
-        0,
-        0,
-    ),
-]
-
-# DPDGeneralWeight
-potential_tests += [
-    # test the calculation of force and potential (needs kT=0 for zero random force)
-    PotentialTestCase(
-        hoomd.azplugins.pair.DPDGeneralWeight,
-        {"A": 2.0, "gamma": 4.5, "s": 0.5},
-        1.0,
-        False,
-        0.5,
-        0.25,
-        1.0,
-    ),
-    # test the cases where the potential should be zero
-    # outside cutoff
-    PotentialTestCase(
-        hoomd.azplugins.pair.DPDGeneralWeight,
-        {"A": 25.0, "gamma": 4.5, "s": 2},
-        1.0,
-        False,
-        1.05,
-        0,
-        0,
-    ),
-    # inside cutoff but A = 0
-    PotentialTestCase(
-        hoomd.azplugins.pair.DPDGeneralWeight,
-        {"A": 0.0, "gamma": 4.5, "s": 2},
-        1.0,
-        False,
-        0.5,
         0,
         0,
     ),

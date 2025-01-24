@@ -239,6 +239,64 @@ class DPDGeneralWeight(pair.Pair):
         super()._attach_hook()
 
 
+class ExpandedYukawa(pair.Pair):
+    r"""Expanded Yukawa pair potential.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list.
+        r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+        mode (str): Energy shifting/smoothing mode.
+
+    `ExpandedYukawa` is a Yukawa-style potential. It has a similar form to
+    `hoomd.md.pair.Yukawa`, but its discontinuity can be shifted using the
+    parameter :math:`\Delta`:
+
+    .. math::
+
+        U(r) = \varepsilon \frac{\exp[-\kappa(r - \Delta)]}{r - \Delta}
+
+    Example::
+
+        nl = nlist.Cell()
+        exyuk = azplugins.pair.ExpandedYukawa(default_r_cut=4.0, nlist=nl)
+        exyuk.params[("A", "A")] = dict(epsilon=1.0, kappa=1.0, delta=2.0)
+
+    .. py:attribute:: params
+
+        The `ExpandedYukawa` potential parameters. The dictionary has the
+        following keys:
+
+        * ``epsilon`` (`float`, **required**) - Energy parameter
+          :math:`\varepsilon` :math:`[\mathrm{energy}]`
+        * ``kappa`` (`float`, **required**) - Scaling parameter :math:`\kappa`
+          :math:`[\mathrm{length}]^{-1}`
+        * ``delta`` (`float`, **required**) - Shifting parameter :math:`\Delta`
+          :math:`[\mathrm{length}]`
+
+        Type: :class:`~hoomd.data.typeparam.TypeParameter` [`tuple`
+        [``particle_type``, ``particle_type``], `dict`]
+
+    .. py:attribute:: mode
+
+        Energy shifting/smoothing mode: ``"none"``, ``"shift"``, or ``"xplor"``.
+
+        Type: `str`
+
+    """
+
+    _ext_module = _azplugins
+    _cpp_class_name = "PotentialPairExpandedYukawa"
+
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0, mode="none"):
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        params = TypeParameter(
+            "params",
+            "particle_types",
+            TypeParameterDict(epsilon=float, kappa=float, delta=float, len_keys=2),
+        )
+        self._add_typeparam(params)
+
+
 class Hertz(pair.Pair):
     r"""Hertz potential.
 
