@@ -8,7 +8,7 @@ env:
 
   #############################################################################################
   # HOOMD-blue version to build.
-  HOOMD_BLUE_VERSION: v5.0.0
+  HOOMD_BLUE_VERSION: v5.0.1
   # prevent deadlocked MPI tests from causing the job to cancel
   MPIEXEC_TIMEOUT: 3000
   # allow mpirun to execute as root in the tests
@@ -64,7 +64,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: install
-          key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
+          key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-mpi-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
       - name: Install git
         run: |
           apt-get update
@@ -100,6 +100,7 @@ jobs:
                 -DENABLE_MPI=${ENABLE_MPI} \
                 -DCUDA_ARCH_LIST="70" \
                 -DBUILD_TESTING=OFF \
+                -DBUILD_HPMC=OFF \
                 -DPLUGINS="" \
                 -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/install
         env:
@@ -114,7 +115,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: install
-          key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
+          key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-mpi-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
 
       - name: Checkout component
         uses: actions/checkout@v4
