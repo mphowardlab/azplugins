@@ -19,7 +19,7 @@ azplugins.external
 .. rubric:: Details
 
 .. automodule:: hoomd.azplugins.external
-    :synopsis: External barrier.
+    :synopsis: External potentials.
     :members: HarmonicBarrier,
         PlanarHarmonicBarrier,
         SphericalHarmonicBarrier

@@ -60,7 +60,7 @@ class SphericalBarrierEvaluator
         }
 
     private:
-    Scalar m_R; // Radius of sphere
+    Scalar m_R; //<! Radius of sphere
     };
 
     } // end namespace azplugins

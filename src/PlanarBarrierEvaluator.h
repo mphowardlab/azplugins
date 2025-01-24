@@ -42,7 +42,7 @@ class PlanarBarrierEvaluator
             return make_scalar4(0, 0, 0, 0);
             }
 
-        const Scalar f = -k * dy;               // z component of force
+        const Scalar f = -k * dy;               // y component of force
         const Scalar e = Scalar(-0.5) * f * dy; // U = 0.5 k dx^2
         return make_scalar4(0, f, 0, e);
         }
@@ -56,7 +56,7 @@ class PlanarBarrierEvaluator
         }
 
     private:
-    Scalar m_H; // y position of interface
+    Scalar m_H; //<! y position of interface
     };
 
     } // end namespace azplugins

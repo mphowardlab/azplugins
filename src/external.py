@@ -2,7 +2,7 @@
 # Copyright (c) 2021-2024, Auburn University
 # Part of azplugins, released under the BSD 3-Clause License.
 
-"""External harmonic potentials."""
+"""External potentials."""
 
 import hoomd
 
@@ -23,7 +23,7 @@ class HarmonicBarrier(force.Force):
 
     .. py:attribute:: location
 
-        Location of the barrier. The meaning of this position is interpreted
+        Location of the barrier. The meaning of this location is interpreted
         by derived types.
 
         Type: `hoomd.variant.variant_like`
@@ -87,9 +87,10 @@ class PlanarHarmonicBarrier(HarmonicBarrier):
         location (`hoomd.variant.variant_like`): *y* position of the
             barrier.
 
-    `PlanarHarmonicBarrier` applies a purely harmonic potential in a planar
-    geometry with a normal in the :math:`y` direction. Particles are pushed
-    in the :math:`-y` direction when they are above the ``location``:
+    `PlanarHarmonicBarrier` applies a purely repulsive harmonic potential
+    in a planar geometry with a normal in the :math:`y` direction. Particles
+    are pushed in the :math:`-y` direction when they are above the
+    ``location``:
 
     .. math::
 
@@ -124,8 +125,8 @@ class SphericalHarmonicBarrier(HarmonicBarrier):
     Args:
         location (`hoomd.variant.variant_like`): Radius of sphere.
 
-    `SphericalHarmonicBarrier` applies a purely harmonic potential to particles
-    outside the radius of a sphere, acting to push them inward:
+    `SphericalHarmonicBarrier` applies a purely repulsive harmonic potential to
+    particles outside the radius of a sphere, acting to push them inward:
 
     .. math::
 
