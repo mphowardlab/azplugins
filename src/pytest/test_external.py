@@ -95,9 +95,7 @@ def test_spherical_harmonic_barrier(
             [0, 5.6, 0],
             [6.6, 0, 0],
         ]
-        snap.particles.velocity[:] = [[0, 0, 0]] * 4
         snap.particles.typeid[:] = [0, 1, 0, 0]
-
     sim = simulation_factory(snap)
     sim.operations.integrator = integrator
 
@@ -107,18 +105,15 @@ def test_spherical_harmonic_barrier(
     kA = 50.0
     dB = 2.0
     kB = kA * dB**2
-
     barrier.params["A"] = dict(k=kA, offset=0.1)
     barrier.params["B"] = dict(k=kB, offset=-0.1)
-
     sim.operations.add(barrier)
+
     #  at first step the barrier will not move
     sim.run(1)
-
-    # Test forces on particles
+    forces = barrier.forces
+    energies = barrier.energies
     if sim.device.communicator.rank == 0:
-        forces = barrier.forces
-        energies = barrier.energies
         # particle 0 is outside interaction range
         assert numpy.isclose(energies[0], 0.0)
         numpy.testing.assert_allclose(forces[0], [0, 0, 0], atol=1e-4)
@@ -132,14 +127,13 @@ def test_spherical_harmonic_barrier(
         assert numpy.isclose(energies[3], 0.5 * kA * 1.5**2, atol=1e-4)
         numpy.testing.assert_allclose(forces[3], [-kA * 1.5, 0.0, 0.0], atol=1e-4)
 
-        # disable B interactions for the next test
-        barrier.params["B"] = dict(k=0.0, offset=-0.1)
-        # advance the simulation two steps so that now the barrier is at 4.0
-        # in both verlet steps
-        sim.run(2)
-
-        forces = barrier.forces
-        energies = barrier.energies
+    # disable B interactions and advance the simulation two steps so that now
+    # barrier is at 4.0 in both verlet steps
+    barrier.params["B"] = dict(k=0.0, offset=-0.1)
+    sim.run(2)
+    forces = barrier.forces
+    energies = barrier.energies
+    if sim.device.communicator.rank == 0:
         # particle 0 is now inside the harmonic region, -x
         assert numpy.isclose(energies[0], 0.5 * kA * 0.5**2)
         numpy.testing.assert_allclose(forces[0], [0.0, 0.0, -kA * 0.5], atol=1e-4)
@@ -178,18 +172,15 @@ def test_planar_harmonic_barrier(
     kA = 50.0
     dB = 2.0
     kB = kA * dB**2
-
     barrier.params["A"] = dict(k=kA, offset=0.1)
     barrier.params["B"] = dict(k=kB, offset=-0.1)
-
     sim.operations.add(barrier)
+
     #  at first step the barrier will not move
     sim.run(1)
-
-    # Test forces on particles
+    forces = barrier.forces
+    energies = barrier.energies
     if sim.device.communicator.rank == 0:
-        forces = barrier.forces
-        energies = barrier.energies
         # particle 0 is outside interaction range
         assert numpy.isclose(energies[0], 0.0)
         numpy.testing.assert_allclose(forces[0], [0, 0, 0], atol=1e-4)
@@ -207,14 +198,13 @@ def test_planar_harmonic_barrier(
             atol=1e-4,
         )
 
-        # disable B interactions for the next test
-        barrier.params["B"] = dict(k=0.0, offset=-0.1)
-        # advance the simulation two steps so that now the barrier is at 4.0
-        # in both verlet steps
-        sim.run(2)
-
-        forces = barrier.forces
-        energies = barrier.energies
+    # disable B interactions and advance the simulation two steps so that now
+    # barrier is at 4.0 in both verlet steps
+    barrier.params["B"] = dict(k=0.0, offset=-0.1)
+    sim.run(2)
+    forces = barrier.forces
+    energies = barrier.energies
+    if sim.device.communicator.rank == 0:
         # particle 0 is now inside the harmonic region, -x
         assert numpy.isclose(energies[0], 0.5 * kA * 0.5**2, atol=1e-4)
         numpy.testing.assert_allclose(forces[0], [0.0, -kA * 0.5, 0.0], atol=1e-4)
