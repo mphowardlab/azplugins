@@ -70,7 +70,7 @@ jobs:
           apt-get update
           apt-get install git --yes
       - name: Checkout HOOMD-blue
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: glotzerlab/hoomd-blue
           path: hoomd-blue
@@ -118,7 +118,7 @@ jobs:
           key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-mpi-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
 
       - name: Checkout component
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: component
       - name: Configure component
