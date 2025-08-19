@@ -180,6 +180,7 @@ endforeach()
 
 if (ENABLE_HIP)
 set(_cuda_sources ${_${COMPONENT_NAME}_cu_sources})
+set_source_files_properties(${_${COMPONENT_NAME}_cu_sources} PROPERTIES LANGUAGE ${HOOMD_DEVICE_LANGUAGE})
 endif (ENABLE_HIP)
 
 hoomd_add_module(_${COMPONENT_NAME} SHARED ${_${COMPONENT_NAME}_sources} ${_cuda_sources} NO_EXTRAS)
