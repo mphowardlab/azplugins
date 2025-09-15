@@ -7,6 +7,7 @@ set(_${COMPONENT_NAME}_sources
     module.cc
     ParabolicFlow.cc
     VelocityCompute.cc
+    export_ImageBondPotentialHarmonic.cc
     )
 if (ENABLE_HIP)
     list(APPEND _${COMPONENT_NAME}_sources
