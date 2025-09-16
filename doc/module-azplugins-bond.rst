@@ -14,12 +14,14 @@ azplugins.bond
 
     DoubleWell
     Quartic
+    ImageHarmonic
 
 .. rubric:: Details
 
 .. automodule:: hoomd.azplugins.bond
     :synopsis: Bond potentials.
     :members: DoubleWell,
-        Quartic
+        Quartic,
+        ImageHarmonic
     :no-inherited-members:
     :show-inheritance:
