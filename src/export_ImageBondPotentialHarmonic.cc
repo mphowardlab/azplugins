@@ -12,7 +12,7 @@ namespace azplugins
     {
 namespace detail
     {
-void export_ImagePotentialBond(pybind11::module& m)
+void export_ImageBondPotentialHarmonic(pybind11::module& m)
     {
     export_ImagePotentialBond<hoomd::md::EvaluatorBondHarmonic>(m, "ImageBondPotentialHarmonic");
     }

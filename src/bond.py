@@ -173,7 +173,7 @@ class ImageHarmonic(bond.Bond):
             The parameter of the ImageHarmonic bonds for each particle type.
             The dictionary has the following keys:
 
-            * ``r_0`` (`float`, **required**) - Rest length
+            * ``r0`` (`float`, **required**) - Rest length
               :math:`[\mathrm{length}]
 
             * ``k`` (`float`, **required**) - Potential constant
@@ -182,17 +182,17 @@ class ImageHarmonic(bond.Bond):
     Examples::
 
         dw = azplugins.bond.ImageHarmonic()
-        dw.params["A-A"] = dict(r_0=1.0, k=25)
+        dw.params["A-A"] = dict(r0=1.0, k=25)
     """
 
     _ext_module = _azplugins
-    _cpp_class_name = "ImagePotentialBond"
+    _cpp_class_name = "ImageBondPotentialHarmonic"
 
     def __init__(self):
         super().__init__()
         params = TypeParameter(
             "params",
             "bond_types",
-            TypeParameterDict(r_0=float, k=float, len_keys=1),
+            TypeParameterDict(r0=float, k=float, len_keys=1),
         )
         self._add_typeparam(params)
