@@ -115,6 +115,7 @@ PYBIND11_MODULE(_azplugins, m)
     // bond
     export_PotentialBondDoubleWell(m);
     export_PotentialBondQuartic(m);
+    export_ImageBondPotentialHarmonic(m);
 
     // compute
     export_CartesianVelocityFieldCompute(m);

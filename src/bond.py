@@ -155,3 +155,44 @@ class Quartic(bond.Bond):
             ),
         )
         self._add_typeparam(params)
+
+
+class ImageHarmonic(bond.Bond):
+    r"""Harmonic bond potential that calculates bond distances using unwrapped
+    particle coordinates.
+
+    This class implements the same potential as `hoomd.md.bond.Harmonic`, but
+    differs in how the bond distance is computed. Rather than computing the
+    distance between nearest images of bonded particles, the true distance
+    between a pair of particles is computed by unwrapping the coordinates first.
+    This is important for systems where bonded particles may be separated by
+    distances larger than half the box size.
+
+    Attributes:
+        params (TypeParameter[``bond type``, dict]):
+            The parameter of the ImageHarmonic bonds for each particle type.
+            The dictionary has the following keys:
+
+            * ``r_0`` (`float`, **required**) - Rest length
+              :math:`[\mathrm{length}]
+
+            * ``k`` (`float`, **required**) - Potential constant
+              :math:`[\mathrm{energy} / \mathrm{length}^2]`
+
+    Examples::
+
+        dw = azplugins.bond.ImageHarmonic()
+        dw.params["A-A"] = dict(r_0=1.0, k=25)
+    """
+
+    _ext_module = _azplugins
+    _cpp_class_name = "ImagePotentialBond"
+
+    def __init__(self):
+        super().__init__()
+        params = TypeParameter(
+            "params",
+            "bond_types",
+            TypeParameterDict(r_0=float, k=float, len_keys=1),
+        )
+        self._add_typeparam(params)

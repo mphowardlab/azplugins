@@ -23,14 +23,12 @@
 
 #include <pybind11/pybind11.h>
 
-#ifndef AZPLUGINS_IMAGEPOTENTIALBOND_H
-#define AZPLUGINS_IMAGEPOTENTIALBOND_H
+#ifndef AZPLUGINS_IMAGE_POTENTIAL_BOND_H_
+#define AZPLUGINS_IMAGE_POTENTIAL_BOND_H_
 
 namespace hoomd
     {
 namespace azplugins
-    {
-namespace md
     {
 /*! Bond potential with evaluator support
 
@@ -255,10 +253,6 @@ void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
             charge_b = h_charge.data[idx_b];
             }
 
-        // Commenting out to avoid using minimum image for bonds
-        // // if the vector crosses the box, pull it back
-        // dx = box.minImage(dx);
-
         // get images of particles
         const int3 img_a = h_image.data[idx_a];
         const int3 img_b = h_image.data[idx_b];
@@ -378,7 +372,6 @@ template<class T> void export_PotentialMeshBond(pybind11::module& m, const std::
     }
 
     } // end namespace detail
-    } // end namespace md
     } // end namespace azplugins
     } // end namespace hoomd
 
