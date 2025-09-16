@@ -174,15 +174,15 @@ class ImageHarmonic(bond.Bond):
             The dictionary has the following keys:
 
             * ``r0`` (`float`, **required**) - Rest length
-              :math:`[\mathrm{length}]
+              :math:`[\mathrm{length}]`
 
             * ``k`` (`float`, **required**) - Potential constant
               :math:`[\mathrm{energy} / \mathrm{length}^2]`
 
     Examples::
 
-        dw = azplugins.bond.ImageHarmonic()
-        dw.params["A-A"] = dict(r0=1.0, k=25)
+        ih = azplugins.bond.ImageHarmonic()
+        ih.params["A-A"] = dict(r0=1.0, k=25)
     """
 
     _ext_module = _azplugins
