@@ -6,6 +6,7 @@
 
 import collections
 
+import gsd.hoomd
 import hoomd
 import numpy
 
@@ -234,4 +235,111 @@ def test_energy_and_force(
     if sim.device.communicator.rank == 0:
         numpy.testing.assert_array_almost_equal(
             forces, [[-f, 0, 0], [f, 0, 0]], decimal=4
+        )
+
+
+def make_snap_bonded_pair(position_1, position_2, image_1, image_2):
+    snap = gsd.hoomd.Frame()
+    snap.configuration.box = [5, 5, 5, 0, 0, 0]
+    snap.particles.image = [image_1, image_2]
+    snap.particles.N = 2
+    snap.particles.position = [position_1, position_2]
+    snap.particles.typeid = [0, 0]
+    snap.particles.types = ["A"]
+    snap.bonds.N = 1
+    snap.bonds.group = [[0, 1]]
+    snap.bonds.typeid = [0]
+    snap.bonds.types = ["A-A"]
+    return snap
+
+
+def test_imageharmonic_long_bond(simulation_factory):
+    """Test that a bond longer than half the box length is imaged correctly."""
+    position_1 = [-2, -2, -2]
+    position_2 = [2, 2, 2]
+    image_1 = [0, 0, 0]
+    image_2 = [0, 0, 0]
+    snap = make_snap_bonded_pair(position_1, position_2, image_1, image_2)
+    sim = simulation_factory(snap)
+
+    # setup dummy NVE integrator
+    integrator = hoomd.md.Integrator(dt=0.001)
+    nve = hoomd.md.methods.ConstantVolume(hoomd.filter.All())
+    integrator.methods = [nve]
+
+    # setup pair potential
+    harmonic = hoomd.azplugins.bond.ImageHarmonic()
+    harmonic.params["A-A"] = dict(k=2.0, r0=1.0)
+    integrator.forces = [harmonic]
+
+    # calculate energies and forces
+    sim.operations.integrator = integrator
+    sim.run(0)
+
+    expected_distance = numpy.linalg.norm(
+        numpy.array(position_2) - numpy.array(position_1)
+    )
+
+    # test that the energies match reference values, half goes to each particle
+    energies = harmonic.energies
+    e = (expected_distance - 1) ** 2
+    if sim.device.communicator.rank == 0:
+        numpy.testing.assert_array_almost_equal(energies, [0.5 * e, 0.5 * e], decimal=4)
+
+    # test that the forces match reference values
+    # should be along x-axis.
+    # Particle 1 in + direction and particle 2 in - direction
+    forces = harmonic.forces
+    f = -2 * (expected_distance - 1)
+    if sim.device.communicator.rank == 0:
+        numpy.testing.assert_array_almost_equal(
+            forces, [[-f, -f, -f], [f, f, f]] / numpy.sqrt(3), decimal=4
+        )
+
+
+def test_imageharmonic_different_images(simulation_factory):
+    """Test that a bond where particles start in different images."""
+    position_1 = [-2, -2, -2]
+    position_2 = [2, 2, 2]
+    image_1 = [0, 0, 0]
+    image_2 = [-1, -1, -1]
+    snap = make_snap_bonded_pair(position_1, position_2, image_1, image_2)
+    sim = simulation_factory(snap)
+
+    # setup dummy NVE integrator
+    integrator = hoomd.md.Integrator(dt=0.001)
+    nve = hoomd.md.methods.ConstantVolume(hoomd.filter.All())
+    integrator.methods = [nve]
+
+    # setup pair potential
+    harmonic = hoomd.azplugins.bond.ImageHarmonic()
+    harmonic.params["A-A"] = dict(k=2.0, r0=1.0)
+    integrator.forces = [harmonic]
+
+    # calculate energies and forces
+    sim.operations.integrator = integrator
+    sim.run(0)
+
+    unwrapped_position_1 = (
+        numpy.array(position_1) + numpy.array(image_1) * snap.configuration.box[:3]
+    )
+    unwrapped_position_2 = (
+        numpy.array(position_2) + numpy.array(image_2) * snap.configuration.box[:3]
+    )
+    expected_distance = numpy.linalg.norm(unwrapped_position_2 - unwrapped_position_1)
+
+    # test that the energies match reference values, half goes to each particle
+    energies = harmonic.energies
+    e = (expected_distance - 1) ** 2
+    if sim.device.communicator.rank == 0:
+        numpy.testing.assert_array_almost_equal(energies, [0.5 * e, 0.5 * e], decimal=4)
+
+    # test that the forces match reference values
+    # should be 1/sqrt(3) along each axis.
+    # Particle 1 in - direction and particle 2 in + direction
+    forces = harmonic.forces
+    f = -2 * (expected_distance - 1)
+    if sim.device.communicator.rank == 0:
+        numpy.testing.assert_array_almost_equal(
+            forces, [[f, f, f], [-f, -f, -f]] / numpy.sqrt(3), decimal=4
         )
