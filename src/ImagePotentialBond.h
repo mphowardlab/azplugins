@@ -331,6 +331,7 @@ CommFlags ImagePotentialBond<evaluator, Bonds>::getRequestedCommFlags(uint64_t t
     CommFlags flags = CommFlags(0);
 
     flags[comm_flag::tag] = 1;
+    flags[comm_flag::image] = 1;
 
     if (evaluator::needsCharge())
         flags[comm_flag::charge] = 1;
