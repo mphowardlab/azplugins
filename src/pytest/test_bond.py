@@ -248,8 +248,8 @@ class TestImageBond:
             snap.particles.types = ["A"]
             snap.particles.image[:] = [image_1, image_2]
             snap.bonds.N = 1
-            snap.bonds.group[:] = [[0, 1]]
-            snap.bonds.typeid[:] = [0]
+            snap.bonds.group[0] = [0, 1]
+            snap.bonds.typeid[0] = 0
             snap.bonds.types = ["A-A"]
 
         return snap
