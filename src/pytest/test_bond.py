@@ -237,25 +237,6 @@ def test_energy_and_force(
         )
 
 
-@pytest.mark.parametrize(
-    "position_1, position_2, image_1, image_2,",
-    [
-        # Bond longer than half the box length, both images zero
-        ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [0, 0, 0]),
-        # Bond with particles in different x images
-        ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [-1, 0, 0]),
-        # Bond with particles in different y images
-        ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [0, -1, 0]),
-        # Bond with particles in different z images
-        ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [0, 0, -1]),
-        # Bond with particles in different xyz images
-        ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [-1, -1, -1]),
-        # Bond with particles in different images, particle 1 in image
-        ([-2, -2, -2], [2, 2, 2], [1, 1, 1], [0, 0, 0]),
-        # Bond with particles in different images, both particles in image
-        ([-2, -2, -2], [2, 2, 2], [1, 1, 1], [-1, -1, -1]),
-    ],
-)
 class TestImageBond:
     def _make_snapshot(self, position_1, position_2, image_1, image_2):
         snap = hoomd.Snapshot()
@@ -270,8 +251,28 @@ class TestImageBond:
             snap.bonds.group[:] = [[0, 1]]
             snap.bonds.typeid[:] = [0]
             snap.bonds.types = ["A-A"]
+
         return snap
 
+    @pytest.mark.parametrize(
+        "position_1, position_2, image_1, image_2,",
+        [
+            # Bond longer than half the box length, both images zero
+            ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [0, 0, 0]),
+            # Bond with particles in different x images
+            ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [-1, 0, 0]),
+            # Bond with particles in different y images
+            ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [0, -1, 0]),
+            # Bond with particles in different z images
+            ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [0, 0, -1]),
+            # Bond with particles in different xyz images
+            ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [-1, -1, -1]),
+            # Bond with particles in different images, particle 1 in image
+            ([-2, -2, -2], [2, 2, 2], [1, 1, 1], [0, 0, 0]),
+            # Bond with particles in different images, both particles in image
+            ([-2, -2, -2], [2, 2, 2], [1, 1, 1], [-1, -1, -1]),
+        ],
+    )
     def test_imageharmonic(
         self, simulation_factory, position_1, position_2, image_1, image_2
     ):
