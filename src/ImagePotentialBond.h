@@ -34,43 +34,16 @@ namespace azplugins
 
     \ingroup computes
 */
-template<class evaluator, class Bonds> class ImagePotentialBond : public ForceCompute
+template<class evaluator, class Bonds> class ImagePotentialBond : public PotentialBond<evaluator, Bonds>
     {
-    public:
-    //! Param type from evaluator
-    typedef typename evaluator::param_type param_type;
-
-    //! Constructs the compute
-    ImagePotentialBond(std::shared_ptr<SystemDefinition> sysdef);
-
-    //! Constructs the compute with external Bond data
-    ImagePotentialBond(std::shared_ptr<SystemDefinition> sysdef,
-                       std::shared_ptr<MeshDefinition> meshdef);
-
-    //! Destructor
-    virtual ~ImagePotentialBond();
-
-    /// Set the parameters
-    virtual void setParams(unsigned int type, const param_type& param);
-    virtual void setParamsPython(std::string type, pybind11::dict param);
-
-    /// Get the parameters
-    pybind11::dict getParams(std::string type);
-
-    /// Validate bond type
-    virtual void validateType(unsigned int type, std::string action);
-
 #ifdef ENABLE_MPI
+    public:
     //! Get ghost particle fields requested by this pair potential
-    virtual CommFlags getRequestedCommFlags(uint64_t timestep);
+   CommFlags getRequestedCommFlags(uint64_t timestep) override;
 #endif
 
     protected:
-    GPUArray<param_type> m_params;      //!< Bond parameters per type
-    std::shared_ptr<Bonds> m_bond_data; //!< Bond data to use in computing bonds
-
-    //! Actually compute the forces
-    virtual void computeForces(uint64_t timestep);
+    void computeForces(uint64_t timestep) override;
     };
 
 template<class evaluator, class Bonds>
@@ -174,7 +147,7 @@ void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
     assert(m_pdata);
 
     // access the particle data arrays
-    ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
+    ArrayHandle<Scalar4> h_pos(this->m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<int3> h_image(m_pdata->getImages(), access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
     ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
@@ -328,15 +301,8 @@ void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
 template<class evaluator, class Bonds>
 CommFlags ImagePotentialBond<evaluator, Bonds>::getRequestedCommFlags(uint64_t timestep)
     {
-    CommFlags flags = CommFlags(0);
-
-    flags[comm_flag::tag] = 1;
+    CommFlags flags = PotentialBond<evaluator, Bonds>::getRequestedCommFlags(timestep);
     flags[comm_flag::image] = 1;
-
-    if (evaluator::needsCharge())
-        flags[comm_flag::charge] = 1;
-
-    flags |= ForceCompute::getRequestedCommFlags(timestep);
 
     return flags;
     }
@@ -351,11 +317,9 @@ namespace detail
 template<class T> void export_ImagePotentialBond(pybind11::module& m, const std::string& name)
     {
     pybind11::class_<ImagePotentialBond<T, BondData>,
-                     ForceCompute,
+                     PotentialBond<T, BondData>,
                      std::shared_ptr<ImagePotentialBond<T, BondData>>>(m, name.c_str())
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>>())
-        .def("setParams", &ImagePotentialBond<T, BondData>::setParamsPython)
-        .def("getParams", &ImagePotentialBond<T, BondData>::getParams);
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>>());
     }
 
 //! Exports the PotentialMeshBond class to python
@@ -365,11 +329,9 @@ template<class T> void export_ImagePotentialBond(pybind11::module& m, const std:
 template<class T> void export_PotentialMeshBond(pybind11::module& m, const std::string& name)
     {
     pybind11::class_<ImagePotentialBond<T, MeshBondData>,
-                     ForceCompute,
+                     PotentialBond<T, MeshBondData>,
                      std::shared_ptr<ImagePotentialBond<T, MeshBondData>>>(m, name.c_str())
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<MeshDefinition>>())
-        .def("setParams", &ImagePotentialBond<T, MeshBondData>::setParamsPython)
-        .def("getParams", &ImagePotentialBond<T, MeshBondData>::getParams);
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<MeshDefinition>>());
     }
 
     } // end namespace detail
