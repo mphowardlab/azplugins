@@ -9,6 +9,7 @@
 #include "hoomd/ForceCompute.h"
 #include "hoomd/GPUArray.h"
 #include "hoomd/MeshDefinition.h"
+#include "hoomd/md/PotentialBond.h"
 #include <memory>
 
 #include <vector>
@@ -34,109 +35,22 @@ namespace azplugins
 
     \ingroup computes
 */
-template<class evaluator, class Bonds> class ImagePotentialBond : public PotentialBond<evaluator, Bonds>
+template<class evaluator, class Bonds>
+class ImagePotentialBond : public md::PotentialBond<evaluator, Bonds>
     {
+    public:
+    //! Inherit constructors from base class
+    using md::PotentialBond<evaluator, Bonds>::PotentialBond;
+
 #ifdef ENABLE_MPI
     public:
     //! Get ghost particle fields requested by this pair potential
-   CommFlags getRequestedCommFlags(uint64_t timestep) override;
+    CommFlags getRequestedCommFlags(uint64_t timestep) override;
 #endif
 
     protected:
     void computeForces(uint64_t timestep) override;
     };
-
-template<class evaluator, class Bonds>
-ImagePotentialBond<evaluator, Bonds>::ImagePotentialBond(std::shared_ptr<SystemDefinition> sysdef)
-    : ForceCompute(sysdef)
-    {
-    m_exec_conf->msg->notice(5) << "Constructing PotentialBond<" << evaluator::getName() << ">"
-                                << std::endl;
-    assert(m_pdata);
-
-    // access the bond data for later use
-    m_bond_data = m_sysdef->getBondData();
-
-    // allocate the parameters
-    GPUArray<param_type> params(m_bond_data->getNTypes(), m_exec_conf);
-    m_params.swap(params);
-    }
-
-template<class evaluator, class Bonds>
-ImagePotentialBond<evaluator, Bonds>::ImagePotentialBond(std::shared_ptr<SystemDefinition> sysdef,
-                                                         std::shared_ptr<MeshDefinition> meshdef)
-    : ForceCompute(sysdef)
-    {
-    m_exec_conf->msg->notice(5) << "Constructing PotentialMeshBond<" << evaluator::getName() << ">"
-                                << std::endl;
-    assert(m_pdata);
-
-    // access the bond data for later use
-    m_bond_data = meshdef->getMeshBondData();
-
-    // allocate the parameters
-    GPUArray<param_type> params(m_bond_data->getNTypes(), m_exec_conf);
-    m_params.swap(params);
-    }
-
-template<class evaluator, class Bonds> ImagePotentialBond<evaluator, Bonds>::~ImagePotentialBond()
-    {
-    m_exec_conf->msg->notice(5) << "Destroying PotentialBond<" << evaluator::getName() << ">"
-                                << std::endl;
-    }
-
-/*! \param type Type of the bond to set parameters for
-    \param param Parameter to set
-
-    Sets the parameters for the potential of a particular bond type
-*/
-template<class evaluator, class Bonds>
-void ImagePotentialBond<evaluator, Bonds>::validateType(unsigned int type, std::string action)
-    {
-    // make sure the type is valid
-    if (type >= m_bond_data->getNTypes())
-        {
-        std::string err = "Invalid bond type specified.";
-        err += "Error " + action + " in PotentialBond";
-        throw std::runtime_error(err);
-        }
-    }
-
-template<class evaluator, class Bonds>
-void ImagePotentialBond<evaluator, Bonds>::setParams(unsigned int type, const param_type& param)
-    {
-    // make sure the type is valid
-    validateType(type, "setting params");
-    ArrayHandle<param_type> h_params(m_params, access_location::host, access_mode::readwrite);
-    h_params.data[type] = param;
-    }
-
-/*! \param types Type of the bond to set parameters for using string
-    \param param Parameter to set
-
-    Sets the parameters for the potential of a particular bond type
-*/
-template<class evaluator, class Bonds>
-void ImagePotentialBond<evaluator, Bonds>::setParamsPython(std::string type, pybind11::dict param)
-    {
-    auto itype = m_bond_data->getTypeByName(type);
-    auto struct_param = param_type(param);
-    setParams(itype, struct_param);
-    }
-
-/*! \param types Type of the bond to set parameters for using string
-    \param param Parameter to set
-
-    Sets the parameters for the potential of a particular bond type
-*/
-template<class evaluator, class Bonds>
-pybind11::dict ImagePotentialBond<evaluator, Bonds>::getParams(std::string type)
-    {
-    auto itype = m_bond_data->getTypeByName(type);
-    validateType(itype, "getting params");
-    ArrayHandle<param_type> h_params(m_params, access_location::host, access_mode::read);
-    return h_params.data[itype].asDict();
-    }
 
 /*! Actually perform the force computation
     \param timestep Current time step
@@ -144,19 +58,27 @@ pybind11::dict ImagePotentialBond<evaluator, Bonds>::getParams(std::string type)
 template<class evaluator, class Bonds>
 void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
     {
-    assert(m_pdata);
+    assert(this->m_pdata);
 
     // access the particle data arrays
-    ArrayHandle<Scalar4> h_pos(this->m_pdata->getPositions(), access_location::host, access_mode::read);
-    ArrayHandle<int3> h_image(m_pdata->getImages(), access_location::host, access_mode::read);
-    ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
-    ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
+    ArrayHandle<Scalar4> h_pos(this->m_pdata->getPositions(),
+                               access_location::host,
+                               access_mode::read);
+    ArrayHandle<int3> h_image(this->m_pdata->getImages(), access_location::host, access_mode::read);
+    ArrayHandle<unsigned int> h_rtag(this->m_pdata->getRTags(),
+                                     access_location::host,
+                                     access_mode::read);
+    ArrayHandle<Scalar> h_charge(this->m_pdata->getCharges(),
+                                 access_location::host,
+                                 access_mode::read);
 
-    ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::readwrite);
-    ArrayHandle<Scalar> h_virial(m_virial, access_location::host, access_mode::readwrite);
+    ArrayHandle<Scalar4> h_force(this->m_force, access_location::host, access_mode::readwrite);
+    ArrayHandle<Scalar> h_virial(this->m_virial, access_location::host, access_mode::readwrite);
 
     // access the parameters
-    ArrayHandle<param_type> h_params(m_params, access_location::host, access_mode::read);
+    ArrayHandle<typename evaluator::param_type> h_params(this->m_params,
+                                                         access_location::host,
+                                                         access_mode::read);
 
     // there are enough other checks on the input data: but it doesn't hurt to be safe
     assert(h_force.data);
@@ -165,13 +87,13 @@ void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
     assert(h_charge.data);
 
     // Zero data for force calculation
-    m_force.zeroFill();
-    m_virial.zeroFill();
+    this->m_force.zeroFill();
+    this->m_virial.zeroFill();
 
     // we are using the minimum image of the global box here
     // to ensure that ghosts are always correctly wrapped (even if a bond exceeds half the domain
     // length)
-    const BoxDim box = m_pdata->getGlobalBox();
+    const BoxDim box = this->m_pdata->getGlobalBox();
 
     PDataFlags flags = this->m_pdata->getFlags();
     bool compute_virial = flags[pdata_flag::pressure_tensor];
@@ -180,24 +102,24 @@ void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
     for (unsigned int i = 0; i < 6; i++)
         bond_virial[i] = Scalar(0.0);
 
-    ArrayHandle<typename Bonds::members_t> h_bonds(m_bond_data->getMembersArray(),
+    ArrayHandle<typename Bonds::members_t> h_bonds(this->m_bond_data->getMembersArray(),
                                                    access_location::host,
                                                    access_mode::read);
-    ArrayHandle<typeval_t> h_typeval(m_bond_data->getTypeValArray(),
+    ArrayHandle<typeval_t> h_typeval(this->m_bond_data->getTypeValArray(),
                                      access_location::host,
                                      access_mode::read);
 
-    unsigned int max_local = m_pdata->getN() + m_pdata->getNGhosts();
+    unsigned int max_local = this->m_pdata->getN() + this->m_pdata->getNGhosts();
 
     // for each of the bonds
-    const unsigned int size = (unsigned int)m_bond_data->getN();
+    const unsigned int size = (unsigned int)this->m_bond_data->getN();
 
     for (unsigned int i = 0; i < size; i++)
         {
         // lookup the tag of each of the particles participating in the bond
         const typename Bonds::members_t& bond = h_bonds.data[i];
-        assert(bond.tag[0] < m_pdata->getMaximumTag() + 1);
-        assert(bond.tag[1] < m_pdata->getMaximumTag() + 1);
+        assert(bond.tag[0] < this->m_pdata->getMaximumTag() + 1);
+        assert(bond.tag[1] < this->m_pdata->getMaximumTag() + 1);
 
         // transform a and b into indices into the particle data arrays
         // (MEM TRANSFER: 4 integers)
@@ -263,7 +185,7 @@ void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
                 }
 
             // add the force to the particles (only for non-ghost particles)
-            if (idx_b < m_pdata->getN())
+            if (idx_b < this->m_pdata->getN())
                 {
                 h_force.data[idx_b].x += force_divr * dx.x;
                 h_force.data[idx_b].y += force_divr * dx.y;
@@ -271,10 +193,10 @@ void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
                 h_force.data[idx_b].w += bond_eng;
                 if (compute_virial)
                     for (unsigned int i = 0; i < 6; i++)
-                        h_virial.data[i * m_virial_pitch + idx_b] += bond_virial[i];
+                        h_virial.data[i * this->m_virial_pitch + idx_b] += bond_virial[i];
                 }
 
-            if (idx_a < m_pdata->getN())
+            if (idx_a < this->m_pdata->getN())
                 {
                 h_force.data[idx_a].x -= force_divr * dx.x;
                 h_force.data[idx_a].y -= force_divr * dx.y;
@@ -282,7 +204,7 @@ void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
                 h_force.data[idx_a].w += bond_eng;
                 if (compute_virial)
                     for (unsigned int i = 0; i < 6; i++)
-                        h_virial.data[i * m_virial_pitch + idx_a] += bond_virial[i];
+                        h_virial.data[i * this->m_virial_pitch + idx_a] += bond_virial[i];
                 }
             }
         else
@@ -301,7 +223,7 @@ void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
 template<class evaluator, class Bonds>
 CommFlags ImagePotentialBond<evaluator, Bonds>::getRequestedCommFlags(uint64_t timestep)
     {
-    CommFlags flags = PotentialBond<evaluator, Bonds>::getRequestedCommFlags(timestep);
+    CommFlags flags = md::PotentialBond<evaluator, Bonds>::getRequestedCommFlags(timestep);
     flags[comm_flag::image] = 1;
 
     return flags;
@@ -317,7 +239,7 @@ namespace detail
 template<class T> void export_ImagePotentialBond(pybind11::module& m, const std::string& name)
     {
     pybind11::class_<ImagePotentialBond<T, BondData>,
-                     PotentialBond<T, BondData>,
+                     md::PotentialBond<T, BondData>,
                      std::shared_ptr<ImagePotentialBond<T, BondData>>>(m, name.c_str())
         .def(pybind11::init<std::shared_ptr<SystemDefinition>>());
     }
@@ -329,7 +251,7 @@ template<class T> void export_ImagePotentialBond(pybind11::module& m, const std:
 template<class T> void export_PotentialMeshBond(pybind11::module& m, const std::string& name)
     {
     pybind11::class_<ImagePotentialBond<T, MeshBondData>,
-                     PotentialBond<T, MeshBondData>,
+                     md::PotentialBond<T, MeshBondData>,
                      std::shared_ptr<ImagePotentialBond<T, MeshBondData>>>(m, name.c_str())
         .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<MeshDefinition>>());
     }
