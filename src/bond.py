@@ -186,7 +186,7 @@ class ImageHarmonic(bond.Bond):
     """
 
     _ext_module = _azplugins
-    _cpp_class_name = "ImageBondPotentialHarmonic"
+    _cpp_class_name = "ImagePotentialBondHarmonic"
 
     def __init__(self):
         super().__init__()

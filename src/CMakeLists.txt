@@ -4,7 +4,7 @@ set(COMPONENT_NAME azplugins)
 # TODO: List all host C++ source code files in _${COMPONENT_NAME}_sources.
 set(_${COMPONENT_NAME}_sources
     ConstantFlow.cc
-    export_ImageBondPotentialHarmonic.cc
+    export_ImagePotentialBondHarmonic.cc
     module.cc
     ParabolicFlow.cc
     VelocityCompute.cc

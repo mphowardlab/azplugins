@@ -52,7 +52,7 @@ namespace detail
 // bond
 void export_PotentialBondDoubleWell(pybind11::module&);
 void export_PotentialBondQuartic(pybind11::module&);
-void export_ImageBondPotentialHarmonic(pybind11::module&);
+void export_ImagePotentialBondHarmonic(pybind11::module&);
 
 // compute
 void export_CartesianVelocityFieldCompute(pybind11::module&);
@@ -115,7 +115,7 @@ PYBIND11_MODULE(_azplugins, m)
     // bond
     export_PotentialBondDoubleWell(m);
     export_PotentialBondQuartic(m);
-    export_ImageBondPotentialHarmonic(m);
+    export_ImagePotentialBondHarmonic(m);
 
     // compute
     export_CartesianVelocityFieldCompute(m);
