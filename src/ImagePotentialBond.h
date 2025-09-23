@@ -2,7 +2,7 @@
 // Copyright (c) 2021-2025, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-// File copied from HOOMD-blue. Above needed to pass license check.
+// File modified from HOOMD-blue
 // Copyright (c) 2009-2025 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
@@ -31,7 +31,7 @@ namespace hoomd
     {
 namespace azplugins
     {
-/*! Bond potential with evaluator support
+/*! Bond potential using unwrapped coordinates
 
     \ingroup computes
 */
@@ -43,7 +43,6 @@ class ImagePotentialBond : public md::PotentialBond<evaluator, Bonds>
     using md::PotentialBond<evaluator, Bonds>::PotentialBond;
 
 #ifdef ENABLE_MPI
-    public:
     //! Get ghost particle fields requested by this pair potential
     CommFlags getRequestedCommFlags(uint64_t timestep) override;
 #endif
@@ -58,8 +57,6 @@ class ImagePotentialBond : public md::PotentialBond<evaluator, Bonds>
 template<class evaluator, class Bonds>
 void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
     {
-    assert(this->m_pdata);
-
     // access the particle data arrays
     ArrayHandle<Scalar4> h_pos(this->m_pdata->getPositions(),
                                access_location::host,
@@ -80,19 +77,10 @@ void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
                                                          access_location::host,
                                                          access_mode::read);
 
-    // there are enough other checks on the input data: but it doesn't hurt to be safe
-    assert(h_force.data);
-    assert(h_virial.data);
-    assert(h_pos.data);
-    assert(h_charge.data);
-
     // Zero data for force calculation
     this->m_force.zeroFill();
     this->m_virial.zeroFill();
 
-    // we are using the minimum image of the global box here
-    // to ensure that ghosts are always correctly wrapped (even if a bond exceeds half the domain
-    // length)
     const BoxDim box = this->m_pdata->getGlobalBox();
 
     PDataFlags flags = this->m_pdata->getFlags();
@@ -118,8 +106,6 @@ void ImagePotentialBond<evaluator, Bonds>::computeForces(uint64_t timestep)
         {
         // lookup the tag of each of the particles participating in the bond
         const typename Bonds::members_t& bond = h_bonds.data[i];
-        assert(bond.tag[0] < this->m_pdata->getMaximumTag() + 1);
-        assert(bond.tag[1] < this->m_pdata->getMaximumTag() + 1);
 
         // transform a and b into indices into the particle data arrays
         // (MEM TRANSFER: 4 integers)

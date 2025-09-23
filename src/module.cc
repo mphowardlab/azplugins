@@ -50,9 +50,9 @@ namespace azplugins
 namespace detail
     {
 // bond
+void export_ImagePotentialBondHarmonic(pybind11::module&);
 void export_PotentialBondDoubleWell(pybind11::module&);
 void export_PotentialBondQuartic(pybind11::module&);
-void export_ImagePotentialBondHarmonic(pybind11::module&);
 
 // compute
 void export_CartesianVelocityFieldCompute(pybind11::module&);
@@ -113,9 +113,9 @@ PYBIND11_MODULE(_azplugins, m)
     using namespace hoomd::azplugins::detail;
 
     // bond
+    export_ImagePotentialBondHarmonic(m);
     export_PotentialBondDoubleWell(m);
     export_PotentialBondQuartic(m);
-    export_ImagePotentialBondHarmonic(m);
 
     // compute
     export_CartesianVelocityFieldCompute(m);
