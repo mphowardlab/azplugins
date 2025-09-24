@@ -79,6 +79,7 @@ void export_PotentialPairDPDThermoGeneralWeight(pybind11::module&);
 
 #ifdef ENABLE_HIP
 // bond
+void export_ImagePotentialBondHarmonicGPU(pybind11::module&);
 void export_PotentialBondDoubleWellGPU(pybind11::module&);
 void export_PotentialBondQuarticGPU(pybind11::module&);
 
@@ -142,6 +143,7 @@ PYBIND11_MODULE(_azplugins, m)
 
 #ifdef ENABLE_HIP
     // bond
+    export_ImagePotentialBondHarmonicGPU(m);
     export_PotentialBondDoubleWellGPU(m);
     export_PotentialBondQuarticGPU(m);
 
