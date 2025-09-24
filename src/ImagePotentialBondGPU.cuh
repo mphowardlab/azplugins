@@ -183,7 +183,7 @@ __global__ void gpu_compute_bond_forces_kernel(Scalar4* d_force,
         const int3 img_b = d_images[cur_bond_idx];
 
         // get relative vector between particles using image shift
-        const Scalar3 dx = box.shift(neigh_pos - pos, img_b - img_a);
+        const Scalar3 dx = box.shift(pos - neigh_pos, img_a - img_b);
 
         // get the bond parameters (MEM TRANSFER: 8 bytes)
         const typename evaluator::param_type* param;

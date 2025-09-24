@@ -38,14 +38,8 @@ class ImagePotentialBondGPU : public md::PotentialBondGPU<evaluator, Bonds>
     //! Inherit constructors from base class
     using md::PotentialBondGPU<evaluator, Bonds>::PotentialBondGPU;
 
-    //! Destructor
-    virtual ~ImagePotentialBondGPU() { }
-
     protected:
-    //! Actually compute the forces
     virtual void computeForces(uint64_t timestep);
-
-    private:
     GPUArray<unsigned int> m_flags; //!< Flags set during the kernel execution
     };
 
@@ -119,7 +113,7 @@ void ImagePotentialBondGPU<evaluator, Bonds>::computeForces(uint64_t timestep)
     if (this->m_exec_conf->isCUDAErrorCheckingEnabled())
         {
         CHECK_CUDA_ERROR();
-
+        m_flags = GPUArray<unsigned int>(1, this->m_exec_conf);
         ArrayHandle<unsigned int> h_flags(m_flags, access_location::host, access_mode::read);
 
         if (h_flags.data[0] & 1)
