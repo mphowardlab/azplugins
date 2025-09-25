@@ -49,7 +49,6 @@ class ImagePotentialBondGPU : public md::PotentialBondGPU<evaluator, Bonds>
 
     protected:
     void computeForces(uint64_t timestep) override;
-    GPUArray<unsigned int> m_flags; //!< Flags set during the kernel execution
     };
 
 template<class evaluator, class Bonds>
@@ -93,7 +92,9 @@ void ImagePotentialBondGPU<evaluator, Bonds>::computeForces(uint64_t timestep)
                                                 access_mode::read);
 
         // access the flags array for overwriting
-        ArrayHandle<unsigned int> d_flags(m_flags, access_location::device, access_mode::readwrite);
+        ArrayHandle<unsigned int> d_flags(this->m_flags,
+                                          access_location::device,
+                                          access_mode::readwrite);
 
         this->m_tuner->begin();
 
@@ -122,8 +123,8 @@ void ImagePotentialBondGPU<evaluator, Bonds>::computeForces(uint64_t timestep)
     if (this->m_exec_conf->isCUDAErrorCheckingEnabled())
         {
         CHECK_CUDA_ERROR();
-        m_flags = GPUArray<unsigned int>(1, this->m_exec_conf);
-        ArrayHandle<unsigned int> h_flags(m_flags, access_location::host, access_mode::read);
+        this->m_flags = GPUArray<unsigned int>(1, this->m_exec_conf);
+        ArrayHandle<unsigned int> h_flags(this->m_flags, access_location::host, access_mode::read);
 
         if (h_flags.data[0] & 1)
             {
