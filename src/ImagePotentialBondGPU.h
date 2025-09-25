@@ -98,23 +98,23 @@ void ImagePotentialBondGPU<evaluator, Bonds>::computeForces(uint64_t timestep)
         this->m_tuner->begin();
 
         // Use Custom Kernel
-        azplugins::kernel::gpu_compute_bond_forces<evaluator, Bonds::size>(
-            azplugins::kernel::bond_args_t<Bonds::size>(d_force.data,
-                                                        d_virial.data,
-                                                        this->m_virial.getPitch(),
-                                                        this->m_pdata->getN(),
-                                                        this->m_pdata->getMaxN(),
-                                                        d_pos.data,
-                                                        d_charge.data,
-                                                        d_images.data,
-                                                        box,
-                                                        d_gpu_bondlist.data,
-                                                        gpu_table_indexer,
-                                                        d_gpu_bond_pos_list.data,
-                                                        d_gpu_n_bonds.data,
-                                                        this->m_bond_data->getNTypes(),
-                                                        this->m_tuner->getParam()[0],
-                                                        this->m_exec_conf->dev_prop),
+        azplugins::gpu::compute_bond_forces<evaluator, 2>(
+            azplugins::gpu::bond_args_t<Bonds::size>(d_force.data,
+                                                     d_virial.data,
+                                                     this->m_virial.getPitch(),
+                                                     this->m_pdata->getN(),
+                                                     this->m_pdata->getMaxN(),
+                                                     d_pos.data,
+                                                     d_charge.data,
+                                                     d_images.data,
+                                                     box,
+                                                     d_gpu_bondlist.data,
+                                                     gpu_table_indexer,
+                                                     d_gpu_bond_pos_list.data,
+                                                     d_gpu_n_bonds.data,
+                                                     this->m_bond_data->getNTypes(),
+                                                     this->m_tuner->getParam()[0],
+                                                     this->m_exec_conf->dev_prop),
             d_params.data,
             d_flags.data);
         }

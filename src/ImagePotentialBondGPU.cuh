@@ -27,7 +27,7 @@ namespace hoomd
     {
 namespace azplugins
     {
-namespace kernel
+namespace gpu
     {
 //! Wraps arguments to kernel driver
 template<int group_size> struct bond_args_t
@@ -76,6 +76,9 @@ template<int group_size> struct bond_args_t
 
 #ifdef __HIPCC__
 
+namespace kernel
+    {
+
 //! Kernel for calculating bond forces
 /*! This kernel is called to calculate the bond forces on all N particles. Actual evaluation of the
    potentials and forces for each bond is handled via the template class \a evaluator.
@@ -103,21 +106,21 @@ template<int group_size> struct bond_args_t
 
 */
 template<class evaluator, int group_size, bool enable_shared_cache>
-__global__ void gpu_compute_bond_forces_kernel(Scalar4* d_force,
-                                               Scalar* d_virial,
-                                               const size_t virial_pitch,
-                                               const unsigned int N,
-                                               const Scalar4* d_pos,
-                                               const Scalar* d_charge,
-                                               const int3* d_images,
-                                               const BoxDim box,
-                                               const group_storage<group_size>* blist,
-                                               const Index2D blist_idx,
-                                               const unsigned int* bpos_list,
-                                               const unsigned int* n_bonds_list,
-                                               const unsigned int n_bond_type,
-                                               const typename evaluator::param_type* d_params,
-                                               unsigned int* d_flags)
+__global__ void compute_bond_forces(Scalar4* d_force,
+                                    Scalar* d_virial,
+                                    const size_t virial_pitch,
+                                    const unsigned int N,
+                                    const Scalar4* d_pos,
+                                    const Scalar* d_charge,
+                                    const int3* d_images,
+                                    const BoxDim box,
+                                    const group_storage<group_size>* blist,
+                                    const Index2D blist_idx,
+                                    const unsigned int* bpos_list,
+                                    const unsigned int* n_bonds_list,
+                                    const unsigned int n_bond_type,
+                                    const typename evaluator::param_type* d_params,
+                                    unsigned int* d_flags)
     {
     // start by identifying which particle we are to handle
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -250,6 +253,7 @@ __global__ void gpu_compute_bond_forces_kernel(Scalar4* d_force,
     for (unsigned int i = 0; i < 6; i++)
         d_virial[i * virial_pitch + idx] = virial[i];
     }
+    } // end namespace kernel
 
 //! Kernel driver that computes lj forces on the GPU for LJForceComputeGPU
 /*! \param bond_args Other arguments to pass onto the kernel
@@ -261,9 +265,9 @@ __global__ void gpu_compute_bond_forces_kernel(Scalar4* d_force,
 */
 template<class evaluator, int group_size>
 __attribute__((visibility("default"))) hipError_t
-gpu_compute_bond_forces(const kernel::bond_args_t<group_size>& bond_args,
-                        const typename evaluator::param_type* d_params,
-                        unsigned int* d_flags)
+compute_bond_forces(const bond_args_t<group_size>& bond_args,
+                    const typename evaluator::param_type* d_params,
+                    unsigned int* d_flags)
     {
     assert(d_params);
     assert(bond_args.n_bond_types > 0);
@@ -273,9 +277,10 @@ gpu_compute_bond_forces(const kernel::bond_args_t<group_size>& bond_args,
 
     unsigned int max_block_size;
     hipFuncAttributes attr;
-    hipFuncGetAttributes(&attr,
-                         reinterpret_cast<const void*>(
-                             &gpu_compute_bond_forces_kernel<evaluator, group_size, true>));
+    hipFuncGetAttributes(
+        &attr,
+        reinterpret_cast<const void*>(
+            &azplugins::gpu::kernel::compute_bond_forces<evaluator, group_size, true>));
     max_block_size = attr.maxThreadsPerBlock;
 
     unsigned int run_block_size = min(bond_args.block_size, max_block_size);
@@ -297,49 +302,51 @@ gpu_compute_bond_forces(const kernel::bond_args_t<group_size>& bond_args,
     // run the kernel
     if (enable_shared_cache)
         {
-        hipLaunchKernelGGL((gpu_compute_bond_forces_kernel<evaluator, group_size, true>),
-                           grid,
-                           threads,
-                           shared_bytes,
-                           0,
-                           bond_args.d_force,
-                           bond_args.d_virial,
-                           bond_args.virial_pitch,
-                           bond_args.N,
-                           bond_args.d_pos,
-                           bond_args.d_charge,
-                           bond_args.d_images,
-                           bond_args.box,
-                           bond_args.d_gpu_bondlist,
-                           bond_args.gpu_table_indexer,
-                           bond_args.d_gpu_bond_pos,
-                           bond_args.d_gpu_n_bonds,
-                           bond_args.n_bond_types,
-                           d_params,
-                           d_flags);
+        hipLaunchKernelGGL(
+            (azplugins::gpu::kernel::compute_bond_forces<evaluator, group_size, true>),
+            grid,
+            threads,
+            shared_bytes,
+            0,
+            bond_args.d_force,
+            bond_args.d_virial,
+            bond_args.virial_pitch,
+            bond_args.N,
+            bond_args.d_pos,
+            bond_args.d_charge,
+            bond_args.d_images,
+            bond_args.box,
+            bond_args.d_gpu_bondlist,
+            bond_args.gpu_table_indexer,
+            bond_args.d_gpu_bond_pos,
+            bond_args.d_gpu_n_bonds,
+            bond_args.n_bond_types,
+            d_params,
+            d_flags);
         }
     else
         {
-        hipLaunchKernelGGL((gpu_compute_bond_forces_kernel<evaluator, group_size, false>),
-                           grid,
-                           threads,
-                           shared_bytes,
-                           0,
-                           bond_args.d_force,
-                           bond_args.d_virial,
-                           bond_args.virial_pitch,
-                           bond_args.N,
-                           bond_args.d_pos,
-                           bond_args.d_charge,
-                           bond_args.d_images,
-                           bond_args.box,
-                           bond_args.d_gpu_bondlist,
-                           bond_args.gpu_table_indexer,
-                           bond_args.d_gpu_bond_pos,
-                           bond_args.d_gpu_n_bonds,
-                           bond_args.n_bond_types,
-                           d_params,
-                           d_flags);
+        hipLaunchKernelGGL(
+            (azplugins::gpu::kernel::compute_bond_forces<evaluator, group_size, false>),
+            grid,
+            threads,
+            shared_bytes,
+            0,
+            bond_args.d_force,
+            bond_args.d_virial,
+            bond_args.virial_pitch,
+            bond_args.N,
+            bond_args.d_pos,
+            bond_args.d_charge,
+            bond_args.d_images,
+            bond_args.box,
+            bond_args.d_gpu_bondlist,
+            bond_args.gpu_table_indexer,
+            bond_args.d_gpu_bond_pos,
+            bond_args.d_gpu_n_bonds,
+            bond_args.n_bond_types,
+            d_params,
+            d_flags);
         }
 
     return hipSuccess;
@@ -347,12 +354,12 @@ gpu_compute_bond_forces(const kernel::bond_args_t<group_size>& bond_args,
 #else
 template<class evaluator, int group_size>
 __attribute__((visibility("default"))) hipError_t
-gpu_compute_bond_forces(const kernel::bond_args_t<group_size>& bond_args,
-                        const typename evaluator::param_type* d_params,
-                        unsigned int* d_flags);
+compute_bond_forces(const bond_args_t<group_size>& bond_args,
+                    const typename evaluator::param_type* d_params,
+                    unsigned int* d_flags);
 #endif
 
-    } // end namespace kernel
+    } // end namespace gpu
     } // end namespace azplugins
     } // end namespace hoomd
 

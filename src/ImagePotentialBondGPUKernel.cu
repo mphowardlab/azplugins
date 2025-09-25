@@ -13,14 +13,15 @@ namespace hoomd
     {
 namespace azplugins
     {
-namespace kernel
+namespace gpu
     {
+// Template instantiation with updated function name
 template __attribute__((visibility("default"))) hipError_t
-gpu_compute_bond_forces<hoomd::md::EvaluatorBondHarmonic, 2>(
-    const kernel::bond_args_t<2>& bond_args,
+compute_bond_forces<hoomd::md::EvaluatorBondHarmonic, 2>(
+    const bond_args_t<2>& bond_args,
     const hoomd::md::EvaluatorBondHarmonic::param_type* d_params,
     unsigned int* d_flags);
 
-    } // end namespace kernel
+    } // end namespace gpu
     } // end namespace azplugins
     } // end namespace hoomd
