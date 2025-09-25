@@ -2,6 +2,10 @@
 // Copyright (c) 2021-2025, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
+// File modified from HOOMD-blue
+// Copyright (c) 2009-2025 The Regents of the University of Michigan.
+// Part of HOOMD-blue, released under the BSD 3-Clause License.
+
 #include "hip/hip_runtime.h"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/Index1D.h"
@@ -16,8 +20,8 @@
     \brief Defines templated GPU kernel code for calculating the bond forces.
 */
 
-#ifndef __IMAGE_POTENTIAL_BOND_GPU_CUH__
-#define __IMAGE_POTENTIAL_BOND_GPU_CUH__
+#ifndef AZPLUGINS_IMAGE_POTENTIAL_BOND_GPU_CUH_
+#define AZPLUGINS_IMAGE_POTENTIAL_BOND_GPU_CUH_
 
 namespace hoomd
     {
@@ -183,6 +187,9 @@ __global__ void gpu_compute_bond_forces_kernel(Scalar4* d_force,
         const int3 img_b = d_images[cur_bond_idx];
 
         // get relative vector between particles using image shift
+        // this is the opposite direction from the CPU code because
+        // the force is added below instead of subtracted. HOOMD uses
+        // this convention for their GPU code as well.
         const Scalar3 dx = box.shift(pos - neigh_pos, img_a - img_b);
 
         // get the bond parameters (MEM TRANSFER: 8 bytes)
@@ -349,4 +356,4 @@ gpu_compute_bond_forces(const kernel::bond_args_t<group_size>& bond_args,
     } // end namespace azplugins
     } // end namespace hoomd
 
-#endif // __IMAGE_POTENTIAL_BOND_GPU_CUH__
+#endif // AZPLUGINS_IMAGE_POTENTIAL_BOND_GPU_CUH_

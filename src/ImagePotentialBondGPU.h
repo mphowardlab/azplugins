@@ -2,8 +2,12 @@
 // Copyright (c) 2021-2025, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-#ifndef __IMAGE_POTENTIAL_BOND_GPU_H__
-#define __IMAGE_POTENTIAL_BOND_GPU_H__
+// File modified from HOOMD-blue
+// Copyright (c) 2009-2025 The Regents of the University of Michigan.
+// Part of HOOMD-blue, released under the BSD 3-Clause License.
+
+#ifndef AZPLUGINS_IMAGE_POTENTIAL_BOND_GPU_H_
+#define AZPLUGINS_IMAGE_POTENTIAL_BOND_GPU_H_
 
 #ifdef ENABLE_HIP
 
@@ -38,8 +42,13 @@ class ImagePotentialBondGPU : public md::PotentialBondGPU<evaluator, Bonds>
     //! Inherit constructors from base class
     using md::PotentialBondGPU<evaluator, Bonds>::PotentialBondGPU;
 
+#ifdef ENABLE_MPI
+    //! Get ghost particle fields requested by this pair potential
+    CommFlags getRequestedCommFlags(uint64_t timestep) override;
+#endif
+
     protected:
-    virtual void computeForces(uint64_t timestep);
+    void computeForces(uint64_t timestep) override;
     GPUArray<unsigned int> m_flags; //!< Flags set during the kernel execution
     };
 
@@ -127,6 +136,19 @@ void ImagePotentialBondGPU<evaluator, Bonds>::computeForces(uint64_t timestep)
     this->m_tuner->end();
     }
 
+#ifdef ENABLE_MPI
+/*! \param timestep Current time step
+ */
+template<class evaluator, class Bonds>
+CommFlags ImagePotentialBondGPU<evaluator, Bonds>::getRequestedCommFlags(uint64_t timestep)
+    {
+    CommFlags flags = md::PotentialBondGPU<evaluator, Bonds>::getRequestedCommFlags(timestep);
+    flags[comm_flag::image] = 1;
+
+    return flags;
+    }
+#endif
+
 namespace detail
     {
 //! Exports the ImagePotentialBondGPU class to python
@@ -141,21 +163,9 @@ template<class T> void export_ImagePotentialBondGPU(pybind11::module& m, const s
         .def(pybind11::init<std::shared_ptr<SystemDefinition>>());
     }
 
-//! Exports the PotentialMeshBond class to python
-/*! \param name Name of the class in the exported python module
-    \tparam T Evaluator type to export.
-*/
-template<class T> void export_PotentialMeshBondGPU(pybind11::module& m, const std::string& name)
-    {
-    pybind11::class_<ImagePotentialBondGPU<T, MeshBondData>,
-                     md::PotentialBondGPU<T, MeshBondData>,
-                     std::shared_ptr<ImagePotentialBondGPU<T, MeshBondData>>>(m, name.c_str())
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<MeshDefinition>>());
-    }
-
     } // end namespace detail
     } // end namespace azplugins
     } // end namespace hoomd
 
 #endif // ENABLE_HIP
-#endif // __IMAGE_POTENTIAL_BOND_GPU_H__
+#endif // AZPLUGINS_IMAGE_POTENTIAL_BOND_GPU_H_

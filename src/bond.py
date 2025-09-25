@@ -157,7 +157,7 @@ class Quartic(bond.Bond):
         self._add_typeparam(params)
 
 
-class ImageHarmonic(bond.Bond):
+class ImageHarmonic(bond.Harmonic):
     r"""Harmonic bond potential using unwrapped coordinates.
 
     This class implements the same potential as `hoomd.md.bond.Harmonic`, but
@@ -190,12 +190,3 @@ class ImageHarmonic(bond.Bond):
 
     _ext_module = _azplugins
     _cpp_class_name = "ImagePotentialBondHarmonic"
-
-    def __init__(self):
-        super().__init__()
-        params = TypeParameter(
-            "params",
-            "bond_types",
-            TypeParameterDict(r0=float, k=float, len_keys=1),
-        )
-        self._add_typeparam(params)

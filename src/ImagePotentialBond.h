@@ -230,18 +230,6 @@ template<class T> void export_ImagePotentialBond(pybind11::module& m, const std:
         .def(pybind11::init<std::shared_ptr<SystemDefinition>>());
     }
 
-//! Exports the PotentialMeshBond class to python
-/*! \param name Name of the class in the exported python module
-    \tparam T Evaluator type to export.
-*/
-template<class T> void export_PotentialMeshBond(pybind11::module& m, const std::string& name)
-    {
-    pybind11::class_<ImagePotentialBond<T, MeshBondData>,
-                     md::PotentialBond<T, MeshBondData>,
-                     std::shared_ptr<ImagePotentialBond<T, MeshBondData>>>(m, name.c_str())
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<MeshDefinition>>());
-    }
-
     } // end namespace detail
     } // end namespace azplugins
     } // end namespace hoomd

@@ -2,10 +2,12 @@
 // Copyright (c) 2021-2025, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-// clang-format off
+// File modified from HOOMD-blue
+// Copyright (c) 2009-2025 The Regents of the University of Michigan.
+// Part of HOOMD-blue, released under the BSD 3-Clause License.
+
 #include "ImagePotentialBondGPU.cuh"
 #include "hoomd/md/EvaluatorBondHarmonic.h"
-// clang-format on
 
 namespace hoomd
     {
