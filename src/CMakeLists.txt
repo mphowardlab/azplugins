@@ -4,18 +4,21 @@ set(COMPONENT_NAME azplugins)
 # TODO: List all host C++ source code files in _${COMPONENT_NAME}_sources.
 set(_${COMPONENT_NAME}_sources
     ConstantFlow.cc
+    export_ImagePotentialBondHarmonic.cc
     module.cc
     ParabolicFlow.cc
     VelocityCompute.cc
     )
 if (ENABLE_HIP)
     list(APPEND _${COMPONENT_NAME}_sources
+    export_ImagePotentialBondHarmonicGPU.cc
     VelocityComputeGPU.cc
     )
 endif()
 
 # TODO: List all GPU C++ source code files in _${COMPONENT_NAME}_cu_sources.
 set(_${COMPONENT_NAME}_cu_sources
+    ImagePotentialBondGPUKernel.cu
     VelocityComputeGPU.cu
     VelocityFieldComputeGPU.cu
     )

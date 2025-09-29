@@ -235,3 +235,75 @@ def test_energy_and_force(
         numpy.testing.assert_array_almost_equal(
             forces, [[-f, 0, 0], [f, 0, 0]], decimal=4
         )
+
+
+@pytest.mark.parametrize(
+    "position_1, position_2, image_1, image_2,",
+    [
+        # Bond longer than half the box length, both images zero
+        ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [0, 0, 0]),
+        # Bond with particles in different x images
+        ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [-1, 0, 0]),
+        # Bond with particles in different y images
+        ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [0, -1, 0]),
+        # Bond with particles in different z images
+        ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [0, 0, -1]),
+        # Bond with particles in different xyz images
+        ([-2, -2, -2], [2, 2, 2], [0, 0, 0], [-1, -1, -1]),
+        # Bond with particles in different images, particle 1 in image
+        ([-2, -2, -2], [2, 2, 2], [1, 1, 1], [0, 0, 0]),
+        # Bond with particles in different images, both particles in image
+        ([-2, -2, -2], [2, 2, 2], [1, 1, 1], [-1, -1, -1]),
+    ],
+)
+def test_image_harmonic(simulation_factory, position_1, position_2, image_1, image_2):
+    """Test ImageHarmonic bond with different particle images."""
+    snap = hoomd.Snapshot()
+    if snap.communicator.rank == 0:
+        snap.configuration.box = [5, 5, 5, 0, 0, 0]
+        snap.particles.N = 2
+        snap.particles.position[:] = [position_1, position_2]
+        snap.particles.typeid[:] = [0, 0]
+        snap.particles.types = ["A"]
+        snap.particles.image[:] = [image_1, image_2]
+        snap.bonds.N = 1
+        snap.bonds.group[0] = [0, 1]
+        snap.bonds.typeid[0] = 0
+        snap.bonds.types = ["A-A"]
+
+    sim = simulation_factory(snap)
+
+    # setup dummy NVE integrator
+    integrator = hoomd.md.Integrator(dt=0.001)
+    nve = hoomd.md.methods.ConstantVolume(hoomd.filter.All())
+    integrator.methods = [nve]
+
+    # setup pair potential
+    harmonic = hoomd.azplugins.bond.ImageHarmonic()
+    harmonic.params["A-A"] = dict(k=2.0, r0=1.0)
+    integrator.forces = [harmonic]
+
+    # calculate energies and forces
+    sim.operations.integrator = integrator
+    sim.run(0)
+
+    # Compute expected distance
+    box = numpy.array(sim.state.box.L)
+    unwrapped_position_1 = numpy.array(position_1) + numpy.array(image_1) * box
+    unwrapped_position_2 = numpy.array(position_2) + numpy.array(image_2) * box
+    expected_distance = numpy.linalg.norm(unwrapped_position_2 - unwrapped_position_1)
+
+    # test that the energies match reference values, half goes to each particle
+    energies = harmonic.energies
+    e = (expected_distance - 1) ** 2
+    if sim.device.communicator.rank == 0:
+        numpy.testing.assert_array_almost_equal(energies, [0.5 * e, 0.5 * e], decimal=4)
+
+    # test that the forces match reference values
+    forces = harmonic.forces
+    f = -2 * (expected_distance - 1)
+    direction = -(unwrapped_position_2 - unwrapped_position_1) / expected_distance
+    force_vector = f * direction
+    expected_forces = [force_vector, -force_vector]
+    if sim.device.communicator.rank == 0:
+        numpy.testing.assert_array_almost_equal(forces, expected_forces, decimal=4)

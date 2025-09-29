@@ -1,0 +1,27 @@
+// Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021-2025, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
+
+// File modified from HOOMD-blue
+// Copyright (c) 2009-2025 The Regents of the University of Michigan.
+// Part of HOOMD-blue, released under the BSD 3-Clause License.
+
+#include "ImagePotentialBondGPU.cuh"
+#include "hoomd/md/EvaluatorBondHarmonic.h"
+
+namespace hoomd
+    {
+namespace azplugins
+    {
+namespace gpu
+    {
+// Template instantiation with updated function name
+template __attribute__((visibility("default"))) hipError_t
+compute_bond_forces<hoomd::md::EvaluatorBondHarmonic, 2>(
+    const bond_args_t<2>& bond_args,
+    const hoomd::md::EvaluatorBondHarmonic::param_type* d_params,
+    unsigned int* d_flags);
+
+    } // end namespace gpu
+    } // end namespace azplugins
+    } // end namespace hoomd
