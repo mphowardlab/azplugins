@@ -353,10 +353,10 @@ compute_bond_forces(const bond_args_t<group_size>& bond_args,
     }
 #else
 template<class evaluator, int group_size>
-__attribute__((visibility("default"))) hipError_t
-compute_bond_forces(const bond_args_t<group_size>& bond_args,
-                    const typename evaluator::param_type* d_params,
-                    unsigned int* d_flags);
+__attribute__((visibility("default")))
+hipError_t compute_bond_forces(const bond_args_t<group_size>& bond_args,
+                               const typename evaluator::param_type* d_params,
+                               unsigned int* d_flags);
 #endif
 
     } // end namespace gpu
