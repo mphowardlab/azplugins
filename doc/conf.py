@@ -18,7 +18,7 @@ project = "azplugins"
 year = datetime.date.today().year
 copyright = f"2018-2020, Michael P. Howard. 2021-{year}, Auburn University."
 author = "Michael P. Howard"
-release = "1.1.0"
+release = "1.2.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

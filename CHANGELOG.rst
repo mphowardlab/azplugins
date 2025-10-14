@@ -8,9 +8,19 @@ Release notes
 v1
 ---
 
+v1.2.0
+^^^^^^
+Released 14 October 2025
+
+*New features*
+
+* ``bond.ImageHarmonic`` is an alternative version of the harmonic bond potential
+  in HOOMD. It computes the distance using the particle images, rather than the
+  minimum image convention.
+
 v1.1.0
 ^^^^^^
-Released 24 January 2024
+Released 24 January 2025
 
 *New features*
 

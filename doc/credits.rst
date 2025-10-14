@@ -19,7 +19,7 @@ Contributors
 * Ashley Knoerdel
 * Kritika
 * Mayukh Kundu
-* C. Levi Petix
+* C\. Levi Petix
 * Wes Reinhart
 * Jude Ann Vishnu
 
@@ -63,7 +63,7 @@ under a BSD 3-Clause license:
 
 .. code-block:: none
 
-    Copyright (c) 2009-2024 The Regents of the University of Michigan. All
+    Copyright (c) 2009-2025 The Regents of the University of Michigan. All
     rights reserved.
 
     Redistribution and use in source and binary forms, with or without

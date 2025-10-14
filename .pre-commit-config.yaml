@@ -13,6 +13,7 @@ repos:
     exclude_types: [svg]
   - id: check-json
   - id: check-yaml
+    exclude: "\\.clang-format"
   - id: check-case-conflict
   - id: mixed-line-ending
 - repo: https://github.com/glotzerlab/fix-license-header

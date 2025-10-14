@@ -10,9 +10,9 @@ build:
     python: "mambaforge-23.11"
   jobs:
     post_install:
-      - wget https://github.com/glotzerlab/hoomd-blue/releases/download/v5.3.1/hoomd-5.3.1.tar.gz
-      - tar -xzvf hoomd-5.3.1.tar.gz
-      - python doc/mock_install.py hoomd-5.3.1/hoomd src
+      - wget https://github.com/glotzerlab/hoomd-blue/releases/download/v5.4.0/hoomd-5.4.0.tar.gz
+      - tar -xzvf hoomd-5.4.0.tar.gz
+      - python doc/mock_install.py hoomd-5.4.0/hoomd src
 
 conda:
   environment: doc/environment.yaml
