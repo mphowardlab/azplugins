@@ -10,23 +10,54 @@
 #ifndef AZPLUGINS_WALL_EVALUATOR_LJ_93_H_
 #define AZPLUGINS_WALL_EVALUATOR_LJ_93_H_
 
-#ifndef NVCC
-#include <string>
-#endif
+#include "WallEvaluator.h"
 
-#include "hoomd/HOOMDMath.h"
-
-#ifdef NVCC
+#ifdef __HIPCC__
 #define DEVICE __device__
 #else
 #define DEVICE
 #endif
 
+namespace hoomd
+    {
 namespace azplugins
     {
 namespace detail
     {
-//! Evaluates the Lennard-Jones 9-3 wall force
+//! Define the paramter type used by this wall potential evaluator
+struct WallParametersLJ93 : public WallParameters
+    {
+#ifndef __HIPCC__
+    WallParametersLJ93(): sigma_3(0), epsilon(0) { }
+
+    WallParametersLJ93(pybind11::dict v, bool managed = false)
+        {
+        auto sigma(v["sigma"].cast<Scalar>());
+        epsilon = v["epsilon"].cast<Scalar>();
+
+        sigma_3 = sigma * sigma * sigma;
+        }
+
+    pybind11::dict asDict()
+        {
+        pybind11::dict v;
+        v["sigma"] = std::cbrt(sigma_3);
+        v["epsilon"] = epsilon;
+        return v;
+        }
+#endif // __HIPCC__
+
+    Scalar sigma_3;
+    Scalar epsilon;
+    }
+
+#if HOOMD_LONGREAL_SIZE == 32
+    __attribute__((aligned(16)));
+#else
+    __attribute__((aligned(32)));
+#endif
+
+//! Class for evaluatring the Lennard-Jones 9-3 wall force
 /*!
  * WallEvaluatorLJ93 computes the Lennard-Jones 9-3 wall potential, which is derived from
  * integrating the standard Lennard-Jones potential between a point particle and a half plane:
@@ -47,55 +78,26 @@ namespace detail
  * \f[ F(r)/r = \frac{\varepsilon}{r^2} \left ( \frac{6}{5}\left(\frac{\sigma}{r}\right)^9 - 3
  * \left(\frac{\sigma}{r}\right)^3 \right) \f]
  */
-class WallEvaluatorLJ93
+class WallEvaluatorLJ93 : public WallEvaluator
     {
     public:
-    //! Define the parameter type used by this wall potential evaluator
-    typedef Scalar2 param_type;
+    typedef WallParametersLJ93 param_type;
 
     //! Constructor
     /*!
-     * \param _rsq Squared distance between particles
+     * \param _rsq Sqaured distance between particles
      * \param _rcutsq Cutoff radius squared
-     * \param _params Pair potential parameters, given by typedef above
-     *
+     * \param _params Wall potential paramters, given by typedef above
+     * 
      * The functor initializes its members from \a _params.
-     */
+    */
     DEVICE WallEvaluatorLJ93(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), lj1(_params.x), lj2(_params.y)
+        : WallEvaluator(_rsq, _rcutsq)
         {
+        lj1 = (Scalar(2.0) / Scalar(15.0)) * _params.epsilon * _params.sigma_3 * _params.sigma_3 * _params.sigma_3;
+        lj2 = _params.epsilon * _params.sigma_3;
         }
-
-    //! LJ 9-3 doesn't use diameter
-    DEVICE static bool needsDiameter()
-        {
-        return false;
-        }
-    //! Accept the optional diameter values
-    /*!
-     * \param di Diameter of particle
-     * \param dj Dummy diameter
-     *
-     * \note The way HOOMD computes wall forces by recycling evaluators requires that we give
-     *       a second diameter, even though this is meaningless for the potential.
-     */
-    DEVICE void setDiameter(Scalar di, Scalar dj) { }
-
-    //! LJ 9-3 doesn't use charge
-    DEVICE static bool needsCharge()
-        {
-        return false;
-        }
-    //! Accept the optional charge values
-    /*!
-     * \param qi Charge of particle
-     * \param qj Dummy charge
-     *
-     * \note The way HOOMD computes wall forces by recycling evaluators requires that we give
-     *       a second charge, even though this is meaningless for the potential.
-     */
-    DEVICE void setCharge(Scalar qi, Scalar qj) { }
-
+    
     //! Evaluate the force and energy
     /*!
      * \param force_divr Holds the computed force divided by r
@@ -134,8 +136,8 @@ class WallEvaluatorLJ93
         else
             return false;
         }
-
-#ifndef NVCC
+    
+#ifndef __HIPCC__
     //! Return the name of this potential
     static std::string getName()
         {
@@ -143,14 +145,14 @@ class WallEvaluatorLJ93
         }
 #endif
 
-    protected:
-    Scalar rsq;    //!< Stored rsq from the constructor
-    Scalar rcutsq; //!< Stored rcutsq from the constructor
-    Scalar lj1;    //!< lj1 parameter extracted from the params passed to the constructor
-    Scalar lj2;    //!< lj2 parameter extracted from the params passed to the constructor
+    private:
+    Scalar lj1;
+    Scalar lj2;
     };
+
     } // end namespace detail
     } // end namespace azplugins
+    } // end namespace hoomd
 
 #undef DEVICE
 #endif // AZPLUGINS_WALL_EVALUATOR_LJ_93_H_

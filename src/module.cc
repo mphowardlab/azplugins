@@ -77,6 +77,9 @@ void export_PotentialPairPerturbedLennardJones(pybind11::module&);
 // dpd
 void export_PotentialPairDPDThermoGeneralWeight(pybind11::module&);
 
+// wall
+void export_PotentialExternalWallLJ93(pybind11::module&);
+
 #ifdef ENABLE_HIP
 // bond
 void export_ImagePotentialBondHarmonicGPU(pybind11::module&);
@@ -140,6 +143,9 @@ PYBIND11_MODULE(_azplugins, m)
 
     // dpd pair
     export_PotentialPairDPDThermoGeneralWeight(m);
+
+    // wall
+    export_PotentialExternalWallLJ93(m);
 
 #ifdef ENABLE_HIP
     // bond
