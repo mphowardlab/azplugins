@@ -23,84 +23,79 @@ potential_tests = []
 potential_tests += [
     # test the calculation of force and potential for plane
     PotentialTestCase(
-    hoomd.azplugins.wall.LJ93,
-    {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-    hoomd.wall.Plane(origin=(0, 0, 0), normal=(0, 0, 1)),
-    (0, 0, 1.5),
-    -0.2558,
-    -0.5718,
+        hoomd.azplugins.wall.LJ93,
+        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
+        hoomd.wall.Plane(origin=(0, 0, 0), normal=(0, 0, 1)),
+        (0, 0, 1.5),
+        -0.2558,
+        -0.5718,
     ),
-
     PotentialTestCase(
-    hoomd.azplugins.wall.LJ93,
-    {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-    hoomd.wall.Plane(origin=(0, 0, 0), normal=(0, 0, 1)),
-    (0, 0, 3.5),
-    0,
-    0,
+        hoomd.azplugins.wall.LJ93,
+        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
+        hoomd.wall.Plane(origin=(0, 0, 0), normal=(0, 0, 1)),
+        (0, 0, 3.5),
+        0,
+        0,
     ),
-
     # test the calculation of force and potential for sphere
     PotentialTestCase(
-    hoomd.azplugins.wall.LJ93,
-    {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-    hoomd.wall.Sphere(radius=5, origin=(0, 0, 0), inside=True),
-    (0, 0, 3.5),
-    -0.2558,
-    0.5718,
-    ),
-
-    PotentialTestCase(
-    hoomd.azplugins.wall.LJ93,
-    {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-    hoomd.wall.Sphere(radius=5, origin=(0, 0, 0), inside=True),
-    (0, 0, 2.0),
-    0,
-    0,
+        hoomd.azplugins.wall.LJ93,
+        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
+        hoomd.wall.Sphere(radius=5, origin=(0, 0, 0), inside=True),
+        (0, 0, 3.5),
+        -0.2558,
+        0.5718,
     ),
     PotentialTestCase(
-    hoomd.azplugins.wall.LJ93,
-    {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-    hoomd.wall.Sphere(radius=5, origin=(0, 0, 0), inside=True),
-    (0, 0, 5.5),
-    0,
-    0,
+        hoomd.azplugins.wall.LJ93,
+        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
+        hoomd.wall.Sphere(radius=5, origin=(0, 0, 0), inside=True),
+        (0, 0, 2.0),
+        0,
+        0,
     ),
-
+    PotentialTestCase(
+        hoomd.azplugins.wall.LJ93,
+        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
+        hoomd.wall.Sphere(radius=5, origin=(0, 0, 0), inside=True),
+        (0, 0, 5.5),
+        0,
+        0,
+    ),
     # test the calculation of force and potential for cylinder
     PotentialTestCase(
-    hoomd.azplugins.wall.LJ93,
-    {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-    hoomd.wall.Cylinder(radius=5, origin=(0, 0, 0), axis=(1, 0, 0), inside=True),
-    (0, 0, 3.5),
-    -0.2558,
-    0.5718,
+        hoomd.azplugins.wall.LJ93,
+        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
+        hoomd.wall.Cylinder(radius=5, origin=(0, 0, 0), axis=(1, 0, 0), inside=True),
+        (0, 0, 3.5),
+        -0.2558,
+        0.5718,
     ),
-
     PotentialTestCase(
-    hoomd.azplugins.wall.LJ93,
-    {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-    hoomd.wall.Cylinder(radius=5, origin=(0, 0, 0), axis=(1, 0, 0), inside=True),
-    (0, 0, 5.5),
-    0,
-    0,
+        hoomd.azplugins.wall.LJ93,
+        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
+        hoomd.wall.Cylinder(radius=5, origin=(0, 0, 0), axis=(1, 0, 0), inside=True),
+        (0, 0, 5.5),
+        0,
+        0,
     ),
-
     PotentialTestCase(
-    hoomd.azplugins.wall.LJ93,
-    {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-    hoomd.wall.Sphere(radius=5, origin=(0, 0, 0), inside=True),
-    (0, 0, 2.0),
-    0,
-    0,
+        hoomd.azplugins.wall.LJ93,
+        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
+        hoomd.wall.Sphere(radius=5, origin=(0, 0, 0), inside=True),
+        (0, 0, 2.0),
+        0,
+        0,
     ),
 ]
 
+
 @pytest.mark.parametrize(
-"potential_test", potential_tests, ids=lambda x: x.potential.__name__
+    "potential_test", potential_tests, ids=lambda x: x.potential.__name__
 )
 def test_energy_and_force(
-simulation_factory, one_particle_snapshot_factory, potential_test
+    simulation_factory, one_particle_snapshot_factory, potential_test
 ):
     """Test energy and force evaluation."""
     # make one particle test configuration
@@ -115,9 +110,7 @@ simulation_factory, one_particle_snapshot_factory, potential_test
 
     # setup wall potential
     wall = potential_test.wall
-    potential = potential_test.potential(
-        walls=[wall]
-    )
+    potential = potential_test.potential(walls=[wall])
     potential.params["A"] = potential_test.params
     integrator.forces = [potential]
 
@@ -134,28 +127,8 @@ simulation_factory, one_particle_snapshot_factory, potential_test
     if sim.device.communicator.rank == 0:
         numpy.testing.assert_array_almost_equal(energies, e, decimal=4)
 
-    # test that the forces match reference values, should be directed along x
+    # test that the forces match reference values, should be directed along z
     forces = potential.forces
     f = potential_test.force
     if sim.device.communicator.rank == 0:
-        numpy.testing.assert_array_almost_equal(
-            forces, [[0, 0, f]], decimal=4
-        )
-
-    # test if particle stays on correct side of the wall
-    for _ in range(10):
-        sim.run(10)
-        with sim.state.cpu_local_snapshot as snap:
-            pos = snap.particles.position
-        
-            if wall == hoomd.wall.Plane:
-                assert numpy.all(snap.particles.position[:, 2] > 0)
-
-            elif wall == hoomd.wall.Sphere:
-                assert numpy.all(numpy.linalg.norm(snap.particles.position, axis=1) < wall.radius)
-
-            elif wall == hoomd.wall.Cylinder:
-                axis = numpy.array(wall.axis, dtype=float)
-                axis /= numpy.linalg.norm(axis)
-                radial = pos - numpy.dot(pos, axis) * axis
-                assert numpy.linalg.norm(radial) < wall.radius
+        numpy.testing.assert_array_almost_equal(forces, [[0, 0, f]], decimal=4)

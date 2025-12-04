@@ -105,6 +105,9 @@ void export_PotentialPairPerturbedLennardJonesGPU(pybind11::module&);
 // dpd
 void export_PotentialPairDPDThermoGeneralWeightGPU(pybind11::module&);
 
+// wall
+void export_PotentialExternalWallLJ93GPU(pybind11::module&);
+
 #endif // ENABLE_HIP
 
     } // namespace detail
@@ -171,6 +174,9 @@ PYBIND11_MODULE(_azplugins, m)
 
     // dpd pair
     export_PotentialPairDPDThermoGeneralWeightGPU(m);
+
+    // wall
+    export_PotentialExternalWallLJ93GPU(m);
 
 #endif // ENABLE_HIP
     }

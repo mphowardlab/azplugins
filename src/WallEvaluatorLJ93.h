@@ -10,7 +10,7 @@
 #ifndef AZPLUGINS_WALL_EVALUATOR_LJ_93_H_
 #define AZPLUGINS_WALL_EVALUATOR_LJ_93_H_
 
-#include "WallEvaluator.h"
+#include "PairEvaluator.h"
 
 #ifdef __HIPCC__
 #define DEVICE __device__
@@ -25,10 +25,10 @@ namespace azplugins
 namespace detail
     {
 //! Define the paramter type used by this wall potential evaluator
-struct WallParametersLJ93 : public WallParameters
+struct WallParametersLJ93 : public PairParameters
     {
 #ifndef __HIPCC__
-    WallParametersLJ93(): sigma_3(0), epsilon(0) { }
+    WallParametersLJ93() : sigma_3(0), epsilon(0) { }
 
     WallParametersLJ93(pybind11::dict v, bool managed = false)
         {
@@ -78,7 +78,7 @@ struct WallParametersLJ93 : public WallParameters
  * \f[ F(r)/r = \frac{\varepsilon}{r^2} \left ( \frac{6}{5}\left(\frac{\sigma}{r}\right)^9 - 3
  * \left(\frac{\sigma}{r}\right)^3 \right) \f]
  */
-class WallEvaluatorLJ93 : public WallEvaluator
+class WallEvaluatorLJ93 : public PairEvaluator
     {
     public:
     typedef WallParametersLJ93 param_type;
@@ -88,16 +88,17 @@ class WallEvaluatorLJ93 : public WallEvaluator
      * \param _rsq Sqaured distance between particles
      * \param _rcutsq Cutoff radius squared
      * \param _params Wall potential paramters, given by typedef above
-     * 
+     *
      * The functor initializes its members from \a _params.
-    */
+     */
     DEVICE WallEvaluatorLJ93(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : WallEvaluator(_rsq, _rcutsq)
+        : PairEvaluator(_rsq, _rcutsq)
         {
-        lj1 = (Scalar(2.0) / Scalar(15.0)) * _params.epsilon * _params.sigma_3 * _params.sigma_3 * _params.sigma_3;
+        lj1 = (Scalar(2.0) / Scalar(15.0)) * _params.epsilon * _params.sigma_3 * _params.sigma_3
+              * _params.sigma_3;
         lj2 = _params.epsilon * _params.sigma_3;
         }
-    
+
     //! Evaluate the force and energy
     /*!
      * \param force_divr Holds the computed force divided by r
@@ -136,7 +137,7 @@ class WallEvaluatorLJ93 : public WallEvaluator
         else
             return false;
         }
-    
+
 #ifndef __HIPCC__
     //! Return the name of this potential
     static std::string getName()

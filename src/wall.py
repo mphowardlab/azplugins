@@ -5,10 +5,9 @@
 """Wall potentials."""
 
 from hoomd.azplugins import _azplugins
-from hoomd.data.parameterdicts import ParameterDict, TypeParameterDict
+from hoomd.data.parameterdicts import TypeParameterDict
 from hoomd.data.typeparam import TypeParameter
 from hoomd.md.external import wall
-from hoomd.variant import Variant
 
 
 class LJ93(wall.WallPotential):
@@ -17,14 +16,14 @@ class LJ93(wall.WallPotential):
     Args:
         walls (`list` [`hoomd.wall.WallGeometry`]) : A list of wall definitions.
 
-    `LJ93` is Lennard-Jones 9-3 wall potential, which is derived from integrating 
+    `LJ93` is Lennard-Jones 9-3 wall potential, which is derived from integrating
     the standard Lennard-Jones potential between a point particle and a half plane:
 
     .. math::
 
-        U(r) = \varepsilon \left(\frac{2}{15} \left(\frac{\sigma}{r} \right)^9 
+        U(r) = \varepsilon \left(\frac{2}{15} \left(\frac{\sigma}{r} \right)^9
             - \left(\frac{\sigma}{r}\right)^3 \right)]
-    
+
     where:
 
     * :math:`\sigma` - diameter of Lennard-Jones particles in the wall
@@ -32,7 +31,7 @@ class LJ93(wall.WallPotential):
 
     Example::
 
-        walls = [hoomd.wall.Plane(origin=(0, 0, 0), normal=(0, 1,0))]
+        walls = [hoomd.wall.Plane(origin=(0, 0, 0), normal=(0, 1, 0))]
         lj93 = azplugins.wall.LJ93(walls=walls)
         lj93.params["A"] = dict(
             sigma=1.0,
@@ -48,14 +47,14 @@ class LJ93(wall.WallPotential):
 
         * ``sigma`` (`float`, **required**) - Lennard-Jones particle size
           :math:`\sigma` :math:`[\mathrm{length}]`
-        * ``epsilon`` (`float`, **required**) - energy parameter 
+        * ``epsilon`` (`float`, **required**) - energy parameter
           :math:`\varepsilon` :math:`[\mathrm{energy}]`
-        * ``r_cut`` (`float`, **required**) - The cut off distance for 
+        * ``r_cut`` (`float`, **required**) - The cut off distance for
           the wall potential :math:`[\mathrm{length}]`
-        * ``r_extrap`` (`float`, **optional**) - The distance to 
+        * ``r_extrap`` (`float`, **optional**) - The distance to
           extrapolate the potential, defaults to 0.
           :math:`[\mathrm{length}]`.
-        
+
         Type: :class:`~hoomd.data.typeparam.TypeParameter` [``particle_type``], `dict`]
     """
 
@@ -67,6 +66,8 @@ class LJ93(wall.WallPotential):
         params = TypeParameter(
             "params",
             "particle_types",
-            TypeParameterDict(sigma=float, epsilon=float, r_cut=float, r_extrap=float, len_keys=1),
+            TypeParameterDict(
+                sigma=float, epsilon=float, r_cut=float, r_extrap=0.0, len_keys=1
+            ),
         )
         self._add_typeparam(params)
