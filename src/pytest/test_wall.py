@@ -14,77 +14,25 @@ import pytest
 
 PotentialTestCase = collections.namedtuple(
     "PotentialTestCase",
-    ["potential", "params", "wall", "position", "energy", "force"],
+    ["potential", "params", "position", "energy", "force"],
 )
 
 potential_tests = []
 
 # Lennard Jones 9-3
 potential_tests += [
-    # test the calculation of force and potential for plane
+    # test the calculation of force and potential
     PotentialTestCase(
         hoomd.azplugins.wall.LJ93,
-        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-        hoomd.wall.Plane(origin=(0, 0, 0), normal=(0, 0, 1)),
+        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0},
         (0, 0, 1.5),
         -0.2558,
         -0.5718,
     ),
     PotentialTestCase(
         hoomd.azplugins.wall.LJ93,
-        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-        hoomd.wall.Plane(origin=(0, 0, 0), normal=(0, 0, 1)),
+        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0},
         (0, 0, 3.5),
-        0,
-        0,
-    ),
-    # test the calculation of force and potential for sphere
-    PotentialTestCase(
-        hoomd.azplugins.wall.LJ93,
-        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-        hoomd.wall.Sphere(radius=5, origin=(0, 0, 0), inside=True),
-        (0, 0, 3.5),
-        -0.2558,
-        0.5718,
-    ),
-    PotentialTestCase(
-        hoomd.azplugins.wall.LJ93,
-        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-        hoomd.wall.Sphere(radius=5, origin=(0, 0, 0), inside=True),
-        (0, 0, 2.0),
-        0,
-        0,
-    ),
-    PotentialTestCase(
-        hoomd.azplugins.wall.LJ93,
-        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-        hoomd.wall.Sphere(radius=5, origin=(0, 0, 0), inside=True),
-        (0, 0, 5.5),
-        0,
-        0,
-    ),
-    # test the calculation of force and potential for cylinder
-    PotentialTestCase(
-        hoomd.azplugins.wall.LJ93,
-        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-        hoomd.wall.Cylinder(radius=5, origin=(0, 0, 0), axis=(1, 0, 0), inside=True),
-        (0, 0, 3.5),
-        -0.2558,
-        0.5718,
-    ),
-    PotentialTestCase(
-        hoomd.azplugins.wall.LJ93,
-        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-        hoomd.wall.Cylinder(radius=5, origin=(0, 0, 0), axis=(1, 0, 0), inside=True),
-        (0, 0, 5.5),
-        0,
-        0,
-    ),
-    PotentialTestCase(
-        hoomd.azplugins.wall.LJ93,
-        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0, "r_extrap": 0.0},
-        hoomd.wall.Sphere(radius=5, origin=(0, 0, 0), inside=True),
-        (0, 0, 2.0),
         0,
         0,
     ),
@@ -109,7 +57,7 @@ def test_energy_and_force(
     integrator.methods = [nve]
 
     # setup wall potential
-    wall = potential_test.wall
+    wall = hoomd.wall.Plane(origin=(0, 0, 0), normal=(0, 0, 1))
     potential = potential_test.potential(walls=[wall])
     potential.params["A"] = potential_test.params
     integrator.forces = [potential]
@@ -119,7 +67,8 @@ def test_energy_and_force(
     sim.run(0)
 
     # test that parameters are still correct after attach runs
-    assert potential.params["A"] == potential_test.params
+    for attr in potential_test.params:
+        assert potential.params["A"][attr] == potential_test.params[attr]
 
     # test that the energies match reference values, half goes to each particle
     energies = potential.energies

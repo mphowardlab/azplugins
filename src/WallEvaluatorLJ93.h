@@ -52,9 +52,9 @@ struct WallParametersLJ93 : public PairParameters
     }
 
 #if HOOMD_LONGREAL_SIZE == 32
-    __attribute__((aligned(16)));
+    __attribute__((aligned(8)));
 #else
-    __attribute__((aligned(32)));
+    __attribute__((aligned(16)));
 #endif
 
 //! Class for evaluatring the Lennard-Jones 9-3 wall force
