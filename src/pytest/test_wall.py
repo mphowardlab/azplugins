@@ -24,14 +24,14 @@ potential_tests += [
     # test the calculation of force and potential
     PotentialTestCase(
         hoomd.azplugins.wall.LJ93,
-        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0},
+        {"sigma": 1.0, "A": 1.0, "r_cut": 3.0},
         (0, 0, 1.5),
         -0.2558,
         -0.5718,
     ),
     PotentialTestCase(
         hoomd.azplugins.wall.LJ93,
-        {"sigma": 1.0, "epsilon": 1.0, "r_cut": 3.0},
+        {"sigma": 1.0, "A": 1.0, "r_cut": 3.0},
         (0, 0, 3.5),
         0,
         0,

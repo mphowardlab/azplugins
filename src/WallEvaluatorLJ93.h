@@ -28,12 +28,12 @@ namespace detail
 struct WallParametersLJ93 : public PairParameters
     {
 #ifndef __HIPCC__
-    WallParametersLJ93() : sigma_3(0), epsilon(0) { }
+    WallParametersLJ93() : sigma_3(0), A(0) { }
 
     WallParametersLJ93(pybind11::dict v, bool managed = false)
         {
         auto sigma(v["sigma"].cast<Scalar>());
-        epsilon = v["epsilon"].cast<Scalar>();
+        A = v["A"].cast<Scalar>();
 
         sigma_3 = sigma * sigma * sigma;
         }
@@ -42,13 +42,13 @@ struct WallParametersLJ93 : public PairParameters
         {
         pybind11::dict v;
         v["sigma"] = std::cbrt(sigma_3);
-        v["epsilon"] = epsilon;
+        v["A"] = A;
         return v;
         }
 #endif // __HIPCC__
 
-    Scalar sigma_3;
-    Scalar epsilon;
+    Scalar sigma_3; //!< Lennard-Jones sigma
+    Scalar A;       //!< Hamaker constant
     }
 
 #if HOOMD_LONGREAL_SIZE == 32
@@ -57,25 +57,25 @@ struct WallParametersLJ93 : public PairParameters
     __attribute__((aligned(16)));
 #endif
 
-//! Class for evaluatring the Lennard-Jones 9-3 wall force
+//! Class for evaluating the Lennard-Jones 9-3 wall force
 /*!
  * WallEvaluatorLJ93 computes the Lennard-Jones 9-3 wall potential, which is derived from
  * integrating the standard Lennard-Jones potential between a point particle and a half plane:
  *
- * \f[ V(r) = \varepsilon \left( \frac{2}{15}\left(\frac{\sigma}{r}\right)^9 -
- * \left(\frac{\sigma}{r}\right)^3 \right) \f]
+ * \f[ V(r) = A \left[ \frac{2}{15}\left(\frac{\sigma}{r}\right)^9 -
+ * \left(\frac{\sigma}{r}\right)^3 \right] \f]
  *
- * where \f$\sigma\f$ is the diameter of Lennard-Jones particles in the wall, and \f$ \varepsilon
- * \f$ is the effective Hamaker constant \f$ \varepsilon = (2/3) \pi \varepsilon_{\rm LJ} \rho_{\rm
- * w} \sigma^3 \f$ with \f$\varepsilon_{\rm LJ}\f$ the energy of interaction and \f$\rho_{\rm w}\f$
- * the density of particles in the wall. Evaluation of this energy is simplified into the following
+ * where \f$\sigma\f$ is the diameter of Lennard-Jones particles in the wall, and \f$ A \f$ is the
+ * Hamaker constant \f$ A = (2/3) \pi \varepsilon_{\rm LJ} \rho_{\rm w} \sigma^3 \f$ with
+ * \f$\varepsilon_{\rm LJ}\f$ the energy of interaction and \f$\rho_{\rm w}\f$ the density of
+ * particles in the wall. Evaluation of this energy is simplified into the following
  * parameters:
  *
- * - \verbatim lj1 = (2.0/15.0) * epsilon * pow(sigma,9.0) \endverbatim
- * - \verbatim lj2 = epsilon * pow(sigma,3.0) \endverbatim
+ * - \verbatim lj1 = (2.0/15.0) * A * pow(sigma,9.0) \endverbatim
+ * - \verbatim lj2 = A * pow(sigma,3.0) \endverbatim
  *
  * The force acting on the particle is then
- * \f[ F(r)/r = \frac{\varepsilon}{r^2} \left ( \frac{6}{5}\left(\frac{\sigma}{r}\right)^9 - 3
+ * \f[ F(r)/r = \frac{A}{r^2} \left ( \frac{6}{5}\left(\frac{\sigma}{r}\right)^9 - 3
  * \left(\frac{\sigma}{r}\right)^3 \right) \f]
  */
 class WallEvaluatorLJ93 : public PairEvaluator
@@ -94,9 +94,9 @@ class WallEvaluatorLJ93 : public PairEvaluator
     DEVICE WallEvaluatorLJ93(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
         : PairEvaluator(_rsq, _rcutsq)
         {
-        lj1 = (Scalar(2.0) / Scalar(15.0)) * _params.epsilon * _params.sigma_3 * _params.sigma_3
+        lj1 = (Scalar(2.0) / Scalar(15.0)) * _params.A * _params.sigma_3 * _params.sigma_3
               * _params.sigma_3;
-        lj2 = _params.epsilon * _params.sigma_3;
+        lj2 = _params.A * _params.sigma_3;
         }
 
     //! Evaluate the force and energy
