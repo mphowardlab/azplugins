@@ -2,7 +2,7 @@
 
 azplugins is a component for [HOOMD-blue][1] which expands its functionality for
 tackling a variety of problems in soft matter physics. Currently, azplugins is
-tested against v5.4.0 of HOOMD-blue. See [CHANGELOG.rst](CHANGELOG.rst) for a
+tested against v6.0.0 of HOOMD-blue. See [CHANGELOG.rst](CHANGELOG.rst) for a
 list of recent development.
 
 ## Compiling azplugins
