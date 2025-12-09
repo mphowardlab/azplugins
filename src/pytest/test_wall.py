@@ -19,6 +19,25 @@ PotentialTestCase = collections.namedtuple(
 
 potential_tests = []
 
+# Colloid
+potential_tests += [
+    # test the calculation of force and potential
+    PotentialTestCase(
+        hoomd.azplugins.wall.Colloid,
+        {"A": 1.0, "a": 1.0, "sigma": 1.0, "r_cut": 3.0},
+        (0, 0, 1.5),
+        -0.0292,
+        0.8940,
+    ),
+    PotentialTestCase(
+        hoomd.azplugins.wall.Colloid,
+        {"A": 1.0, "a": 1.0, "sigma": 1.0, "r_cut": 3.0},
+        (0, 0, 3.5),
+        0,
+        0,
+    ),
+]
+
 # Lennard Jones 9-3
 potential_tests += [
     # test the calculation of force and potential

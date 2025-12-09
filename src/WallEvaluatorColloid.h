@@ -11,23 +11,56 @@
 #ifndef AZPLUGINS_WALL_EVALUATOR_COLLOID_H_
 #define AZPLUGINS_WALL_EVALUATOR_COLLOID_H_
 
-#ifndef NVCC
-#include <string>
-#endif
+#include "PairEvaluator.h"
 
-#include "hoomd/HOOMDMath.h"
-
-#ifdef NVCC
+#ifdef __HIPCC__
 #define DEVICE __device__
 #else
 #define DEVICE
 #endif
 
+namespace hoomd
+    {
 namespace azplugins
     {
 namespace detail
     {
-//! Evaluates the Lennard-Jones colloid wall force
+//! Define the parameter type used by this wall potential evaluator
+struct WallParametersColloid : public PairParameters
+    {
+#ifndef __HIPCC__
+    WallParametersColloid() : A(0), a(0), sigma_3(0) { }
+
+    WallParametersColloid(pybind11::dict v, bool managed = false)
+        {
+        A = v["A"].cast<Scalar>();
+        a = v["a"].cast<Scalar>();
+        auto sigma(v["sigma"].cast<Scalar>());
+        sigma_3 = sigma * sigma * sigma;
+        }
+
+    pybind11::dict asDict()
+        {
+        pybind11::dict v;
+        v["A"] = A;
+        v["a"] = a;
+        v["sigma"] = std::cbrt(sigma_3);
+        return v;
+        }
+#endif // __HIPCC__
+
+    Scalar A;       //!< Hamaker constant
+    Scalar a;       //!< particle radius
+    Scalar sigma_3; //!< Lennard-Jones sigma
+    }
+
+#if HOOMD_LONGREAL_SIZE == 32
+    __attribute__((aligned(8)));
+#else
+    __attribute__((aligned(16)));
+#endif
+
+//! Class for evaluating the Lennard-Jones colloid wall force
 /*!
  * The Lennard-Jones colloid wall potential is derived from integrating the standard Lennard-Jones
  * potential between a spherical particle of radius \f$ a \f$ and a half plane, and it takes the
@@ -49,11 +82,11 @@ namespace detail
  * where \f$ \rho_{\rm w} \f$ and \f$ \rho_{\rm c} \f$ are the wall and colloid densities and \f$
  * \epsilon \f$ is the Lennard-Jones interaction energy.
  */
-class WallEvaluatorColloid
+class WallEvaluatorColloid : public PairEvaluator
     {
     public:
     //! Define the parameter type used by this wall potential evaluator
-    typedef Scalar2 param_type;
+    typedef WallParametersColloid param_type;
 
     //! Constructor
     /*!
@@ -64,42 +97,12 @@ class WallEvaluatorColloid
      * The functor initializes its members from \a _params.
      */
     DEVICE WallEvaluatorColloid(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), A(_params.x), B(_params.y)
+        : PairEvaluator(_rsq, _rcutsq)
         {
+        a = _params.a;
+        lj1 = _params.A * _params.sigma_3 * _params.sigma_3 / Scalar(7560);
+        lj2 = _params.A / Scalar(6);
         }
-
-    //! Colloid diameter is needed
-    DEVICE static bool needsDiameter()
-        {
-        return true;
-        }
-    //! Accept the optional diameter values
-    /*!
-     * \param di Diameter of particle
-     * \param dj Dummy diameter
-     *
-     * \note The way HOOMD computes wall forces by recycling evaluators requires that we give
-     *       a second diameter, even though this is meaningless for the potential.
-     */
-    DEVICE void setDiameter(Scalar di, Scalar dj)
-        {
-        a = Scalar(0.5) * di;
-        }
-
-    //! Colloid wall potential doesn't use charge
-    DEVICE static bool needsCharge()
-        {
-        return false;
-        }
-    //! Accept the optional charge values
-    /*!
-     * \param qi Charge of particle
-     * \param qj Dummy charge
-     *
-     * \note The way HOOMD computes wall forces by recycling evaluators requires that we give
-     *       a second charge, even though this is meaningless for the potential.
-     */
-    DEVICE void setCharge(Scalar qi, Scalar qj) { }
 
     //! Computes the colloid-wall interaction potential
     /*!
@@ -135,18 +138,18 @@ class WallEvaluatorColloid
         if (force)
             {
             Scalar arinv8 = Scalar(8.0) * arinv;
-            force_divr = Scalar(6.0) * A
+            force_divr = Scalar(6.0) * lj1
                          * ((arinv8 - Scalar(1.0)) * r_minus_a_inv2 * r_minus_a_inv6
                             + (arinv8 + Scalar(1.0)) * r_plus_a_inv2 * r_plus_a_inv6);
-            force_divr -= B * (Scalar(4.0) * a * a * arinv * r2_minus_a2_inv * r2_minus_a2_inv);
+            force_divr -= lj2 * (Scalar(4.0) * a * a * arinv * r2_minus_a2_inv * r2_minus_a2_inv);
             }
 
         // energy
         Scalar a7 = Scalar(7.0) * a;
-        Scalar energy = A
+        Scalar energy = lj1
                         * ((a7 - r) * r_minus_a_inv * r_minus_a_inv6
                            + (a7 + r) * r_plus_a_inv * r_plus_a_inv6);
-        energy -= B * (Scalar(2.0) * a * r * r2_minus_a2_inv + log(r_plus_a_inv / r_minus_a_inv));
+        energy -= lj2 * (Scalar(2.0) * a * r * r2_minus_a2_inv + log(r_plus_a_inv / r_minus_a_inv));
         return energy;
         }
 
@@ -163,7 +166,7 @@ class WallEvaluatorColloid
      */
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& energy, bool energy_shift)
         {
-        if (rsq < rcutsq && A != 0 && a > 0)
+        if (rsq < rcutsq && lj1 != 0 && a > 0)
             {
             energy = computePotential<true>(force_divr, rsq);
             if (energy_shift)
@@ -176,7 +179,7 @@ class WallEvaluatorColloid
             return false;
         }
 
-#ifndef NVCC
+#ifndef __HIPCC__
     //! Return the name of this potential
     static std::string getName()
         {
@@ -184,18 +187,15 @@ class WallEvaluatorColloid
         }
 #endif
 
-    protected:
-    Scalar rsq;    //!< Stored rsq from the constructor
-    Scalar rcutsq; //!< Stored rcutsq from the constructor
-
-    Scalar A; //!< Prefactor for first term (includes Hammaker constant)
-    Scalar B; //!< Prefactor for second term (includes Hammaker constant)
-
-    Scalar a; //!< The particle radius
+    private:
+    Scalar a;   //!< The particle radius
+    Scalar lj1; //!< Prefactor for first term (includes Hamaker constant)
+    Scalar lj2; //!< Prefactor for second term (includes Hamaker constant)
     };
 
     } // end namespace detail
-    } // namespace azplugins
+    } // end namespace azplugins
+    } // end namespace hoomd
 
 #undef DEVICE
 #endif // AZPLUGINS_WALL_EVALUATOR_COLLOID_H_
