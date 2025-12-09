@@ -29,16 +29,16 @@ class LJ93(wall.WallPotential):
     * :math:`\sigma` - diameter of Lennard-Jones particles in the wall
     * :math:`A` - Hamaker constant, related to the Lennard-Jones parameters as
         :math:`A = \frac{2}{3} \pi \varepsilon \sigma^3 \rho`, where :math:`\rho`
-        is the number density of particles in the wall.
+        is the number density of particles in the wall and
+        :math:`\varepsilon` is the Lennard-Jones energy parameter.
 
     Example::
 
         walls = [hoomd.wall.Plane(origin=(0, 0, 0), normal=(0, 1, 0))]
         lj93 = azplugins.wall.LJ93(walls=walls)
-        # For rho = 1, epsilon = 1, sigma = 1, A = 2*pi/3
         lj93.params["A"] = dict(
             sigma=1.0,
-            A=2 * numpy.pi / 3,
+            A=2 * numpy.pi / 3,  # rho = 1, epsilon = 1, sigma = 1
             r_cut=3.0,
         )
 
@@ -47,10 +47,10 @@ class LJ93(wall.WallPotential):
         The `LJ93` potential parameters. The dictionary has the following
         keys:
 
-        * ``sigma`` (`float`, **required**) - Lennard-Jones particle size
-          :math:`\sigma` :math:`[\mathrm{length}]`
         * ``A`` (`float`, **required**) - Hamaker constant
           :math:`A` :math:`[\mathrm{energy}]`
+        * ``sigma`` (`float`, **required**) - Lennard-Jones particle size
+          :math:`\sigma` :math:`[\mathrm{length}]`
         * ``r_cut`` (`float`, **required**) - The cut off distance for
           the wall potential :math:`[\mathrm{length}]`
         * ``r_extrap`` (`float`, **optional**) - The distance to
@@ -69,7 +69,7 @@ class LJ93(wall.WallPotential):
             "params",
             "particle_types",
             TypeParameterDict(
-                sigma=float, A=float, r_cut=float, r_extrap=0.0, len_keys=1
+                A=float, sigma=float, r_cut=float, r_extrap=0.0, len_keys=1
             ),
         )
         self._add_typeparam(params)
