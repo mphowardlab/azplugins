@@ -56,6 +56,7 @@ Contents
     module-azplugins-external
     module-azplugins-flow
     module-azplugins-pair
+    module-azplugins-wall
 
 .. toctree::
     :maxdepth: 1

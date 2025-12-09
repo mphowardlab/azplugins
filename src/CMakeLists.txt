@@ -32,6 +32,7 @@ set(python_files
     external.py
     flow.py
     pair.py
+    wall.py
     )
 
 # TODO: Add names of all bond evaluators
@@ -46,6 +47,11 @@ set(_pair_evaluators
     ExpandedYukawa
     Hertz
     PerturbedLennardJones
+    )
+
+# TODO: Add names of all wall evaluators
+set(_wall_evaluators
+    LJ93
     )
 
 # TODO: Add names of all dpd evaluators
@@ -93,6 +99,25 @@ foreach(_evaluator ${_pair_evaluators})
                        @ONLY)
         set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialPair${_evaluator}GPU.cc)
         set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} PotentialPair${_evaluator}GPUKernel.cu)
+    endif()
+endforeach()
+
+# process wall potentials
+foreach(_evaluator ${_wall_evaluators})
+    configure_file(export_PotentialExternalWall.cc.inc
+                   export_PotentialExternalWall${_evaluator}.cc
+                   @ONLY)
+    set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialExternalWall${_evaluator}.cc)
+
+    if (ENABLE_HIP)
+        configure_file(export_PotentialExternalWallGPU.cc.inc
+                       export_PotentialExternalWall${_evaluator}GPU.cc
+                       @ONLY)
+        configure_file(PotentialExternalWallGPUKernel.cu.inc
+                       PotentialExternalWall${_evaluator}GPUKernel.cu
+                       @ONLY)
+        set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_PotentialExternalWall${_evaluator}GPU.cc)
+        set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} PotentialExternalWall${_evaluator}GPUKernel.cu)
     endif()
 endforeach()
 
