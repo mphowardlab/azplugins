@@ -12,12 +12,14 @@ azplugins.wall
 .. autosummary::
     :nosignatures:
 
+    Colloid
     LJ93
 
 .. rubric:: Details
 
 .. automodule:: hoomd.azplugins.wall
     :synopsis: Wall potentials.
-    :members: LJ93
+    :members: Colloid,
+        LJ93
     :no-inherited-members:
     :show-inheritance:

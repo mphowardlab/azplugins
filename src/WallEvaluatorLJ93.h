@@ -24,7 +24,7 @@ namespace azplugins
     {
 namespace detail
     {
-//! Define the paramter type used by this wall potential evaluator
+//! Define the parameter type used by this wall potential evaluator
 struct WallParametersLJ93 : public PairParameters
     {
 #ifndef __HIPCC__
@@ -85,9 +85,9 @@ class WallEvaluatorLJ93 : public PairEvaluator
 
     //! Constructor
     /*!
-     * \param _rsq Sqaured distance between particles
+     * \param _rsq Squared distance between particles
      * \param _rcutsq Cutoff radius squared
-     * \param _params Wall potential paramters, given by typedef above
+     * \param _params Wall potential parameters, given by typedef above
      *
      * The functor initializes its members from \a _params.
      */

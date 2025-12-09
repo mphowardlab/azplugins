@@ -51,6 +51,7 @@ set(_pair_evaluators
 
 # TODO: Add names of all wall evaluators
 set(_wall_evaluators
+    Colloid
     LJ93
     )
 
