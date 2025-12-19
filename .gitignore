@@ -6,3 +6,6 @@ build*
 doc/build
 doc/env
 **-checkpoint.ipynb
+.pixi/*
+!.pixi/config.toml
+.vscode
