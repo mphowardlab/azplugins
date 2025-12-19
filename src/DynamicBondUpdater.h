@@ -15,28 +15,37 @@
 #error This header cannot be compiled by nvcc
 #endif
 
+#ifndef __HIPCC__
+#include <pybind11/pybind11.h>
+#endif
+
 #include "hoomd/AABBTree.h"
 #include "hoomd/md/NeighborList.h"
 #include "hoomd/Updater.h"
 #include "hoomd/ParticleGroup.h"
-#include "hoomd/extern/pybind/include/pybind11/pybind11.h"
+
+
+namespace hoomd
+{
 
 namespace azplugins
 {
 
-class PYBIND11_EXPORT DynamicBondUpdater : public Updater
+class PYBIND11_EXPORT DynamicBondUpdater : public hoomd::Updater
     {
     public:
 
       //! Simple constructor
       DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
+                         std::shared_ptr<Trigger> trigger,
                          std::shared_ptr<ParticleGroup> group_1,
                          std::shared_ptr<ParticleGroup> group_2,
-                         unsigned int seed);
+                         uint16_t seed);
 
       //! Constructor with parameters
       DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
-                         std::shared_ptr<NeighborList> pair_nlist,
+                         std::shared_ptr<Trigger> trigger,
+                         std::shared_ptr<md::NeighborList> pair_nlist,
                          std::shared_ptr<ParticleGroup> group_1,
                          std::shared_ptr<ParticleGroup> group_2,
                          const Scalar r_cut,
@@ -44,7 +53,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
                          unsigned int bond_type,
                          unsigned int max_bonds_group_1,
                          unsigned int max_bonds_group_2,
-                         unsigned int seed);
+                         uint16_t seed);
 
       //! Destructor
       virtual ~DynamicBondUpdater();
@@ -106,16 +115,13 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
           {
           return m_max_bonds_group_2;
           }
-      //! Set the maximum number of bonds on particles in group_2
-      /*!
-       * \param max_bonds_group_2 max number of bonds formed by particles in group_2
-       */
+      //! set probablilty
       void setProbability(Scalar probability)
           {
           m_probability = probability;
           }
-      //! Get the maximum number of bonds on particles in group_2
-      unsigned int getProbability()
+      //! Get the probability
+      Scalar getProbability()
           {
           return m_probability;
           }
@@ -123,7 +129,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
       /*!
        * \param nlist hoomd NeighborList pointer
        */
-      void setNeighbourList( std::shared_ptr<NeighborList> nlist)
+      void setNeighbourList( std::shared_ptr<md::NeighborList> nlist)
           {
           m_pair_nlist = nlist;
           m_pair_nlist_exclusions_set = true;
@@ -142,7 +148,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         unsigned int m_bond_type;                   //!< Type id of the bond to form
         unsigned int m_max_bonds_group_1;           //!< maximum number of bonds which can be formed by the first group
         unsigned int m_max_bonds_group_2;           //!< maximum number of bonds which can be formed by the second group
-        unsigned int m_seed;                        //!< seed for random number generator for bond probability
+        uint16_t m_seed;                            //!< seed for random number generator for bond probability
 
         unsigned int m_max_bonds;                   //!<  maximum number of possible bonds (or neighbors) which can be found
         unsigned int m_max_bonds_overflow;          //!< registers if there is an overflow in  maximum number of possible bonds
@@ -150,11 +156,11 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         GPUArray<Scalar3> m_all_possible_bonds;     //!< list of possible bonds, size: NumMembers(group_1)*m_max_bonds
         unsigned int m_num_all_possible_bonds;      //!< number of valid possible bonds at the beginning of m_all_possible_bonds
 
-        GlobalArray<unsigned int> m_n_list;        //!< Neighbor list data
-        GlobalArray<unsigned int> m_n_neigh;       //!< Number of neighbors for each particle
+        GPUArray<unsigned int> m_n_list;        //!< Neighbor list data
+        GPUArray<unsigned int> m_n_neigh;       //!< Number of neighbors for each particle
 
-        hpmc::detail::AABBTree        m_aabb_tree;  //!< AABB tree for group_1
-        GPUVector<hpmc::detail::AABB> m_aabbs;      //!< Flat array of AABBs of particles in group_2
+        detail::AABBTree        m_aabb_tree;  //!< AABB tree for group_1
+        GPUVector<detail::AABB> m_aabbs;      //!< Flat array of AABBs of particles in group_2
         std::vector< vec3<Scalar> > m_image_list;   //!< List of translation vectors for tree traversal
         unsigned int m_n_images;                    //!< The number of image vectors to check
 
@@ -163,7 +169,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         unsigned int m_max_existing_bonds_list;        //!< maximum number of  bonds in list of existing bonded particles
         Index2D m_existing_bonds_list_indexer;         //!< Indexer for accessing the by-tag bonded particle list
 
-        std::shared_ptr<NeighborList> m_pair_nlist;    //!< The hoomd neighborlist, only used if exclusions of the newly formed bonds need to be set
+        std::shared_ptr<md::NeighborList> m_pair_nlist;    //!< The hoomd neighborlist, only used if exclusions of the newly formed bonds need to be set
         bool m_pair_nlist_exclusions_set;              //!< whether or not the bonds are set as exclusions in the hoomd particle neighborlist. Set to true when m_pair_nlist is set
 
         //! filter out existing and doublicate bonds from all found possible bonds
@@ -213,5 +219,7 @@ void export_DynamicBondUpdater(pybind11::module& m);
 } // end namespace detail
 
 } // end namespace azplugins
+
+} // end namespace hoomd
 
 #endif // AZPLUGINS_TYPE_UPDATER_H_

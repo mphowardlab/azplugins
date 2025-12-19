@@ -35,12 +35,14 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
     public:
       //! Simple constructor
       DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
+                            std::shared_ptr<Trigger> trigger,
                             std::shared_ptr<ParticleGroup> group_1,
                             std::shared_ptr<ParticleGroup> group_2,
-                            unsigned int seed);
+                            uint16_t seed);
 
       //! Constructor with parameters
       DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
+                            std::shared_ptr<Trigger> trigger,
                             std::shared_ptr<NeighborList> nlist,
                             std::shared_ptr<ParticleGroup> group_1,
                             std::shared_ptr<ParticleGroup> group_2,
@@ -49,7 +51,7 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
                             unsigned int bond_type,
                             unsigned int max_bonds_group_1,
                             unsigned int max_bonds_group_2,
-                            unsigned int seed);
+                            uint16_t seed);
 
       //! Destructor
       virtual ~DynamicBondUpdaterGPU();

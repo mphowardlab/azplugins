@@ -36,7 +36,7 @@ DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> s
     }
 
 DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
-                                              std::shared_ptr<NeighborList> pair_nlist,
+                                              std::shared_ptr<md::NeighborList> pair_nlist,
                                               std::shared_ptr<ParticleGroup> group_1,
                                               std::shared_ptr<ParticleGroup> group_2,
                                               const Scalar r_cut,
@@ -67,8 +67,6 @@ DynamicBondUpdaterGPU::~DynamicBondUpdaterGPU()
 void DynamicBondUpdaterGPU::buildTree()
     {
 
-    if (m_prof) m_prof->push("buildTree");
-
     ArrayHandle<unsigned int> d_index_group_2(m_group_2->getIndexArray(), access_location::device, access_mode::read);
     ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
     const BoxDim lbvh_box = getLBVHBox();
@@ -81,13 +79,10 @@ void DynamicBondUpdaterGPU::buildTree()
                                 lbvh_box.getLo(),
                                 lbvh_box.getHi());
 
-
-   if (m_prof) m_prof->pop();
    }
 
 void DynamicBondUpdaterGPU::traverseTree()
     {
-   if (m_prof) m_prof->push("traverseTree");
     ArrayHandle<unsigned int> d_nlist(m_n_list, access_location::device, access_mode::overwrite);
     ArrayHandle<unsigned int> d_n_neigh(m_n_neigh, access_location::device, access_mode::overwrite);
     ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
@@ -117,8 +112,6 @@ void DynamicBondUpdaterGPU::traverseTree()
 
      m_max_bonds_overflow =  m_max_bonds_overflow_flag.readFlags();
 
-    if (m_prof) m_prof->pop();
-
     }
 
 
@@ -126,7 +119,6 @@ void DynamicBondUpdaterGPU::traverseTree()
 void DynamicBondUpdaterGPU::filterPossibleBonds()
    {
 
-    if (m_prof) m_prof->push("filterPossibleBonds copy ");
     //copy data from m_n_list to d_all_possible_bonds. nlist saves indices and the existing bonds have to be stored by tags
     //so copy data first then sort out existing bonds
     const unsigned int size = m_group_1->getNumMembers()*m_max_bonds;
@@ -159,8 +151,6 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
     if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
     m_copy_tuner->end();
 
-    if (m_prof) m_prof->pop();
-    if (m_prof) m_prof->push("filterPossibleBonds remove existing");
 
     //filter out the existing bonds - based on neighbor list exclusion handeling
     m_tuner_filter_bonds->begin();
@@ -173,9 +163,6 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
     if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
     m_tuner_filter_bonds->end();
 
-    if (m_prof) m_prof->pop();
-    if (m_prof) m_prof->push("filterPossibleBonds sort_remove");
-
     m_num_all_possible_bonds = 0;
 
     gpu::remove_zeros_and_sort_possible_bond_array(d_all_possible_bonds.data,
@@ -183,8 +170,6 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
                                                    m_num_nonzero_bonds_flag.getDeviceFlags());
 
     m_num_all_possible_bonds = m_num_nonzero_bonds_flag.readFlags();
-
-    if (m_prof) m_prof->pop();
 
 
     // at this point, the sub-array: d_all_possible_bonds[0,m_num_all_possible_bonds]
@@ -261,9 +246,9 @@ namespace detail
      namespace py = pybind11;
 
      py::class_< DynamicBondUpdaterGPU, std::shared_ptr<DynamicBondUpdaterGPU> >(m, "DynamicBondUpdaterGPU", py::base<DynamicBondUpdater>())
-       .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<ParticleGroup>, std::shared_ptr<ParticleGroup>, unsigned int>())
-       .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, std::shared_ptr<ParticleGroup>,
-              std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int, unsigned int>());
+       .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Trigger>,std::shared_ptr<ParticleGroup>, std::shared_ptr<ParticleGroup>, unsigned int>())
+       .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<Trigger>, std::shared_ptr<md::NeighborList>, std::shared_ptr<ParticleGroup>,
+              std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int, uint16_t>());
      }
 
 } // end namespace detail

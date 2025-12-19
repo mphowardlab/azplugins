@@ -12,7 +12,11 @@
 #include "DynamicBondUpdater.h"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
+#include "hoomd/AABBTree.h"
+#include "hoomd/AABB.h"
 
+namespace hoomd
+{
 namespace azplugins
 {
 
@@ -23,13 +27,14 @@ namespace azplugins
  * This constructor requires that the user properly initialize the system via setters.
  */
 DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
+                                       std::shared_ptr<Trigger> trigger,
                                        std::shared_ptr<ParticleGroup> group_1,
                                        std::shared_ptr<ParticleGroup> group_2,
-                                       unsigned int seed)
-          : Updater(sysdef),
-           m_group_1(group_1),  m_group_2(group_2), m_seed(seed), m_groups_identical(false),
-           m_r_cut(0), m_probability(0), m_bond_type(0xffffffff),
-           m_max_bonds_group_1(0),m_max_bonds_group_2(0),
+                                       uint16_t seed)
+          : Updater(sysdef, trigger),
+           m_group_1(group_1),  m_group_2(group_2), m_groups_identical(false),
+           m_r_cut(0), m_probability(0.0), m_bond_type(0xffffffff),
+           m_max_bonds_group_1(0),m_max_bonds_group_2(0), m_seed(seed),
            m_pair_nlist(nullptr), m_pair_nlist_exclusions_set(false),
            m_box_changed(true), m_max_N_changed(true)
     {
@@ -48,7 +53,8 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
     }
 
 DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
-                         std::shared_ptr<NeighborList> pair_nlist,
+                         std::shared_ptr<Trigger> trigger,
+                         std::shared_ptr<md::NeighborList> pair_nlist,
                          std::shared_ptr<ParticleGroup> group_1,
                          std::shared_ptr<ParticleGroup> group_2,
                          const Scalar r_cut,
@@ -56,8 +62,8 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                          unsigned int bond_type,
                          unsigned int max_bonds_group_1,
                          unsigned int max_bonds_group_2,
-                         unsigned int seed)
-        : Updater(sysdef),
+                         uint16_t seed)
+        : Updater(sysdef, trigger),
          m_group_1(group_1),  m_group_2(group_2),  m_groups_identical(false),
          m_r_cut(r_cut), m_probability(probability), m_bond_type(bond_type),
          m_max_bonds_group_1(max_bonds_group_1),m_max_bonds_group_2(max_bonds_group_2),
@@ -92,7 +98,6 @@ DynamicBondUpdater::~DynamicBondUpdater()
 */
 void DynamicBondUpdater::update(unsigned int timestep)
     {
-      if (m_prof) m_prof->push("DynamicBondUpdater");
 
       // don't do anything if either one of the groups is  empty
       if (m_group_1->getNumMembers() == 0 || m_group_2->getNumMembers() == 0)
@@ -133,7 +138,6 @@ void DynamicBondUpdater::update(unsigned int timestep)
       filterPossibleBonds();
       // this function is not easily implemented on the GPU, uses addBondedGroup()
       makeBonds(timestep);
-      if (m_prof) m_prof->pop();
 
     }
 
@@ -301,7 +305,7 @@ void DynamicBondUpdater::resizeExistingBondList()
       unsigned int new_height = m_existing_bonds_list_indexer.getH() + 1;
       m_existing_bonds_list.resize(m_pdata->getRTags().size(), new_height);
       // update the indexer
-      m_existing_bonds_list_indexer = Index2D(m_existing_bonds_list.getPitch(), new_height);
+      m_existing_bonds_list_indexer = Index2D((unsigned int)m_existing_bonds_list.getPitch(), new_height);
       m_exec_conf->msg->notice(6) << "DynamicBondUpdater: (Re-)size existing bond list, new size " << new_height << " bonds per particle " << std::endl;
     }
 
@@ -316,7 +320,7 @@ void DynamicBondUpdater::resizePossibleBondlists()
       m_all_possible_bonds.resize(size);
       m_num_all_possible_bonds=0;
 
-      GlobalArray<unsigned int> nlist(size, m_exec_conf);
+      GPUArray<unsigned int> nlist(size, m_exec_conf);
       m_n_list.swap(nlist);
 
       m_exec_conf->msg->notice(6) << "DynamicBondUpdater: (Re-)size possible bond list, new size " << m_max_bonds << " bonds per particle " << std::endl;
@@ -338,7 +342,7 @@ void DynamicBondUpdater::allocateParticleArrays()
 
       GPUArray<unsigned int> existing_bonds_list(m_pdata->getRTags().size(),1, m_exec_conf);
       m_existing_bonds_list.swap(existing_bonds_list);
-      m_existing_bonds_list_indexer = Index2D(m_existing_bonds_list.getPitch(), m_existing_bonds_list.getHeight());
+      m_existing_bonds_list_indexer = Index2D((unsigned int)m_existing_bonds_list.getPitch(), (unsigned int)m_existing_bonds_list.getHeight());
 
       ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::overwrite);
       ArrayHandle<unsigned int> h_existing_bonds_list(m_existing_bonds_list, access_location::host, access_mode::overwrite);
@@ -347,13 +351,13 @@ void DynamicBondUpdater::allocateParticleArrays()
       memset(h_existing_bonds_list.data, 0, sizeof(unsigned int)*m_existing_bonds_list.getNumElements());
 
       // allocate the number of neighbors (per particle) for finding bonds
-      GlobalArray<unsigned int> n_neigh(m_group_1->getNumMembers(), m_exec_conf);
+      GPUArray<unsigned int> n_neigh(m_group_1->getNumMembers(), m_exec_conf);
       m_n_neigh.swap(n_neigh);
       ArrayHandle<unsigned int> h_n_neigh(m_n_neigh, access_location::host, access_mode::overwrite);
       memset(h_n_neigh.data, 0, sizeof(unsigned int)*m_group_1->getNumMembers());
 
       // default allocation of m_max_bonds neighbors per particle for the neighborlist
-      GlobalArray<unsigned int> nlist(m_group_1->getNumMembers()*m_max_bonds, m_exec_conf);
+      GPUArray<unsigned int> nlist(m_group_1->getNumMembers()*m_max_bonds, m_exec_conf);
       m_n_list.swap(nlist);
 
       calculateExistingBonds();
@@ -366,23 +370,21 @@ void DynamicBondUpdater::allocateParticleArrays()
 */
 void DynamicBondUpdater::buildTree()
     {
-      if (m_prof) m_prof->push("buildTree");
 
       // make tree for group 2
       ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
-      ArrayHandle<hpmc::detail::AABB> h_aabbs(m_aabbs, access_location::host, access_mode::readwrite);
+      ArrayHandle<hoomd::detail::AABB> h_aabbs(m_aabbs, access_location::host, access_mode::readwrite);
 
       for (unsigned int group_idx = 0; group_idx < m_group_2->getNumMembers(); group_idx++)
       {
         unsigned int i = m_group_2->getMemberIndex(group_idx);
         // make a point particle AABB
         vec3<Scalar> my_pos(h_postype.data[i]);
-        h_aabbs.data[group_idx] = hpmc::detail::AABB(my_pos,i);
+        h_aabbs.data[group_idx] = hoomd::detail::AABB(my_pos,i);
       }
 
       m_aabb_tree.buildTree(&(h_aabbs.data[0]) , m_group_2->getNumMembers());
 
-      if (m_prof) m_prof->pop();
     }
 
 
@@ -392,7 +394,6 @@ void DynamicBondUpdater::buildTree()
 */
 void DynamicBondUpdater::traverseTree()
     {
-      if (m_prof) m_prof->push("traverseTree");
 
       ArrayHandle<unsigned int> h_nlist(m_n_list, access_location::host, access_mode::overwrite);
       ArrayHandle<unsigned int> h_n_neigh(m_n_neigh, access_location::host, access_mode::overwrite);
@@ -420,12 +421,12 @@ void DynamicBondUpdater::traverseTree()
         {
           // make an AABB for the image of this particle
           vec3<Scalar> pos_i_image = pos_i + m_image_list[cur_image];
-          hpmc::detail::AABB aabb = hpmc::detail::AABB(pos_i_image,m_r_cut);
-          hpmc::detail::AABBTree *cur_aabb_tree = &m_aabb_tree;
+          hoomd::detail::AABB aabb = hoomd::detail::AABB(pos_i_image,m_r_cut);
+          hoomd::detail::AABBTree *cur_aabb_tree = &m_aabb_tree;
           // stackless traversal of the tree
           for (unsigned int cur_node_idx = 0; cur_node_idx < cur_aabb_tree->getNumNodes(); ++cur_node_idx)
           {
-            if (overlap(cur_aabb_tree->getNodeAABB(cur_node_idx), aabb))
+            if (aabb.overlaps(cur_aabb_tree->getNodeAABB(cur_node_idx)))
             {
               if (cur_aabb_tree->isNodeLeaf(cur_node_idx))
               {
@@ -467,7 +468,6 @@ void DynamicBondUpdater::traverseTree()
         } // end loop over images
         h_n_neigh.data[group_idx] = n_curr_bond;
       } // end loop over group 1
-      if (m_prof) m_prof->pop();
     }
 
 
@@ -478,7 +478,6 @@ void DynamicBondUpdater::traverseTree()
 */
 void DynamicBondUpdater::filterPossibleBonds()
     {
-      if (m_prof) m_prof->push("filterPossibleBonds");
       //copy data from h_n_list to h_all_possible_bonds
 
       ArrayHandle<unsigned int> h_nlist(m_n_list, access_location::host, access_mode::read);
@@ -551,7 +550,7 @@ void DynamicBondUpdater::filterPossibleBonds()
                    h_all_possible_bonds.data + size,
                    [this](Scalar3 i) {return CheckisExistingLegalBond(i); });
 
-      m_num_all_possible_bonds = std::distance(h_all_possible_bonds.data,last2);
+      m_num_all_possible_bonds = (unsigned int) std::distance(h_all_possible_bonds.data,last2);
 
       // then sort array by distance between particles in the found possible bond pairs
       // performance is better if remove_if happens before sort
@@ -559,12 +558,12 @@ void DynamicBondUpdater::filterPossibleBonds()
 
       // now make sure each possible bond is in the array only once by comparing tags
       auto last = std::unique(h_all_possible_bonds.data, h_all_possible_bonds.data + m_num_all_possible_bonds, CompareBonds);
-      m_num_all_possible_bonds = std::distance(h_all_possible_bonds.data,last);
+      m_num_all_possible_bonds = (unsigned int)std::distance(h_all_possible_bonds.data,last);
 
 
       // at this point, the sub-array: h_all_possible_bonds[0,m_num_all_possible_bonds]
       // should contain only unique entries of possible bonds which are not yet formed.
-      if (m_prof) m_prof->pop();
+
       }
 
 /*! This function actually creates the bonds by looping over the entries in m_all_possible_bonds
@@ -577,9 +576,6 @@ void DynamicBondUpdater::filterPossibleBonds()
 */
 void DynamicBondUpdater::makeBonds(unsigned int timestep)
   {
-
-    if (m_prof) m_prof->push("makeBonds");
-
     ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::read);
 
@@ -598,10 +594,15 @@ void DynamicBondUpdater::makeBonds(unsigned int timestep)
       unsigned int tag_i = __scalar_as_int(d.x);
       unsigned int tag_j = __scalar_as_int(d.y);
 
-      //todo: put in other external criteria here, e.g. max number of bonds possible in one step, etc.
-      //todo: randomize which bonds are formed or keep them ordered by their distances ?
+     //todo: put in other external criteria here, e.g. max number of bonds possible in one step, etc.
+     //todo: randomize which bonds are formed or keep them ordered by their distances ?
      //todo: would it be faster/better to create the rng outside of the loop?
-     hoomd::RandomGenerator rng(azplugins::RNGIdentifier::DynamicBondUpdater, m_seed, i, timestep);
+    hoomd::RandomGenerator rng(
+                hoomd::Seed(hoomd::azplugins::detail::RNGIdentifier::DynamicBondUpdater,
+                            timestep,
+                            m_seed),
+                hoomd::Counter());
+
      hoomd::UniformDistribution<Scalar> uniform(0, 1);
      const Scalar random = uniform(rng);
 
@@ -617,8 +618,6 @@ void DynamicBondUpdater::makeBonds(unsigned int timestep)
             }
         }
       }
-
-      if (m_prof) m_prof->pop();
     }
 
 
@@ -772,9 +771,9 @@ void export_DynamicBondUpdater(pybind11::module& m)
     {
     namespace py = pybind11;
     py::class_< DynamicBondUpdater, std::shared_ptr<DynamicBondUpdater> >(m, "DynamicBondUpdater", py::base<Updater>())
-    .def(py::init< std::shared_ptr<SystemDefinition> ,std::shared_ptr<ParticleGroup>, std::shared_ptr<ParticleGroup>, unsigned int>())
-    .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, std::shared_ptr<ParticleGroup>,
-      std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int, unsigned int>())
+    .def(py::init< std::shared_ptr<SystemDefinition> , std::shared_ptr<Trigger>,std::shared_ptr<ParticleGroup>, std::shared_ptr<ParticleGroup>, unsigned int>())
+    .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Trigger>, std::shared_ptr<md::NeighborList>, std::shared_ptr<ParticleGroup>,
+      std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int, uint16_t>())
     .def("setNeighbourList", &DynamicBondUpdater::setNeighbourList)
     .def_property("r_cut", &DynamicBondUpdater::getRcut, &DynamicBondUpdater::setRcut)
     .def_property("probability", &DynamicBondUpdater::getProbability, &DynamicBondUpdater::setProbability)
@@ -782,6 +781,8 @@ void export_DynamicBondUpdater(pybind11::module& m)
     .def_property("max_bonds_group_1", &DynamicBondUpdater::getMaxBondsGroup1, &DynamicBondUpdater::setMaxBondsGroup1)
     .def_property("max_bonds_group_2", &DynamicBondUpdater::getMaxBondsGroup2, &DynamicBondUpdater::setMaxBondsGroup2);
     }
-  }
+} // end namespace detail
 
 } // end namespace azplugins
+
+} // end namespace hoomd
