@@ -34,6 +34,7 @@ set(python_files
     conftest.py
     external.py
     flow.py
+    update.py
     pair.py
     wall.py
     )

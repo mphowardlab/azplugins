@@ -89,7 +89,7 @@ class dynamic_bond(hoomd.operation.Updater):
             group = sim.state._get_group(self.filter)
         else:
             group = None
-
+        #todo: incomplete
         self._cpp_obj = cpp_class(
             sim.state._cpp_sys_def,
             group,

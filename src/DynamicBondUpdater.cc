@@ -50,6 +50,8 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
       m_num_all_possible_bonds = 0;
 
       setGroupOverlap();
+
+      std::cout<< "in constructor dynamic bonds" << std::endl;
     }
 
 DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
@@ -770,7 +772,8 @@ namespace detail
 void export_DynamicBondUpdater(pybind11::module& m)
     {
     namespace py = pybind11;
-    py::class_< DynamicBondUpdater, std::shared_ptr<DynamicBondUpdater> >(m, "DynamicBondUpdater", py::base<Updater>())
+
+    py::class_< DynamicBondUpdater, Updater,std::shared_ptr<DynamicBondUpdater> >(m, "DynamicBondUpdater")
     .def(py::init< std::shared_ptr<SystemDefinition> , std::shared_ptr<Trigger>,std::shared_ptr<ParticleGroup>, std::shared_ptr<ParticleGroup>, unsigned int>())
     .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Trigger>, std::shared_ptr<md::NeighborList>, std::shared_ptr<ParticleGroup>,
       std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int, uint16_t>())

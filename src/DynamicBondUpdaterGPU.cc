@@ -245,10 +245,10 @@ namespace detail
      {
      namespace py = pybind11;
 
-     py::class_< DynamicBondUpdaterGPU, std::shared_ptr<DynamicBondUpdaterGPU> >(m, "DynamicBondUpdaterGPU", py::base<DynamicBondUpdater>())
+     py::class_< DynamicBondUpdaterGPU, DynamicBondUpdater, std::shared_ptr<DynamicBondUpdaterGPU> >(m, "DynamicBondUpdaterGPU")
        .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Trigger>,std::shared_ptr<ParticleGroup>, std::shared_ptr<ParticleGroup>, unsigned int>())
        .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<Trigger>, std::shared_ptr<md::NeighborList>, std::shared_ptr<ParticleGroup>,
-              std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int, uint16_t>());
+              std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int, unsigned int>());
      }
 
 } // end namespace detail

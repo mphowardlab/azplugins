@@ -153,6 +153,9 @@ PYBIND11_MODULE(_azplugins, m)
     // dpd pair
     export_PotentialPairDPDThermoGeneralWeight(m);
 
+    // updater
+    export_DynamicBondUpdater(m);
+
     // wall
     export_PotentialExternalWallLJ93(m);
 
@@ -180,6 +183,9 @@ PYBIND11_MODULE(_azplugins, m)
 
     // dpd pair
     export_PotentialPairDPDThermoGeneralWeightGPU(m);
+
+    // updater
+    export_DynamicBondUpdaterGPU(m);
 
     // wall
     export_PotentialExternalWallLJ93GPU(m);

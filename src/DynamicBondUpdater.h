@@ -25,6 +25,17 @@
 #include "hoomd/ParticleGroup.h"
 
 
+#ifndef __HIPCC__
+#define HOSTDEVICE __host__ __device__
+#else
+#define HOSTDEVICE
+#endif // __HIPCC__
+
+#ifndef PYBIND11_EXPORT
+#define PYBIND11_EXPORT __attribute__((visibility("default")))
+#endif
+
+
 namespace hoomd
 {
 
