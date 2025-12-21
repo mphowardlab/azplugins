@@ -17,8 +17,8 @@ class Colloid(wall.WallPotential):
         walls (`list` [`hoomd.wall.WallGeometry`]) : A list of wall definitions.
 
     `Colloid` is Lennard-Jones colloid wall potential, which is derived from integrating
-    the standard Lennard-Jones potential between a spherical particle of :math:`a`
-    and a half plane:
+    the standard Lennard-Jones potential between a spherical particle of radius
+    :math:`a` and a half plane:
 
     .. math::
 

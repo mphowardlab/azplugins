@@ -29,29 +29,35 @@ namespace detail
 struct WallParametersColloid : public PairParameters
     {
 #ifndef __HIPCC__
-    WallParametersColloid() : A(0), a(0), sigma_3(0) { }
+    WallParametersColloid() : c_1(0), c_2(0), a(0) { }
 
     WallParametersColloid(pybind11::dict v, bool managed = false)
         {
-        A = v["A"].cast<Scalar>();
-        a = v["a"].cast<Scalar>();
+        auto A(v["A"].cast<Scalar>());
         auto sigma(v["sigma"].cast<Scalar>());
-        sigma_3 = sigma * sigma * sigma;
+
+        const Scalar sigma_3 = sigma * sigma * sigma;
+        c_1 = A * sigma_3 * sigma_3 / Scalar(7560);
+        c_2 = A / Scalar(6);
+        a = v["a"].cast<Scalar>();
         }
 
     pybind11::dict asDict()
         {
+        const Scalar A = Scalar(6) * c_2;
+        const Scalar sigma_6 = Scalar(7560) * c_1 / A;
+
         pybind11::dict v;
         v["A"] = A;
         v["a"] = a;
-        v["sigma"] = std::cbrt(sigma_3);
+        v["sigma"] = pow(sigma_6, 1. / 6.);
         return v;
         }
 #endif // __HIPCC__
 
-    Scalar A;       //!< Hamaker constant
-    Scalar a;       //!< particle radius
-    Scalar sigma_3; //!< Lennard-Jones sigma
+    Scalar c_1; //!< First coefficient
+    Scalar c_2; //!< Second coefficient
+    Scalar a;   //!< Particle radius
     }
 
 #if HOOMD_LONGREAL_SIZE == 32
@@ -99,9 +105,9 @@ class WallEvaluatorColloid : public PairEvaluator
     DEVICE WallEvaluatorColloid(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
         : PairEvaluator(_rsq, _rcutsq)
         {
+        c_1 = _params.c_1;
+        c_2 = _params.c_2;
         a = _params.a;
-        lj1 = _params.A * _params.sigma_3 * _params.sigma_3 / Scalar(7560);
-        lj2 = _params.A / Scalar(6);
         }
 
     //! Computes the colloid-wall interaction potential
@@ -138,18 +144,18 @@ class WallEvaluatorColloid : public PairEvaluator
         if (force)
             {
             Scalar arinv8 = Scalar(8.0) * arinv;
-            force_divr = Scalar(6.0) * lj1
+            force_divr = Scalar(6.0) * c_1
                          * ((arinv8 - Scalar(1.0)) * r_minus_a_inv2 * r_minus_a_inv6
                             + (arinv8 + Scalar(1.0)) * r_plus_a_inv2 * r_plus_a_inv6);
-            force_divr -= lj2 * (Scalar(4.0) * a * a * arinv * r2_minus_a2_inv * r2_minus_a2_inv);
+            force_divr -= c_2 * (Scalar(4.0) * a * a * arinv * r2_minus_a2_inv * r2_minus_a2_inv);
             }
 
         // energy
         Scalar a7 = Scalar(7.0) * a;
-        Scalar energy = lj1
+        Scalar energy = c_1
                         * ((a7 - r) * r_minus_a_inv * r_minus_a_inv6
                            + (a7 + r) * r_plus_a_inv * r_plus_a_inv6);
-        energy -= lj2 * (Scalar(2.0) * a * r * r2_minus_a2_inv + log(r_plus_a_inv / r_minus_a_inv));
+        energy -= c_2 * (Scalar(2.0) * a * r * r2_minus_a2_inv + log(r_plus_a_inv / r_minus_a_inv));
         return energy;
         }
 
@@ -166,7 +172,7 @@ class WallEvaluatorColloid : public PairEvaluator
      */
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& energy, bool energy_shift)
         {
-        if (rsq < rcutsq && lj1 != 0 && a > 0)
+        if (rsq < rcutsq && c_1 != 0 && a > 0)
             {
             energy = computePotential<true>(force_divr, rsq);
             if (energy_shift)
@@ -188,9 +194,9 @@ class WallEvaluatorColloid : public PairEvaluator
 #endif
 
     private:
+    Scalar c_1; //!< Prefactor for first term (includes Hamaker constant)
+    Scalar c_2; //!< Prefactor for second term (includes Hamaker constant)
     Scalar a;   //!< The particle radius
-    Scalar lj1; //!< Prefactor for first term (includes Hamaker constant)
-    Scalar lj2; //!< Prefactor for second term (includes Hamaker constant)
     };
 
     } // end namespace detail
