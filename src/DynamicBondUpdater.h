@@ -42,7 +42,7 @@ namespace hoomd
 namespace azplugins
 {
 
-class PYBIND11_EXPORT DynamicBondUpdater : public hoomd::Updater
+class PYBIND11_EXPORT DynamicBondUpdater : public Updater
     {
     public:
 
@@ -70,7 +70,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public hoomd::Updater
       virtual ~DynamicBondUpdater();
 
       //! update
-      virtual void update(unsigned int timestep);
+      virtual void update(uint64_t timestep);
 
       //! Set the cutoff distance for finding bonds
       /*!
@@ -193,7 +193,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public hoomd::Updater
 
         bool CheckisExistingLegalBond(Scalar3 i); //this acesses info in m_existing_bonds_list_tag. todo: rename to something sensible
         void calculateExistingBonds();
-        void makeBonds(unsigned int timestep);
+        void makeBonds(uint64_t timestep);
 
         void AddtoExistingBonds(unsigned int tag1,unsigned int tag2);
         bool isExistingBond(unsigned int tag1,unsigned int tag2); //this acesses info in m_existing_bonds_list_tag
@@ -226,7 +226,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public hoomd::Updater
 namespace detail
 {
 //! Export the Evaporator to python
-void export_DynamicBondUpdater(pybind11::module& m);
+//void export_DynamicBondUpdater(pybind11::module& m);
 } // end namespace detail
 
 } // end namespace azplugins

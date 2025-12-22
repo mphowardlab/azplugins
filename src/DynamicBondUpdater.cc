@@ -98,7 +98,7 @@ DynamicBondUpdater::~DynamicBondUpdater()
 /*!
 * \param timestep Timestep update is called
 */
-void DynamicBondUpdater::update(unsigned int timestep)
+void DynamicBondUpdater::update(uint64_t timestep)
     {
 
       // don't do anything if either one of the groups is  empty
@@ -576,7 +576,7 @@ void DynamicBondUpdater::filterPossibleBonds()
 * Note: this function is very hard to parallelize on the GPU since we need to go through the bonds sequentially
 * to prevent forming too many bonds in one step. Have not found a good way of doing this on the GPU.
 */
-void DynamicBondUpdater::makeBonds(unsigned int timestep)
+void DynamicBondUpdater::makeBonds(uint64_t timestep)
   {
     ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::read);
@@ -769,20 +769,37 @@ namespace detail
 /*!
 * \param m Python module to export to
 */
+
 void export_DynamicBondUpdater(pybind11::module& m)
     {
-    namespace py = pybind11;
 
-    py::class_< DynamicBondUpdater, Updater,std::shared_ptr<DynamicBondUpdater> >(m, "DynamicBondUpdater")
-    .def(py::init< std::shared_ptr<SystemDefinition> , std::shared_ptr<Trigger>,std::shared_ptr<ParticleGroup>, std::shared_ptr<ParticleGroup>, unsigned int>())
-    .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Trigger>, std::shared_ptr<md::NeighborList>, std::shared_ptr<ParticleGroup>,
-      std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int, uint16_t>())
-    .def("setNeighbourList", &DynamicBondUpdater::setNeighbourList)
-    .def_property("r_cut", &DynamicBondUpdater::getRcut, &DynamicBondUpdater::setRcut)
-    .def_property("probability", &DynamicBondUpdater::getProbability, &DynamicBondUpdater::setProbability)
-    .def_property("bond_type", &DynamicBondUpdater::getBondType, &DynamicBondUpdater::setBondType)
-    .def_property("max_bonds_group_1", &DynamicBondUpdater::getMaxBondsGroup1, &DynamicBondUpdater::setMaxBondsGroup1)
-    .def_property("max_bonds_group_2", &DynamicBondUpdater::getMaxBondsGroup2, &DynamicBondUpdater::setMaxBondsGroup2);
+    pybind11::class_< DynamicBondUpdater, Updater,std::shared_ptr<DynamicBondUpdater>>(
+      m,
+      "DynamicBondUpdater")
+    .def(pybind11::init<std::shared_ptr<SystemDefinition>,
+      std::shared_ptr<Trigger>,
+      std::shared_ptr<ParticleGroup>,
+      std::shared_ptr<ParticleGroup>,
+      uint16_t>())
+    .def(pybind11::init<std::shared_ptr<SystemDefinition>,
+      std::shared_ptr<Trigger>,
+      std::shared_ptr<md::NeighborList>,
+      std::shared_ptr<ParticleGroup>,
+      std::shared_ptr<ParticleGroup>,
+      Scalar,
+      Scalar,
+      unsigned int,
+      unsigned int,
+      unsigned int,
+      uint16_t>());
+
+
+    //.def("setNeighbourList", &DynamicBondUpdater::setNeighbourList)
+   // .def_property("r_cut", &DynamicBondUpdater::getRcut, &DynamicBondUpdater::setRcut)
+    //.def_property("probability", &DynamicBondUpdater::getProbability, &DynamicBondUpdater::setProbability)
+    //.def_property("bond_type", &DynamicBondUpdater::getBondType, &DynamicBondUpdater::setBondType)
+    //.def_property("max_bonds_group_1", &DynamicBondUpdater::getMaxBondsGroup1, &DynamicBondUpdater::setMaxBondsGroup1)
+    //.def_property("max_bonds_group_2", &DynamicBondUpdater::getMaxBondsGroup2, &DynamicBondUpdater::setMaxBondsGroup2);
     }
 } // end namespace detail
 

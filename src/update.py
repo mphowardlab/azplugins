@@ -5,11 +5,10 @@
 """ Updaters. """
 
 import hoomd
+
 from hoomd.azplugins import _azplugins
 from hoomd.data.parameterdicts import ParameterDict
 from hoomd.data.typeconverter import OnlyTypes
-from hoomd import _hoomd
-from hoomd.md import _md
 
 class dynamic_bond(hoomd.operation.Updater):
     R""" Update bonds dynamically during simulation.
@@ -51,12 +50,12 @@ class dynamic_bond(hoomd.operation.Updater):
             azplugins.update.dynamic_bond(nlist=nl,r_cut=1.0,probability=1.0, bond_type='bond',
                 group_1=hoomd.group.type(type='A'),group_2=hoomd.group.type(type='B'),max_bonds_1=3,max_bonds_2=2)
     """
-    _ext_module = _azplugins
+    #_ext_module = _azplugins
 
     def __init__(self,trigger,r_cut,nlist,bond_type,group_1, group_2, max_bonds_1,max_bonds_2,seed,probability=1,period=1, phase=0):
         super().__init__(trigger)
 
-        param_dict = ParameterDict(
+        params = ParameterDict(
             r_cut=float(r_cut),
             nlist =OnlyTypes(hoomd.md.nlist.NeighborList,strict=True, allow_none=False),
             group_1=OnlyTypes(hoomd.filter.ParticleFilter, allow_none=True),
@@ -67,33 +66,47 @@ class dynamic_bond(hoomd.operation.Updater):
             seed = int(seed),
             probability = float(probability)
         )
-        param_dict["nlist"] = nlist
-        param_dict["group_1"] = group_1
-        param_dict["group_2"] = group_2
-        param_dict["max_bonds_1"] = max_bonds_1
-        param_dict["max_bonds_2"] = max_bonds_2
-        param_dict["bond_type"] = bond_type
+        params.update(
+            dict(
+                r_cut = r_cut,
+                nlist=nlist,
+                group_1=group_1,
+                group_2=group_2,
+                max_bonds_1=max_bonds_1,
+                max_bonds_2=max_bonds_2,
+                bond_type = bond_type,
+                seed = seed,
+                probability = probability
+            )
+        )
+        print("parsed param dict")
+        self._param_dict.update(params)
 
-        print("in init dynamic bonds")
-        self._param_dict.update(param_dict)
 
     def _attach_hook(self):
         sim = self._simulation
         print("in attach hook dynamic bonds")
+        print(_azplugins)
         if isinstance(sim.device, hoomd.device.GPU):
             cpp_class = _azplugins.DynamicBondUpdaterGPU
         else:
             cpp_class = _azplugins.DynamicBondUpdater
 
-        if self.filter is not None:
-            group = sim.state._get_group(self.filter)
+        if self.group_1 is not None:
+            group_1 = sim.state._get_group(self.group_1)
         else:
-            group = None
+            group_1 = None
+
+        if self.group_2 is not None:
+            group_2 = sim.state._get_group(self.group_2)
+        else:
+            group_2 = None
+
         #todo: incomplete
         self._cpp_obj = cpp_class(
             sim.state._cpp_sys_def,
-            group,
-            self.include_mpcd_particles,
+            group_1,
+            group_2
         )
 
         super()._attach_hook()
