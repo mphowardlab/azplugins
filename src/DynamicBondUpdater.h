@@ -226,7 +226,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 namespace detail
 {
 //! Export the Evaporator to python
-//void export_DynamicBondUpdater(pybind11::module& m);
+void export_DynamicBondUpdater(pybind11::module& m);
 } // end namespace detail
 
 } // end namespace azplugins

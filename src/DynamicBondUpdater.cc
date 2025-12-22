@@ -72,6 +72,7 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
          m_seed(seed),m_pair_nlist(pair_nlist), m_pair_nlist_exclusions_set(true),
          m_box_changed(true), m_max_N_changed(true)
     {
+    std::cout<< "in constructor dynamic bonds" << std::endl;
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdater" << std::endl;
 
     m_pdata->getBoxChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotBoxChanged>(this);
