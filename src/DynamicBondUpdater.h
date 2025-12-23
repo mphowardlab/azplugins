@@ -49,6 +49,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
       //! Simple constructor
       DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                          std::shared_ptr<Trigger> trigger,
+                         std::shared_ptr<md::NeighborList> pair_nlist,
                          std::shared_ptr<ParticleGroup> group_1,
                          std::shared_ptr<ParticleGroup> group_2,
                          uint16_t seed);
@@ -59,12 +60,13 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
                          std::shared_ptr<md::NeighborList> pair_nlist,
                          std::shared_ptr<ParticleGroup> group_1,
                          std::shared_ptr<ParticleGroup> group_2,
+                         uint16_t seed,
                          const Scalar r_cut,
                          const Scalar probability,
-                         unsigned int bond_type,
                          unsigned int max_bonds_group_1,
                          unsigned int max_bonds_group_2,
-                         uint16_t seed);
+                         unsigned int bond_type
+                         );
 
       //! Destructor
       virtual ~DynamicBondUpdater();
@@ -92,14 +94,17 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
        */
       void setBondType(unsigned int bond_type)
           {
-          m_bond_type = bond_type;
-          checkBondType();
+            //m_bond_data = m_sysdef->getBondData();
+            //m_bond_type = m_bond_data->getTypeByName(bond_type);
+            m_bond_type = bond_type;
+            checkBondType();
           }
       //! Get the bond type of the dynamically formed bonds
       unsigned int getBondType()
-          {
-          return m_bond_type;
-          }
+      {
+        return m_bond_type;
+      }
+
       //! Set the maximum number of bonds on particles in group_1
       /*!
        * \param max_bonds_group_1 max number of bonds formed by particles in group 1
@@ -107,6 +112,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
       void setMaxBondsGroup1(unsigned int max_bonds_group_1)
           {
           m_max_bonds_group_1 = max_bonds_group_1;
+          checkMaxBondsGroup();
           }
       //! Get the maximum number of bonds on particles in group_1
       unsigned int getMaxBondsGroup1()
@@ -120,6 +126,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
       void setMaxBondsGroup2(unsigned int max_bonds_group_2)
           {
           m_max_bonds_group_2 = max_bonds_group_2;
+          checkMaxBondsGroup();
           }
       //! Get the maximum number of bonds on particles in group_2
       unsigned int getMaxBondsGroup2()
@@ -130,20 +137,12 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
       void setProbability(Scalar probability)
           {
           m_probability = probability;
+          checkProbability();
           }
       //! Get the probability
       Scalar getProbability()
           {
           return m_probability;
-          }
-      //! Set the hoomd neighbor list
-      /*!
-       * \param nlist hoomd NeighborList pointer
-       */
-      void setNeighbourList( std::shared_ptr<md::NeighborList> nlist)
-          {
-          m_pair_nlist = nlist;
-          m_pair_nlist_exclusions_set = true;
           }
 
     protected:
@@ -161,7 +160,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         unsigned int m_max_bonds_group_2;           //!< maximum number of bonds which can be formed by the second group
         uint16_t m_seed;                            //!< seed for random number generator for bond probability
 
-        unsigned int m_max_bonds;                   //!<  maximum number of possible bonds (or neighbors) which can be found
+        unsigned int m_max_bonds;                   //!<  maximum number of possible bonds (or neighbors) which can be found, is resized if overflow is triggered
         unsigned int m_max_bonds_overflow;          //!< registers if there is an overflow in  maximum number of possible bonds
 
         GPUArray<Scalar3> m_all_possible_bonds;     //!< list of possible bonds, size: NumMembers(group_1)*m_max_bonds
@@ -201,7 +200,9 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         void checkBoxSize();
         void checkRcut();
         void checkBondType();
+        void checkProbability();
         void setGroupOverlap();
+        void checkMaxBondsGroup();
         void resizePossibleBondlists();
         void resizeExistingBondList();
         void allocateParticleArrays();

@@ -28,15 +28,24 @@ namespace azplugins
  */
 DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                                        std::shared_ptr<Trigger> trigger,
+                                       std::shared_ptr<md::NeighborList> pair_nlist,
                                        std::shared_ptr<ParticleGroup> group_1,
                                        std::shared_ptr<ParticleGroup> group_2,
                                        uint16_t seed)
           : Updater(sysdef, trigger),
-           m_group_1(group_1),  m_group_2(group_2), m_groups_identical(false),
-           m_r_cut(0), m_probability(0.0), m_bond_type(0xffffffff),
-           m_max_bonds_group_1(0),m_max_bonds_group_2(0), m_seed(seed),
-           m_pair_nlist(nullptr), m_pair_nlist_exclusions_set(false),
-           m_box_changed(true), m_max_N_changed(true)
+           m_group_1(group_1),
+           m_group_2(group_2),
+           m_groups_identical(false),
+           m_r_cut(0),
+           m_probability(0.0),
+           m_bond_type(0),
+           m_max_bonds_group_1(0),
+           m_max_bonds_group_2(0),
+           m_seed(seed),
+           m_pair_nlist(pair_nlist),
+           m_pair_nlist_exclusions_set(true),
+           m_box_changed(true),
+           m_max_N_changed(true)
     {
       m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdater" << std::endl;
 
@@ -50,35 +59,43 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
       m_num_all_possible_bonds = 0;
 
       setGroupOverlap();
-
-      std::cout<< "in constructor dynamic bonds" << std::endl;
     }
+
 
 DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                          std::shared_ptr<Trigger> trigger,
                          std::shared_ptr<md::NeighborList> pair_nlist,
                          std::shared_ptr<ParticleGroup> group_1,
                          std::shared_ptr<ParticleGroup> group_2,
+                         uint16_t seed,
                          const Scalar r_cut,
                          const Scalar probability,
-                         unsigned int bond_type,
                          unsigned int max_bonds_group_1,
                          unsigned int max_bonds_group_2,
-                         uint16_t seed)
+                         unsigned int bond_type
+                         )
         : Updater(sysdef, trigger),
-         m_group_1(group_1),  m_group_2(group_2),  m_groups_identical(false),
-         m_r_cut(r_cut), m_probability(probability), m_bond_type(bond_type),
-         m_max_bonds_group_1(max_bonds_group_1),m_max_bonds_group_2(max_bonds_group_2),
-         m_seed(seed),m_pair_nlist(pair_nlist), m_pair_nlist_exclusions_set(true),
-         m_box_changed(true), m_max_N_changed(true)
+         m_group_1(group_1),
+         m_group_2(group_2),
+         m_groups_identical(false),
+         m_r_cut(r_cut),
+         m_probability(probability),
+         m_bond_type(bond_type),
+         m_max_bonds_group_1(max_bonds_group_1),
+         m_max_bonds_group_2(max_bonds_group_2),
+         m_seed(seed),
+         m_pair_nlist(pair_nlist),
+         m_pair_nlist_exclusions_set(true),
+         m_box_changed(true),
+         m_max_N_changed(true)
     {
-    std::cout<< "in constructor dynamic bonds" << std::endl;
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdater" << std::endl;
 
     m_pdata->getBoxChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotBoxChanged>(this);
     m_pdata->getGlobalParticleNumberChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotNumParticlesChanged>(this);
 
     m_bond_data = m_sysdef->getBondData();
+   //m_bond_type = m_bond_data->getTypeByName(bond_type);
 
     m_max_bonds = 4;
     m_max_bonds_overflow = 0;
@@ -101,7 +118,6 @@ DynamicBondUpdater::~DynamicBondUpdater()
 */
 void DynamicBondUpdater::update(uint64_t timestep)
     {
-
       // don't do anything if either one of the groups is  empty
       if (m_group_1->getNumMembers() == 0 || m_group_2->getNumMembers() == 0)
       return;
@@ -127,9 +143,11 @@ void DynamicBondUpdater::update(uint64_t timestep)
       // rebuild the list of possible bonds until there is no overflow
       bool overflowed = false;
       buildTree();
+
       do
       {
         traverseTree();
+
         overflowed = m_max_bonds < m_max_bonds_overflow;
         // if we overflowed, need to reallocate memory and re-traverse the tree
         if (overflowed)
@@ -220,7 +238,7 @@ bool DynamicBondUpdater::CheckisExistingLegalBond(Scalar3 i)
 
 void DynamicBondUpdater::calculateExistingBonds()
     {
-
+      {
       // reset exisitng bond list
       ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(), access_location::host, access_mode::read);
       ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::overwrite);
@@ -228,7 +246,8 @@ void DynamicBondUpdater::calculateExistingBonds()
 
       ArrayHandle<unsigned int> h_existing_bonds_list(m_existing_bonds_list, access_location::host, access_mode::overwrite);
       memset((void*)h_existing_bonds_list.data,0,sizeof(unsigned int)*m_group_1->getNumMembers()*m_existing_bonds_list_indexer.getH());
-
+      }
+      {
       ArrayHandle<typename BondData::members_t> h_bonds(m_bond_data->getMembersArray(), access_location::host, access_mode::read);
 
       // for each of the bonds in the system - regardless of their type
@@ -241,7 +260,7 @@ void DynamicBondUpdater::calculateExistingBonds()
         unsigned int tag2 = bond.tag[1];
 
         AddtoExistingBonds(tag1,tag2);
-
+      }
       }
 
     }
@@ -252,6 +271,7 @@ void DynamicBondUpdater::calculateExistingBonds()
 */
 bool DynamicBondUpdater::isExistingBond(unsigned int tag1, unsigned int tag2)
     {
+      {
       ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::read);
       ArrayHandle<unsigned int> h_existing_bonds_list(m_existing_bonds_list, access_location::host, access_mode::read);
       unsigned int n_existing_bonds = h_n_existing_bonds.data[tag1];
@@ -262,6 +282,7 @@ bool DynamicBondUpdater::isExistingBond(unsigned int tag1, unsigned int tag2)
         return true;
       }
       return false;
+      }
     }
 
 
@@ -271,12 +292,16 @@ bool DynamicBondUpdater::isExistingBond(unsigned int tag1, unsigned int tag2)
 */
 void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag_a,unsigned int tag_b)
     {
+
       assert(tag_a <= m_pdata->getMaximumTag());
       assert(tag_b <= m_pdata->getMaximumTag());
 
       bool overflowed = false;
 
+      std::cout << "inside of AddtoExistingBonds: array acsess readwrite h_n_existing_bonds " << std::endl;
+
       ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::readwrite);
+
 
       // resize the list if necessary
       if (h_n_existing_bonds.data[tag_a] == m_existing_bonds_list_indexer.getH())
@@ -305,16 +330,19 @@ void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag_a,unsigned int tag_
 // grows the existing bonds list and its indexer when needed
 void DynamicBondUpdater::resizeExistingBondList()
     {
+      {
       unsigned int new_height = m_existing_bonds_list_indexer.getH() + 1;
       m_existing_bonds_list.resize(m_pdata->getRTags().size(), new_height);
       // update the indexer
       m_existing_bonds_list_indexer = Index2D((unsigned int)m_existing_bonds_list.getPitch(), new_height);
       m_exec_conf->msg->notice(6) << "DynamicBondUpdater: (Re-)size existing bond list, new size " << new_height << " bonds per particle " << std::endl;
+      }
     }
 
 // grows the all possible bonds list when needed in increments of 4, inspired by the neighbor list
 void DynamicBondUpdater::resizePossibleBondlists()
     {
+      {
       // round up to nearest multiple of 4
       m_max_bonds_overflow = (m_max_bonds_overflow > 4) ? (m_max_bonds_overflow + 3) & ~3 : 4;
       m_max_bonds = m_max_bonds_overflow;
@@ -327,6 +355,7 @@ void DynamicBondUpdater::resizePossibleBondlists()
       m_n_list.swap(nlist);
 
       m_exec_conf->msg->notice(6) << "DynamicBondUpdater: (Re-)size possible bond list, new size " << m_max_bonds << " bonds per particle " << std::endl;
+      }
     }
 
 
@@ -334,7 +363,7 @@ void DynamicBondUpdater::resizePossibleBondlists()
 // allocates all arrays depending on the particles and groups
 void DynamicBondUpdater::allocateParticleArrays()
     {
-
+      {
       GPUArray<Scalar3> all_possible_bonds(m_group_1->getNumMembers() *m_max_bonds, m_exec_conf);
       m_all_possible_bonds.swap(all_possible_bonds);
 
@@ -362,7 +391,7 @@ void DynamicBondUpdater::allocateParticleArrays()
       // default allocation of m_max_bonds neighbors per particle for the neighborlist
       GPUArray<unsigned int> nlist(m_group_1->getNumMembers()*m_max_bonds, m_exec_conf);
       m_n_list.swap(nlist);
-
+      }
       calculateExistingBonds();
     }
 
@@ -373,7 +402,7 @@ void DynamicBondUpdater::allocateParticleArrays()
 */
 void DynamicBondUpdater::buildTree()
     {
-
+      {
       // make tree for group 2
       ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
       ArrayHandle<hoomd::detail::AABB> h_aabbs(m_aabbs, access_location::host, access_mode::readwrite);
@@ -387,7 +416,7 @@ void DynamicBondUpdater::buildTree()
       }
 
       m_aabb_tree.buildTree(&(h_aabbs.data[0]) , m_group_2->getNumMembers());
-
+      }
     }
 
 
@@ -397,7 +426,7 @@ void DynamicBondUpdater::buildTree()
 */
 void DynamicBondUpdater::traverseTree()
     {
-
+      {
       ArrayHandle<unsigned int> h_nlist(m_n_list, access_location::host, access_mode::overwrite);
       ArrayHandle<unsigned int> h_n_neigh(m_n_neigh, access_location::host, access_mode::overwrite);
 
@@ -471,6 +500,7 @@ void DynamicBondUpdater::traverseTree()
         } // end loop over images
         h_n_neigh.data[group_idx] = n_curr_bond;
       } // end loop over group 1
+      }
     }
 
 
@@ -482,7 +512,7 @@ void DynamicBondUpdater::traverseTree()
 void DynamicBondUpdater::filterPossibleBonds()
     {
       //copy data from h_n_list to h_all_possible_bonds
-
+      {
       ArrayHandle<unsigned int> h_nlist(m_n_list, access_location::host, access_mode::read);
       ArrayHandle<unsigned int> h_n_neigh(m_n_neigh, access_location::host, access_mode::read);
       ArrayHandle<Scalar4> h_postype(m_pdata->getPositions(), access_location::host, access_mode::read);
@@ -566,7 +596,7 @@ void DynamicBondUpdater::filterPossibleBonds()
 
       // at this point, the sub-array: h_all_possible_bonds[0,m_num_all_possible_bonds]
       // should contain only unique entries of possible bonds which are not yet formed.
-
+      }
       }
 
 /*! This function actually creates the bonds by looping over the entries in m_all_possible_bonds
@@ -579,6 +609,8 @@ void DynamicBondUpdater::filterPossibleBonds()
 */
 void DynamicBondUpdater::makeBonds(uint64_t timestep)
   {
+
+    std::cout << "in makeBonds, need h_all_possible_bonds read acsess."<< std::endl;
     ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::read);
 
@@ -621,6 +653,7 @@ void DynamicBondUpdater::makeBonds(uint64_t timestep)
             }
         }
       }
+
     }
 
 
@@ -755,6 +788,35 @@ void DynamicBondUpdater::checkRcut()
       checkBoxSize();
     }
 
+void DynamicBondUpdater::checkProbability()
+{
+      if (m_probability < 0.0)
+      {
+        m_exec_conf->msg->error() << "DynamicBondUpdater: Requested probability  is less than zero" << std::endl;
+        throw std::runtime_error("Error initializing DynamicBondUpdater");
+      }
+      else if (m_probability > 1.0)
+      {
+         m_exec_conf->msg->error() << "DynamicBondUpdater: Requested probability is larger than one" << std::endl;
+        throw std::runtime_error("Error initializing DynamicBondUpdater");
+      }
+
+}
+
+void DynamicBondUpdater::checkMaxBondsGroup()
+{
+      if (m_max_bonds_group_1 < 0.0 or m_max_bonds_group_2 < 0.0 )
+      {
+        m_exec_conf->msg->error() << "DynamicBondUpdater: Max number of bonds that groups can form is negative. Check parameters." << std::endl;
+        throw std::runtime_error("Error initializing DynamicBondUpdater");
+      }
+      else if (m_max_bonds_group_1 > 10 or m_max_bonds_group_2 > 10  )
+      {
+         m_exec_conf->msg->warning() << "DynamicBondUpdater: Requested number of bonds that can form is very large. This can lead to performance issues." << std::endl;
+      }
+
+}
+
 // Check that the given bond type is valid
 void DynamicBondUpdater::checkBondType()
     {
@@ -764,6 +826,7 @@ void DynamicBondUpdater::checkBondType()
         throw std::runtime_error("Invalid bond type for DynamicBondUpdater");
       }
     }
+
 
 namespace detail
 {
@@ -779,6 +842,7 @@ void export_DynamicBondUpdater(pybind11::module& m)
       "DynamicBondUpdater")
     .def(pybind11::init<std::shared_ptr<SystemDefinition>,
       std::shared_ptr<Trigger>,
+      std::shared_ptr<md::NeighborList>,
       std::shared_ptr<ParticleGroup>,
       std::shared_ptr<ParticleGroup>,
       uint16_t>())
@@ -787,20 +851,17 @@ void export_DynamicBondUpdater(pybind11::module& m)
       std::shared_ptr<md::NeighborList>,
       std::shared_ptr<ParticleGroup>,
       std::shared_ptr<ParticleGroup>,
+      uint16_t,
       Scalar,
       Scalar,
       unsigned int,
       unsigned int,
-      unsigned int,
-      uint16_t>());
-
-
-    //.def("setNeighbourList", &DynamicBondUpdater::setNeighbourList)
-   // .def_property("r_cut", &DynamicBondUpdater::getRcut, &DynamicBondUpdater::setRcut)
-    //.def_property("probability", &DynamicBondUpdater::getProbability, &DynamicBondUpdater::setProbability)
-    //.def_property("bond_type", &DynamicBondUpdater::getBondType, &DynamicBondUpdater::setBondType)
-    //.def_property("max_bonds_group_1", &DynamicBondUpdater::getMaxBondsGroup1, &DynamicBondUpdater::setMaxBondsGroup1)
-    //.def_property("max_bonds_group_2", &DynamicBondUpdater::getMaxBondsGroup2, &DynamicBondUpdater::setMaxBondsGroup2);
+      unsigned int>())
+      .def_property("r_cut", &DynamicBondUpdater::getRcut, &DynamicBondUpdater::setRcut)
+      .def_property("probability", &DynamicBondUpdater::getProbability, &DynamicBondUpdater::setProbability)
+      .def_property("bond_type",&DynamicBondUpdater::getBondType, &DynamicBondUpdater::setBondType)
+      .def_property("max_bonds_group_1", &DynamicBondUpdater::getMaxBondsGroup1, &DynamicBondUpdater::setMaxBondsGroup1)
+      .def_property("max_bonds_group_2", &DynamicBondUpdater::getMaxBondsGroup2, &DynamicBondUpdater::setMaxBondsGroup2);
     }
 } // end namespace detail
 
