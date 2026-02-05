@@ -7,13 +7,14 @@
  * \brief Declaration of ChebyshevTensorAnisotropicPairPotential
  */
 
-#ifndef AZPLUGINS_CHEBYSHEV_TENSOR_ANISO_PAIR_POTENTIAL_H_
-#define AZPLUGINS_CHEBYSHEV_TENSOR_ANISO_PAIR_POTENTIAL_H_
+#ifndef AZPLUGINS_CHEBYSHEV_TENSOR_ANISOTROPIC_PAIR_POTENTIAL_H_
+#define AZPLUGINS_CHEBYSHEV_TENSOR_ANISOTROPIC_PAIR_POTENTIAL_H_
 
 #ifdef NVCC
 #error This header cannot be compiled by nvcc
 #endif
 
+#include <array>
 #include <memory>
 #include <pybind11/pybind11.h>
 #include <vector>
@@ -30,14 +31,18 @@ namespace hoomd
 namespace azplugins
     {
 
-class R0Interpolator;
+class LinearInterpolator5D;
 
 class PYBIND11_EXPORT ChebyshevTensorAnisotropicPairPotential : public ForceCompute
     {
     public:
     //! Constructor
     ChebyshevTensorAnisotropicPairPotential(std::shared_ptr<SystemDefinition> sysdef,
-                                            std::shared_ptr<hoomd::md::NeighborList> nlist);
+                                            std::shared_ptr<hoomd::md::NeighborList> nlist,
+                                            const std::array<Scalar2, 6>& domain,
+                                            const std::vector<Scalar>& r0_data,
+                                            const std::vector<unsigned int>& terms,
+                                            const std::vector<Scalar>& coeffs);
 
     //! Destructor
     virtual ~ChebyshevTensorAnisotropicPairPotential();
@@ -54,6 +59,12 @@ class PYBIND11_EXPORT ChebyshevTensorAnisotropicPairPotential : public ForceComp
         return m_domain;
         }
 
+    /// r0 data (theta, phi, alpha, beta, gamma) (N x 6)
+    const GPUArray<Scalar>& getR0Data() const
+        {
+        return m_r0_data;
+        }
+
     /// Term degrees (Nterms x 6)
     const GPUArray<unsigned int>& getChebyshevTermList() const
         {
@@ -66,31 +77,13 @@ class PYBIND11_EXPORT ChebyshevTensorAnisotropicPairPotential : public ForceComp
         return m_coeffs;
         }
 
-    /// Max degree per dimension length (length = 6)
-    const GPUArray<unsigned int>& getMaxDegreePerDim() const
-        {
-        return m_max_degree;
-        }
-
-    /// Number of terms (int)
     unsigned int getNTerms() const
         {
         return m_Nterms;
         }
 
-    /// R0 interpolator object
-    std::shared_ptr<R0Interpolator> getR0Interpolator() const
-        {
-        return m_r0_interp;
-        }
-
     /// Allocate storage for term list and coefficients.
     void resizeTerms(unsigned int Nterms);
-
-    void setR0Interpolator(std::shared_ptr<R0Interpolator> interp)
-        {
-        m_r0_interp = interp;
-        }
 
     protected:
     void computeForces(uint64_t timestep) override;
@@ -102,20 +95,20 @@ class PYBIND11_EXPORT ChebyshevTensorAnisotropicPairPotential : public ForceComp
     // 2) approximation domain (6x2): 6 rows, each is (min,max)
     GPUArray<Scalar2> m_domain;
 
-    // 3) r0 interpolation object
-    std::shared_ptr<R0Interpolator> m_r0_interp;
+    // 3) intenal r0 linear interpolator
+    std::unique_ptr<LinearInterpolator5D> m_r0_interp;
 
-    // 4) Chebyshev term list (Nterms x 6)
+    // 4) r0_data
+    GPUArray<Scalar> m_r0_data;
+
+    // 5) Chebyshev term list (Nterms x 6)
     GPUArray<unsigned int> m_terms;
 
-    // 5) coeffs (Nterms)
+    // 6) coeffs (Nterms)
     GPUArray<Scalar> m_coeffs;
 
-    // 6) max degree per dimension (6)
-    GPUArray<unsigned int> m_max_degree;
-
     // 7) number of terms
-    unsigned int m_Nterms;
+    unsigned int m_Nterms = 0;
     };
 
 namespace detail
@@ -127,4 +120,4 @@ void export_ChebyshevTensorAnisotropicPairPotential(pybind11::module& m);
     } // end namespace azplugins
     } // end namespace hoomd
 
-#endif // AZPLUGINS_CHEBYSHEV_TENSOR_ANISO_PAIR_POTENTIAL_H_
+#endif // AZPLUGINS_CHEBYSHEV_TENSOR_ANISOTROPIC_PAIR_POTENTIAL_H_
