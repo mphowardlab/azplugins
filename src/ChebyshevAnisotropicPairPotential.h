@@ -31,7 +31,7 @@ namespace hoomd
 namespace azplugins
     {
 
-class LinearInterpolator5D;
+template<typename T> class LinearInterpolator5D;
 
 class PYBIND11_EXPORT ChebyshevAnisotropicPairPotential : public ForceCompute
     {
@@ -40,11 +40,12 @@ class PYBIND11_EXPORT ChebyshevAnisotropicPairPotential : public ForceCompute
     ChebyshevAnisotropicPairPotential(std::shared_ptr<SystemDefinition> sysdef,
                                       std::shared_ptr<hoomd::md::NeighborList> nlist,
                                       const Scalar* domain,
-                                      const Scalar* r0_data,
-                                      const unsigned int* r0_shape,
-                                      unsigned int Nterms,
+                                      const float r_cut,
                                       const unsigned int* terms,
-                                      const Scalar* coeffs);
+                                      const Scalar* coeffs,
+                                      unsigned int Nterms,
+                                      const Scalar* r0_data,
+                                      const unsigned int* r0_shape);
 
     //! Destructor
     virtual ~ChebyshevAnisotropicPairPotential();
@@ -55,37 +56,42 @@ class PYBIND11_EXPORT ChebyshevAnisotropicPairPotential : public ForceCompute
         return m_nlist;
         }
 
-    /// 6x2 domain: stored as 6 entries of Scalar2 = (min,max)
+    /// 5x2 domain: stored as 5 entries of Scalar2 = (min,max)
     const GPUArray<Scalar2>& getApproximationDomain() const
         {
         return m_domain;
         }
 
+    /// Read-only cutoff radius
+    const float getRCut() const
+        {
+        return m_r_cut;
+        }
+
+    /// Read-only number of Chebyshev terms
+    unsigned int getNTerms() const
+        {
+        return m_Nterms;
+        }
+
     protected:
     void computeForces(uint64_t timestep) override;
 
-    // neighbor list object
-    std::shared_ptr<hoomd::md::NeighborList> m_nlist;
+    std::shared_ptr<hoomd::md::NeighborList> m_nlist; //!< Neighbor list
 
-    // approximation domain (6x2): 6 rows, each is (min,max)
-    GPUArray<Scalar2> m_domain;
+    GPUArray<Scalar2> m_domain; //!< Approximation domain (5x2): 5 rows, each is (min, max)
 
-    // intenal r0 linear interpolator
-    std::unique_ptr<LinearInterpolator5D> m_r0_interp;
+    float m_r_cut; //!< cut-off distance in approximation domain
 
-    // r0_data
-    GPUArray<Scalar> m_r0_data;
+    GPUArray<unsigned int> m_terms; //!< Chebyshev term list (Nterms x 6)
 
-    std::array<unsigned int, 5> m_r0_shape;
+    GPUArray<Scalar> m_coeffs; //!< Coefficients corresponding to each term
 
-    // Chebyshev term list (Nterms x 6)
-    GPUArray<unsigned int> m_terms;
+    unsigned int m_Nterms; //!< Number of terms
 
-    // coeffs (Nterms)
-    GPUArray<Scalar> m_coeffs;
+    GPUArray<Scalar> m_r0_data; //!< R0 data
 
-    // number of terms
-    unsigned int m_Nterms = 0;
+    GPUArray<unsigned int> m_r0_shape; //!< Number of points used along each dimension to sample r0
     };
 
 namespace detail
