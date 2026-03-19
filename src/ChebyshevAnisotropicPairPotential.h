@@ -31,8 +31,6 @@ namespace hoomd
 namespace azplugins
     {
 
-template<typename T> class LinearInterpolator5D;
-
 class PYBIND11_EXPORT ChebyshevAnisotropicPairPotential : public ForceCompute
     {
     public:
@@ -40,7 +38,7 @@ class PYBIND11_EXPORT ChebyshevAnisotropicPairPotential : public ForceCompute
     ChebyshevAnisotropicPairPotential(std::shared_ptr<SystemDefinition> sysdef,
                                       std::shared_ptr<hoomd::md::NeighborList> nlist,
                                       const Scalar* domain,
-                                      const float r_cut,
+                                      const Scalar r_cut,
                                       const unsigned int* terms,
                                       const Scalar* coeffs,
                                       unsigned int Nterms,
@@ -63,7 +61,7 @@ class PYBIND11_EXPORT ChebyshevAnisotropicPairPotential : public ForceCompute
         }
 
     /// Read-only cutoff radius
-    const float getRCut() const
+    Scalar getRCut() const
         {
         return m_r_cut;
         }
@@ -81,7 +79,7 @@ class PYBIND11_EXPORT ChebyshevAnisotropicPairPotential : public ForceCompute
 
     GPUArray<Scalar2> m_domain; //!< Approximation domain (5x2): 5 rows, each is (min, max)
 
-    float m_r_cut; //!< cut-off distance in approximation domain
+    Scalar m_r_cut; //!< cut-off distance in approximation domain
 
     GPUArray<unsigned int> m_terms; //!< Chebyshev term list (Nterms x 6)
 
@@ -93,12 +91,6 @@ class PYBIND11_EXPORT ChebyshevAnisotropicPairPotential : public ForceCompute
 
     GPUArray<unsigned int> m_r0_shape; //!< Number of points used along each dimension to sample r0
     };
-
-namespace detail
-    {
-///! exports to Python
-void export_ChebyshevAnisotropicPairPotential(pybind11::module& m);
-    } // end namespace detail
 
     } // end namespace azplugins
     } // end namespace hoomd

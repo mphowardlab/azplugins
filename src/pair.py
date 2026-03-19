@@ -16,40 +16,32 @@ from hoomd.variant import Variant
 class ChebyshevAnisotropicPairPotential(Force):
     """Chebyshev anisotropic pair potential."""
 
-    def __init__(self, nlist, domain, terms, coeffs, r0_data, r_cut=3.0):
+    def __init__(self, nlist, domain, terms, coeffs, r0, r_cut):
         super().__init__()
+
         self._nlist = nlist
 
-        self._domain = numpy.asarray(domain)
-        self._r_cut = float(r_cut)
+        param_dict = ParameterDict(r_cut=float)
+        param_dict["r_cut"] = float(r_cut)
+        self._param_dict.update(param_dict)
+
+        self._domain = numpy.asarray(domain, dtype=numpy.float64)
         self._terms = numpy.asarray(terms, dtype=numpy.uint32)
-        self._coeffs = numpy.asarray(coeffs)
-        self._r0_data = numpy.asarray(r0_data)
+        self._coeffs = numpy.asarray(coeffs, dtype=numpy.float64)
+
+        self.r0 = numpy.asarray(r0, dtype=numpy.float64)
 
         if self._domain.shape != (5, 2):
-            raise ValueError("domain must have shape (5, 2).")
+            raise ValueError("domain must have shape (5,2).")
         if self._terms.ndim != 2 or self._terms.shape[1] != 6:
-            raise ValueError("terms must have shape (Nterms, 6).")
-        nterms = int(self._terms.shape[0])
-        if self._coeffs.ndim != 1 or int(self._coeffs.shape[0]) != nterms:
+            raise ValueError("terms must have shape (Nterms,6).")
+
+        n_terms = int(self._terms.shape[0])
+        if self._coeffs.ndim != 1 or int(self._coeffs.shape[0]) != n_terms:
             raise ValueError("coeffs must have shape (Nterms,).")
-        if self._r0_data.ndim != 5:
-            raise ValueError("r0_data must be a 5D array.")
 
-    @property
-    def r_cut(self):
-        """Cut-off distance in approximation domain"""
-        return self._r_cut
-
-    @property
-    def n_terms(self):
-        """Number of terms."""
-        return int(self._terms.shape[0])
-
-    @property
-    def r0_shape(self):
-        """r0 table shape."""
-        return tuple(int(x) for x in self._r0_data.shape)
+        if self.r0.ndim != 5:
+            raise ValueError("r0 must be a 5D array.")
 
     def _attach_hook(self):
         self._nlist._attach(self._simulation)
@@ -58,10 +50,10 @@ class ChebyshevAnisotropicPairPotential(Force):
             self._simulation.state._cpp_sys_def,
             self._nlist._cpp_obj,
             self._domain,
-            self._r_cut,
+            self.r_cut,
             self._terms,
             self._coeffs,
-            self._r0_data,
+            self.r0,
         )
 
         super()._attach_hook()

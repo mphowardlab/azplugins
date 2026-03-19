@@ -27,8 +27,10 @@ namespace azplugins
 class FiveDimensionalIndex
     {
     public:
-    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE FiveDimensionalIndex()
-        : n0_(0), n1_(0), n2_(0), n3_(0), n4_(0)
+    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE FiveDimensionalIndex() : m_n {0, 0, 0, 0, 0} { }
+
+    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE explicit FiveDimensionalIndex(const unsigned int* n)
+        : m_n {n[0], n[1], n[2], n[3], n[4]}
         {
         }
 
@@ -37,7 +39,7 @@ class FiveDimensionalIndex
                                                                     unsigned int n2,
                                                                     unsigned int n3,
                                                                     unsigned int n4)
-        : n0_(n0), n1_(n1), n2_(n2), n3_(n3), n4_(n4)
+        : m_n {n0, n1, n2, n3, n4}
         {
         }
 
@@ -48,139 +50,153 @@ class FiveDimensionalIndex
                                                                        unsigned int i4) const
         {
         unsigned int idx = i0;
-        idx = idx * n1_ + i1;
-        idx = idx * n2_ + i2;
-        idx = idx * n3_ + i3;
-        idx = idx * n4_ + i4;
+        idx = idx * m_n[1] + i1;
+        idx = idx * m_n[2] + i2;
+        idx = idx * m_n[3] + i3;
+        idx = idx * m_n[4] + i4;
         return idx;
         }
 
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE unsigned int size() const
         {
-        return n0_ * n1_ * n2_ * n3_ * n4_;
+        return m_n[0] * m_n[1] * m_n[2] * m_n[3] * m_n[4];
+        }
+
+    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE unsigned int getN(unsigned int dim) const
+        {
+        return m_n[dim];
         }
 
     private:
-    unsigned int n0_, n1_, n2_, n3_, n4_;
+    unsigned int m_n[5];
     };
 
-// T is the stored data type.
+/*! \brief 5D multilinear interpolation on a uniform rectilinear grid.
+
+    This is an extension of three-dimensional linear interpolation
+    from (https://github.com/mphowardlab/flyft/blob/main/src/grid_interpolator.cc).
+
+*/
 template<typename T> class LinearInterpolator5D
     {
     public:
-    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE LinearInterpolator5D() : data_(nullptr), nindex_()
+    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE LinearInterpolator5D() : m_data(nullptr), m_indexer()
         {
         for (int d = 0; d < 5; ++d)
             {
-            n_[d] = 0;
-            lo_[d] = Scalar(0);
-            hi_[d] = Scalar(0);
-            dx_[d] = Scalar(0);
+            m_lo[d] = Scalar(0);
+            m_hi[d] = Scalar(0);
+            m_dx[d] = Scalar(0);
             }
         }
 
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE
     LinearInterpolator5D(const T* data, const unsigned int* n, const Scalar* lo, const Scalar* hi)
-        : data_(data)
+        : m_data(data), m_indexer(n)
         {
         for (int d = 0; d < 5; ++d)
             {
-            n_[d] = n[d];
-            lo_[d] = lo[d];
-            hi_[d] = hi[d];
+            const unsigned int nd = n[d];
+            assert(nd >= 2);
 
-            assert(n_[d] >= 2);
-            dx_[d] = (hi_[d] - lo_[d]) / Scalar(n_[d] - 1);
+            m_lo[d] = lo[d];
+            m_hi[d] = hi[d];
+            m_dx[d] = (m_hi[d] - m_lo[d]) / Scalar(nd - 1);
             }
 
-        nindex_ = FiveDimensionalIndex(n_[0], n_[1], n_[2], n_[3], n_[4]);
+        assert(m_indexer.size() > 0);
         }
 
-    // Interpolate at (x0, x1, x2, x3, x4).
+    //! Interpolate at (x0, x1, x2, x3, x4).
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar
     operator()(Scalar x0, Scalar x1, Scalar x2, Scalar x3, Scalar x4) const
         {
         const Scalar x[5] = {x0, x1, x2, x3, x4};
 
-        Scalar f[5];
+        // Compute the cell bin and fractional coordinate in each dimension.
+        int bin[5];
+        Scalar frac[5];
+
         for (int d = 0; d < 5; ++d)
             {
-            f[d] = (x[d] - lo_[d]) / dx_[d];
-            }
+            const unsigned int nd = m_indexer.getN(static_cast<unsigned int>(d));
+            const Scalar f = (x[d] - m_lo[d]) / m_dx[d];
 
-        int bin[5];
-        Scalar dloc[5];
+            int b = static_cast<int>(std::floor(static_cast<double>(f)));
 
-        for (int dim = 0; dim < 5; ++dim)
-            {
-            bin[dim] = (int)std::floor((double)f[dim]);
-
-            if (f[dim] == Scalar(n_[dim] - 1) && x[dim] == hi_[dim])
+            // If exactly at the top boundary, shift into the last valid cell so
+            // that (b+1) remains in bounds.
+            if (f == Scalar(nd - 1) && x[d] == m_hi[d])
                 {
-                --bin[dim];
+                --b;
                 }
 
-            dloc[dim] = f[dim] - Scalar(bin[dim]);
+            assert(b >= 0);
+            assert(b < static_cast<int>(nd) - 1);
 
-            assert(bin[dim] >= 0);
-            assert(bin[dim] < (int)n_[dim] - 1);
+            bin[d] = b;
+            frac[d] = f - Scalar(b);
             }
 
-        const Scalar xd = dloc[0];
-        const Scalar yd = dloc[1];
-        const Scalar zd = dloc[2];
-        const Scalar wd = dloc[3];
-        const Scalar vd = dloc[4];
-
+        // Load the 2^5=32 corners of the surrounding 5D cell.
+        Scalar c0[32];
         Scalar c[32];
+
         for (unsigned int mask = 0; mask < 32; ++mask)
             {
-            const unsigned int i0 = (unsigned int)(bin[0] + ((mask >> 0) & 1u));
-            const unsigned int i1 = (unsigned int)(bin[1] + ((mask >> 1) & 1u));
-            const unsigned int i2 = (unsigned int)(bin[2] + ((mask >> 2) & 1u));
-            const unsigned int i3 = (unsigned int)(bin[3] + ((mask >> 3) & 1u));
-            const unsigned int i4 = (unsigned int)(bin[4] + ((mask >> 4) & 1u));
+            const unsigned int i0
+                = static_cast<unsigned int>(bin[0] + static_cast<int>((mask >> 0) & 1u));
+            const unsigned int i1
+                = static_cast<unsigned int>(bin[1] + static_cast<int>((mask >> 1) & 1u));
+            const unsigned int i2
+                = static_cast<unsigned int>(bin[2] + static_cast<int>((mask >> 2) & 1u));
+            const unsigned int i3
+                = static_cast<unsigned int>(bin[3] + static_cast<int>((mask >> 3) & 1u));
+            const unsigned int i4
+                = static_cast<unsigned int>(bin[4] + static_cast<int>((mask >> 4) & 1u));
 
-            c[mask] = Scalar(data_[nindex_(i0, i1, i2, i3, i4)]);
+            // Implicit conversion from T to Scalar is intended.
+            c0[mask] = m_data[m_indexer(i0, i1, i2, i3, i4)];
             }
 
-        Scalar c0[16];
-        for (unsigned int i = 0; i < 16; ++i)
+        // For each dimension d, collapse pairs of points that differ in bit d.
+        Scalar* in = c0;
+        Scalar* out = c;
+        unsigned int len = 32;
+
+        for (int d = 0; d < 5; ++d)
             {
-            c0[i] = c[2 * i] * (Scalar(1) - xd) + c[2 * i + 1] * xd;
+            const Scalar t = frac[d];
+            const Scalar omt = Scalar(1) - t;
+            const unsigned int out_len = len / 2;
+
+            for (unsigned int i = 0; i < out_len; ++i)
+                {
+                out[i] = in[2 * i] * omt + in[2 * i + 1] * t;
+                }
+            // Swap input/output
+            Scalar* tmp = in;
+            in = out;
+            out = tmp;
+            len = out_len;
             }
 
-        Scalar c1[8];
-        for (unsigned int i = 0; i < 8; ++i)
-            {
-            c1[i] = c0[2 * i] * (Scalar(1) - yd) + c0[2 * i + 1] * yd;
-            }
-
-        Scalar c2[4];
-        for (unsigned int i = 0; i < 4; ++i)
-            {
-            c2[i] = c1[2 * i] * (Scalar(1) - zd) + c1[2 * i + 1] * zd;
-            }
-
-        Scalar c3[2];
-        for (unsigned int i = 0; i < 2; ++i)
-            {
-            c3[i] = c2[2 * i] * (Scalar(1) - wd) + c2[2 * i + 1] * wd;
-            }
-
-        return c3[0] * (Scalar(1) - vd) + c3[1] * vd;
+        // After 5 reductions, len==1 and in[0] holds the interpolated value.
+        return in[0];
         }
 
     private:
-    const T* data_;
-    unsigned int n_[5];
-    Scalar lo_[5];
-    Scalar hi_[5];
-    Scalar dx_[5];
-    FiveDimensionalIndex nindex_;
+    const T* m_data;
+    Scalar m_lo[5];
+    Scalar m_hi[5];
+    Scalar m_dx[5];
+    FiveDimensionalIndex m_indexer;
     };
 
     } // namespace azplugins
     } // namespace hoomd
+
+#undef AZPLUGINS_HOSTDEVICE
+#undef AZPLUGINS_FORCEINLINE
 
 #endif // AZPLUGINS_LINEAR_INTERPOLATOR_5D_H_

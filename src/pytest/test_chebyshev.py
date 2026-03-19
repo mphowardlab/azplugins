@@ -7,33 +7,11 @@ import hoomd
 import hoomd.azplugins
 
 
-def test_attach_and_zero_force(simulation_factory, two_particle_snapshot_factory):
+def test_chebyshev_construct_attach_zero(
+    simulation_factory, two_particle_snapshot_factory
+):
     """Construct, attach, and check force/torque output."""
 
-    # Construct the Python object
-    nlist = hoomd.md.nlist.Cell(buffer=0.4)
-
-    domain = numpy.zeros((5, 2), dtype=numpy.float64)
-    terms = numpy.zeros((2, 6), dtype=numpy.uint32)
-    coeffs = numpy.zeros((2,), dtype=numpy.float64)
-    r0_data = numpy.zeros((2, 2, 2, 2, 2), dtype=numpy.float64)
-    r_cut = 3.0
-
-    pot = hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential(
-        nlist=nlist,
-        domain=domain,
-        r_cut=r_cut,
-        terms=terms,
-        coeffs=coeffs,
-        r0_data=r0_data,
-    )
-
-    # Pre-attach checks
-    assert numpy.isclose(pot.r_cut, r_cut)
-    assert pot.n_terms == 2
-    assert pot.r0_shape == (2, 2, 2, 2, 2)
-
-    # Attach via a 0-step simulation
     snap = two_particle_snapshot_factory()
     if snap.communicator.rank == 0:
         snap.particles.position[:] = [[-0.5, 0.0, 0.0], [0.5, 0.0, 0.0]]
@@ -46,25 +24,57 @@ def test_attach_and_zero_force(simulation_factory, two_particle_snapshot_factory
     nve = hoomd.md.methods.ConstantVolume(hoomd.filter.All())
     integrator.methods = [nve]
 
+    nlist = hoomd.md.nlist.Cell(buffer=0.4)
+
+    domain = numpy.asarray(
+        [
+            [0.0, 2.0 * numpy.pi],  # theta
+            [0.0, numpy.pi],  # phi
+            [0.0, 2.0 * numpy.pi],  # alpha
+            [0.0, numpy.pi],  # beta
+            [0.0, 2.0 * numpy.pi],  # gamma
+        ],
+        dtype=numpy.float64,
+    )
+
+    terms = numpy.asarray(
+        [
+            [0, 0, 0, 0, 0, 0],
+            [1, 0, 2, 0, 1, 3],
+        ],
+        dtype=numpy.uint32,
+    )
+
+    coeffs = numpy.asarray([1.0, -0.25], dtype=numpy.float64)
+
+    # r0 must be 5D (and each dimension >= 2)
+    r0 = (numpy.arange(32, dtype=numpy.float64).reshape((2, 2, 2, 2, 2))) * 0.01
+
+    r_cut = 3.0
+
+    pot = hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential(
+        nlist=nlist, domain=domain, terms=terms, coeffs=coeffs, r0=r0, r_cut=r_cut
+    )
+
+    assert numpy.isclose(pot.r_cut, r_cut)
+    assert isinstance(pot.r0, numpy.ndarray)
+    assert pot.r0.ndim == 5
+    assert pot.r0.shape == (2, 2, 2, 2, 2)
+
     integrator.forces = [pot]
     sim.operations.integrator = integrator
 
-    # Attach all objects
+    # attach
     sim.run(0)
 
-    # After attach
+    # check if attach happened
     assert hasattr(pot, "_cpp_obj")
     assert pot._cpp_obj is not None
 
-    # Post-attach checks
+    # recheck key properties after attach
     assert numpy.isclose(pot.r_cut, r_cut)
-    assert pot.n_terms == 2
-    assert pot.r0_shape == (2, 2, 2, 2, 2)
+    assert pot.r0.shape == (2, 2, 2, 2, 2)
 
-    assert pot._cpp_obj.n_terms == 2
-    assert numpy.isclose(pot._cpp_obj.r_cut, r_cut)
-
-    # Check Force/torque/energy outputs
     if sim.device.communicator.rank == 0:
         numpy.testing.assert_array_equal(pot.forces, numpy.zeros((2, 3)))
         numpy.testing.assert_array_equal(pot.torques, numpy.zeros((2, 3)))
