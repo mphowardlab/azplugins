@@ -259,7 +259,43 @@ void DynamicBondUpdater::calculateExistingBonds()
         unsigned int tag1 = bond.tag[0];
         unsigned int tag2 = bond.tag[1];
 
-        AddtoExistingBonds(tag1,tag2);
+        //AddtoExistingBonds(tag1,tag2);
+
+        // BEGIN DynamicBondUpdater::AddtoExistingBonds
+        assert(tag1 <= m_pdata->getMaximumTag());
+        assert(tag2 <= m_pdata->getMaximumTag());
+
+        bool overflowed = false;
+
+        std::cout << "inside of CalculatingExistingBonds: array accsess readwrite h_n_existing_bonds " << std::endl;
+
+        ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::readwrite);
+
+
+        // resize the list if necessary
+        if (h_n_existing_bonds.data[tag1] == m_existing_bonds_list_indexer.getH())
+        overflowed = true;
+        if (h_n_existing_bonds.data[tag2] == m_existing_bonds_list_indexer.getH())
+        overflowed = true;
+
+        if (overflowed) resizeExistingBondList();
+
+        ArrayHandle<unsigned int> h_existing_bonds_list(m_existing_bonds_list, access_location::host, access_mode::readwrite);
+
+        // add tag_b to tag_a's existing bonds list
+        unsigned int pos_a = h_n_existing_bonds.data[tag1];
+        assert(pos_a < m_existing_bonds_list_indexer.getH());
+        h_existing_bonds_list.data[m_existing_bonds_list_indexer(tag1,pos_a)] = tag2;
+        h_n_existing_bonds.data[tag1]++;
+
+        // add tag_a to tag_b's existing bonds list
+        unsigned int pos_b = h_n_existing_bonds.data[tag2];
+        assert(pos_b < m_existing_bonds_list_indexer.getH());
+        h_existing_bonds_list.data[m_existing_bonds_list_indexer(tag2,pos_b)] = tag1;
+        h_n_existing_bonds.data[tag2]++;
+
+        // END DynamicBondUpdater::AddtoExistingBonds
+
       }
       }
 
@@ -292,13 +328,13 @@ bool DynamicBondUpdater::isExistingBond(unsigned int tag1, unsigned int tag2)
 */
 void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag_a,unsigned int tag_b)
     {
-
+      // BEGIN DynamicBondUpdater::AddtoExistingBonds
       assert(tag_a <= m_pdata->getMaximumTag());
       assert(tag_b <= m_pdata->getMaximumTag());
 
       bool overflowed = false;
 
-      std::cout << "inside of AddtoExistingBonds: array acsess readwrite h_n_existing_bonds " << std::endl;
+      std::cout << "inside of AddtoExistingBonds: array accsess readwrite h_n_existing_bonds " << std::endl;
 
       ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::readwrite);
 
@@ -324,6 +360,8 @@ void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag_a,unsigned int tag_
       assert(pos_b < m_existing_bonds_list_indexer.getH());
       h_existing_bonds_list.data[m_existing_bonds_list_indexer(tag_b,pos_b)] = tag_a;
       h_n_existing_bonds.data[tag_b]++;
+
+      // END DynamicBondUpdater::AddtoExistingBonds
 
     }
 
@@ -612,7 +650,9 @@ void DynamicBondUpdater::makeBonds(uint64_t timestep)
 
     std::cout << "in makeBonds, need h_all_possible_bonds read acsess."<< std::endl;
     ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::read);
-    ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::read);
+
+    // ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::read);
+    ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::readwrite);
 
     // we need to count how many bonds are in the h_all_possible_bonds array for a given tag
     // so that we don't end up forming too many bonds in one step. "AddtoExistingBonds" increases the count in
@@ -646,7 +686,41 @@ void DynamicBondUpdater::makeBonds(uint64_t timestep)
           (random < m_probability))
         {
           m_bond_data->addBondedGroup(Bond(m_bond_type,tag_i,tag_j));
-          AddtoExistingBonds(tag_i,tag_j);
+          //AddtoExistingBonds(tag_i,tag_j);
+
+          // BEGIN DynamicBondUpdater::AddtoExistingBonds
+          assert(tag_i <= m_pdata->getMaximumTag());
+          assert(tag_j <= m_pdata->getMaximumTag());
+
+          bool overflowed = false;
+
+          std::cout << "inside of makeBonds: array accsess readwrite h_n_existing_bonds " << std::endl;
+
+          // resize the list if necessary
+          if (h_n_existing_bonds.data[tag_i] == m_existing_bonds_list_indexer.getH())
+          overflowed = true;
+          if (h_n_existing_bonds.data[tag_j] == m_existing_bonds_list_indexer.getH())
+          overflowed = true;
+
+          if (overflowed) resizeExistingBondList();
+
+          ArrayHandle<unsigned int> h_existing_bonds_list(m_existing_bonds_list, access_location::host, access_mode::readwrite);
+
+          // add tag_b to tag_a's existing bonds list
+          unsigned int pos_a = h_n_existing_bonds.data[tag_i];
+          assert(pos_a < m_existing_bonds_list_indexer.getH());
+          h_existing_bonds_list.data[m_existing_bonds_list_indexer(tag_i,pos_a)] = tag_j;
+          h_n_existing_bonds.data[tag_i]++;
+
+          // add tag_a to tag_b's existing bonds list
+          unsigned int pos_b = h_n_existing_bonds.data[tag_j];
+          assert(pos_b < m_existing_bonds_list_indexer.getH());
+          h_existing_bonds_list.data[m_existing_bonds_list_indexer(tag_j,pos_b)] = tag_i;
+          h_n_existing_bonds.data[tag_j]++;
+
+          // END DynamicBondUpdater::AddtoExistingBonds
+
+
           if (m_pair_nlist_exclusions_set)
             {
             m_pair_nlist -> addExclusion(tag_i,tag_j);
