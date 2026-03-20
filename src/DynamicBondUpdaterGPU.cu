@@ -1,4 +1,5 @@
 // Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021-2025, Auburn University
 // This file is part of the azplugins project, released under the Modified BSD License.
 
 // Maintainer: astatt
@@ -17,7 +18,8 @@
 #include "hoomd/extern/neighbor/neighbor/LBVHTraverser.cuh"
 //#include "hoomd/extern/cub/cub/cub.cuh"
 
-
+namespace hoomd
+{
 namespace azplugins
 {
 
@@ -349,6 +351,7 @@ cudaError_t copy_possible_bonds(Scalar3 *d_all_possible_bonds,
 } // end namespace gpu
 } // end namespace azplugins
 
+} // end namespace hoomd
 
 // explicit templates for neighbor::LBVH with PointMapInsertOp
 template void neighbor::gpu::lbvh_gen_codes(unsigned int *, unsigned int *, const azplugins::gpu::PointMapInsertOp&,

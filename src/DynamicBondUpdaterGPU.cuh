@@ -1,4 +1,5 @@
 // Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021-2025, Auburn University
 // This file is part of the azplugins project, released under the Modified BSD License.
 
 // Maintainer: astatt
@@ -18,9 +19,14 @@
 #include "hoomd/ParticleData.cuh"
 #include <iostream>
 
-#include "hoomd/extern/neighbor/neighbor/BoundingVolumes.h"
-#include "hoomd/extern/neighbor/neighbor/InsertOps.h"
-#include "hoomd/extern/neighbor/neighbor/TransformOps.h"
+#include "hip/hip_runtime.h"
+#include "hoomd/md/NeighborListGPUTree.cuh"
+
+/*
+#include "hoomd/extern/neighbor/include/neighbor/BoundingVolumes.h"
+#include "hoomd/extern/neighbor/include/neighbor/InsertOps.h"
+#include "hoomd/extern/neighbor/include/neighbor/TransformOps.h"
+*/
 
 #ifdef NVCC
 #define DEVICE __device__ __forceinline__
@@ -30,6 +36,9 @@
 #define HOSTDEVICE
 #endif
 
+
+namespace hoomd
+{
 namespace azplugins
 {
 namespace gpu
@@ -392,7 +401,7 @@ const unsigned int NeighborListTypeSentinel = 0xffffffff;
 
 } // end namespace gpu
 } // end namespace azplugins
-
+} // end namespace hoomd
 
 
 #undef DEVICE

@@ -1,4 +1,5 @@
 // Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021-2025, Auburn University
 // This file is part of the azplugins project, released under the Modified BSD License.
 
 // Maintainer: astatt
@@ -11,6 +12,8 @@
 #include "DynamicBondUpdaterGPU.h"
 #include "DynamicBondUpdaterGPU.cuh"
 
+namespace hoomd
+{
 namespace azplugins
 {
 
@@ -22,39 +25,62 @@ namespace azplugins
  * properly initialize the system via setters.
  */
 DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
-                                            std::shared_ptr<ParticleGroup> group_1,
-                                            std::shared_ptr<ParticleGroup> group_2,
-                                            unsigned int seed)
-        : DynamicBondUpdater(sysdef, group_1, group_2, seed),  m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf),
+                         std::shared_ptr<Trigger> trigger,
+                         std::shared_ptr<md::NeighborList> pair_nlist,
+                         std::shared_ptr<ParticleGroup> group_1,
+                         std::shared_ptr<ParticleGroup> group_2,
+                         uint16_t seed)
+        : DynamicBondUpdater(sysdef, trigger, pair_nlist, group_1, group_2, seed),  m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf),
           m_lbvh(m_exec_conf), m_traverser(m_exec_conf)
     {
+
+   // only one GPU is supported
+    if (!m_exec_conf->isCUDAEnabled())
+        {
+        throw std::runtime_error("Cannot initialize DynamicBondUpdaterGPU on a CPU device.");
+        }
+
+    m_tuner_copy_nlist.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                        m_exec_conf,
+                                        "dynamic_bonding_copy_nlist"));
+    m_tuner_filter_bonds.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                        m_exec_conf,
+                                        "dynamic_bonding_filter_bonds"));
+
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdaterGPU" << std::endl;
 
-    m_copy_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "dynamic_bond_copy", m_exec_conf));
-    m_copy_nlist_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "dynamic_bond_nlist_copy", m_exec_conf));
-    m_tuner_filter_bonds.reset(new Autotuner(32, 1024, 32, 5, 100000, "dynamic_bond_filter_bonds", m_exec_conf));
     }
 
 DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
-                                              std::shared_ptr<md::NeighborList> pair_nlist,
-                                              std::shared_ptr<ParticleGroup> group_1,
-                                              std::shared_ptr<ParticleGroup> group_2,
-                                              const Scalar r_cut,
-                                              const Scalar probability,
-                                              unsigned int bond_type,
-                                              unsigned int max_bonds_group_1,
-                                              unsigned int max_bonds_group_2,
-                                              unsigned int seed)
-        : DynamicBondUpdater(sysdef, pair_nlist, group_1, group_2,
-                            r_cut, probability, bond_type, max_bonds_group_1, max_bonds_group_2,seed),
+                         std::shared_ptr<Trigger> trigger,
+                         std::shared_ptr<md::NeighborList> pair_nlist,
+                         std::shared_ptr<ParticleGroup> group_1,
+                         std::shared_ptr<ParticleGroup> group_2,
+                         uint16_t seed,
+                         const Scalar r_cut,
+                         const Scalar probability,
+                         unsigned int max_bonds_group_1,
+                         unsigned int max_bonds_group_2,
+                         unsigned int bond_type)
+        : DynamicBondUpdater(sysdef,trigger,pair_nlist,group_1,group_2, seed, r_cut,
+            probability,max_bonds_group_1,max_bonds_group_2,bond_type),
         m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf),
         m_lbvh(m_exec_conf), m_traverser(m_exec_conf)
     {
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdaterGPU" << std::endl;
 
-    m_copy_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "dynamic_bond_copy", m_exec_conf));
-    m_copy_nlist_tuner.reset(new Autotuner(32, 1024, 32, 5, 100000, "dynamic_bond_nlist_copy", m_exec_conf));
-    m_tuner_filter_bonds.reset(new Autotuner(32, 1024, 32, 5, 100000, "dynamic_bond_filter_bonds", m_exec_conf));
+     // only one GPU is supported
+    if (!m_exec_conf->isCUDAEnabled())
+        {
+        throw std::runtime_error("Cannot initialize DynamicBondUpdaterGPU on a CPU device.");
+        }
+
+    m_tuner_copy_nlist.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                        m_exec_conf,
+                                        "dynamic_bonding_copy_nlist"));
+    m_tuner_filter_bonds.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                        m_exec_conf,
+                                        "dynamic_bonding_filter_bonds"));
 
     }
 
@@ -135,7 +161,7 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
 
     const BoxDim& box = m_pdata->getBox();
 
-    m_copy_tuner->begin();
+   m_tuner_copy_nlist->begin();
     gpu::copy_possible_bonds(d_all_possible_bonds.data,
                               d_pos.data,
                               d_tag.data,
@@ -147,9 +173,9 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
                               m_r_cut,
                               m_groups_identical,
                               m_group_1->getNumMembers(),
-                              m_copy_tuner->getParam());
+                              m_tuner_copy_nlist->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
-    m_copy_tuner->end();
+    m_tuner_copy_nlist->end();
 
 
     //filter out the existing bonds - based on neighbor list exclusion handeling
@@ -159,7 +185,7 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
                                d_existing_bonds_list.data,
                                m_existing_bonds_list_indexer,
                                size,
-                               m_tuner_filter_bonds->getParam());
+                               m_tuner_filter_bonds->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
     m_tuner_filter_bonds->end();
 
@@ -204,7 +230,7 @@ void DynamicBondUpdaterGPU::updateImageVectors()
     // reallocate memory if necessary
     if (m_n_images > m_image_list.getNumElements())
         {
-        GlobalVector<Scalar3> image_list(m_n_images, m_exec_conf);
+        GPUVector<Scalar3> image_list(m_n_images, m_exec_conf);
         m_image_list.swap(image_list);
         }
 
@@ -245,13 +271,30 @@ namespace detail
      {
      namespace py = pybind11;
 
+
      py::class_< DynamicBondUpdaterGPU, DynamicBondUpdater, std::shared_ptr<DynamicBondUpdaterGPU> >(m, "DynamicBondUpdaterGPU")
-       .def(py::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<Trigger>,std::shared_ptr<ParticleGroup>, std::shared_ptr<ParticleGroup>, unsigned int>())
-       .def(py::init<std::shared_ptr<SystemDefinition>,std::shared_ptr<Trigger>, std::shared_ptr<md::NeighborList>, std::shared_ptr<ParticleGroup>,
-              std::shared_ptr<ParticleGroup>, Scalar, Scalar, unsigned int, unsigned int, unsigned int, unsigned int>());
+    .def(pybind11::init<std::shared_ptr<SystemDefinition>,
+      std::shared_ptr<Trigger>,
+      std::shared_ptr<md::NeighborList>,
+      std::shared_ptr<ParticleGroup>,
+      std::shared_ptr<ParticleGroup>,
+      uint16_t>())
+    .def(pybind11::init<std::shared_ptr<SystemDefinition>,
+      std::shared_ptr<Trigger>,
+      std::shared_ptr<md::NeighborList>,
+      std::shared_ptr<ParticleGroup>,
+      std::shared_ptr<ParticleGroup>,
+      uint16_t,
+      Scalar,
+      Scalar,
+      unsigned int,
+      unsigned int,
+      unsigned int>());
      }
 
 } // end namespace detail
 } // end namespace azplugins
+
+} // end namespace hoomd
 
 

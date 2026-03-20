@@ -1,4 +1,5 @@
 // Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021-2025, Auburn University
 // This file is part of the azplugins project, released under the Modified BSD License.
 
 // Maintainer: astatt
@@ -19,9 +20,16 @@
 #include "DynamicBondUpdaterGPU.cuh"
 #include "hoomd/Autotuner.h"
 
-#include "hoomd/extern/neighbor/neighbor/LBVH.h"
-#include "hoomd/extern/neighbor/neighbor/LBVHTraverser.h"
+#include "hip/hip_runtime.h"
+#include "hoomd/md/NeighborListGPUTree.cuh"
 
+/*
+#include "hoomd/extern/neighbor/include/neighbor/LBVH.h"
+#include "hoomd/extern/neighbor/include/neighbor/LBVHTraverser.h"
+*/
+
+namespace hoomd
+{
 namespace azplugins
 {
 
@@ -35,45 +43,29 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
     public:
       //! Simple constructor
       DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
-                            std::shared_ptr<Trigger> trigger,
-                            std::shared_ptr<ParticleGroup> group_1,
-                            std::shared_ptr<ParticleGroup> group_2,
-                            uint16_t seed);
+                         std::shared_ptr<Trigger> trigger,
+                         std::shared_ptr<md::NeighborList> pair_nlist,
+                         std::shared_ptr<ParticleGroup> group_1,
+                         std::shared_ptr<ParticleGroup> group_2,
+                         uint16_t seed);
+
 
       //! Constructor with parameters
       DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
-                            std::shared_ptr<Trigger> trigger,
-                            std::shared_ptr<NeighborList> nlist,
-                            std::shared_ptr<ParticleGroup> group_1,
-                            std::shared_ptr<ParticleGroup> group_2,
-                            const Scalar r_cut,
-                            const Scalar probability,
-                            unsigned int bond_type,
-                            unsigned int max_bonds_group_1,
-                            unsigned int max_bonds_group_2,
-                            uint16_t seed);
+                         std::shared_ptr<Trigger> trigger,
+                         std::shared_ptr<md::NeighborList> pair_nlist,
+                         std::shared_ptr<ParticleGroup> group_1,
+                         std::shared_ptr<ParticleGroup> group_2,
+                         uint16_t seed,
+                         const Scalar r_cut,
+                         const Scalar probability,
+                         unsigned int max_bonds_group_1,
+                         unsigned int max_bonds_group_2,
+                         unsigned int bond_type);
 
       //! Destructor
       virtual ~DynamicBondUpdaterGPU();
 
-      /*! Set autotuner parameters
-       * \param enable Enable / disable autotuning
-       * \param period period (approximate) in time steps when retuning occurs
-       */
-      virtual void setAutotunerParams(bool enable, unsigned int period)
-          {
-          DynamicBondUpdater::setAutotunerParams(enable, period);
-
-          m_copy_tuner->setPeriod(period);
-          m_copy_tuner->setEnabled(enable);
-
-          m_copy_nlist_tuner->setPeriod(period);
-          m_copy_nlist_tuner->setEnabled(enable);
-
-          m_tuner_filter_bonds->setPeriod(period);
-          m_tuner_filter_bonds->setEnabled(enable);
-
-          }
 
     protected:
           //! filter out existing and doublicate bonds from all found possible bonds
@@ -87,16 +79,15 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
 
     private:
 
-        std::unique_ptr<Autotuner> m_copy_tuner;           //!< Tuner for the primitive-copy kernel
-        std::unique_ptr<Autotuner> m_copy_nlist_tuner;     //!< Tuner for the primitive-copy kernel
-        std::unique_ptr<Autotuner> m_tuner_filter_bonds;   //!< Tuner for existing bond filter
+        std::shared_ptr<Autotuner<1>> m_tuner_copy_nlist;     //!< Tuner for the primitive-copy kernel
+        std::shared_ptr<Autotuner<1>> m_tuner_filter_bonds;   //!< Tuner for existing bond filter
 
         GPUFlags<int> m_num_nonzero_bonds_flag;            //!< GPU flag for the number of valid bonds
         GPUFlags<unsigned int> m_max_bonds_overflow_flag;  //!< GPU flag for overflow
 
         neighbor::LBVH m_lbvh;                            //!< LBVH for group_2
         neighbor::LBVHTraverser  m_traverser;             //!< LBVH traverer
-        GlobalVector<Scalar3> m_image_list;               //!< List of translation vectors for traversal
+        GPUVector<Scalar3> m_image_list;               //!< List of translation vectors for traversal
         unsigned int m_n_images;                          //!< Number of translation vectors for traversal
 
 
@@ -129,5 +120,6 @@ void export_DynamicBondUpdaterGPU(pybind11::module& m);
 } // end namespace detail
 
 } // end namespace azplugins
+} // end namespace hoomd
 
 #endif // AZPLUGINS_DYNAMIC_BOND_UPDATER_GPU_H_
