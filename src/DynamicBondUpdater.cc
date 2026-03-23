@@ -259,6 +259,9 @@ void DynamicBondUpdater::calculateExistingBonds()
         unsigned int tag1 = bond.tag[0];
         unsigned int tag2 = bond.tag[1];
 
+       // @mphoward: The next section is the one that needed to be dublicated to accomodate
+       // the changes in hoomd (GPUArray and GPUVector)
+
         //AddtoExistingBonds(tag1,tag2);
 
         // BEGIN DynamicBondUpdater::AddtoExistingBonds
@@ -322,12 +325,16 @@ bool DynamicBondUpdater::isExistingBond(unsigned int tag1, unsigned int tag2)
     }
 
 
+// @mphoward: This is the function that I originally had that doesn't work anymore due to
+// the changes in hoomd (GPUArray and GPUVector).
+
 /*! \param tag1 First particle tag in the pair
     \param tag2 Second particle tag in the pair
     adds a bond between the tag1 and tag2 to the existing bonds list
 */
 void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag_a,unsigned int tag_b)
     {
+
       // BEGIN DynamicBondUpdater::AddtoExistingBonds
       assert(tag_a <= m_pdata->getMaximumTag());
       assert(tag_b <= m_pdata->getMaximumTag());
@@ -687,6 +694,9 @@ void DynamicBondUpdater::makeBonds(uint64_t timestep)
         {
           m_bond_data->addBondedGroup(Bond(m_bond_type,tag_i,tag_j));
           //AddtoExistingBonds(tag_i,tag_j);
+
+         // @mphoward: The next section is the one that needed to be dublicated to accomodate
+         // the changes in hoomd (GPUArray and GPUVector)
 
           // BEGIN DynamicBondUpdater::AddtoExistingBonds
           assert(tag_i <= m_pdata->getMaximumTag());

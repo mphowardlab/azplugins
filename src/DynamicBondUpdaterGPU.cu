@@ -13,6 +13,10 @@
 #include "DynamicBondUpdaterGPU.cuh"
 //#include <thrust/sort.h>
 #include <thrust/device_vector.h>
+
+// @mphoward: There is some issue with importing the right headers from the extern/neighbor
+// class. Could you please have a look at it and check which headers to import?
+
 // todo: should azplugins have its own "extern"?
 #include "hoomd/extern/neighbor/neighbor/LBVH.cuh"
 #include "hoomd/extern/neighbor/neighbor/LBVHTraverser.cuh"

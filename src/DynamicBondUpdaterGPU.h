@@ -23,6 +23,9 @@
 #include "hip/hip_runtime.h"
 #include "hoomd/md/NeighborListGPUTree.cuh"
 
+// @mphoward: There is some issue with importing the right headers from the extern/neighbor
+// class. Could you please have a look at it and check which headers to import?
+
 /*
 #include "hoomd/extern/neighbor/include/neighbor/LBVH.h"
 #include "hoomd/extern/neighbor/include/neighbor/LBVHTraverser.h"

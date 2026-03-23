@@ -19,9 +19,11 @@
 #include "hoomd/ParticleData.cuh"
 #include <iostream>
 
-#include "hip/hip_runtime.h"
-#include "hoomd/md/NeighborListGPUTree.cuh"
 
+// @mphoward: There is some issue with importing the right headers from the extern/neighbor
+// class. Could you please have a look at it and check which headers to import?
+
+// #include "hip/hip_runtime.h"
 /*
 #include "hoomd/extern/neighbor/include/neighbor/BoundingVolumes.h"
 #include "hoomd/extern/neighbor/include/neighbor/InsertOps.h"

@@ -119,7 +119,7 @@ void DynamicBondUpdaterGPU::traverseTree()
     const BoxDim& box = m_pdata->getBox();
 
     // neighbor list write op
-    azplugins::gpu::NeighborListOp nlist_op(d_nlist.data, d_n_neigh.data, m_max_bonds_overflow_flag.getDeviceFlags(), m_max_bonds);
+    hoomd::azplugins::NeighborListOp nlist_op(d_nlist.data, d_n_neigh.data, m_max_bonds_overflow_flag.getDeviceFlags(), m_max_bonds);
 
     ArrayHandle<unsigned int> d_index_group_1(m_group_1->getIndexArray(), access_location::device, access_mode::read);
     ArrayHandle<unsigned int> d_index_group_2(m_group_2->getIndexArray(), access_location::device, access_mode::read);
@@ -127,7 +127,7 @@ void DynamicBondUpdaterGPU::traverseTree()
     neighbor::MapTransformOp map(d_index_group_2.data );
     m_traverser.setup(map, m_lbvh);
 
-    azplugins::gpu::ParticleQueryOp query_op(d_pos.data,
+    hoomd::azplugins::ParticleQueryOp query_op(d_pos.data,
                                                d_index_group_1.data,
                                                m_group_1->getNumMembers(),
                                                m_pdata->getMaxN(),
