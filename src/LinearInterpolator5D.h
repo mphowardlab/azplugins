@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <utility>
 
 #include "hoomd/HOOMDMath.h"
 
@@ -24,21 +25,18 @@ namespace hoomd
 namespace azplugins
     {
 
-class FiveDimensionalIndex
+class Index5D
     {
     public:
-    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE FiveDimensionalIndex() : m_n {0, 0, 0, 0, 0} { }
+    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Index5D() : m_n {0, 0, 0, 0, 0} { }
 
-    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE explicit FiveDimensionalIndex(const unsigned int* n)
+    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE explicit Index5D(const unsigned int* n)
         : m_n {n[0], n[1], n[2], n[3], n[4]}
         {
         }
 
-    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE FiveDimensionalIndex(unsigned int n0,
-                                                                    unsigned int n1,
-                                                                    unsigned int n2,
-                                                                    unsigned int n3,
-                                                                    unsigned int n4)
+    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE
+    Index5D(unsigned int n0, unsigned int n1, unsigned int n2, unsigned int n3, unsigned int n4)
         : m_n {n0, n1, n2, n3, n4}
         {
         }
@@ -107,6 +105,25 @@ template<typename T> class LinearInterpolator5D
         assert(m_indexer.size() > 0);
         }
 
+    //! Constructor accepting the domain as a Scalar2 array.
+    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE LinearInterpolator5D(const T* data,
+                                                                    const unsigned int* n,
+                                                                    const Scalar2* domain_s2)
+        : m_data(data), m_indexer(n)
+        {
+        for (int d = 0; d < 5; ++d)
+            {
+            const unsigned int nd = n[d];
+            assert(nd >= 2);
+
+            m_lo[d] = domain_s2[d].x;
+            m_hi[d] = domain_s2[d].y;
+            m_dx[d] = (m_hi[d] - m_lo[d]) / Scalar(nd - 1);
+            }
+
+        assert(m_indexer.size() > 0);
+        }
+
     //! Interpolate at (x0, x1, x2, x3, x4).
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar
     operator()(Scalar x0, Scalar x1, Scalar x2, Scalar x3, Scalar x4) const
@@ -122,7 +139,7 @@ template<typename T> class LinearInterpolator5D
             const unsigned int nd = m_indexer.getN(static_cast<unsigned int>(d));
             const Scalar f = (x[d] - m_lo[d]) / m_dx[d];
 
-            int b = static_cast<int>(std::floor(static_cast<double>(f)));
+            int b = static_cast<int>(std::floor(f));
 
             // If exactly at the top boundary, shift into the last valid cell so
             // that (b+1) remains in bounds.
@@ -139,8 +156,7 @@ template<typename T> class LinearInterpolator5D
             }
 
         // Load the 2^5=32 corners of the surrounding 5D cell.
-        Scalar c0[32];
-        Scalar c[32];
+        Scalar corners[32];
 
         for (unsigned int mask = 0; mask < 32; ++mask)
             {
@@ -156,12 +172,13 @@ template<typename T> class LinearInterpolator5D
                 = static_cast<unsigned int>(bin[4] + static_cast<int>((mask >> 4) & 1u));
 
             // Implicit conversion from T to Scalar is intended.
-            c0[mask] = m_data[m_indexer(i0, i1, i2, i3, i4)];
+            corners[mask] = m_data[m_indexer(i0, i1, i2, i3, i4)];
             }
 
         // For each dimension d, collapse pairs of points that differ in bit d.
-        Scalar* in = c0;
-        Scalar* out = c;
+        Scalar scratch[16];
+        Scalar* in = corners;
+        Scalar* out = scratch;
         unsigned int len = 32;
 
         for (int d = 0; d < 5; ++d)
@@ -175,9 +192,7 @@ template<typename T> class LinearInterpolator5D
                 out[i] = in[2 * i] * omt + in[2 * i + 1] * t;
                 }
             // Swap input/output
-            Scalar* tmp = in;
-            in = out;
-            out = tmp;
+            std::swap(in, out);
             len = out_len;
             }
 
@@ -185,12 +200,70 @@ template<typename T> class LinearInterpolator5D
         return in[0];
         }
 
+    //! Compute the finite-difference derivative with respect to dimensions.
+    /*! Uses central differences when possible, falling back to forward or backward
+        differences at the domain boundaries.
+
+        \param x0  Coordinate along dimension 0
+        \param x1  Coordinate along dimension 1
+        \param x2  Coordinate along dimension 2
+        \param x3  Coordinate along dimension 3
+        \param x4  Coordinate along dimension 4
+        \param dim Which dimension (0-4) to differentiate with respect to
+        \param h   Finite-difference step size
+    */
+    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar
+    derivative(Scalar x0, Scalar x1, Scalar x2, Scalar x3, Scalar x4, int dim, Scalar h) const
+        {
+        Scalar x[5] = {x0, x1, x2, x3, x4};
+        const Scalar val = (*this)(x[0], x[1], x[2], x[3], x[4]);
+
+        const bool at_lo = (x[dim] - h < m_lo[dim]);
+        const bool at_hi = (x[dim] + h > m_hi[dim]);
+
+        if (!at_lo && !at_hi)
+            {
+            // central difference
+            x[dim] += h;
+            const Scalar f_plus = (*this)(x[0], x[1], x[2], x[3], x[4]);
+            x[dim] -= Scalar(2) * h;
+            const Scalar f_minus = (*this)(x[0], x[1], x[2], x[3], x[4]);
+            return (f_plus - f_minus) / (Scalar(2) * h);
+            }
+        else if (at_lo)
+            {
+            // forward difference
+            x[dim] += h;
+            const Scalar f_plus = (*this)(x[0], x[1], x[2], x[3], x[4]);
+            return (f_plus - val) / h;
+            }
+        else
+            {
+            // backward difference
+            x[dim] -= h;
+            const Scalar f_minus = (*this)(x[0], x[1], x[2], x[3], x[4]);
+            return (val - f_minus) / h;
+            }
+        }
+
+    //! Return the lower bound for a given dimension.
+    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar getLo(int dim) const
+        {
+        return m_lo[dim];
+        }
+
+    //! Return the upper bound for a given dimension.
+    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar getHi(int dim) const
+        {
+        return m_hi[dim];
+        }
+
     private:
     const T* m_data;
     Scalar m_lo[5];
     Scalar m_hi[5];
     Scalar m_dx[5];
-    FiveDimensionalIndex m_indexer;
+    Index5D m_indexer;
     };
 
     } // namespace azplugins

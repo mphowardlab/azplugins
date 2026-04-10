@@ -3,25 +3,54 @@
 // Part of azplugins, released under the BSD 3-Clause License.
 
 /*!
- * \file ChebyshevAnisotropicPairPotential.h
+ * \file ChebyshevAnisotropicPairPotential.cc
  * \brief Definition of ChebyshevAnisotropicPairPotential
  */
 
 #include "ChebyshevAnisotropicPairPotential.h"
 #include "LinearInterpolator5D.h"
 
-#include "hoomd/BoxDim.h"
-#include "hoomd/VectorMath.h"
-
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <stdexcept>
-
 namespace hoomd
     {
 namespace azplugins
     {
+
+//! Scale a coordinate from [lo, hi] to the Chebyshev domain [-1, 1].
+static inline Scalar scaleToChebDomain(Scalar x, Scalar lo, Scalar hi)
+    {
+    return (Scalar(2) * (x - lo) / (hi - lo)) - Scalar(1);
+    }
+
+//! Evaluate Chebyshev polynomials of the first kind and their derivatives
+//! from degree 0 up to max_deg, using the three-term recurrence relation.
+/*!
+    T_0(x) = 1                       T'_0(x) = 0
+    T_1(x) = x                       T'_1(x) = 1
+    T_{n+1}(x) = 2x T_n - T_{n-1}   T'_{n+1}(x) = 2 T_n + 2x T'_n - T'_{n-1}
+
+    \param x        Evaluation point in [-1, 1]
+    \param max_deg  Highest polynomial degree to compute
+    \param T        Output: T[n] = T_n(x)  for n = 0 .. max_deg  (size >= max_deg+1)
+    \param dT       Output: dT[n] = T'_n(x) for n = 0 .. max_deg (size >= max_deg+1)
+*/
+static inline void evaluateChebyshev(Scalar x, unsigned int max_deg, Scalar* T, Scalar* dT)
+    {
+    T[0] = Scalar(1);
+    dT[0] = Scalar(0);
+
+    if (max_deg == 0)
+        return;
+
+    T[1] = x;
+    dT[1] = Scalar(1);
+
+    const Scalar two_x = Scalar(2) * x;
+    for (unsigned int n = 1; n < max_deg; ++n)
+        {
+        T[n + 1] = two_x * T[n] - T[n - 1];
+        dT[n + 1] = Scalar(2) * T[n] + two_x * dT[n] - dT[n - 1];
+        }
+    }
 
 ChebyshevAnisotropicPairPotential::ChebyshevAnisotropicPairPotential(
     std::shared_ptr<SystemDefinition> sysdef,
@@ -39,10 +68,11 @@ ChebyshevAnisotropicPairPotential::ChebyshevAnisotropicPairPotential(
         GPUArray<Scalar2> domain_arr(5, m_exec_conf);
         m_domain.swap(domain_arr);
 
+        const Index2D domain_index(2, 5);
         ArrayHandle<Scalar2> h_domain(m_domain, access_location::host, access_mode::readwrite);
         for (unsigned int d = 0; d < 5; ++d)
             {
-            h_domain.data[d] = make_scalar2(domain[2 * d], domain[2 * d + 1]);
+            h_domain.data[d] = make_scalar2(domain[domain_index(0, d)], domain[domain_index(1, d)]);
             }
         }
 
@@ -76,10 +106,10 @@ ChebyshevAnisotropicPairPotential::ChebyshevAnisotropicPairPotential(
         }
 
     // r0_data: flat array, length = product(r0_shape)
-    size_t n_r0 = 1;
+    unsigned int n_r0 = 1;
     for (unsigned int d = 0; d < 5; ++d)
         {
-        n_r0 *= static_cast<size_t>(r0_shape[d]);
+        n_r0 *= r0_shape[d];
         }
 
         {
@@ -89,9 +119,38 @@ ChebyshevAnisotropicPairPotential::ChebyshevAnisotropicPairPotential(
         ArrayHandle<Scalar> h_r0(m_r0_data, access_location::host, access_mode::readwrite);
         std::copy(r0_data, r0_data + n_r0, h_r0.data);
         }
+
+    // neighbor list subscriber
+    Scalar max_r0 = *std::max_element(r0_data, r0_data + n_r0);
+    m_nlist_r_cut = std::ceil(max_r0 + m_r_cut);
+
+    m_r_cut_nlist = std::make_shared<GPUArray<Scalar>>(1, m_exec_conf);
+        {
+        ArrayHandle<Scalar> h_r_cut_nlist(*m_r_cut_nlist,
+                                          access_location::host,
+                                          access_mode::overwrite);
+        h_r_cut_nlist.data[0] = m_nlist_r_cut;
+        }
+    m_nlist->addRCutMatrix(m_r_cut_nlist);
+    m_nlist->notifyRCutMatrixChange();
     }
 
-ChebyshevAnisotropicPairPotential::~ChebyshevAnisotropicPairPotential() { }
+ChebyshevAnisotropicPairPotential::~ChebyshevAnisotropicPairPotential()
+    {
+    if (m_attached)
+        {
+        m_nlist->removeRCutMatrix(m_r_cut_nlist);
+        }
+    }
+
+void ChebyshevAnisotropicPairPotential::notifyDetach()
+    {
+    if (m_attached)
+        {
+        m_nlist->removeRCutMatrix(m_r_cut_nlist);
+        }
+    m_attached = false;
+    }
 
 void ChebyshevAnisotropicPairPotential::computeForces(uint64_t timestep)
     {
@@ -115,20 +174,43 @@ void ChebyshevAnisotropicPairPotential::computeForces(uint64_t timestep)
     ArrayHandle<Scalar2> h_domain(m_domain, access_location::host, access_mode::read);
     ArrayHandle<Scalar> h_r0_data(m_r0_data, access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_r0_shape(m_r0_shape, access_location::host, access_mode::read);
+    ArrayHandle<unsigned int> h_terms(m_terms, access_location::host, access_mode::read);
+    ArrayHandle<Scalar> h_coeffs(m_coeffs, access_location::host, access_mode::read);
 
     const BoxDim box = m_pdata->getGlobalBox();
-    const Scalar rcutsq = m_r_cut * m_r_cut;
-    const Scalar h = Scalar(1.0e-6);
+    const Scalar nlist_rcutsq = m_nlist_r_cut * m_nlist_r_cut;
+    const Scalar fd_step = Scalar(1.0e-6);
 
-    Scalar lo[5];
-    Scalar hi[5];
-    for (unsigned int d = 0; d < 5; ++d)
+    LinearInterpolator5D<Scalar> interp(h_r0_data.data, h_r0_shape.data, h_domain.data);
+
+    // determine the maximum Chebyshev degree needed for each of the 6 coordinates.
+    unsigned int max_deg[6] = {0, 0, 0, 0, 0, 0};
+    for (unsigned int t = 0; t < m_Nterms; ++t)
         {
-        lo[d] = h_domain.data[d].x;
-        hi[d] = h_domain.data[d].y;
+        for (unsigned int c = 0; c < 6; ++c)
+            {
+            const unsigned int deg = h_terms.data[t * 6 + c];
+            if (deg > max_deg[c])
+                max_deg[c] = deg;
+            }
         }
 
-    LinearInterpolator5D<Scalar> interp(h_r0_data.data, h_r0_shape.data, lo, hi);
+    // chain-rule scale factors: d(x_scaled)/d(x) = 2 / (hi - lo).
+    Scalar cheb_scale[6];
+    cheb_scale[0] = Scalar(2);
+    for (unsigned int d = 0; d < 5; ++d)
+        {
+        cheb_scale[d + 1] = Scalar(2) / (h_domain.data[d].y - h_domain.data[d].x);
+        }
+
+    // pre-allocate Chebyshev evaluation storage.
+    std::vector<Scalar> cheb_T[6];
+    std::vector<Scalar> cheb_dT[6];
+    for (unsigned int c = 0; c < 6; ++c)
+        {
+        cheb_T[c].resize(max_deg[c] + 1);
+        cheb_dT[c].resize(max_deg[c] + 1);
+        }
 
     // need to start from a zero force and torque
     m_force.zeroFill();
@@ -139,16 +221,23 @@ void ChebyshevAnisotropicPairPotential::computeForces(uint64_t timestep)
 
     const unsigned int N = m_pdata->getN();
 
+    //! Euler-angle singularity tolerance for the alpha/gamma extraction.
+    const Scalar euler_singularity_tol = Scalar(1e-7);
+
+    //! beta threshold for the Jacobian (avoids 1/sin(beta) singulrity).
+    const Scalar beta_tol = Scalar(1e-5);
+
     for (unsigned int i = 0; i < N; ++i)
         {
         // particle i position and orientation
-        const Scalar3 pi = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
+        const Scalar3 pos_i = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
         const quat<Scalar> q_i(h_orientation.data[i]);
         const quat<Scalar> q_i_conj = conj(q_i);
 
-        // initialize current particle force and torque
+        // initialize particle force, torque, and energy
         Scalar3 fi = make_scalar3(0, 0, 0);
         Scalar3 ti = make_scalar3(0, 0, 0);
+        Scalar pei = Scalar(0);
 
         const size_t myHead = h_head_list.data[i];
         const unsigned int size = (unsigned int)h_n_neigh.data[i];
@@ -159,14 +248,14 @@ void ChebyshevAnisotropicPairPotential::computeForces(uint64_t timestep)
             const unsigned int j = h_nlist.data[myHead + k];
             assert(j < m_pdata->getN() + m_pdata->getNGhosts());
 
-            const Scalar3 pj = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
-            Scalar3 dx = pi - pj;
+            const Scalar3 pos_j = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
+            Scalar3 dx = pos_i - pos_j;
             // apply periodic boundary conditions
             dx = box.minImage(dx);
 
-            // cut-off check
+            // Neighbor-list cutoff check (center-center distance).
             const Scalar rsq = dot(dx, dx);
-            if (rsq > rcutsq)
+            if (rsq > nlist_rcutsq)
                 {
                 continue;
                 }
@@ -174,9 +263,12 @@ void ChebyshevAnisotropicPairPotential::computeForces(uint64_t timestep)
             // particle j, orientation quaternion
             const quat<Scalar> q_j(h_orientation.data[j]);
             // dx is in lab frame, so rotate dx by conj(q_i)
-            const vec3<Scalar> dx_lab(dx.x, dx.y, dx.z);
-            const vec3<Scalar> dx_body = rotate(q_i_conj, dx_lab);
-            // relative orientation of j with respect to i
+            const vec3<Scalar> dx_body = rotate(q_i_conj, vec3<Scalar>(dx));
+
+            // Relative orientation of j with respect to i:
+            //     q_rel = conj(q_i) * q_j
+            // ref:
+            // https://www.mathworks.com/help/fusion/ug/rotations-orientation-and-quaternions.html
             const quat<Scalar> q_rel = q_i_conj * q_j;
 
             // convert position to spherical coordinates
@@ -184,170 +276,243 @@ void ChebyshevAnisotropicPairPotential::computeForces(uint64_t timestep)
             Scalar theta = Scalar(0);
             Scalar phi = Scalar(0);
 
-            if (r > Scalar(0))
+            // skip overlapping particles.
+            if (r < Scalar(1e-12))
                 {
-                theta = std::atan2(dx_body.y, dx_body.x);
-                if (theta < Scalar(0))
-                    {
-                    theta += Scalar(2.0) * M_PI;
-                    }
-
-                Scalar cosphi = dx_body.z / r;
-                if (cosphi < Scalar(-1))
-                    {
-                    cosphi = Scalar(-1);
-                    }
-                else if (cosphi > Scalar(1))
-                    {
-                    cosphi = Scalar(1);
-                    }
-
-                phi = std::acos(cosphi);
+                continue;
                 }
 
-            // get the columns of an active rotation matrix
-            const vec3<Scalar> ex = rotate(q_rel, vec3<Scalar>(1, 0, 0));
-            const vec3<Scalar> ey = rotate(q_rel, vec3<Scalar>(0, 1, 0));
-            const vec3<Scalar> ez = rotate(q_rel, vec3<Scalar>(0, 0, 1));
+            theta = std::atan2(dx_body.y, dx_body.x);
+            if (theta < Scalar(0))
+                {
+                theta += Scalar(2.0) * M_PI;
+                }
+
+            Scalar cosphi = dx_body.z / r;
+            if (cosphi < Scalar(-1))
+                {
+                cosphi = Scalar(-1);
+                }
+            else if (cosphi > Scalar(1))
+                {
+                cosphi = Scalar(1);
+                }
+            phi = std::acos(cosphi);
+
+            // Build rotation matrix from the relative quaternion and extract
+            // ZXZ Euler angles (alpha, beta, gamma).
+            const rotmat3<Scalar> R(q_rel);
 
             Scalar alpha = Scalar(0);
             Scalar beta = Scalar(0);
             Scalar gamma = Scalar(0);
 
-            // get the rotation angles by R_ZXZ (body-fixed) = R_q
-            if (ez.z < Scalar(-1))
+            if (R.row2.z < Scalar(-1))
                 {
                 beta = Scalar(M_PI);
                 }
-            else if (ez.z > Scalar(1))
+            else if (R.row2.z > Scalar(1))
                 {
                 beta = Scalar(0);
                 }
             else
                 {
-                beta = std::acos(ez.z);
+                beta = std::acos(R.row2.z);
                 }
 
-            if (beta > Scalar(1e-7) && beta < Scalar(M_PI - 1e-7))
+            if (beta > euler_singularity_tol && beta < Scalar(M_PI) - euler_singularity_tol)
                 {
-                alpha = std::atan2(ez.x, -ez.y);
-                gamma = std::atan2(ex.z, ey.z);
-                }
-            else if (beta <= Scalar(1e-7))
-                {
-                alpha = Scalar(0);
-                gamma = std::atan2(ex.y, ex.x);
+                alpha = std::atan2(R.row0.z, -R.row1.z);
+                gamma = std::atan2(R.row2.x, R.row2.y);
+                if (alpha < Scalar(0))
+                    {
+                    alpha += Scalar(2) * M_PI;
+                    }
                 }
             else
                 {
                 alpha = Scalar(0);
-                gamma = std::atan2(-ex.y, ex.x);
+                gamma
+                    = std::atan2((beta <= euler_singularity_tol) ? R.row0.y : -R.row0.y, R.row0.x);
                 }
 
-            if (alpha < Scalar(0))
-                {
-                alpha += Scalar(2) * M_PI;
-                }
             if (gamma < Scalar(0))
                 {
                 gamma += Scalar(2) * M_PI;
                 }
 
-            // compute r0 and its derivatives
+            // move beta away from 0 and pi to avoid 1/sin(beta)
+            // singularity in the Jacobian.
+            if (beta < beta_tol)
+                {
+                beta = beta_tol;
+                }
+            else if (beta > Scalar(M_PI) - beta_tol)
+                {
+                beta = Scalar(M_PI) - beta_tol;
+                }
+
+            // move phi away from 0 and pi to avoid 1/sin(phi)
+            // singularity in the Jacobian (used the same threshold as beta).
+            if (phi < beta_tol)
+                {
+                phi = beta_tol;
+                }
+            else if (phi > Scalar(M_PI) - beta_tol)
+                {
+                phi = Scalar(M_PI) - beta_tol;
+                }
+
+            // compute r0 and its numerical derivatives.
             const Scalar r0 = interp(theta, phi, alpha, beta, gamma);
-            Scalar dr0_dtheta = Scalar(0);
-            Scalar dr0_dphi = Scalar(0);
-            Scalar dr0_dalpha = Scalar(0);
-            Scalar dr0_dbeta = Scalar(0);
-            Scalar dr0_dgamma = Scalar(0);
+            const Scalar dr0_dtheta = interp.derivative(theta, phi, alpha, beta, gamma, 0, fd_step);
+            const Scalar dr0_dphi = interp.derivative(theta, phi, alpha, beta, gamma, 1, fd_step);
+            const Scalar dr0_dalpha = interp.derivative(theta, phi, alpha, beta, gamma, 2, fd_step);
+            const Scalar dr0_dbeta = interp.derivative(theta, phi, alpha, beta, gamma, 3, fd_step);
+            const Scalar dr0_dgamma = interp.derivative(theta, phi, alpha, beta, gamma, 4, fd_step);
 
-            // d r0 / d theta
-            if (theta - h < lo[0])
-                {
-                dr0_dtheta = (interp(theta + h, phi, alpha, beta, gamma) - r0) / h;
-                }
-            else if (theta + h > hi[0])
-                {
-                dr0_dtheta = (r0 - interp(theta - h, phi, alpha, beta, gamma)) / h;
-                }
-            else
-                {
-                dr0_dtheta = (interp(theta + h, phi, alpha, beta, gamma)
-                              - interp(theta - h, phi, alpha, beta, gamma))
-                             / (Scalar(2) * h);
-                }
+            // compute rho and apply domain checks.
+            // rho = (1/r - 1/r0) / (1/(r0 + r_cut) - 1/r0)
+            // rho > 1  =>  beyond the surface cutoff; skip.
+            // rho < 0  =>  overlap; shift to 0.
+            const Scalar inv_r = Scalar(1) / r;
+            const Scalar inv_r0 = Scalar(1) / r0;
+            const Scalar inv_r0_rcut = Scalar(1) / (r0 + m_r_cut);
+            const Scalar rho_denom = inv_r0_rcut - inv_r0;
+            const Scalar rho_num = inv_r - inv_r0;
+            Scalar rho = rho_num / rho_denom;
 
-            // d r0 / d phi
-            if (phi - h < lo[1])
+            if (rho > Scalar(1))
                 {
-                dr0_dphi = (interp(theta, phi + h, alpha, beta, gamma) - r0) / h;
-                }
-            else if (phi + h > hi[1])
-                {
-                dr0_dphi = (r0 - interp(theta, phi - h, alpha, beta, gamma)) / h;
-                }
-            else
-                {
-                dr0_dphi = (interp(theta, phi + h, alpha, beta, gamma)
-                            - interp(theta, phi - h, alpha, beta, gamma))
-                           / (Scalar(2) * h);
+                continue;
                 }
 
-            // d r0 / d alpha
-            if (alpha - h < lo[2])
+            if (rho < Scalar(0))
                 {
-                dr0_dalpha = (interp(theta, phi, alpha + h, beta, gamma) - r0) / h;
-                }
-            else if (alpha + h > hi[2])
-                {
-                dr0_dalpha = (r0 - interp(theta, phi, alpha - h, beta, gamma)) / h;
-                }
-            else
-                {
-                dr0_dalpha = (interp(theta, phi, alpha + h, beta, gamma)
-                              - interp(theta, phi, alpha - h, beta, gamma))
-                             / (Scalar(2) * h);
+                rho = Scalar(0);
                 }
 
-            // d r0 / d beta
-            if (beta - h < lo[3])
+            // derivatives of rho with respect to r and r0, needed by
+            // the Jacobian.
+            const Scalar inv_r_sq = inv_r * inv_r;
+            const Scalar inv_r0_sq = inv_r0 * inv_r0;
+            const Scalar inv_r0_rcut_sq = inv_r0_rcut * inv_r0_rcut;
+            const Scalar rho_denom_sq = rho_denom * rho_denom;
+
+            const Scalar drho_dr = -inv_r_sq / rho_denom;
+            const Scalar drho_dr0
+                = (inv_r0_sq * rho_denom - rho_num * (inv_r0_sq - inv_r0_rcut_sq)) / rho_denom_sq;
+
+            // Chebyshev evaluation: scale each coordinate to [-1,1]
+            // and evaluate polynomials + derivatives up to max degree.
+            evaluateChebyshev(scaleToChebDomain(rho, Scalar(0), Scalar(1)),
+                              max_deg[0],
+                              cheb_T[0].data(),
+                              cheb_dT[0].data());
+
+            const Scalar ang_coords[5] = {theta, phi, alpha, beta, gamma};
+            for (unsigned int c = 0; c < 5; ++c)
                 {
-                dr0_dbeta = (interp(theta, phi, alpha, beta + h, gamma) - r0) / h;
-                }
-            else if (beta + h > hi[3])
-                {
-                dr0_dbeta = (r0 - interp(theta, phi, alpha, beta - h, gamma)) / h;
-                }
-            else
-                {
-                dr0_dbeta = (interp(theta, phi, alpha, beta + h, gamma)
-                             - interp(theta, phi, alpha, beta - h, gamma))
-                            / (Scalar(2) * h);
+                evaluateChebyshev(
+                    scaleToChebDomain(ang_coords[c], h_domain.data[c].x, h_domain.data[c].y),
+                    max_deg[c + 1],
+                    cheb_T[c + 1].data(),
+                    cheb_dT[c + 1].data());
                 }
 
-            // d r0 / d gamma
-            if (gamma - h < lo[4])
-                {
-                dr0_dgamma = (interp(theta, phi, alpha, beta, gamma + h) - r0) / h;
-                }
-            else if (gamma + h > hi[4])
-                {
-                dr0_dgamma = (r0 - interp(theta, phi, alpha, beta, gamma - h)) / h;
-                }
-            else
-                {
-                dr0_dgamma = (interp(theta, phi, alpha, beta, gamma + h)
-                              - interp(theta, phi, alpha, beta, gamma - h))
-                             / (Scalar(2) * h);
-                }
+            // evaluate u and du/d(coord_k).
+            Scalar u = Scalar(0);
+            Scalar du[6] = {Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0)};
 
-            // compute J
+            for (unsigned int t = 0; t < m_Nterms; ++t)
+                {
+                const unsigned int* degs = &h_terms.data[t * 6];
+                const Scalar coeff = h_coeffs.data[t];
+
+                Scalar T_vals[6];
+                Scalar dT_vals[6];
+                for (unsigned int c = 0; c < 6; ++c)
+                    {
+                    T_vals[c] = cheb_T[c][degs[c]];
+                    dT_vals[c] = cheb_dT[c][degs[c]];
+                    }
+
+                Scalar prefix[7];
+                prefix[0] = Scalar(1);
+                for (unsigned int c = 0; c < 6; ++c)
+                    {
+                    prefix[c + 1] = prefix[c] * T_vals[c];
+                    }
+
+                Scalar suffix[7];
+                suffix[6] = Scalar(1);
+                for (int c = 5; c >= 0; --c)
+                    {
+                    suffix[c] = suffix[c + 1] * T_vals[c];
+                    }
+
+                u += coeff * prefix[6];
+
+                for (unsigned int c = 0; c < 6; ++c)
+                    {
+                    du[c] += coeff * dT_vals[c] * cheb_scale[c] * prefix[c] * suffix[c + 1];
+                    }
+                }
+            // Jacobian matrix J (6x6).
+            // J maps the potential-derivative vector
+            //   [du/drho, du/dtheta, du/dphi, du/dalpha, du/dbeta, du/dgamma]
+            // to the lab-frame force and torque:
+            //   [F_x, F_y, F_z, tau_x, tau_y, tau_z]
+            const Scalar c_th = std::cos(theta), s_th = std::sin(theta);
+            const Scalar c_ph = std::cos(phi), s_ph = std::sin(phi);
+            const Scalar c_b = std::cos(beta), s_b = std::sin(beta);
+            const Scalar c_a = std::cos(alpha), s_a = std::sin(alpha);
+
+            const Scalar inv_r_s_ph = inv_r / s_ph;
+            const Scalar inv_s_b = Scalar(1) / s_b;
+
+            // common products involving drho_dr0 and r0 derivatives.
+            const Scalar A = drho_dr0 * dr0_dtheta * inv_r_s_ph;
+            const Scalar B = drho_dr0 * dr0_dphi * inv_r;
+            const Scalar C = drho_dr0 * dr0_dalpha * inv_s_b;
+            const Scalar D = drho_dr0 * dr0_dgamma * inv_s_b;
+
+            // force
+            const Scalar f_x = (-c_th * s_ph * drho_dr + s_th * A - c_th * c_ph * B) * du[0]
+                               + (s_th * inv_r_s_ph) * du[1] + (-c_th * c_ph * inv_r) * du[2];
+
+            const Scalar f_y = (-s_th * s_ph * drho_dr - c_th * A - s_th * c_ph * B) * du[0]
+                               + (-c_th * inv_r_s_ph) * du[1] + (-s_th * c_ph * inv_r) * du[2];
+
+            const Scalar f_z = (-c_ph * drho_dr + s_ph * B) * du[0] + (s_ph * inv_r) * du[2];
+
+            // torque
+            const Scalar tau_x = (c_b * s_a * C - c_a * drho_dr0 * dr0_dbeta - s_a * D) * du[0]
+                                 + (c_b * s_a * inv_s_b) * du[3] + (-c_a) * du[4]
+                                 + (-s_a * inv_s_b) * du[5];
+
+            const Scalar tau_y = (-c_b * c_a * C - s_a * drho_dr0 * dr0_dbeta + c_a * D) * du[0]
+                                 + (-c_a * c_b * inv_s_b) * du[3] + (-s_a) * du[4]
+                                 + (c_a * inv_s_b) * du[5];
+
+            const Scalar tau_z = (-drho_dr0 * dr0_dalpha) * du[0] + (-Scalar(1)) * du[3];
+
+            // accumulate
+            fi.x += f_x;
+            fi.y += f_y;
+            fi.z += f_z;
+
+            ti.x += tau_x;
+            ti.y += tau_y;
+            ti.z += tau_z;
+
+            pei += u;
             }
 
         h_force.data[i].x += fi.x;
         h_force.data[i].y += fi.y;
         h_force.data[i].z += fi.z;
-        h_force.data[i].w += Scalar(0.0);
+        h_force.data[i].w += pei;
 
         h_torque.data[i].x += ti.x;
         h_torque.data[i].y += ti.y;
@@ -404,7 +569,7 @@ void export_ChebyshevAnisotropicPairPotential(pybind11::module& m)
                     throw std::runtime_error("r0_data must be a 5D array.");
                     }
 
-                // Infer r0_shape from r0_data.shape
+                // infer r0_shape from r0_data.shape
                 std::array<unsigned int, 5> r0_shape;
                 for (unsigned int k = 0; k < 5; ++k)
                     {

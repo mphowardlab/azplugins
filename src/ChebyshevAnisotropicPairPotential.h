@@ -48,6 +48,9 @@ class PYBIND11_EXPORT ChebyshevAnisotropicPairPotential : public ForceCompute
     //! Destructor
     virtual ~ChebyshevAnisotropicPairPotential();
 
+    //! Detach from the neighbor list (called when removing from simulation)
+    virtual void notifyDetach();
+
     // Getters
     std::shared_ptr<hoomd::md::NeighborList> getNeighborList() const
         {
@@ -73,23 +76,32 @@ class PYBIND11_EXPORT ChebyshevAnisotropicPairPotential : public ForceCompute
         }
 
     protected:
-    void computeForces(uint64_t timestep) override;
+    // member variables
 
     std::shared_ptr<hoomd::md::NeighborList> m_nlist; //!< Neighbor list
 
     GPUArray<Scalar2> m_domain; //!< Approximation domain (5x2): 5 rows, each is (min, max)
 
-    Scalar m_r_cut; //!< cut-off distance in approximation domain
+    Scalar m_r_cut; //!< Cut-off distance in approximation domain
+
+    Scalar m_nlist_r_cut; //!< Effective neighbor-list cutoff = ceil(max(r0_data) + r_cut)
+
+    /// r_cut matrix shared with the neighbor list (subscriber pattern)
+    std::shared_ptr<GPUArray<Scalar>> m_r_cut_nlist;
+
+    /// Track whether we have attached to the Simulation object
+    bool m_attached = true;
 
     GPUArray<unsigned int> m_terms; //!< Chebyshev term list (Nterms x 6)
+    GPUArray<Scalar> m_coeffs;      //!< Coefficients corresponding to each term
+    unsigned int m_Nterms;          //!< Number of terms
 
-    GPUArray<Scalar> m_coeffs; //!< Coefficients corresponding to each term
+    GPUArray<Scalar> m_r0_data;        //!< R0 data
+    GPUArray<unsigned int> m_r0_shape; //!< Points per dimension to sample r0
 
-    unsigned int m_Nterms; //!< Number of terms
+    // methods
 
-    GPUArray<Scalar> m_r0_data; //!< R0 data
-
-    GPUArray<unsigned int> m_r0_shape; //!< Number of points used along each dimension to sample r0
+    void computeForces(uint64_t timestep) override;
     };
 
     } // end namespace azplugins
