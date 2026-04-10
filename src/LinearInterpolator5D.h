@@ -8,7 +8,6 @@
 #include <cassert>
 #include <cmath>
 #include <cstdint>
-#include <utility>
 
 #include "hoomd/HOOMDMath.h"
 
