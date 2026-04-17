@@ -199,18 +199,7 @@ template<typename T> class LinearInterpolator5D
         return in[0];
         }
 
-    //! Compute the finite-difference derivative with respect to dimensions.
-    /*! Uses central differences when possible, falling back to forward or backward
-        differences at the domain boundaries.
-
-        \param x0  Coordinate along dimension 0
-        \param x1  Coordinate along dimension 1
-        \param x2  Coordinate along dimension 2
-        \param x3  Coordinate along dimension 3
-        \param x4  Coordinate along dimension 4
-        \param dim Which dimension (0-4) to differentiate with respect to
-        \param h   Finite-difference step size
-    */
+    //! Compute the finite-difference derivative with respect to a single dimension.
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar
     derivative(Scalar x0, Scalar x1, Scalar x2, Scalar x3, Scalar x4, int dim, Scalar h) const
         {
@@ -222,7 +211,6 @@ template<typename T> class LinearInterpolator5D
 
         if (!at_lo && !at_hi)
             {
-            // central difference
             x[dim] += h;
             const Scalar f_plus = (*this)(x[0], x[1], x[2], x[3], x[4]);
             x[dim] -= Scalar(2) * h;
@@ -245,12 +233,69 @@ template<typename T> class LinearInterpolator5D
             }
         }
 
+    //! Compute the interpolated value and all 5 partial derivatives in one call.
+    /*! Compute the finite-difference derivative with respect to dimensions.
+        Uses central differences when possible, falling back to forward or backward
+        differences at the domain boundaries.
+
+        \param x0    Coordinate along dimension 0
+        \param x1    Coordinate along dimension 1
+        \param x2    Coordinate along dimension 2
+        \param x3    Coordinate along dimension 3
+        \param x4    Coordinate along dimension 4
+        \param h     Finite-difference step size
+        \param value Interpolated value at (x0..x4)
+        \param deriv Array of 5 partial derivatives (one per dimension)
+    */
+    AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE void valueAndDerivatives(Scalar x0,
+                                                                        Scalar x1,
+                                                                        Scalar x2,
+                                                                        Scalar x3,
+                                                                        Scalar x4,
+                                                                        Scalar h,
+                                                                        Scalar& value,
+                                                                        Scalar* deriv) const
+        {
+        Scalar x[5] = {x0, x1, x2, x3, x4};
+        value = (*this)(x[0], x[1], x[2], x[3], x[4]);
+
+        for (int dim = 0; dim < 5; ++dim)
+            {
+            const Scalar x_orig = x[dim];
+            const bool at_lo = (x_orig - h < m_lo[dim]);
+            const bool at_hi = (x_orig + h > m_hi[dim]);
+
+            if (!at_lo && !at_hi)
+                {
+                // central difference
+                x[dim] = x_orig + h;
+                const Scalar f_plus = (*this)(x[0], x[1], x[2], x[3], x[4]);
+                x[dim] = x_orig - h;
+                const Scalar f_minus = (*this)(x[0], x[1], x[2], x[3], x[4]);
+                deriv[dim] = (f_plus - f_minus) / (Scalar(2) * h);
+                }
+            else if (at_lo)
+                {
+                // forward difference
+                x[dim] = x_orig + h;
+                const Scalar f_plus = (*this)(x[0], x[1], x[2], x[3], x[4]);
+                deriv[dim] = (f_plus - value) / h;
+                }
+            else
+                {
+                // backward difference
+                x[dim] = x_orig - h;
+                const Scalar f_minus = (*this)(x[0], x[1], x[2], x[3], x[4]);
+                deriv[dim] = (value - f_minus) / h;
+                }
+            x[dim] = x_orig;
+            }
+        }
     //! Return the lower bound for a given dimension.
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar getLo(int dim) const
         {
         return m_lo[dim];
         }
-
     //! Return the upper bound for a given dimension.
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar getHi(int dim) const
         {

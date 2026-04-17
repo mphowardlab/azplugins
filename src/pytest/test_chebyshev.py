@@ -48,7 +48,6 @@ def test_chebyshev_construct_attach_zero(
 
     coeffs = numpy.asarray([0.0, 0.0], dtype=numpy.float64)
 
-    # r0 must be 5D (and each dimension >= 2)
     r0 = (numpy.arange(32, dtype=numpy.float64).reshape((2, 2, 2, 2, 2))) * 0.01
 
     r_cut = 3.0
@@ -65,14 +64,10 @@ def test_chebyshev_construct_attach_zero(
     integrator.forces = [pot]
     sim.operations.integrator = integrator
 
-    # attach
     sim.run(0)
 
-    # check if attach happened
     assert hasattr(pot, "_cpp_obj")
     assert pot._cpp_obj is not None
-
-    # recheck key properties after attach
     assert numpy.isclose(pot.r_cut, r_cut)
     assert pot.r0.shape == (2, 2, 2, 2, 2)
 
@@ -85,7 +80,7 @@ def test_chebyshev_construct_attach_zero(
 def test_chebyshev_force_torque_energy_no_symmetry(
     simulation_factory, two_particle_snapshot_factory
 ):
-    """Test energy, force, and torque, without considering symmetry."""
+    """ "Test energy, force, and torque, without considering symmetry."""
     rc = 3.0
     phi_min = 1e-5
     beta_min = 1e-5
@@ -112,11 +107,11 @@ def test_chebyshev_force_torque_energy_no_symmetry(
     )
     coeffs = numpy.array([1.0, 0.25, 1.5, -1.0], dtype=numpy.float64)
 
-    # r0 data: shape (3, 2, 3, 2, 3) = 108 values.
     r0_data = numpy.array([1, 2.1, 3.2] * 36, dtype=numpy.float64).reshape(
         3, 2, 3, 2, 3
     )
 
+    # r0 interpolator
     theta_grid = numpy.linspace(0, 2 * numpy.pi, 3)
     phi_grid = numpy.linspace(phi_min, numpy.pi - phi_min, 2)
     alpha_grid = numpy.linspace(0, 2 * numpy.pi, 3)
@@ -132,15 +127,12 @@ def test_chebyshev_force_torque_energy_no_symmetry(
     )
 
     def rho_to_r(rho, r0, rc):
-        """Invert  rho = (1/r - 1/r0) / (1/(r0+rc) - 1/r0)  to obtain r."""
         inv_r0 = 1.0 / r0
         inv_r0_rc = 1.0 / (r0 + rc)
         inv_r = rho * (inv_r0_rc - inv_r0) + inv_r0
         return 1.0 / inv_r
 
     def run_pair(rho, theta, phi, alpha, beta, gamma):
-        """Build a two-particle simulation, run for one step, and return
-        the potential object."""
         snap = two_particle_snapshot_factory()
         if snap.communicator.rank == 0:
             r0 = float(r0_interp(numpy.array([theta, phi, alpha, beta, gamma]))[0])
@@ -181,16 +173,26 @@ def test_chebyshev_force_torque_energy_no_symmetry(
         return sim, pot
 
     def check(sim, pot, expected_energy, expected_force, expected_torque):
-        """Compare the output on particle 0 to the Python reference (smolyay)."""
+        """Compare both particles.  Particle 1 should obey Newton's third law."""
         if sim.device.communicator.rank == 0:
-            numpy.testing.assert_allclose(
-                pot.energies[0], expected_energy, atol=1e-3, rtol=1e-3
-            )
+            half_e = 0.5 * expected_energy
+
+            # particle 0
+            numpy.testing.assert_allclose(pot.energies[0], half_e, atol=1e-3, rtol=1e-3)
             numpy.testing.assert_allclose(
                 pot.forces[0], expected_force, atol=1e-3, rtol=1e-3
             )
             numpy.testing.assert_allclose(
                 pot.torques[0], expected_torque, atol=1e-3, rtol=1e-3
+            )
+
+            # particle 1 - Newton's third law
+            numpy.testing.assert_allclose(pot.energies[1], half_e, atol=1e-3, rtol=1e-3)
+            numpy.testing.assert_allclose(
+                pot.forces[1], -expected_force, atol=1e-3, rtol=1e-3
+            )
+            numpy.testing.assert_allclose(
+                pot.torques[1], -expected_torque, atol=1e-3, rtol=1e-3
             )
 
     # point 1: interior
@@ -210,7 +212,7 @@ def test_chebyshev_force_torque_energy_no_symmetry(
         expected_torque=numpy.array([0.944, -0.307, -0.271]),
     )
 
-    # point 2: rho < 0
+    # point 2: rho < 0 (clamped for derivatives, extrapolated for energy)
     sim, pot = run_pair(
         rho=-0.1,
         theta=numpy.pi / 4,
@@ -222,14 +224,14 @@ def test_chebyshev_force_torque_energy_no_symmetry(
     check(
         sim,
         pot,
-        expected_energy=-1.25,
+        expected_energy=-1.67,
         expected_force=numpy.array([-1.906, -1.906, -2.695]),
         expected_torque=numpy.array([1.226, -0.398, -0.398]),
     )
 
-    # point 3: rho < 0 and phi at upper boundary
+    # point 3: phi at upper boundary
     sim, pot = run_pair(
-        rho=-0.1,
+        rho=0.0,
         theta=numpy.pi / 4,
         phi=numpy.pi - phi_min,
         alpha=2 * numpy.pi / 15,
@@ -240,8 +242,8 @@ def test_chebyshev_force_torque_energy_no_symmetry(
         sim,
         pot,
         expected_energy=-1.583,
-        expected_force=numpy.array([0.0, 0.0, 4.296]),
-        expected_torque=numpy.array([0.591, -1.327, -0.398]),
+        expected_force=numpy.array([0.0, 0.0, 3.832]),
+        expected_torque=numpy.array([0.546, -1.226, -0.398]),
     )
 
     # point 4: beta at lower boundary
@@ -278,7 +280,7 @@ def test_chebyshev_force_torque_energy_no_symmetry(
         expected_torque=numpy.array([0.207, -0.067, 0.207]),
     )
 
-    # point 6: rho > 1, pair is beyond the surface cutoff
+    # point 6: rho > 1, beyond surface cutoff - all zeros
     sim, pot = run_pair(
         rho=1.05,
         theta=numpy.pi / 4,
@@ -291,3 +293,6 @@ def test_chebyshev_force_torque_energy_no_symmetry(
         numpy.testing.assert_allclose(pot.energies[0], 0.0, atol=1e-10)
         numpy.testing.assert_allclose(pot.forces[0], [0.0, 0.0, 0.0], atol=1e-10)
         numpy.testing.assert_allclose(pot.torques[0], [0.0, 0.0, 0.0], atol=1e-10)
+        numpy.testing.assert_allclose(pot.energies[1], 0.0, atol=1e-10)
+        numpy.testing.assert_allclose(pot.forces[1], [0.0, 0.0, 0.0], atol=1e-10)
+        numpy.testing.assert_allclose(pot.torques[1], [0.0, 0.0, 0.0], atol=1e-10)
