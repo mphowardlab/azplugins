@@ -27,6 +27,12 @@ static inline Scalar scaleToChebDomain(Scalar x, Scalar lo, Scalar hi)
     T_0(x) = 1                       T'_0(x) = 0
     T_1(x) = x                       T'_1(x) = 1
     T_{n+1}(x) = 2x T_n - T_{n-1}   T'_{n+1}(x) = 2 T_n + 2x T'_n - T'_{n-1}
+
+
+    \param x        Evaluation point in [-1, 1]
+    \param max_deg  Highest polynomial degree to compute
+    \param T        Output: T[n] = T_n(x)  for n = 0 .. max_deg  (size >= max_deg+1)
+    \param dT       Output: dT[n] = T'_n(x) for n = 0 .. max_deg (size >= max_deg+1)
 */
 static inline void evaluateChebyshev(Scalar x, unsigned int max_deg, Scalar* T, Scalar* dT)
     {
@@ -342,9 +348,13 @@ void ChebyshevAnisotropicPairPotential::computeForces(uint64_t timestep)
             // move phi and beta away from 0 and pi to avoid 1/sin(beta or phi)
             // singularity in the Jacobian (used the same threshold as beta).
             if (phi < beta_tol)
+                {
                 phi = beta_tol;
+                }
             else if (phi > Scalar(M_PI) - beta_tol)
+                {
                 phi = Scalar(M_PI) - beta_tol;
+                }
 
             if (beta < beta_tol)
                 beta = beta_tol;
@@ -552,11 +562,13 @@ void export_ChebyshevAnisotropicPairPotential(pybind11::module& m)
                py::array_t<Scalar, py::array::c_style | py::array::forcecast> coeffs,
                py::array_t<Scalar, py::array::c_style | py::array::forcecast> r0_data)
             {
+                // domain must be (5,2) - rho is always in (0, 1)
                 if (domain.ndim() != 2 || domain.shape(0) != 5 || domain.shape(1) != 2)
                     {
                     throw std::runtime_error("domain must have shape (5,2).");
                     }
 
+                // terms must be (Nterms,6)
                 if (terms.ndim() != 2 || terms.shape(1) != 6)
                     {
                     throw std::runtime_error("terms must have shape (Nterms,6).");
@@ -564,16 +576,19 @@ void export_ChebyshevAnisotropicPairPotential(pybind11::module& m)
 
                 const unsigned int Nterms = static_cast<unsigned int>(terms.shape(0));
 
+                // coeffs must be (Nterms,)
                 if (coeffs.ndim() != 1 || static_cast<unsigned int>(coeffs.shape(0)) != Nterms)
                     {
                     throw std::runtime_error("coeffs must have shape (Nterms,).");
                     }
 
+                // r0_data must be 5D
                 if (r0_data.ndim() != 5)
                     {
                     throw std::runtime_error("r0_data must be a 5D array.");
                     }
 
+                // infer r0_shape from r0_data.shape
                 std::array<unsigned int, 5> r0_shape;
                 for (unsigned int k = 0; k < 5; ++k)
                     {

@@ -68,10 +68,10 @@ class Index5D
     unsigned int m_n[5];
     };
 
-/*! \brief 5D multilinear interpolation on a uniform rectilinear grid.
+/*! \brief 5D multilinear interpolation on a uniform rectilinear grid
 
     This is an extension of three-dimensional linear interpolation
-    from (https://github.com/mphowardlab/flyft/blob/main/src/grid_interpolator.cc).
+    from (https://github.com/mphowardlab/flyft/blob/main/src/grid_interpolator.cc)
 
 */
 template<typename T> class LinearInterpolator5D
@@ -104,7 +104,7 @@ template<typename T> class LinearInterpolator5D
         assert(m_indexer.size() > 0);
         }
 
-    //! Constructor accepting the domain as a Scalar2 array.
+    //! Constructor accepting the domain as a Scalar2 array
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE LinearInterpolator5D(const T* data,
                                                                     const unsigned int* n,
                                                                     const Scalar2* domain_s2)
@@ -123,13 +123,13 @@ template<typename T> class LinearInterpolator5D
         assert(m_indexer.size() > 0);
         }
 
-    //! Interpolate at (x0, x1, x2, x3, x4).
+    //! Interpolate at (x0, x1, x2, x3, x4)
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar
     operator()(Scalar x0, Scalar x1, Scalar x2, Scalar x3, Scalar x4) const
         {
         const Scalar x[5] = {x0, x1, x2, x3, x4};
 
-        // Compute the cell bin and fractional coordinate in each dimension.
+        // Compute the cell bin and fractional coordinate in each dimension
         int bin[5];
         Scalar frac[5];
 
@@ -141,7 +141,7 @@ template<typename T> class LinearInterpolator5D
             int b = static_cast<int>(std::floor(f));
 
             // If exactly at the top boundary, shift into the last valid cell so
-            // that (b+1) remains in bounds.
+            // that (b+1) remains in bounds
             if (f == Scalar(nd - 1) && x[d] == m_hi[d])
                 {
                 --b;
@@ -154,7 +154,7 @@ template<typename T> class LinearInterpolator5D
             frac[d] = f - Scalar(b);
             }
 
-        // Load the 2^5=32 corners of the surrounding 5D cell.
+        // Load the 2^5=32 corners of the surrounding 5D cell
         Scalar corners[32];
 
         for (unsigned int mask = 0; mask < 32; ++mask)
@@ -170,11 +170,11 @@ template<typename T> class LinearInterpolator5D
             const unsigned int i4
                 = static_cast<unsigned int>(bin[4] + static_cast<int>((mask >> 4) & 1u));
 
-            // Implicit conversion from T to Scalar is intended.
+            // Implicit conversion from T to Scalar is intended
             corners[mask] = m_data[m_indexer(i0, i1, i2, i3, i4)];
             }
 
-        // For each dimension d, collapse pairs of points that differ in bit d.
+        // For each dimension d, collapse pairs of points that differ in bit d
         Scalar scratch[16];
         Scalar* in = corners;
         Scalar* out = scratch;
@@ -195,11 +195,22 @@ template<typename T> class LinearInterpolator5D
             len = out_len;
             }
 
-        // After 5 reductions, len==1 and in[0] holds the interpolated value.
+        // After 5 reductions, len==1 and in[0] holds the interpolated value
         return in[0];
         }
 
-    //! Compute the finite-difference derivative with respect to a single dimension.
+    //! Compute the finite-difference derivative with respect to a single dimension
+    /*! Uses central differences when possible, falling back to forward or backward
+        differences at the domain boundaries.
+
+        \param x0  Coordinate along dimension 0
+        \param x1  Coordinate along dimension 1
+        \param x2  Coordinate along dimension 2
+        \param x3  Coordinate along dimension 3
+        \param x4  Coordinate along dimension 4
+        \param dim Which dimension (0-4) to differentiate with respect to
+        \param h   Finite-difference step size
+    */
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar
     derivative(Scalar x0, Scalar x1, Scalar x2, Scalar x3, Scalar x4, int dim, Scalar h) const
         {
