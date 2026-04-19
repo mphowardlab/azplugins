@@ -159,6 +159,128 @@ class ShapeSymmetryNull
         }
     };
 
+//! Cube symmetry evaluator.
+/*! Reduced domain:
+    theta in [0, pi/4], phi in [0, pi/2], alpha in [0, 2 pi],
+    beta in [0, arccos(1/sqrt(3))], gamma in [0, pi/2].
+*/
+class ShapeSymmetryCube
+    {
+    public:
+    //! Upper bounds of the reduced domain.
+    static constexpr Scalar domain_upper[5] = {Scalar(M_PI / 4.0),
+                                               Scalar(M_PI / 2.0),
+                                               Scalar(2.0 * M_PI),
+                                               Scalar(0.9553166181245093),
+                                               Scalar(M_PI / 2.0)};
+
+    AZPLUGINS_HOSTDEVICE ShapeSymmetryCube()
+        : m_rot_x_pi(detail::quatFromAxisAngle(vec3<Scalar>(1, 0, 0), Scalar(M_PI))),
+          m_rot_111(quat<Scalar>(Scalar(0.5), vec3<Scalar>(Scalar(0.5), Scalar(0.5), Scalar(0.5))))
+        {
+        }
+
+#ifndef __HIPCC__
+    static std::string getName()
+        {
+        return "Cube";
+        }
+#endif
+
+    AZPLUGINS_HOSTDEVICE quat<Scalar>
+    reduce(Scalar& theta, Scalar& phi, Scalar& alpha, Scalar& beta, Scalar& gamma) const
+        {
+        quat<Scalar> transformation(Scalar(1), vec3<Scalar>(0, 0, 0));
+
+        vec3<Scalar> pos = detail::sphericalToCartesian(Scalar(1), theta, phi);
+
+        // if phi > pi/2, rotate by pi around x to flip z.
+        if (phi > Scalar(M_PI) / Scalar(2))
+            {
+            pos = rotate(m_rot_x_pi, pos);
+            transformation = m_rot_x_pi * transformation;
+            }
+
+        // fold theta into [0, pi/2] by rotating around z.
+        Scalar r_tmp, th_tmp, ph_tmp;
+        detail::cartesianToSpherical(pos, r_tmp, th_tmp, ph_tmp);
+
+        const Scalar theta_fold = Scalar(M_PI) / Scalar(2);
+        if (th_tmp > theta_fold)
+            {
+            const Scalar angle = -slow::floor(th_tmp / theta_fold) * theta_fold;
+            const quat<Scalar> rot_z = detail::quatFromAxisAngle(vec3<Scalar>(0, 0, 1), angle);
+            pos = rotate(rot_z, pos);
+            transformation = rot_z * transformation;
+            }
+
+        // fold theta into [0, pi/4] using 120-degree rotations
+        // around the [111] body diagonal (up to 3 attempts).
+        const Scalar theta_max = Scalar(M_PI) / Scalar(4);
+        unsigned int n_rot = 0;
+        detail::cartesianToSpherical(pos, r_tmp, th_tmp, ph_tmp);
+        while (n_rot < 3 && th_tmp > theta_max)
+            {
+            pos = rotate(m_rot_111, pos);
+            transformation = m_rot_111 * transformation;
+            detail::cartesianToSpherical(pos, r_tmp, th_tmp, ph_tmp);
+            ++n_rot;
+            }
+
+        // Write back reduced position angles.
+        detail::cartesianToSpherical(pos, r_tmp, theta, phi);
+
+        // apply cumulative transformation to orientation and
+        // select the best candidate from 3 rotations around [111].
+        quat<Scalar> q_orient = detail::quatFromEulerZXZ(alpha, beta, gamma);
+        quat<Scalar> q_cand = transformation * q_orient;
+
+        Scalar best_a = Scalar(0);
+        Scalar best_b = Scalar(1e30);
+        Scalar best_g = Scalar(1e30);
+
+        for (unsigned int i = 0; i < 3; ++i)
+            {
+            Scalar a, b, g;
+            detail::eulerFromQuat(q_cand, a, b, g);
+
+            // if > pi/2, reflect.
+            if (b > Scalar(M_PI) / Scalar(2))
+                {
+                a = std::fmod(a + Scalar(M_PI), Scalar(2) * Scalar(M_PI));
+                b = Scalar(M_PI) - b;
+                g = Scalar(2) * Scalar(M_PI) - g;
+                if (g < Scalar(0))
+                    g += Scalar(2) * Scalar(M_PI);
+                }
+
+            // 4-fold gamma symmetry.
+            g = std::fmod(g, Scalar(M_PI) / Scalar(2));
+
+            // Lexicographic pick on (beta, gamma).
+            if (b < best_b - Scalar(1e-10) || (std::fabs(b - best_b) < Scalar(1e-10) && g < best_g))
+                {
+                best_a = a;
+                best_b = b;
+                best_g = g;
+                }
+
+            // Rotate candidate to the next [111] orientation.
+            q_cand = q_cand * m_rot_111;
+            }
+
+        alpha = best_a;
+        beta = best_b;
+        gamma = best_g;
+
+        return transformation;
+        }
+
+    private:
+    quat<Scalar> m_rot_x_pi; //!< Rotation by pi around x
+    quat<Scalar> m_rot_111;  //!< Rotation by 2 pi/3 around [1,1,1]/sqrt(3)
+    };
+
 //! Tetrahedron symmetry evaluator.
 /*! Reduced domain:
     theta in [0, 2 pi/3], phi in [0, pi], alpha in [0, 2 pi],
