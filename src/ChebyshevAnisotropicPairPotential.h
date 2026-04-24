@@ -91,7 +91,6 @@ class PYBIND11_EXPORT ChebyshevAnisotropicPairPotential : public ForceCompute
     public:
     ChebyshevAnisotropicPairPotential(std::shared_ptr<SystemDefinition> sysdef,
                                       std::shared_ptr<hoomd::md::NeighborList> nlist,
-                                      const Scalar* domain,
                                       const Scalar r_cut,
                                       const unsigned int* terms,
                                       const Scalar* coeffs,
@@ -156,7 +155,6 @@ template<class ShapeSymmetryT>
 ChebyshevAnisotropicPairPotential<ShapeSymmetryT>::ChebyshevAnisotropicPairPotential(
     std::shared_ptr<SystemDefinition> sysdef,
     std::shared_ptr<hoomd::md::NeighborList> nlist,
-    const Scalar* domain,
     const Scalar r_cut,
     const unsigned int* terms,
     const Scalar* coeffs,
@@ -170,9 +168,17 @@ ChebyshevAnisotropicPairPotential<ShapeSymmetryT>::ChebyshevAnisotropicPairPoten
         m_domain.swap(domain_arr);
 
         ArrayHandle<Scalar2> h_domain(m_domain, access_location::host, access_mode::readwrite);
+        const Scalar angle_lower[5] = {
+            Scalar(0.0),    // theta
+            Scalar(1.0e-5), // phi
+            Scalar(0.0),    // alpha
+            Scalar(1.0e-5), // beta
+            Scalar(0.0)     // gamma
+        };
+
         for (unsigned int d = 0; d < 5; ++d)
             {
-            h_domain.data[d] = make_scalar2(domain[2 * d], domain[2 * d + 1]);
+            h_domain.data[d] = make_scalar2(angle_lower[d], ShapeSymmetryT::domain_upper[d]);
             }
         }
 
@@ -652,18 +658,11 @@ void export_ChebyshevAnisotropicPairPotential(pybind11::module& m, const std::st
         .def(py::init(
             [](std::shared_ptr<SystemDefinition> sysdef,
                std::shared_ptr<NL> nlist,
-               py::array_t<Scalar, py::array::c_style | py::array::forcecast> domain,
                Scalar r_cut,
                py::array_t<unsigned int, py::array::c_style | py::array::forcecast> terms,
                py::array_t<Scalar, py::array::c_style | py::array::forcecast> coeffs,
                py::array_t<Scalar, py::array::c_style | py::array::forcecast> r0_data)
             {
-                // Domain must be (5,2) - rho is always in (0, 1)
-                if (domain.ndim() != 2 || domain.shape(0) != 5 || domain.shape(1) != 2)
-                    {
-                    throw std::runtime_error("domain must have shape (5,2).");
-                    }
-
                 // Terms must be (Nterms,6)
                 if (terms.ndim() != 2 || terms.shape(1) != 6)
                     {
@@ -698,7 +697,6 @@ void export_ChebyshevAnisotropicPairPotential(pybind11::module& m, const std::st
 
                 return std::make_shared<Pot>(sysdef,
                                              nlist,
-                                             domain.data(),
                                              r_cut,
                                              terms.data(),
                                              coeffs.data(),

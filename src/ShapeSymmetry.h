@@ -130,15 +130,18 @@ eulerFromQuat(const quat<Scalar>& q, Scalar& alpha, Scalar& beta, Scalar& gamma)
 
 //! Null symmetry: no reduction.
 /*! Full natural domain:
-    theta in [0, 2 pi], phi in [0, pi], alpha in [0, 2 pi],
-    beta in [0, pi], gamma in [0, 2 pi].
+    theta in [0, 2 pi], phi in [1e-5, pi-1e-5], alpha in [0, 2 pi],
+    beta in [1e-5, pi-1e-5], gamma in [0, 2 pi].
 */
 class ShapeSymmetryNull
     {
     public:
-    //! Upper bounds of the reduced domain (lower bounds are always zero).
-    static constexpr Scalar domain_upper[5]
-        = {Scalar(2.0 * M_PI), Scalar(M_PI), Scalar(2.0 * M_PI), Scalar(M_PI), Scalar(2.0 * M_PI)};
+    //! Upper bounds of the reduced domain.
+    static constexpr Scalar domain_upper[5] = {Scalar(2.0 * M_PI),
+                                               Scalar(M_PI) - Scalar(1e-5),
+                                               Scalar(2.0 * M_PI),
+                                               Scalar(M_PI) - Scalar(1e-5),
+                                               Scalar(2.0 * M_PI)};
 
 #ifndef __HIPCC__
     static std::string getName()
@@ -159,8 +162,8 @@ class ShapeSymmetryNull
 
 //! Cube symmetry evaluator.
 /*! Reduced domain:
-    theta in [0, pi/4], phi in [0, pi/2], alpha in [0, 2 pi],
-    beta in [0, arccos(1/sqrt(3))], gamma in [0, pi/2].
+    theta in [0, pi/4], phi in [1e-5, pi/2], alpha in [0, 2 pi],
+    beta in [1e-5, arccos(1/sqrt(3))], gamma in [0, pi/2].
 */
 class ShapeSymmetryCube
     {
@@ -285,9 +288,9 @@ class ShapeSymmetryTetrahedron
     public:
     //! Upper bounds of the reduced domain.
     static constexpr Scalar domain_upper[5] = {Scalar(2.0 * M_PI / 3.0),
-                                               Scalar(M_PI),
+                                               Scalar(M_PI) - Scalar(1e-5),
                                                Scalar(2.0 * M_PI),
-                                               Scalar(M_PI),
+                                               Scalar(M_PI - Scalar(1e-5)),
                                                Scalar(2.0 * M_PI / 3.0)};
 
 #ifndef __HIPCC__

@@ -43,7 +43,6 @@ def build_simulation(
     simulation_factory,
     two_particle_snapshot_factory,
     pot_cls,
-    domain,
     r0,
     rho,
     theta,
@@ -89,7 +88,6 @@ def build_simulation(
     nlist = hoomd.md.nlist.Cell(buffer=1)
     pot = pot_cls(
         nlist=nlist,
-        domain=domain,
         terms=terms,
         coeffs=coeffs,
         r0=r0_data,
@@ -152,17 +150,6 @@ def test_chebyshev_construct_attach_zero(
 
     nlist = hoomd.md.nlist.Cell(buffer=0.4)
 
-    domain = numpy.asarray(
-        [
-            [0.0, 2.0 * numpy.pi],
-            [0.0, numpy.pi],
-            [0.0, 2.0 * numpy.pi],
-            [0.0, numpy.pi],
-            [0.0, 2.0 * numpy.pi],
-        ],
-        dtype=numpy.float64,
-    )
-
     terms = numpy.asarray(
         [
             [0, 0, 0, 0, 0, 0],
@@ -177,7 +164,7 @@ def test_chebyshev_construct_attach_zero(
     r_cut = 3.0
 
     pot = hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential(
-        nlist=nlist, domain=domain, terms=terms, coeffs=coeffs, r0=r0, r_cut=r_cut
+        nlist=nlist, terms=terms, coeffs=coeffs, r0=r0, r_cut=r_cut
     )
 
     assert numpy.isclose(pot.r_cut, r_cut)
@@ -207,7 +194,6 @@ def good_kwargs():
     """A set of constructor kwargs known to be valid."""
     return dict(
         nlist=hoomd.md.nlist.Cell(buffer=0.4),
-        domain=numpy.zeros((5, 2), dtype=numpy.float64),
         terms=numpy.zeros((1, 6), dtype=numpy.uint32),
         coeffs=numpy.zeros((1,), dtype=numpy.float64),
         r0=numpy.zeros((2, 2, 2, 2, 2), dtype=numpy.float64),
@@ -257,22 +243,11 @@ def test_chebyshev_force_torque_energy_null_symmetry(
     simulation_factory, two_particle_snapshot_factory
 ):
     """Force, torque, and energy with no symmetry reduction."""
-    domain = numpy.array(
-        [
-            [0.0, 2.0 * numpy.pi],
-            [phi_min, numpy.pi - phi_min],
-            [0.0, 2.0 * numpy.pi],
-            [beta_min, numpy.pi - phi_min],
-            [0.0, 2.0 * numpy.pi],
-        ],
-        dtype=numpy.float64,
-    )
-
     # r0 interpolator aligned with r0_data's shape (3, 2, 3, 2, 3).
     theta_grid = numpy.linspace(0, 2 * numpy.pi, 3)
     phi_grid = numpy.linspace(phi_min, numpy.pi - phi_min, 2)
     alpha_grid = numpy.linspace(0, 2 * numpy.pi, 3)
-    beta_grid = numpy.linspace(beta_min, numpy.pi - phi_min, 2)
+    beta_grid = numpy.linspace(beta_min, numpy.pi - beta_min, 2)
     gamma_grid = numpy.linspace(0, 2 * numpy.pi, 3)
 
     r0_interp = RegularGridInterpolator(
@@ -289,7 +264,6 @@ def test_chebyshev_force_torque_energy_null_symmetry(
             simulation_factory,
             two_particle_snapshot_factory,
             hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential,
-            domain,
             r0,
             rho,
             theta,
@@ -402,26 +376,15 @@ def test_chebyshev_force_torque_energy_cube_symmetry(
 ):
     """Force, torque, and energy with cube symmetry reduction.
 
-    Reduced domain: theta in [0, pi/4], phi in [0, pi/2],
-    alpha in [0, 2 pi], beta in [0, arccos(1/sqrt(3))],
+    Reduced domain: theta in [0, pi/4], phi in [1e-5, pi/2],
+    alpha in [0, 2 pi], beta in [1e-5, arccos(1/sqrt(3))],
     gamma in [0, pi/2]."""
-    domain = numpy.array(
-        [
-            [0.0, numpy.pi / 4],
-            [phi_min, numpy.pi / 2],
-            [0.0, 2.0 * numpy.pi],
-            [beta_min, numpy.arccos(1 / numpy.sqrt(3))],
-            [0.0, numpy.pi / 2],
-        ],
-        dtype=numpy.float64,
-    )
 
     def run(r0, rho, theta, phi, alpha, beta, gamma):
         return build_simulation(
             simulation_factory,
             two_particle_snapshot_factory,
             hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialCube,
-            domain,
             r0,
             rho,
             theta,
@@ -467,15 +430,14 @@ def test_chebyshev_force_torque_energy_cube_symmetry(
         expected_torque=numpy.array([9.579, -3.113, -0.398]),
     )
 
-    # point 3: phi at upper boundary (outside domain), theta and beta
-    # also outside the domain
+    # point 3: interior with rho=0
     sim, pot = run(
         r0=2.62072583,
         rho=0.0,
         theta=2 * numpy.pi / 7,
         phi=numpy.pi / 9,
         alpha=2 * numpy.pi / 15,
-        beta=2 * numpy.pi / 8,
+        beta=numpy.pi / 4,
         gamma=numpy.pi / 5,
     )
     check_pair(
@@ -486,7 +448,7 @@ def test_chebyshev_force_torque_energy_cube_symmetry(
         expected_torque=numpy.array([4.223, -0.398, 3.08]),
     )
 
-    # point 4: theta out of bound
+    # point 4: theta, phi, and beta out of bound
     sim, pot = run(
         r0=2.11254315,
         rho=0.0,
@@ -577,25 +539,14 @@ def test_chebyshev_force_torque_energy_tetrahedron_symmetry(
 ):
     """Force, torque, and energy with tetrahedron symmetry reduction.
 
-    Reduced domain: theta in [0, 2 pi/3], phi in [0, pi],
-    alpha in [0, 2 pi], beta in [0, pi], gamma in [0, 2 pi/3]."""
-    domain = numpy.array(
-        [
-            [0.0, 2 * numpy.pi / 3],
-            [phi_min, numpy.pi],
-            [0.0, 2.0 * numpy.pi],
-            [beta_min, numpy.pi],
-            [0.0, 2 * numpy.pi / 3],
-        ],
-        dtype=numpy.float64,
-    )
+    Reduced domain: theta in [0, 2 pi/3], phi in [1e-5, pi],
+    alpha in [0, 2 pi], beta in [1e-5, pi], gamma in [0, 2 pi/3]."""
 
     def run(r0, rho, theta, phi, alpha, beta, gamma):
         return build_simulation(
             simulation_factory,
             two_particle_snapshot_factory,
             hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialTetrahedron,
-            domain,
             r0,
             rho,
             theta,
@@ -684,7 +635,7 @@ def test_chebyshev_force_torque_energy_tetrahedron_symmetry(
         theta=numpy.pi / 4,
         phi=numpy.pi - phi_min,
         alpha=2 * numpy.pi / 5,
-        beta=beta_min,
+        beta=numpy.pi - beta_min,
         gamma=numpy.pi,
     )
     check_pair(
@@ -692,7 +643,7 @@ def test_chebyshev_force_torque_energy_tetrahedron_symmetry(
         pot,
         expected_energy=-0.41,
         expected_force=numpy.array([0.0, 0.0, 2.647]),
-        expected_torque=numpy.array([3.08981190e05, -1.00394074e05, -0.271]),
+        expected_torque=numpy.array([2.57516972e05, -8.36723360e04, -0.271]),
     )
 
     # point 6: all angles outside the domain (except alpha)

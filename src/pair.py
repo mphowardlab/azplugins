@@ -26,7 +26,7 @@ class ChebyshevAnisotropicPairPotential(Force):
     _ext_module = _azplugins
     _cpp_class_name = "ChebyshevAnisotropicPairPotentialNull"
 
-    def __init__(self, nlist, domain, terms, coeffs, r0, r_cut):
+    def __init__(self, nlist, terms, coeffs, r0, r_cut):
         super().__init__()
 
         self._nlist = nlist
@@ -35,14 +35,11 @@ class ChebyshevAnisotropicPairPotential(Force):
         param_dict["r_cut"] = float(r_cut)
         self._param_dict.update(param_dict)
 
-        self._domain = numpy.asarray(domain, dtype=numpy.float64)
         self._terms = numpy.asarray(terms, dtype=numpy.uint32)
         self._coeffs = numpy.asarray(coeffs, dtype=numpy.float64)
 
         self.r0 = numpy.asarray(r0, dtype=numpy.float64)
 
-        if self._domain.shape != (5, 2):
-            raise ValueError("domain must have shape (5, 2).")
         if self._terms.ndim != 2 or self._terms.shape[1] != 6:
             raise ValueError("terms must have shape (Nterms, 6).")
 
@@ -65,7 +62,6 @@ class ChebyshevAnisotropicPairPotential(Force):
         self._cpp_obj = cls(
             self._simulation.state._cpp_sys_def,
             self._nlist._cpp_obj,
-            self._domain,
             self.r_cut,
             self._terms,
             self._coeffs,
@@ -79,8 +75,8 @@ class ChebyshevAnisotropicPairPotentialCube(ChebyshevAnisotropicPairPotential):
     """Chebyshev anisotropic pair potential with cube symmetry reduction.
 
     Reduced domain:
-    theta in [0, pi/4], phi in [0, pi/2], alpha in [0, 2 pi],
-    beta in [0, arccos(1/sqrt(3))], gamma in [0, pi/2].
+    theta in [0, pi/4], phi in [1e-5, pi/2], alpha in [0, 2 pi],
+    beta in [1e-5, arccos(1/sqrt(3))], gamma in [0, pi/2].
     """
 
     _cpp_class_name = "ChebyshevAnisotropicPairPotentialCube"
@@ -90,8 +86,8 @@ class ChebyshevAnisotropicPairPotentialTetrahedron(ChebyshevAnisotropicPairPoten
     """Chebyshev anisotropic pair potential with tetrahedron symmetry reduction.
 
     Reduced domain:
-    theta in [0, 2 pi/3], phi in [0, pi], alpha in [0, 2 pi],
-    beta in [0, pi], gamma in [0, 2 pi/3].
+    theta in [0, 2 pi/3], phi in [1e-5, pi-1e-5], alpha in [0, 2 pi],
+    beta in [1e-5, pi-1e-5], gamma in [0, 2 pi/3].
     """
 
     _cpp_class_name = "ChebyshevAnisotropicPairPotentialTetrahedron"
