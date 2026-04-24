@@ -101,7 +101,7 @@ eulerFromQuat(const quat<Scalar>& q, Scalar& alpha, Scalar& beta, Scalar& gamma)
         }
     else
         {
-        beta = std::acos(R.row2.z);
+        beta = slow::acos(R.row2.z);
         }
 
     if (beta > tol && beta < Scalar(M_PI) - tol)
@@ -140,8 +140,6 @@ class ShapeSymmetryNull
     static constexpr Scalar domain_upper[5]
         = {Scalar(2.0 * M_PI), Scalar(M_PI), Scalar(2.0 * M_PI), Scalar(M_PI), Scalar(2.0 * M_PI)};
 
-    AZPLUGINS_HOSTDEVICE ShapeSymmetryNull() { }
-
 #ifndef __HIPCC__
     static std::string getName()
         {
@@ -149,11 +147,11 @@ class ShapeSymmetryNull
         }
 #endif
 
-    AZPLUGINS_HOSTDEVICE quat<Scalar> reduce(Scalar& /*theta*/,
-                                             Scalar& /*phi*/,
-                                             Scalar& /*alpha*/,
-                                             Scalar& /*beta*/,
-                                             Scalar& /*gamma*/) const
+    AZPLUGINS_HOSTDEVICE static quat<Scalar> reduce(Scalar& /*theta*/,
+                                                    Scalar& /*phi*/,
+                                                    Scalar& /*alpha*/,
+                                                    Scalar& /*beta*/,
+                                                    Scalar& /*gamma*/)
         {
         return quat<Scalar>(Scalar(1), vec3<Scalar>(0, 0, 0));
         }
@@ -174,12 +172,6 @@ class ShapeSymmetryCube
                                                Scalar(0.9553166181245093),
                                                Scalar(M_PI / 2.0)};
 
-    AZPLUGINS_HOSTDEVICE ShapeSymmetryCube()
-        : m_rot_x_pi(detail::quatFromAxisAngle(vec3<Scalar>(1, 0, 0), Scalar(M_PI))),
-          m_rot_111(quat<Scalar>(Scalar(0.5), vec3<Scalar>(Scalar(0.5), Scalar(0.5), Scalar(0.5))))
-        {
-        }
-
 #ifndef __HIPCC__
     static std::string getName()
         {
@@ -187,21 +179,28 @@ class ShapeSymmetryCube
         }
 #endif
 
-    AZPLUGINS_HOSTDEVICE quat<Scalar>
-    reduce(Scalar& theta, Scalar& phi, Scalar& alpha, Scalar& beta, Scalar& gamma) const
+    AZPLUGINS_HOSTDEVICE static quat<Scalar>
+    reduce(Scalar& theta, Scalar& phi, Scalar& alpha, Scalar& beta, Scalar& gamma)
         {
+        // Rotation by pi around x
+        const quat<Scalar> rot_x_pi
+            = detail::quatFromAxisAngle(vec3<Scalar>(1, 0, 0), Scalar(M_PI));
+        // Rotation by 2 pi/3 around [1,1,1]/sqrt(3)
+        const quat<Scalar> rot_111(Scalar(0.5),
+                                   vec3<Scalar>(Scalar(0.5), Scalar(0.5), Scalar(0.5)));
+
         quat<Scalar> transformation(Scalar(1), vec3<Scalar>(0, 0, 0));
 
         vec3<Scalar> pos = detail::sphericalToCartesian(Scalar(1), theta, phi);
 
-        // if phi > pi/2, rotate by pi around x to flip z.
+        // If phi > pi/2, rotate by pi around x to flip z.
         if (phi > Scalar(M_PI) / Scalar(2))
             {
-            pos = rotate(m_rot_x_pi, pos);
-            transformation = m_rot_x_pi * transformation;
+            pos = rotate(rot_x_pi, pos);
+            transformation = rot_x_pi * transformation;
             }
 
-        // fold theta into [0, pi/2] by rotating around z.
+        // Fold theta into [0, pi/2] by rotating around z.
         Scalar r_tmp, th_tmp, ph_tmp;
         detail::cartesianToSpherical(pos, r_tmp, th_tmp, ph_tmp);
 
@@ -214,15 +213,15 @@ class ShapeSymmetryCube
             transformation = rot_z * transformation;
             }
 
-        // fold theta into [0, pi/4] using 120-degree rotations
-        // around the [111] body diagonal (up to 3 attempts).
+        // Fold theta into [0, pi/4] using 120-degree rotations around the
+        // [111] body diagonal (up to 3 attempts).
         const Scalar theta_max = Scalar(M_PI) / Scalar(4);
         unsigned int n_rot = 0;
         detail::cartesianToSpherical(pos, r_tmp, th_tmp, ph_tmp);
         while (n_rot < 3 && th_tmp > theta_max)
             {
-            pos = rotate(m_rot_111, pos);
-            transformation = m_rot_111 * transformation;
+            pos = rotate(rot_111, pos);
+            transformation = rot_111 * transformation;
             detail::cartesianToSpherical(pos, r_tmp, th_tmp, ph_tmp);
             ++n_rot;
             }
@@ -230,7 +229,7 @@ class ShapeSymmetryCube
         // Write back reduced position angles.
         detail::cartesianToSpherical(pos, r_tmp, theta, phi);
 
-        // apply cumulative transformation to orientation and
+        // Apply cumulative transformation to orientation and
         // select the best candidate from 3 rotations around [111].
         quat<Scalar> q_orient = detail::quatFromEulerZXZ(alpha, beta, gamma);
         quat<Scalar> q_cand = transformation * q_orient;
@@ -244,7 +243,7 @@ class ShapeSymmetryCube
             Scalar a, b, g;
             detail::eulerFromQuat(q_cand, a, b, g);
 
-            // if > pi/2, reflect.
+            // If beta > pi/2, reflect.
             if (b > Scalar(M_PI) / Scalar(2))
                 {
                 a = std::fmod(a + Scalar(M_PI), Scalar(2) * Scalar(M_PI));
@@ -265,8 +264,7 @@ class ShapeSymmetryCube
                 best_g = g;
                 }
 
-            // Rotate candidate to the next [111] orientation.
-            q_cand = q_cand * m_rot_111;
+            q_cand = q_cand * rot_111;
             }
 
         alpha = best_a;
@@ -275,10 +273,6 @@ class ShapeSymmetryCube
 
         return transformation;
         }
-
-    private:
-    quat<Scalar> m_rot_x_pi; //!< Rotation by pi around x
-    quat<Scalar> m_rot_111;  //!< Rotation by 2 pi/3 around [1,1,1]/sqrt(3)
     };
 
 //! Tetrahedron symmetry evaluator.
@@ -289,14 +283,12 @@ class ShapeSymmetryCube
 class ShapeSymmetryTetrahedron
     {
     public:
-    //! Upper bounds of the domain.
+    //! Upper bounds of the reduced domain.
     static constexpr Scalar domain_upper[5] = {Scalar(2.0 * M_PI / 3.0),
                                                Scalar(M_PI),
                                                Scalar(2.0 * M_PI),
                                                Scalar(M_PI),
                                                Scalar(2.0 * M_PI / 3.0)};
-
-    AZPLUGINS_HOSTDEVICE ShapeSymmetryTetrahedron() { }
 
 #ifndef __HIPCC__
     static std::string getName()
@@ -305,14 +297,14 @@ class ShapeSymmetryTetrahedron
         }
 #endif
 
-    AZPLUGINS_HOSTDEVICE quat<Scalar>
-    reduce(Scalar& theta, Scalar& phi, Scalar& alpha, Scalar& beta, Scalar& gamma) const
+    AZPLUGINS_HOSTDEVICE static quat<Scalar>
+    reduce(Scalar& theta, Scalar& phi, Scalar& alpha, Scalar& beta, Scalar& gamma)
         {
         quat<Scalar> transformation(Scalar(1), vec3<Scalar>(0, 0, 0));
 
         const Scalar theta_fold = Scalar(2) * Scalar(M_PI) / Scalar(3);
 
-        // fold theta into [0, 2 pi/3] by rotating around z.
+        // Fold theta into [0, 2 pi/3] by rotating around z.
         if (theta > theta_fold)
             {
             vec3<Scalar> pos = detail::sphericalToCartesian(Scalar(1), theta, phi);
@@ -327,7 +319,7 @@ class ShapeSymmetryTetrahedron
             detail::cartesianToSpherical(pos, r_tmp, theta, phi);
             }
 
-        // apply transformation to orientation, extract Euler angles.
+        // Apply transformation to orientation, extract Euler angles.
         quat<Scalar> q_orient = detail::quatFromEulerZXZ(alpha, beta, gamma);
         quat<Scalar> q_transformed = transformation * q_orient;
         detail::eulerFromQuat(q_transformed, alpha, beta, gamma);

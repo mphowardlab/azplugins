@@ -3,7 +3,6 @@ set(COMPONENT_NAME azplugins)
 
 # TODO: List all host C++ source code files in _${COMPONENT_NAME}_sources.
 set(_${COMPONENT_NAME}_sources
-    ChebyshevAnisotropicPairPotential.cc
     ConstantFlow.cc
     export_ImagePotentialBondHarmonic.cc
     module.cc
@@ -64,6 +63,12 @@ set(_dpd_evaluators
 # TODO: Add names of all anisotropic pair evaluators
 set(_aniso_pair_evaluators
     TwoPatchMorse
+    )
+
+set(_chebyshev_symmetries
+    Null
+    Cube
+    Tetrahedron
     )
 
 # process bond potentials
@@ -159,6 +164,15 @@ foreach(_evaluator ${_aniso_pair_evaluators})
         set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_AnisoPotentialPair${_evaluator}GPU.cc)
         set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} AnisoPotentialPair${_evaluator}GPUKernel.cu)
     endif()
+endforeach()
+
+# process Chebyshev anisotropic pair potential
+foreach(_symmetry ${_chebyshev_symmetries})
+    configure_file(export_ChebyshevAnisotropicPairPotential.cc.inc
+                   export_ChebyshevAnisotropicPairPotential${_symmetry}.cc
+                   @ONLY)
+    set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources}
+        export_ChebyshevAnisotropicPairPotential${_symmetry}.cc)
 endforeach()
 
 # process velocity field geometries

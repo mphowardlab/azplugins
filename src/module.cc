@@ -69,7 +69,9 @@ void export_ParabolicFlow(pybind11::module&);
 
 // pair
 void export_AnisoPotentialPairTwoPatchMorse(pybind11::module&);
-void export_ChebyshevAnisotropicPairPotential(pybind11::module&);
+void export_ChebyshevAnisotropicPairPotentialNull(pybind11::module&);
+void export_ChebyshevAnisotropicPairPotentialCube(pybind11::module&);
+void export_ChebyshevAnisotropicPairPotentialTetrahedron(pybind11::module&);
 void export_PotentialPairColloid(pybind11::module&);
 void export_PotentialPairExpandedYukawa(pybind11::module&);
 void export_PotentialPairHertz(pybind11::module&);
@@ -142,7 +144,9 @@ PYBIND11_MODULE(_azplugins, m)
 
     // pair
     export_AnisoPotentialPairTwoPatchMorse(m);
-    export_ChebyshevAnisotropicPairPotential(m);
+    export_ChebyshevAnisotropicPairPotentialNull(m);
+    export_ChebyshevAnisotropicPairPotentialCube(m);
+    export_ChebyshevAnisotropicPairPotentialTetrahedron(m);
     export_PotentialPairColloid(m);
     export_PotentialPairExpandedYukawa(m);
     export_PotentialPairHertz(m);
