@@ -1,59 +1,58 @@
 # Copyright (c) 2018-2020, Michael P. Howard
-# This file is part of the azplugins project, released under the Modified BSD License.
+# Copyright (c) 2021-2025, Auburn University
+# Part of azplugins, released under the BSD 3-Clause License.
 
-# Maintainer: astatt
 
 import hoomd
-from hoomd import md
-hoomd.context.initialize()
-try:
-    from hoomd import azplugins
-except ImportError:
-    import azplugins
-import unittest
-import numpy as np
+import pytest
+import numpy
 
-class update_dynamic_bond_tests_two_groups(unittest.TestCase):
-    def setUp(self):
-        snap = hoomd.data.make_snapshot(N=4, box=hoomd.data.boxdim(L=20),
-                                        particle_types=['A','B'],
-                                        bond_types=['bond'])
-        if hoomd.comm.get_rank() == 0:
-            snap.particles.position[:,0] = (0,0.9,1.1,2)
-            snap.particles.position[:,1] = (0,0,0,0)
-            snap.particles.position[:,2] = (0,0,0,0)
-            snap.particles.typeid[:] = [1,0,1,0]
 
-        self.s = hoomd.init.read_snapshot(snap)
-        self.nl = hoomd.md.nlist.cell()
 
-        self.group_1 = hoomd.group.tag_list(name="a", tags = [0,1])
-        self.group_2 = hoomd.group.tag_list(name="b", tags = [2,3])
-        self.u = azplugins.update.dynamic_bond(nlist=self.nl,
-                                               r_cut=1.0,
-                                               bond_type='bond',
-                                               group_1=self.group_1,
-                                               group_2=self.group_2,
-                                               max_bonds_1=1,
-                                               max_bonds_2=2)
 
-    def test_set_params(self):
-        self.assertEqual(self.u.cpp_updater.r_cut, 1)
-        self.u.set_params(r_cut=1.5)
-        self.assertEqual(self.u.cpp_updater.r_cut, 1.5)
+def update_dynamic_bond_tests_two_groups_setup(simulation_factory,two_particle_snapshot_factory):
 
-        # check the test of box size large enough for cutoff
-        with self.assertRaises(RuntimeError):
-            self.u.set_params(r_cut=15.0)
+    snap = hoomd.data.make_snapshot(N=4, box=hoomd.data.boxdim(L=20),
+                                    particle_types=['A','B'],
+                                    bond_types=['bond'])
+    if hoomd.comm.get_rank() == 0:
+        snap.particles.position[:,0] = (0,0.9,1.1,2)
+        snap.particles.position[:,1] = (0,0,0,0)
+        snap.particles.position[:,2] = (0,0,0,0)
+        snap.particles.typeid[:] = [1,0,1,0]
 
-        self.u.set_params(max_bonds_1=3)
-        self.assertEqual(self.u.cpp_updater.max_bonds_group_1,3)
-        self.u.set_params(max_bonds_2=7)
-        self.assertEqual(self.u.cpp_updater.max_bonds_group_2,7)
+    s = hoomd.init.read_snapshot(snap)
+    nl = hoomd.md.nlist.cell()
 
-        # check the test of bondy_type
-        with self.assertRaises(RuntimeError):
-            self.u.set_params(bond_type='not_existing')
+    group_1 = hoomd.group.tag_list(name="a", tags = [0,1])
+    group_2 = hoomd.group.tag_list(name="b", tags = [2,3])
+    u = hoomd.azplugins.update.dynamic_bond(nlist=nl,
+                                            r_cut=1.0,
+                                            bond_type='bond',
+                                            group_1=group_1,
+                                            group_2=group_2,
+                                            max_bonds_1=1,
+                                            max_bonds_2=2)
+    if sim.device.communicator.rank == 0:
+        # particle 0 is outside interaction range
+        assert numpy.isclose(energies[0], 0.0)
+
+    assertEqual(u.cpp_updater.r_cut, 1)
+    u.set_params(r_cut=1.5)
+    assertEqual(u.cpp_updater.r_cut, 1.5)
+
+    # check the test of box size large enough for cutoff
+    with assertRaises(RuntimeError):
+            u.set_params(r_cut=15.0)
+
+    u.set_params(max_bonds_1=3)
+    assertEqual(self.u.cpp_updater.max_bonds_group_1,3)
+    u.set_params(max_bonds_2=7)
+    assertEqual(self.u.cpp_updater.max_bonds_group_2,7)
+
+    # check the test of bondy_type
+    with assertRaises(RuntimeError):
+        u.set_params(bond_type='not_existing')
 
 
     def test_form_bond(self):
