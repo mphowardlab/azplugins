@@ -20,16 +20,6 @@
 #include <iostream>
 
 
-// @mphoward: There is some issue with importing the right headers from the extern/neighbor
-// class. Could you please have a look at it and check which headers to import?
-
-// #include "hip/hip_runtime.h"
-/*
-#include "hoomd/extern/neighbor/include/neighbor/BoundingVolumes.h"
-#include "hoomd/extern/neighbor/include/neighbor/InsertOps.h"
-#include "hoomd/extern/neighbor/include/neighbor/TransformOps.h"
-*/
-
 #ifdef NVCC
 #define DEVICE __device__ __forceinline__
 #define HOSTDEVICE __host__ __device__ __forceinline__
