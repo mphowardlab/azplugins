@@ -19,6 +19,7 @@
 #include "hoomd/ParticleData.cuh"
 #include <iostream>
 
+#include "hoomd/NeighborListGPUTree.cuh"
 
 #ifdef NVCC
 #define DEVICE __device__ __forceinline__
@@ -63,7 +64,36 @@ cudaError_t remove_zeros_and_sort_possible_bond_array(Scalar3 *d_all_possible_bo
                                                       const unsigned int size,
                                                       int *d_max_non_zero_bonds);
 
-//! Insert operation for a point under a mapping.
+/ ThreadData for output.
+     *
+     * \tparam Type of QueryData.
+     *
+     * This setup function can poach data from the query data in order to save loads.
+     * In this case, it makes use of the particle index mapping.
+     */
+    template<class QueryDataT>
+    DEVICE ThreadData setup(const unsigned int idx, const QueryDataT& q) const
+        {
+        //const unsigned int first = __ldg(first_neigh + q.idx);
+        const unsigned int first = q.idx+q.idx*(max_neigh-1);
+        const unsigned int num_neigh = nneigh[q.idx]; // no __ldg, since this is writeable
+
+        // prefetch from the stack if current number of neighbors does not align with a boundary
+        /* NOTE: There seemed to be a compiler error/bug when stack was declared outside this if
+                 statement, initialized with zeros, and then assigned inside (so that only
+                 one return statement was needed). It went away using:
+                 uint4 tmp = neigh_list[...];
+                 stack = tmp;
+                 But this looked funny, so the structure below seems more human readable.
+         */
+        if (num_neigh % 4 != 0)
+            {
+            uint4 stack = neigh_list[(first+num_neigh-1)/4];
+            return ThreadData(q.idx, first, num_neigh, stack);
+            }
+        else
+            {
+            return/! Insert operation for a point under a mapping.
 /*!
  * Extends the base neighbor::PointInsertOp to insert a point primitive
  * subject to a mapping of the indexes. This is useful for reading from
@@ -118,7 +148,8 @@ struct PointMapInsertOp : public neighbor::PointInsertOp
  * The particles are traversed using a \a map. Ghost particles can be included
  * in this map, and they will be neglected during traversal.
  */
-struct ParticleQueryOp
+
+/* struct ParticleQueryOp
     {
     //! Constructor
     /*!
@@ -297,36 +328,7 @@ struct NeighborListOp
     /*!
      * \param idx Index of this thread.
      * \param q Thread-local query data.
-     * \returns The ThreadData for output.
-     *
-     * \tparam Type of QueryData.
-     *
-     * This setup function can poach data from the query data in order to save loads.
-     * In this case, it makes use of the particle index mapping.
-     */
-    template<class QueryDataT>
-    DEVICE ThreadData setup(const unsigned int idx, const QueryDataT& q) const
-        {
-        //const unsigned int first = __ldg(first_neigh + q.idx);
-        const unsigned int first = q.idx+q.idx*(max_neigh-1);
-        const unsigned int num_neigh = nneigh[q.idx]; // no __ldg, since this is writeable
-
-        // prefetch from the stack if current number of neighbors does not align with a boundary
-        /* NOTE: There seemed to be a compiler error/bug when stack was declared outside this if
-                 statement, initialized with zeros, and then assigned inside (so that only
-                 one return statement was needed). It went away using:
-                 uint4 tmp = neigh_list[...];
-                 stack = tmp;
-                 But this looked funny, so the structure below seems more human readable.
-         */
-        if (num_neigh % 4 != 0)
-            {
-            uint4 stack = neigh_list[(first+num_neigh-1)/4];
-            return ThreadData(q.idx, first, num_neigh, stack);
-            }
-        else
-            {
-            return ThreadData(q.idx, first, num_neigh, make_uint4(0,0,0,0));
+     * \returns The ThreadData(q.idx, first, num_neigh, make_uint4(0,0,0,0));
             }
         }
 
@@ -386,6 +388,7 @@ struct NeighborListOp
     unsigned int* new_max_neigh;        //!< New maximum number of neighbors
     unsigned int max_neigh;             //!< Maximum number of neighbors allocated
     };
+ */
 
 //! Sentinel for an invalid particle (e.g., ghost)
 const unsigned int NeighborListTypeSentinel = 0xffffffff;

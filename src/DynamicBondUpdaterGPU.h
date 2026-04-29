@@ -23,13 +23,6 @@
 #include "hip/hip_runtime.h"
 #include "hoomd/md/NeighborListGPUTree.cuh"
 
-// @mphoward: There is some issue with importing the right headers from the extern/neighbor
-// class. Could you please have a look at it and check which headers to import?
-
-/*
-#include "hoomd/extern/neighbor/include/neighbor/LBVH.h"
-#include "hoomd/extern/neighbor/include/neighbor/LBVHTraverser.h"
-*/
 
 namespace hoomd
 {
@@ -88,8 +81,8 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
         GPUFlags<int> m_num_nonzero_bonds_flag;            //!< GPU flag for the number of valid bonds
         GPUFlags<unsigned int> m_max_bonds_overflow_flag;  //!< GPU flag for overflow
 
-        neighbor::LBVH m_lbvh;                            //!< LBVH for group_2
-        neighbor::LBVHTraverser  m_traverser;             //!< LBVH traverer
+        std::vector<std::unique_ptr<kernel::LBVHWrapper>> m_lbvh; //!< Array of LBVHs per-type
+        std::vector<std::unique_ptr<kernel::LBVHTraverserWrapper>>  m_traverser;     //!< Array of LBVH traverers per-type
         GPUVector<Scalar3> m_image_list;               //!< List of translation vectors for traversal
         unsigned int m_n_images;                          //!< Number of translation vectors for traversal
 
