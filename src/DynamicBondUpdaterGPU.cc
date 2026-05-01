@@ -30,8 +30,8 @@ DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> s
                          std::shared_ptr<ParticleGroup> group_1,
                          std::shared_ptr<ParticleGroup> group_2,
                          uint16_t seed)
-        : DynamicBondUpdater(sysdef, trigger, pair_nlist, group_1, group_2, seed),  m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf),
-          m_lbvh(m_exec_conf), m_traverser(m_exec_conf)
+        : DynamicBondUpdater(sysdef, trigger, pair_nlist, group_1, group_2, seed),
+         m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf)
     {
 
    // only one GPU is supported
@@ -64,8 +64,7 @@ DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> s
                          unsigned int bond_type)
         : DynamicBondUpdater(sysdef,trigger,pair_nlist,group_1,group_2, seed, r_cut,
             probability,max_bonds_group_1,max_bonds_group_2,bond_type),
-        m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf),
-        m_lbvh(m_exec_conf), m_traverser(m_exec_conf)
+        m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf)
     {
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdaterGPU" << std::endl;
 
@@ -75,18 +74,34 @@ DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> s
         throw std::runtime_error("Cannot initialize DynamicBondUpdaterGPU on a CPU device.");
         }
 
-    m_tuner_copy_nlist.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+    m_tuner_copy_nlist.reset(new Autotuner<1>({m_lbvh->getTunableParameters()},
                                         m_exec_conf,
                                         "dynamic_bonding_copy_nlist"));
-    m_tuner_filter_bonds.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+    m_tuner_filter_bonds.reset(new Autotuner<1>({m_lbvh->getTunableParameters()},
                                         m_exec_conf,
                                         "dynamic_bonding_filter_bonds"));
+
+    m_tuner_build.reset(new Autotuner<1>({m_lbvh->getTunableParameters()},
+                                             m_exec_conf,
+                                             "dynamic_bonding_build_nlist"));
+
+
+    m_tuner_traverse.reset(new Autotuner<1>({m_traverser->getTunableParameters()},
+                                             m_exec_conf,
+                                             "dynamic_bonding_traverse_nlist"));
+
+
+    m_autotuners.insert(m_autotuners.end(), {m_tuner_copy_nlist, m_tuner_filter_bonds ,m_tuner_build,m_tuner_traverse});
 
     }
 
 DynamicBondUpdaterGPU::~DynamicBondUpdaterGPU()
     {
       m_exec_conf->msg->notice(5) << "Destroying DynamicBondUpdaterGPU" << std::endl;
+
+    // destroy all of the created stream
+    hipStreamDestroy(m_stream);
+
     }
 
 
@@ -97,13 +112,28 @@ void DynamicBondUpdaterGPU::buildTree()
     ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
     const BoxDim lbvh_box = getLBVHBox();
 
+    m_lbvh.reset(new hoomd::md::kernel::LBVHWrapper());
+    m_traverser.reset(new hoomd::md::kernel::LBVHTraverserWrapper());
+    hipStreamCreate(&m_stream);
+
+     m_lbvh->setup(d_pos.data,
+                   d_index_group_2.data,
+                   m_group_2->getNumMembers(),
+                   m_stream);
+
+    hipDeviceSynchronize();
+    m_tuner_build->begin();
+    const unsigned int block_size = m_tuner_build->getParam()[0];
     // build a lbvh for group_2
     // this tree is traversed in traverseTree()
-    m_lbvh.build(azplugins::gpu::PointMapInsertOp(d_pos.data,
-                                d_index_group_2.data,
-                                m_group_2->getNumMembers()),
-                                lbvh_box.getLo(),
-                                lbvh_box.getHi());
+    m_lbvh->build(d_pos.data,
+                  d_index_group_2.data,
+                  m_group_2->getNumMembers(),
+                  lbvh_box.getLo(),
+                  lbvh_box.getHi(),
+                  m_stream,
+                  block_size);
+    m_tuner_build->end();
 
    }
 
@@ -111,30 +141,63 @@ void DynamicBondUpdaterGPU::traverseTree()
     {
     ArrayHandle<unsigned int> d_nlist(m_n_list, access_location::device, access_mode::overwrite);
     ArrayHandle<unsigned int> d_n_neigh(m_n_neigh, access_location::device, access_mode::overwrite);
+
     ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
+
+    ArrayHandle<Scalar3> d_image_list(m_image_list, access_location::device, access_mode::read);
+
+    //todo: this needs to be set/written somewhere??
+    ArrayHandle<unsigned int> d_traverse_order(m_traverse_order, access_location::device, access_mode::read);
 
     // clear the neighbor counts
     cudaMemset(d_n_neigh.data,0, sizeof(unsigned int)*m_group_1->getNumMembers());
 
     const BoxDim& box = m_pdata->getBox();
 
-    // neighbor list write op
-    hoomd::azplugins::NeighborListOp nlist_op(d_nlist.data, d_n_neigh.data, m_max_bonds_overflow_flag.getDeviceFlags(), m_max_bonds);
-
     ArrayHandle<unsigned int> d_index_group_1(m_group_1->getIndexArray(), access_location::device, access_mode::read);
     ArrayHandle<unsigned int> d_index_group_2(m_group_2->getIndexArray(), access_location::device, access_mode::read);
 
-    neighbor::MapTransformOp map(d_index_group_2.data );
-    m_traverser.setup(map, m_lbvh);
 
-    hoomd::azplugins::ParticleQueryOp query_op(d_pos.data,
-                                               d_index_group_1.data,
-                                               m_group_1->getNumMembers(),
-                                               m_pdata->getMaxN(),
-                                               m_r_cut,
-                                               box);
+    m_traverser->setup(d_index_group_1.data,
+                       *(m_lbvh->get()),
+                       m_stream);
 
-     m_traverser.traverse(nlist_op, query_op, map,m_lbvh, m_image_list);
+
+    // pack args to the traverser
+    hoomd::md::kernel::LBVHTraverserWrapper::TraverserArgs args;
+
+    args.map = d_index_group_1.data;
+
+    // particles
+    args.positions = d_pos.data;
+    //todo: does it make sense to take rigid bodies into account in this code?
+    args.bodies =  NULL;
+    args.order = d_traverse_order.data;
+    args.N = m_group_1->getNumMembers();
+    args.Nown = m_pdata->getMaxN();
+    //todo: double check that this is correct
+    args.rcut = m_r_cut;
+    args.rlist = m_r_cut;
+    args.box = box;
+
+    // neighbor list write op for this type
+    args.neigh_list = d_nlist.data;
+    args.nneigh = d_n_neigh.data;
+    args.new_max_neigh = m_max_bonds_overflow;
+    args.first_neigh = d_head_list.data;
+    args.max_neigh = m_max_bonds_overflow;
+
+
+    m_tuner_traverse->begin();
+    const unsigned int block_size = m_tuner_traverse->getParam()[0];
+
+    m_traverser->traverse(args,
+                         *(m_lbvh->get()),
+                         d_image_list.data,
+                         (unsigned int)m_image_list.getNumElements(),
+                         m_stream,
+                         block_size);
+     m_tuner_traverse->end();
 
      m_max_bonds_overflow =  m_max_bonds_overflow_flag.readFlags();
 
@@ -161,7 +224,7 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
 
     const BoxDim& box = m_pdata->getBox();
 
-   m_tuner_copy_nlist->begin();
+    m_tuner_copy_nlist->begin();
     gpu::copy_possible_bonds(d_all_possible_bonds.data,
                               d_pos.data,
                               d_tag.data,

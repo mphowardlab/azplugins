@@ -180,8 +180,8 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         unsigned int m_max_existing_bonds_list;        //!< maximum number of  bonds in list of existing bonded particles
         Index2D m_existing_bonds_list_indexer;         //!< Indexer for accessing the by-tag bonded particle list
 
-        std::shared_ptr<md::NeighborList> m_pair_nlist;    //!< The hoomd neighborlist, only used if exclusions of the newly formed bonds need to be set
-        bool m_pair_nlist_exclusions_set;              //!< whether or not the bonds are set as exclusions in the hoomd particle neighborlist. Set to true when m_pair_nlist is set
+        std::shared_ptr<md::NeighborList> m_pair_nlist; //!< The hoomd neighborlist, only used if exclusions of the newly formed bonds need to be set
+        bool m_pair_nlist_exclusions_set;               //!< whether or not the bonds are set as exclusions in the hoomd particle neighborlist. Set to true when m_pair_nlist is set
 
         //! filter out existing and doublicate bonds from all found possible bonds
         virtual void filterPossibleBonds();

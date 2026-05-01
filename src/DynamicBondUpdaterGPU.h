@@ -77,14 +77,19 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
 
         std::shared_ptr<Autotuner<1>> m_tuner_copy_nlist;     //!< Tuner for the primitive-copy kernel
         std::shared_ptr<Autotuner<1>> m_tuner_filter_bonds;   //!< Tuner for existing bond filter
+        std::shared_ptr<Autotuner<1>> m_tuner_build;   //!< Tuner for building neigh list
+        std::shared_ptr<Autotuner<1>> m_tuner_traverse;   //!< Tuner for traversing neigh list
 
         GPUFlags<int> m_num_nonzero_bonds_flag;            //!< GPU flag for the number of valid bonds
         GPUFlags<unsigned int> m_max_bonds_overflow_flag;  //!< GPU flag for overflow
 
-        std::vector<std::unique_ptr<kernel::LBVHWrapper>> m_lbvh; //!< Array of LBVHs per-type
-        std::vector<std::unique_ptr<kernel::LBVHTraverserWrapper>>  m_traverser;     //!< Array of LBVH traverers per-type
+        std::unique_ptr<hoomd::md::kernel::LBVHWrapper> m_lbvh; //!<  LBVH
+        std::unique_ptr<hoomd::md::kernel::LBVHTraverserWrapper>  m_traverser;     //!<  LBVH traverer
+        hipStream_t m_stream; //!< CUDA stream
+
         GPUVector<Scalar3> m_image_list;               //!< List of translation vectors for traversal
-        unsigned int m_n_images;                          //!< Number of translation vectors for traversal
+        unsigned int m_n_images;                       //!< Number of translation vectors for traversal
+        GPUArray<unsigned int> m_traverse_order; //!< Order to traverse primitives
 
 
         //! Compute the LBVH domain from the current box
