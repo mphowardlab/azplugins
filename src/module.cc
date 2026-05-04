@@ -81,6 +81,7 @@ void export_PotentialPairDPDThermoGeneralWeight(pybind11::module&);
 void export_DynamicBondUpdater(pybind11::module&);
 
 // wall
+void export_PotentialExternalWallColloid(pybind11::module&);
 void export_PotentialExternalWallLJ93(pybind11::module&);
 
 #ifdef ENABLE_HIP
@@ -112,6 +113,7 @@ void export_PotentialPairDPDThermoGeneralWeightGPU(pybind11::module&);
 void export_DynamicBondUpdaterGPU(pybind11::module&);
 
 // wall
+void export_PotentialExternalWallColloidGPU(pybind11::module&);
 void export_PotentialExternalWallLJ93GPU(pybind11::module&);
 
 #endif // ENABLE_HIP
@@ -157,6 +159,7 @@ PYBIND11_MODULE(_azplugins, m)
     export_DynamicBondUpdater(m);
 
     // wall
+    export_PotentialExternalWallColloid(m);
     export_PotentialExternalWallLJ93(m);
 
 #ifdef ENABLE_HIP
@@ -188,6 +191,7 @@ PYBIND11_MODULE(_azplugins, m)
     export_DynamicBondUpdaterGPU(m);
 
     // wall
+    export_PotentialExternalWallColloidGPU(m);
     export_PotentialExternalWallLJ93GPU(m);
 
 #endif // ENABLE_HIP
