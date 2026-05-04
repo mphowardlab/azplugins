@@ -12,8 +12,7 @@
 #include "DynamicBondUpdater.h"
 #include "hoomd/RandomNumbers.h"
 #include "RNGIdentifiers.h"
-#include "hoomd/AABBTree.h"
-#include "hoomd/AABB.h"
+#include "hoomd/md/NeighborListTree.h"
 
 namespace hoomd
 {
@@ -53,6 +52,9 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
       m_pdata->getGlobalParticleNumberChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotNumParticlesChanged>(this);
 
       m_bond_data = m_sysdef->getBondData();
+
+      hoomd::md::NeighborList* m_pair_internal_nlist = new hoomd::md::NeighborListTree(sysdef, 0.5);
+      m_pair_internal_nlist-> setRcut(0,0,0.5);
 
       m_max_bonds = 4;
       m_max_bonds_overflow = 0;
@@ -97,6 +99,10 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
     m_bond_data = m_sysdef->getBondData();
    //m_bond_type = m_bond_data->getTypeByName(bond_type);
 
+   // m_pair_internal_nlist = new hoomd::md::NeighborListTree(sysdef, 0.5);
+    hoomd::md::NeighborList* m_pair_internal_nlist = new hoomd::md::NeighborListTree(sysdef, 0.5);
+    m_pair_internal_nlist-> setRcut(0,0,0.5);
+
     m_max_bonds = 4;
     m_max_bonds_overflow = 0;
     m_num_all_possible_bonds = 0;
@@ -118,6 +124,8 @@ DynamicBondUpdater::~DynamicBondUpdater()
 */
 void DynamicBondUpdater::update(uint64_t timestep)
     {
+      Scalar test = m_pair_internal_nlist->getRCut(pybind11::make_tuple(0,0));
+      std::cout << "in update "<< test << std::endl;
       // don't do anything if either one of the groups is  empty
       if (m_group_1->getNumMembers() == 0 || m_group_2->getNumMembers() == 0)
       return;
