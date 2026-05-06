@@ -72,8 +72,6 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
 
         std::shared_ptr<Autotuner<1>> m_tuner_copy_nlist;     //!< Tuner for the primitive-copy kernel
         std::shared_ptr<Autotuner<1>> m_tuner_filter_bonds;   //!< Tuner for existing bond filter
-        std::shared_ptr<Autotuner<1>> m_tuner_build;   //!< Tuner for building neigh list
-        std::shared_ptr<Autotuner<1>> m_tuner_traverse;   //!< Tuner for traversing neigh list
 
         GPUFlags<int> m_num_nonzero_bonds_flag;            //!< GPU flag for the number of valid bonds
         GPUFlags<unsigned int> m_max_bonds_overflow_flag;  //!< GPU flag for overflow

@@ -47,6 +47,8 @@ DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> s
                                         m_exec_conf,
                                         "dynamic_bonding_filter_bonds"));
 
+    m_autotuners.insert(m_autotuners.end(), {m_tuner_copy_nlist, m_tuner_filter_bonds});
+
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdaterGPU" << std::endl;
 
     }
@@ -66,7 +68,6 @@ DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> s
             probability,max_bonds_group_1,max_bonds_group_2,bond_type),
         m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf)
     {
-    m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdaterGPU" << std::endl;
 
      // only one GPU is supported
     if (!m_exec_conf->isCUDAEnabled())
@@ -74,24 +75,16 @@ DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> s
         throw std::runtime_error("Cannot initialize DynamicBondUpdaterGPU on a CPU device.");
         }
 
-    m_tuner_copy_nlist.reset(new Autotuner<1>({m_lbvh->getTunableParameters()},
+    m_tuner_copy_nlist.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
                                         m_exec_conf,
                                         "dynamic_bonding_copy_nlist"));
-    m_tuner_filter_bonds.reset(new Autotuner<1>({m_lbvh->getTunableParameters()},
+    m_tuner_filter_bonds.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
                                         m_exec_conf,
                                         "dynamic_bonding_filter_bonds"));
 
-    m_tuner_build.reset(new Autotuner<1>({m_lbvh->getTunableParameters()},
-                                             m_exec_conf,
-                                             "dynamic_bonding_build_nlist"));
+    m_autotuners.insert(m_autotuners.end(), {m_tuner_copy_nlist, m_tuner_filter_bonds});
 
-
-    m_tuner_traverse.reset(new Autotuner<1>({m_traverser->getTunableParameters()},
-                                             m_exec_conf,
-                                             "dynamic_bonding_traverse_nlist"));
-
-
-    m_autotuners.insert(m_autotuners.end(), {m_tuner_copy_nlist, m_tuner_filter_bonds ,m_tuner_build,m_tuner_traverse});
+    m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdaterGPU" << std::endl;
 
     }
 
@@ -172,65 +165,6 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
     // should contain only unique entries of possible bonds which are not yet formed.
     }
 
-
-/*!
- * (Re-)computes the translation vectors for traversing the BVH tree. At most, there are 26 translation vectors
- * when the simulation box is 3D periodic (the self-image is excluded). In 2D, there are at most 8 translation vectors.
- * In MPI runs, a ghost layer of particles is added from adjacent ranks, so there is no need to perform any translations
- * in this direction. The translation vectors are determined by linear combination of the lattice vectors, and must be
- * recomputed any time that the box resizes.
- */
-void DynamicBondUpdaterGPU::updateImageVectors()
-    {
-
-    const BoxDim& box = m_pdata->getBox();
-    uchar3 periodic = box.getPeriodic();
-    unsigned char sys3d = (m_sysdef->getNDimensions() == 3);
-
-    // now compute the image vectors
-    // each dimension increases by one power of 3
-    unsigned int n_dim_periodic = (periodic.x + periodic.y + sys3d*periodic.z);
-    m_n_images = 1;
-    for (unsigned int dim = 0; dim < n_dim_periodic; ++dim)
-        {
-        m_n_images *= 3;
-        }
-    m_n_images -= 1; // remove the self image
-
-    // reallocate memory if necessary
-    if (m_n_images > m_image_list.getNumElements())
-        {
-        GPUVector<Scalar3> image_list(m_n_images, m_exec_conf);
-        m_image_list.swap(image_list);
-        }
-
-    ArrayHandle<Scalar3> h_image_list(m_image_list, access_location::host, access_mode::overwrite);
-    Scalar3 latt_a = box.getLatticeVector(0);
-    Scalar3 latt_b = box.getLatticeVector(1);
-    Scalar3 latt_c = box.getLatticeVector(2);
-
-    // iterate over all other combinations of images, skipping those that are
-    unsigned int n_images = 0;
-    for (int i=-1; i <= 1 && n_images < m_n_images; ++i)
-        {
-        for (int j=-1; j <= 1 && n_images < m_n_images; ++j)
-            {
-            for (int k=-1; k <= 1 && n_images < m_n_images; ++k)
-                {
-                if (!(i == 0 && j == 0 && k == 0))
-                    {
-                    // skip any periodic images if we don't have periodicity
-                    if (i != 0 && !periodic.x) continue;
-                    if (j != 0 && !periodic.y) continue;
-                    if (k != 0 && (!sys3d || !periodic.z)) continue;
-
-                    h_image_list.data[n_images] = Scalar(i) * latt_a + Scalar(j) * latt_b + Scalar(k) * latt_c;
-                    ++n_images;
-                    }
-                }
-            }
-        }
-    }
 
 namespace detail
 {
