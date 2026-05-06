@@ -92,9 +92,6 @@ DynamicBondUpdaterGPU::~DynamicBondUpdaterGPU()
     {
       m_exec_conf->msg->notice(5) << "Destroying DynamicBondUpdaterGPU" << std::endl;
 
-    // destroy all of the created stream
-    hipStreamDestroy(m_stream);
-
     }
 
 
