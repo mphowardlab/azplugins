@@ -83,6 +83,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
           {
           m_r_cut = r_cut;
           checkRcut();
+          setCutoffs();
           }
       //! Get the cutoff distance between particles for finding bonds
       Scalar getRcut()
@@ -169,11 +170,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
         GPUArray<unsigned int> m_n_list;        //!< Neighbor list data
         GPUArray<unsigned int> m_n_neigh;       //!< Number of neighbors for each particle
-
-        detail::AABBTree        m_aabb_tree;  //!< AABB tree for group_1
-        GPUVector<detail::AABB> m_aabbs;      //!< Flat array of AABBs of particles in group_2
-        std::vector< vec3<Scalar> > m_image_list;   //!< List of translation vectors for tree traversal
-        unsigned int m_n_images;                    //!< The number of image vectors to check
+        GPUArray<size_t> m_n_head_list;        //!< Neighbor list data
 
         GPUArray<unsigned int> m_existing_bonds_list;  //!< List of existing bonded particles referenced by tag
         GPUArray<unsigned int> m_n_existing_bonds;     //!< Number of existing bonds for a given particle tag
@@ -186,11 +183,6 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
         //! filter out existing and doublicate bonds from all found possible bonds
         virtual void filterPossibleBonds();
-        //! build the neighbor list AABB tree
-        virtual void buildTree();
-        //! traverse the neighbor list ABB tree
-        virtual void traverseTree();
-
 
         bool CheckisExistingLegalBond(Scalar3 i); //this acesses info in m_existing_bonds_list_tag. todo: rename to something sensible
         void calculateExistingBonds();
@@ -198,12 +190,12 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
         void AddtoExistingBonds(unsigned int tag1,unsigned int tag2);
         bool isExistingBond(unsigned int tag1,unsigned int tag2); //this acesses info in m_existing_bonds_list_tag
-        virtual void updateImageVectors();
         void checkBoxSize();
         void checkRcut();
         void checkBondType();
         void checkProbability();
         void setGroupOverlap();
+        void setCutoffs();
         void checkMaxBondsGroup();
         void resizePossibleBondlists();
         void resizeExistingBondList();
