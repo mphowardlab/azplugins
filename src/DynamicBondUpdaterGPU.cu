@@ -10,13 +10,13 @@
  */
 
 #include "DynamicBondUpdaterGPU.cuh"
-#include "hoomd/md/NeighborListGPUTree.cuh"
 #include "hoomd/HOOMDMath.h"
+#include "hoomd/md/NeighborListGPUTree.cuh"
 
 #include <thrust/device_vector.h>
-#include <thrust/unique.h>
-#include <thrust/sort.h>
 #include <thrust/reduce.h>
+#include <thrust/sort.h>
+#include <thrust/unique.h>
 
 namespace hoomd
     {
@@ -100,6 +100,7 @@ __global__ void copy_nlist_possible_bonds(Scalar3* d_all_possible_bonds,
                                           const unsigned int* d_sorted_indexes,
                                           const unsigned int* d_n_neigh,
                                           const unsigned int* d_nlist,
+                                          const size_t* d_nhead_list,
                                           const BoxDim box,
                                           const unsigned int max_bonds,
                                           const Scalar r_cut,
@@ -120,13 +121,14 @@ __global__ void copy_nlist_possible_bonds(Scalar3* d_all_possible_bonds,
     // get all information for this particle
     Scalar4 postype_i = d_postype[pidx_i];
     const unsigned int tag_i = d_tag[pidx_i];
-    const unsigned int n_neigh = d_n_neigh[idx];
+    const unsigned int n_neigh = d_n_neigh[pidx_i];
+    const size_t head = h_n_head_list[pidx_i];
 
     // loop over all neighbors of this particle
     for (unsigned int j = 0; j < n_neigh; ++j)
         {
         // get index of neighbor from neigh_list
-        const unsigned int pidx_j = d_nlist[idx * max_bonds + j];
+        const unsigned int pidx_j = d_nlist[head + j];
         Scalar4 postype_j = d_postype[pidx_j];
         const unsigned int tag_j = d_tag[pidx_j];
 
@@ -261,9 +263,7 @@ cudaError_t remove_zeros_and_sort_possible_bond_array(Scalar3* d_all_possible_bo
 
     isZeroBondGPU zero;
     thrust::device_ptr<Scalar3> last0
-        = thrust::remove_if(d_all_possible_bonds_wrap,
-                                  d_all_possible_bonds_wrap + size,
-                                  zero);
+        = thrust::remove_if(d_all_possible_bonds_wrap, d_all_possible_bonds_wrap + size, zero);
     unsigned int l0 = thrust::distance(d_all_possible_bonds_wrap, last0);
 
     // sort remainder by distance, should make all identical bonds consequtive
@@ -325,6 +325,7 @@ cudaError_t copy_possible_bonds(Scalar3* d_all_possible_bonds,
                                 const unsigned int* d_sorted_indexes,
                                 const unsigned int* d_n_neigh,
                                 const unsigned int* d_nlist,
+                                const size_t* d_nhead_list,
                                 const BoxDim box,
                                 const unsigned int max_bonds,
                                 const Scalar r_cut,
@@ -349,6 +350,7 @@ cudaError_t copy_possible_bonds(Scalar3* d_all_possible_bonds,
         d_sorted_indexes,
         d_n_neigh,
         d_nlist,
+        d_nhead_list,
         box,
         max_bonds,
         r_cut,
@@ -361,5 +363,3 @@ cudaError_t copy_possible_bonds(Scalar3* d_all_possible_bonds,
     } // end namespace azplugins
 
     } // end namespace hoomd
-
-

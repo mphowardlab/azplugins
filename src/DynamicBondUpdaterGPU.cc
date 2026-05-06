@@ -105,105 +105,6 @@ DynamicBondUpdaterGPU::~DynamicBondUpdaterGPU()
     }
 
 
-void DynamicBondUpdaterGPU::buildTree()
-    {
-
-    ArrayHandle<unsigned int> d_index_group_2(m_group_2->getIndexArray(), access_location::device, access_mode::read);
-    ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
-    const BoxDim lbvh_box = getLBVHBox();
-
-    m_lbvh.reset(new hoomd::md::kernel::LBVHWrapper());
-    m_traverser.reset(new hoomd::md::kernel::LBVHTraverserWrapper());
-    hipStreamCreate(&m_stream);
-
-     m_lbvh->setup(d_pos.data,
-                   d_index_group_2.data,
-                   m_group_2->getNumMembers(),
-                   m_stream);
-
-    hipDeviceSynchronize();
-    m_tuner_build->begin();
-    const unsigned int block_size = m_tuner_build->getParam()[0];
-    // build a lbvh for group_2
-    // this tree is traversed in traverseTree()
-    m_lbvh->build(d_pos.data,
-                  d_index_group_2.data,
-                  m_group_2->getNumMembers(),
-                  lbvh_box.getLo(),
-                  lbvh_box.getHi(),
-                  m_stream,
-                  block_size);
-    m_tuner_build->end();
-
-   }
-
-void DynamicBondUpdaterGPU::traverseTree()
-    {
-    ArrayHandle<unsigned int> d_nlist(m_n_list, access_location::device, access_mode::overwrite);
-    ArrayHandle<unsigned int> d_n_neigh(m_n_neigh, access_location::device, access_mode::overwrite);
-
-    ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
-
-    ArrayHandle<Scalar3> d_image_list(m_image_list, access_location::device, access_mode::read);
-
-    //todo: this needs to be set/written somewhere??
-    ArrayHandle<unsigned int> d_traverse_order(m_traverse_order, access_location::device, access_mode::read);
-
-    // clear the neighbor counts
-    cudaMemset(d_n_neigh.data,0, sizeof(unsigned int)*m_group_1->getNumMembers());
-
-    const BoxDim& box = m_pdata->getBox();
-
-    ArrayHandle<unsigned int> d_index_group_1(m_group_1->getIndexArray(), access_location::device, access_mode::read);
-    ArrayHandle<unsigned int> d_index_group_2(m_group_2->getIndexArray(), access_location::device, access_mode::read);
-
-
-    m_traverser->setup(d_index_group_1.data,
-                       *(m_lbvh->get()),
-                       m_stream);
-
-
-    // pack args to the traverser
-    hoomd::md::kernel::LBVHTraverserWrapper::TraverserArgs args;
-
-    args.map = d_index_group_1.data;
-
-    // particles
-    args.positions = d_pos.data;
-    //todo: does it make sense to take rigid bodies into account in this code?
-    args.bodies =  NULL;
-    args.order = d_traverse_order.data;
-    args.N = m_group_1->getNumMembers();
-    args.Nown = m_pdata->getMaxN();
-    //todo: double check that this is correct
-    args.rcut = m_r_cut;
-    args.rlist = m_r_cut;
-    args.box = box;
-
-    // neighbor list write op for this type
-    args.neigh_list = d_nlist.data;
-    args.nneigh = d_n_neigh.data;
-    args.new_max_neigh = m_max_bonds_overflow;
-    args.first_neigh = d_head_list.data;
-    args.max_neigh = m_max_bonds_overflow;
-
-
-    m_tuner_traverse->begin();
-    const unsigned int block_size = m_tuner_traverse->getParam()[0];
-
-    m_traverser->traverse(args,
-                         *(m_lbvh->get()),
-                         d_image_list.data,
-                         (unsigned int)m_image_list.getNumElements(),
-                         m_stream,
-                         block_size);
-     m_tuner_traverse->end();
-
-     m_max_bonds_overflow =  m_max_bonds_overflow_flag.readFlags();
-
-    }
-
-
 
 void DynamicBondUpdaterGPU::filterPossibleBonds()
    {
@@ -213,8 +114,12 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
     const unsigned int size = m_group_1->getNumMembers()*m_max_bonds;
     ArrayHandle<unsigned int> d_n_existing_bonds(m_n_existing_bonds, access_location::device, access_mode::read);
     ArrayHandle<unsigned int> d_existing_bonds_list(m_existing_bonds_list, access_location::device, access_mode::read);
-    ArrayHandle<unsigned int> d_nlist(m_n_list, access_location::device, access_mode::read);
-    ArrayHandle<unsigned int> d_n_neigh(m_n_neigh, access_location::device, access_mode::read);
+
+    ArrayHandle<unsigned int> d_nlist(m_pair_internal_nlist->getNListArray(), access_location::device, access_mode::read);
+    ArrayHandle<unsigned int> d_n_neigh(m_pair_internal_nlist->getNNeighArray(), access_location::device, access_mode::read);
+    ArrayHandle<size_t> d_n_head_list(m_pair_internal_nlist->getHeadList(), access_location::device, access_mode::read);
+
+
     ArrayHandle<unsigned int> d_tag(m_pdata->getTags(), access_location::device, access_mode::read);
     ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
     ArrayHandle<unsigned int> d_index_group_1(m_group_1->getIndexArray(), access_location::device, access_mode::read);
@@ -225,12 +130,14 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
     const BoxDim& box = m_pdata->getBox();
 
     m_tuner_copy_nlist->begin();
+    //todo: add d_n_headlist and fix kernel
     gpu::copy_possible_bonds(d_all_possible_bonds.data,
                               d_pos.data,
                               d_tag.data,
                               d_index_group_1.data,
                               d_n_neigh.data,
                               d_nlist.data,
+                              d_n_head_list.data,
                               box,
                               m_max_bonds,
                               m_r_cut,

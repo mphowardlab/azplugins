@@ -168,9 +168,9 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
         GPUArray<Scalar3> m_all_possible_bonds;     //!< list of possible bonds, size: NumMembers(group_1)*m_max_bonds
         unsigned int m_num_all_possible_bonds;      //!< number of valid possible bonds at the beginning of m_all_possible_bonds
 
-        GPUArray<unsigned int> m_n_list;        //!< Neighbor list data
-        GPUArray<unsigned int> m_n_neigh;       //!< Number of neighbors for each particle
-        GPUArray<size_t> m_n_head_list;        //!< Neighbor list data
+        //GPUArray<unsigned int> m_n_list;        //!< Neighbor list data
+       // GPUArray<unsigned int> m_n_neigh;       //!< Number of neighbors for each particle
+        //GPUArray<size_t> m_n_head_list;        //!< Neighbor list data
 
         GPUArray<unsigned int> m_existing_bonds_list;  //!< List of existing bonded particles referenced by tag
         GPUArray<unsigned int> m_n_existing_bonds;     //!< Number of existing bonds for a given particle tag

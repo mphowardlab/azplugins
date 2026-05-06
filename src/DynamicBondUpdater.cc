@@ -58,7 +58,7 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
 
       m_pair_internal_nlist = std::shared_ptr<hoomd::md::NeighborList>(
         new hoomd::md::NeighborListTree(sysdef, 0.0));
-      m_pair_internal_nlist->setStorageMode(hoomd::md::NeighborList::full);
+      //m_pair_internal_nlist->setStorageMode(hoomd::md::NeighborList::full);
       setCutoffs();
 
       m_max_bonds = 4;
@@ -105,7 +105,7 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
 
     m_pair_internal_nlist = std::shared_ptr<hoomd::md::NeighborList>(
         new hoomd::md::NeighborListTree(sysdef, 0.0));
-    m_pair_internal_nlist->setStorageMode(hoomd::md::NeighborList::full);
+    //m_pair_internal_nlist->setStorageMode(hoomd::md::NeighborList::full);
     setCutoffs();
 
     m_max_bonds = 4;
@@ -170,7 +170,7 @@ void DynamicBondUpdater::update(uint64_t timestep)
           }
 
         overflowed = m_max_bonds < m_max_bonds_overflow;
-        // if we overflowed, need to reallocate memory and re-traverse the tree
+        // if we overflowed, need to reallocate memory and re-traverse the neighbor list
         if (overflowed)
         {
           resizePossibleBondlists();
@@ -417,9 +417,6 @@ void DynamicBondUpdater::resizePossibleBondlists()
       m_all_possible_bonds.resize(size);
       m_num_all_possible_bonds=0;
 
-      GPUArray<unsigned int> nlist(size, m_exec_conf);
-      m_n_list.swap(nlist);
-
       m_exec_conf->msg->notice(6) << "DynamicBondUpdater: (Re-)size possible bond list, new size " << m_max_bonds << " bonds per particle " << std::endl;
       }
     }
@@ -486,13 +483,13 @@ void DynamicBondUpdater::filterPossibleBonds()
         const Scalar r_cutsq = m_r_cut*m_r_cut;
 
         const unsigned int n_neigh = h_n_neigh.data[i];
-        const size_t myHead = h_n_head_list.data[i];
+        const size_t head = h_n_head_list.data[i];
 
         // loop over all neighbors of this particle
         for (unsigned int l=0; l<n_neigh; ++l)
         {
           // get index of neighbor from neigh_list
-          const unsigned int j = h_nlist.data[myHead + l];
+          const unsigned int j = h_nlist.data[head + l];
 
           Scalar4 postype_j = h_postype.data[j];
           const unsigned int tag_j = h_tag.data[j];
@@ -564,10 +561,8 @@ void DynamicBondUpdater::filterPossibleBonds()
 void DynamicBondUpdater::makeBonds(uint64_t timestep)
   {
 
-    //std::cout << "in makeBonds, need h_all_possible_bonds read acsess."<< std::endl;
     ArrayHandle<Scalar3> h_all_possible_bonds(m_all_possible_bonds, access_location::host, access_mode::read);
 
-    // ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds, access_location::host, access_mode::readwrite);
 
     // we need to count how many bonds are in the h_all_possible_bonds array for a given tag
@@ -643,6 +638,7 @@ void DynamicBondUpdater::makeBonds(uint64_t timestep)
           if (m_pair_nlist_exclusions_set)
             {
             m_pair_nlist -> addExclusion(tag_i,tag_j);
+            m_pair_internal_nlist -> addExclusion(tag_i,tag_j);
             }
         }
       }
