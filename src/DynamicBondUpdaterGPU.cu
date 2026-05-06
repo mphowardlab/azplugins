@@ -15,6 +15,7 @@
 
 #include <thrust/device_vector.h>
 #include <thrust/reduce.h>
+#include <thrust/remove.h>
 #include <thrust/sort.h>
 #include <thrust/unique.h>
 
@@ -122,7 +123,7 @@ __global__ void copy_nlist_possible_bonds(Scalar3* d_all_possible_bonds,
     Scalar4 postype_i = d_postype[pidx_i];
     const unsigned int tag_i = d_tag[pidx_i];
     const unsigned int n_neigh = d_n_neigh[pidx_i];
-    const size_t head = h_n_head_list[pidx_i];
+    const size_t head = d_nhead_list[pidx_i];
 
     // loop over all neighbors of this particle
     for (unsigned int j = 0; j < n_neigh; ++j)
