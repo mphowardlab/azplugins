@@ -153,7 +153,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
         std::shared_ptr<ParticleGroup> m_group_1;   //!< First particle group to form bonds with
         std::shared_ptr<ParticleGroup> m_group_2;   //!< Second particle group to form bonds with
-        bool m_groups_identical;
+        bool m_groups_identical;                        //!< whether or not the two groups are identical. Set true if they are identical.
 
         Scalar m_r_cut;                             //!< cutoff for the bond forming criterion
         Scalar m_probability;                       //!< probability of bond formation if bond can be formed (i.e. within cutoff)
@@ -167,10 +167,6 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
         GPUArray<Scalar3> m_all_possible_bonds;     //!< list of possible bonds, size: NumMembers(group_1)*m_max_bonds
         unsigned int m_num_all_possible_bonds;      //!< number of valid possible bonds at the beginning of m_all_possible_bonds
-
-        //GPUArray<unsigned int> m_n_list;        //!< Neighbor list data
-       // GPUArray<unsigned int> m_n_neigh;       //!< Number of neighbors for each particle
-        //GPUArray<size_t> m_n_head_list;        //!< Neighbor list data
 
         GPUArray<unsigned int> m_existing_bonds_list;  //!< List of existing bonded particles referenced by tag
         GPUArray<unsigned int> m_n_existing_bonds;     //!< Number of existing bonds for a given particle tag

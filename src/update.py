@@ -47,7 +47,7 @@ class dynamic_bond(hoomd.operation.Updater):
 
         Examples::
 
-            azplugins.update.dynamic_bond(nlist=nl,r_cut=1.0,probability=1.0, bond_type='bond',
+            azplugins.update.dynamic_bond(nlist=nl,r_cut=1.0,bond_type=0,
                 group_1=hoomd.group.type(type='A'),group_2=hoomd.group.type(type='B'),max_bonds_1=3,max_bonds_2=2)
     """
     _ext_module = _azplugins
@@ -115,6 +115,19 @@ class dynamic_bond(hoomd.operation.Updater):
         self._cpp_obj.probability = value
 
     @property
+    def r_cut(self):
+        """
+         r_cut (float): Distance cutoff for making bonds between particles
+        """
+        return self._cpp_obj.r_cut
+
+    @r_cut.setter
+    def r_cut(self, value):
+        self._cpp_obj.r_cut = value
+        self._param_dict['r_cut']=value
+
+
+    @property
     def max_bonds_group_1(self):
         """
          max_bonds_1 (int)
@@ -127,18 +140,6 @@ class dynamic_bond(hoomd.operation.Updater):
         self._param_dict['max_bonds_group_1']=value
 
     @property
-    def r_cut(self):
-        """
-         r_cut (float): Distance cutoff for making bonds between particles
-        """
-        return self._cpp_obj.r_cut
-
-    @r_cut.setter
-    def r_cut(self, value):
-        self._cpp_obj.r_cut = value
-        self._param_dict['r_cut']=value
-
-    @property
     def max_bonds_group_2(self):
         """
          max_bonds_group_2 (int)
@@ -149,6 +150,7 @@ class dynamic_bond(hoomd.operation.Updater):
     def max_bonds_group_2(self, value):
         self._cpp_obj.max_bonds_group_2 = value
         self._param_dict['max_bonds_group_2']=value
+
 
 
     def _attach_hook(self):

@@ -50,6 +50,7 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
            m_max_N_changed(true)
     {
       m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdater" << std::endl;
+      std::cout<< " in constructor 1"<< std::endl;
 
       m_pdata->getBoxChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotBoxChanged>(this);
       m_pdata->getGlobalParticleNumberChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotNumParticlesChanged>(this);
@@ -58,14 +59,17 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
 
       m_pair_internal_nlist = std::shared_ptr<hoomd::md::NeighborList>(
         new hoomd::md::NeighborListTree(sysdef, 0.0));
-      //m_pair_internal_nlist->setStorageMode(hoomd::md::NeighborList::full);
+      m_pair_internal_nlist->setStorageMode(hoomd::md::NeighborList::full);
+
+      setGroupOverlap();
+
       setCutoffs();
 
       m_max_bonds = 4;
       m_max_bonds_overflow = 0;
       m_num_all_possible_bonds = 0;
 
-      setGroupOverlap();
+
     }
 
 
@@ -96,6 +100,7 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
          m_box_changed(true),
          m_max_N_changed(true)
     {
+    std::cout<< " in constructor 2"<< std::endl;
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdater" << std::endl;
 
     m_pdata->getBoxChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotBoxChanged>(this);
@@ -105,14 +110,16 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
 
     m_pair_internal_nlist = std::shared_ptr<hoomd::md::NeighborList>(
         new hoomd::md::NeighborListTree(sysdef, 0.0));
-    //m_pair_internal_nlist->setStorageMode(hoomd::md::NeighborList::full);
+
+    setGroupOverlap();
+    m_pair_internal_nlist->setStorageMode(hoomd::md::NeighborList::full);
     setCutoffs();
 
     m_max_bonds = 4;
     m_max_bonds_overflow = 0;
     m_num_all_possible_bonds = 0;
 
-    setGroupOverlap();
+
     }
 
 DynamicBondUpdater::~DynamicBondUpdater()
@@ -129,7 +136,7 @@ DynamicBondUpdater::~DynamicBondUpdater()
 */
 void DynamicBondUpdater::update(uint64_t timestep)
     {
-
+      std::cout<< " in  update"<< std::endl;
       //Scalar test = m_pair_internal_nlist->getRCut(pybind11::make_tuple('A','A'));
 
       // don't do anything if either one of the groups is  empty
@@ -475,9 +482,11 @@ void DynamicBondUpdater::filterPossibleBonds()
       // Loop over all particles in group 1
       for (unsigned int group_idx = 0; group_idx < m_group_1->getNumMembers(); group_idx++)
       {
+
         unsigned int i = m_group_1->getMemberIndex(group_idx);
         const unsigned int tag_i = h_tag.data[i];
         const Scalar4 postype_i = h_postype.data[i];
+
 
         unsigned int n_curr_bond = 0;
         const Scalar r_cutsq = m_r_cut*m_r_cut;
@@ -488,38 +497,42 @@ void DynamicBondUpdater::filterPossibleBonds()
         // loop over all neighbors of this particle
         for (unsigned int l=0; l<n_neigh; ++l)
         {
+
           // get index of neighbor from neigh_list
           const unsigned int j = h_nlist.data[head + l];
 
-          Scalar4 postype_j = h_postype.data[j];
-          const unsigned int tag_j = h_tag.data[j];
-
-          Scalar3 drij = make_scalar3(postype_j.x,postype_j.y,postype_j.z)
-          - make_scalar3(postype_i.x,postype_i.y,postype_i.z);
-
-          // apply periodic boundary conditions
-          drij = box.minImage(drij);
-          Scalar dr_sq = dot(drij,drij);
-
-          if (dr_sq < r_cutsq)
+          if ( m_group_2->isMember(j))
           {
-            if (n_curr_bond < m_max_bonds)
+            Scalar4 postype_j = h_postype.data[j];
+            const unsigned int tag_j = h_tag.data[j];
+
+            Scalar3 drij = make_scalar3(postype_j.x,postype_j.y,postype_j.z)
+            - make_scalar3(postype_i.x,postype_i.y,postype_i.z);
+
+            // apply periodic boundary conditions
+            drij = box.minImage(drij);
+            Scalar dr_sq = dot(drij,drij);
+
+            if (dr_sq < r_cutsq)
             {
-              Scalar3 d;
-              if(m_groups_identical)
+              if (n_curr_bond < m_max_bonds)
               {
-                // sort the two tags in this possible bond pair if groups identical
-                const unsigned int tag_a = tag_j > tag_i ? tag_i : tag_j;
-                const unsigned int tag_b = tag_j > tag_i ? tag_j : tag_i;
-                d = make_scalar3(__int_as_scalar(tag_a),__int_as_scalar(tag_b),dr_sq);
+                Scalar3 d;
+                if(m_groups_identical)
+                {
+                  // sort the two tags in this possible bond pair if groups identical
+                  const unsigned int tag_a = tag_j > tag_i ? tag_i : tag_j;
+                  const unsigned int tag_b = tag_j > tag_i ? tag_j : tag_i;
+                  d = make_scalar3(__int_as_scalar(tag_a),__int_as_scalar(tag_b),dr_sq);
+                }
+                else
+                {
+                  d = make_scalar3(__int_as_scalar(tag_i),__int_as_scalar(tag_j),dr_sq);
+                }
+                h_all_possible_bonds.data[group_idx*m_max_bonds + n_curr_bond] = d;
               }
-              else
-              {
-                d = make_scalar3(__int_as_scalar(tag_i),__int_as_scalar(tag_j),dr_sq);
-              }
-              h_all_possible_bonds.data[group_idx*m_max_bonds + n_curr_bond] = d;
+              ++n_curr_bond;
             }
-            ++n_curr_bond;
           }
         }
       }
@@ -683,6 +696,7 @@ void DynamicBondUpdater::setGroupOverlap()
       {
         m_exec_conf->msg->warning() << "DynamicBondUpdater: Second group group_2 appears to be empty. No bonds will be formed. " << std::endl;
       }
+      {
       //check if the two groups are either identical or have no overlap
       ArrayHandle<unsigned int> h_index_group_1(m_group_1->getIndexArray(), access_location::host, access_mode::read);
 
@@ -705,6 +719,8 @@ void DynamicBondUpdater::setGroupOverlap()
       {
         m_groups_identical=true;
       }
+      }
+      std::cout << "groups identical "<< m_groups_identical<< std::endl;
     }
 
 /*! Sets cutoffs based on types present in the two groups to save some performance from
@@ -712,12 +728,7 @@ void DynamicBondUpdater::setGroupOverlap()
 */
 void DynamicBondUpdater::setCutoffs()
     {
-    ArrayHandle<unsigned int> h_index_group_1(m_group_1->getIndexArray(), access_location::host, access_mode::read);
-    ArrayHandle<unsigned int> h_index_group_2(m_group_2->getIndexArray(), access_location::host, access_mode::read);
-
-    ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(),
-                               access_location::host,
-                               access_mode::readwrite);
+    {
 
     // set all rcuts to zero first, then only set the one between group1 and group 2 particle types to be m_r_cut
      unsigned int NTypes = m_pdata -> getNTypes();
@@ -729,6 +740,13 @@ void DynamicBondUpdater::setCutoffs()
           }
       }
 
+    ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(),
+                               access_location::host,
+                               access_mode::read);
+
+
+    ArrayHandle<unsigned int> h_index_group_1(m_group_1->getIndexArray(), access_location::host, access_mode::read);
+
     // finding all types in group 1
     std::set<unsigned int> types_group_1;
     for (unsigned int i=0; i<m_group_1->getNumMembers(); ++i)
@@ -738,14 +756,23 @@ void DynamicBondUpdater::setCutoffs()
         types_group_1.insert(__scalar_as_int(type.w));
       }
 
-    // finding all types in group 2
     std::set<unsigned int> types_group_2;
+    if (m_groups_identical == false)
+    {
+    ArrayHandle<unsigned int> h_index_group_2(m_group_2->getIndexArray(), access_location::host, access_mode::read);
+
+    // finding all types in group 2
     for (unsigned int i=0; i<m_group_2->getNumMembers(); ++i)
       {
         unsigned int idx = h_index_group_2.data[i];
         Scalar4 type =  h_pos.data[idx];
         types_group_2.insert(__scalar_as_int(type.w));
       }
+    }
+    else
+    {
+    types_group_2 = types_group_1;
+    }
 
       // looping over types in group 1 and 2 to set the cutoff to m_r_cut
       for (const auto& element_1 : types_group_1)
@@ -754,10 +781,13 @@ void DynamicBondUpdater::setCutoffs()
         {
           m_pair_internal_nlist->setRcut(element_1,element_2,m_r_cut);
           m_pair_internal_nlist->setRcut(element_2,element_1,m_r_cut);
+          std::cout<< " cutoffs set "<< element_1<< " " << element_2 << " " << m_r_cut << std::endl;
         }
       }
 
     }
+    }
+
 
 // Check that the given cutoff value is valid
 void DynamicBondUpdater::checkRcut()

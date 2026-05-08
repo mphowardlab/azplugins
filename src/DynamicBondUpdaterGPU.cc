@@ -120,7 +120,7 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
     const BoxDim& box = m_pdata->getBox();
 
     m_tuner_copy_nlist->begin();
-    //todo: add d_n_headlist and fix kernel
+    //todo:  check that second particle is actually in group 2
     gpu::copy_possible_bonds(d_all_possible_bonds.data,
                               d_pos.data,
                               d_tag.data,
@@ -138,7 +138,7 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
     m_tuner_copy_nlist->end();
 
 
-    //filter out the existing bonds - based on neighbor list exclusion handeling
+    //filter out the existing bonds - based on neighbor list exclusion handling
     m_tuner_filter_bonds->begin();
     gpu::filter_existing_bonds(d_all_possible_bonds.data,
                                d_n_existing_bonds.data,
