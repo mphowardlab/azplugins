@@ -501,7 +501,7 @@ void DynamicBondUpdater::filterPossibleBonds()
           // get index of neighbor from neigh_list
           const unsigned int j = h_nlist.data[head + l];
 
-          if ( m_group_2->isMember(j))
+          if (m_group_2->isMember(j))
           {
             Scalar4 postype_j = h_postype.data[j];
             const unsigned int tag_j = h_tag.data[j];

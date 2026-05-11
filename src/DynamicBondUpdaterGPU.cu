@@ -66,6 +66,7 @@ struct isZeroBondGPU
         }
     };
 
+
 struct CompareBondsGPU
     {
     __host__ __device__ bool operator()(const Scalar3& i, const Scalar3& j)
@@ -99,6 +100,7 @@ __global__ void copy_nlist_possible_bonds(Scalar3* d_all_possible_bonds,
                                           const Scalar4* d_postype,
                                           const unsigned int* d_tag,
                                           const unsigned int* d_sorted_indexes,
+                                          unsigned int* d_sorted_indexes_group_2,
                                           const unsigned int* d_n_neigh,
                                           const unsigned int* d_nlist,
                                           const size_t* d_nhead_list,
@@ -106,6 +108,7 @@ __global__ void copy_nlist_possible_bonds(Scalar3* d_all_possible_bonds,
                                           const unsigned int max_bonds,
                                           const Scalar r_cut,
                                           const bool groups_identical,
+                                          const unsigned int size_group_2,
                                           const unsigned int N)
     {
     // one thread per particle in group_1
@@ -130,38 +133,50 @@ __global__ void copy_nlist_possible_bonds(Scalar3* d_all_possible_bonds,
         {
         // get index of neighbor from neigh_list
         const unsigned int pidx_j = d_nlist[head + j];
-        Scalar4 postype_j = d_postype[pidx_j];
-        const unsigned int tag_j = d_tag[pidx_j];
 
-        Scalar3 drij = make_scalar3(postype_j.x, postype_j.y, postype_j.z)
-                       - make_scalar3(postype_i.x, postype_i.y, postype_i.z);
+        // test if j is in group 2
 
-        // apply periodic boundary conditions (FLOPS: 12)
-        drij = box.minImage(drij);
+        // wrapper for pointer needed for thrust
+        thrust::device_ptr<unsigned int> d_sorted_indexes_group_2_wrap(d_sorted_indexes_group_2);
 
-        // same as on the cpu, just not during the tree traversal
-        Scalar dr_sq = dot(drij, drij);
+        auto iter = thrust::find(thrust::device, d_sorted_indexes_group_2_wrap,d_sorted_indexes_group_2_wrap+size_group_2, pidx_j);
 
-        if (dr_sq < r_cutsq)
-            {
-            if (n_curr_bond < max_bonds)
+        if (iter != d_sorted_indexes_group_2_wrap+size_group_2)
+        {
+
+            Scalar4 postype_j = d_postype[pidx_j];
+            const unsigned int tag_j = d_tag[pidx_j];
+
+            Scalar3 drij = make_scalar3(postype_j.x, postype_j.y, postype_j.z)
+                        - make_scalar3(postype_i.x, postype_i.y, postype_i.z);
+
+            // apply periodic boundary conditions (FLOPS: 12)
+            drij = box.minImage(drij);
+
+            // same as on the cpu, just not during the tree traversal
+            Scalar dr_sq = dot(drij, drij);
+
+            if (dr_sq < r_cutsq)
                 {
-                Scalar3 d;
-                if (groups_identical)
+                if (n_curr_bond < max_bonds)
                     {
-                    // sort the two tags in this possible bond pair if groups are identical
-                    const unsigned int tag_a = tag_j > tag_i ? tag_i : tag_j;
-                    const unsigned int tag_b = tag_j > tag_i ? tag_j : tag_i;
-                    d = make_scalar3(__int_as_scalar(tag_a), __int_as_scalar(tag_b), dr_sq);
+                    Scalar3 d;
+                    if (groups_identical)
+                        {
+                        // sort the two tags in this possible bond pair if groups are identical
+                        const unsigned int tag_a = tag_j > tag_i ? tag_i : tag_j;
+                        const unsigned int tag_b = tag_j > tag_i ? tag_j : tag_i;
+                        d = make_scalar3(__int_as_scalar(tag_a), __int_as_scalar(tag_b), dr_sq);
+                        }
+                    else
+                        {
+                        d = make_scalar3(__int_as_scalar(tag_i), __int_as_scalar(tag_j), dr_sq);
+                        }
+                    d_all_possible_bonds[idx * max_bonds + n_curr_bond] = d;
                     }
-                else
-                    {
-                    d = make_scalar3(__int_as_scalar(tag_i), __int_as_scalar(tag_j), dr_sq);
-                    }
-                d_all_possible_bonds[idx * max_bonds + n_curr_bond] = d;
+                ++n_curr_bond;
                 }
-            ++n_curr_bond;
-            }
+        }
         }
     }
 
@@ -324,6 +339,7 @@ cudaError_t copy_possible_bonds(Scalar3* d_all_possible_bonds,
                                 const Scalar4* d_postype,
                                 const unsigned int* d_tag,
                                 const unsigned int* d_sorted_indexes,
+                                unsigned int* d_sorted_indexes_group_2,
                                 const unsigned int* d_n_neigh,
                                 const unsigned int* d_nlist,
                                 const size_t* d_nhead_list,
@@ -331,6 +347,7 @@ cudaError_t copy_possible_bonds(Scalar3* d_all_possible_bonds,
                                 const unsigned int max_bonds,
                                 const Scalar r_cut,
                                 const bool groups_identical,
+                                const unsigned int size_group_2,
                                 const unsigned int N,
                                 const unsigned int block_size)
     {
@@ -349,6 +366,7 @@ cudaError_t copy_possible_bonds(Scalar3* d_all_possible_bonds,
         d_postype,
         d_tag,
         d_sorted_indexes,
+        d_sorted_indexes_group_2,
         d_n_neigh,
         d_nlist,
         d_nhead_list,
@@ -356,6 +374,7 @@ cudaError_t copy_possible_bonds(Scalar3* d_all_possible_bonds,
         max_bonds,
         r_cut,
         groups_identical,
+        size_group_2,
         N);
     return cudaSuccess;
     }

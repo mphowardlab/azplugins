@@ -119,11 +119,13 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
 
     const BoxDim& box = m_pdata->getBox();
 
+    if (m_groups_identical)
+    {
     m_tuner_copy_nlist->begin();
-    //todo:  check that second particle is actually in group 2
     gpu::copy_possible_bonds(d_all_possible_bonds.data,
                               d_pos.data,
                               d_tag.data,
+                              d_index_group_1.data,
                               d_index_group_1.data,
                               d_n_neigh.data,
                               d_nlist.data,
@@ -133,9 +135,37 @@ void DynamicBondUpdaterGPU::filterPossibleBonds()
                               m_r_cut,
                               m_groups_identical,
                               m_group_1->getNumMembers(),
+                              m_group_1->getNumMembers(),
                               m_tuner_copy_nlist->getParam()[0]);
     if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
     m_tuner_copy_nlist->end();
+
+
+    }else
+    {
+        ArrayHandle<unsigned int> d_index_group_2(m_group_2->getIndexArray(), access_location::device, access_mode::read);
+        m_tuner_copy_nlist->begin();
+        gpu::copy_possible_bonds(d_all_possible_bonds.data,
+                                d_pos.data,
+                                d_tag.data,
+                                d_index_group_1.data,
+                                d_index_group_2.data,
+                                d_n_neigh.data,
+                                d_nlist.data,
+                                d_n_head_list.data,
+                                box,
+                                m_max_bonds,
+                                m_r_cut,
+                                m_groups_identical,
+                                m_group_2->getNumMembers(),
+                                m_group_1->getNumMembers(),
+                                m_tuner_copy_nlist->getParam()[0]);
+        if (m_exec_conf->isCUDAErrorCheckingEnabled()) CHECK_CUDA_ERROR();
+        m_tuner_copy_nlist->end();
+
+    }
+
+
 
 
     //filter out the existing bonds - based on neighbor list exclusion handling

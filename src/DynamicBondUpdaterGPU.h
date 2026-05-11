@@ -77,26 +77,6 @@ class PYBIND11_EXPORT DynamicBondUpdaterGPU : public DynamicBondUpdater
         GPUFlags<unsigned int> m_max_bonds_overflow_flag;  //!< GPU flag for overflow
 
 
-        //! Compute the LBVH domain from the current box
-        BoxDim getLBVHBox() const
-            {
-            const BoxDim& box = m_pdata->getBox();
-
-            // ghost layer padding
-            Scalar ghost_layer_width(0.0);
-            #ifdef ENABLE_MPI
-            if (m_comm) ghost_layer_width = m_comm->getGhostLayerMaxWidth();
-            #endif
-
-            Scalar3 ghost_width = make_scalar3(0.0, 0.0, 0.0);
-            if (!box.getPeriodic().x) ghost_width.x = ghost_layer_width;
-            if (!box.getPeriodic().y) ghost_width.y = ghost_layer_width;
-            if (!box.getPeriodic().z && m_sysdef->getNDimensions() == 3) ghost_width.z = ghost_layer_width;
-
-            return BoxDim(box.getLo()-ghost_width, box.getHi()+ghost_width, box.getPeriodic());
-            }
-
-
     };
 
 namespace detail
