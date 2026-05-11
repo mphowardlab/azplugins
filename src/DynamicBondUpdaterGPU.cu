@@ -100,7 +100,7 @@ __global__ void copy_nlist_possible_bonds(Scalar3* d_all_possible_bonds,
                                           const Scalar4* d_postype,
                                           const unsigned int* d_tag,
                                           const unsigned int* d_sorted_indexes,
-                                          unsigned int* d_sorted_indexes_group_2,
+                                          const unsigned int* d_sorted_indexes_group_2,
                                           const unsigned int* d_n_neigh,
                                           const unsigned int* d_nlist,
                                           const size_t* d_nhead_list,
@@ -137,7 +137,7 @@ __global__ void copy_nlist_possible_bonds(Scalar3* d_all_possible_bonds,
         // test if j is in group 2
 
         // wrapper for pointer needed for thrust
-        thrust::device_ptr<unsigned int> d_sorted_indexes_group_2_wrap(d_sorted_indexes_group_2);
+        thrust::device_ptr<const unsigned int> d_sorted_indexes_group_2_wrap(d_sorted_indexes_group_2);
 
         auto iter = thrust::find(thrust::device, d_sorted_indexes_group_2_wrap,d_sorted_indexes_group_2_wrap+size_group_2, pidx_j);
 
@@ -339,7 +339,7 @@ cudaError_t copy_possible_bonds(Scalar3* d_all_possible_bonds,
                                 const Scalar4* d_postype,
                                 const unsigned int* d_tag,
                                 const unsigned int* d_sorted_indexes,
-                                unsigned int* d_sorted_indexes_group_2,
+                                const unsigned int* d_sorted_indexes_group_2,
                                 const unsigned int* d_n_neigh,
                                 const unsigned int* d_nlist,
                                 const size_t* d_nhead_list,
