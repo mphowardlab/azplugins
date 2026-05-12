@@ -103,7 +103,7 @@ __global__ void copy_nlist_possible_bonds(Scalar3* d_all_possible_bonds,
                                           const unsigned int* d_sorted_indexes_group_2,
                                           const unsigned int* d_n_neigh,
                                           const unsigned int* d_nlist,
-                                          const size_t* d_nhead_list,
+                                          const size_t* d_n_head_list,
                                           const BoxDim box,
                                           const unsigned int max_bonds,
                                           const Scalar r_cut,
@@ -126,7 +126,7 @@ __global__ void copy_nlist_possible_bonds(Scalar3* d_all_possible_bonds,
     Scalar4 postype_i = d_postype[pidx_i];
     const unsigned int tag_i = d_tag[pidx_i];
     const unsigned int n_neigh = d_n_neigh[pidx_i];
-    const size_t head = d_nhead_list[pidx_i];
+    const size_t head = d_n_head_list[pidx_i];
 
     // loop over all neighbors of this particle
     for (unsigned int j = 0; j < n_neigh; ++j)
@@ -342,7 +342,7 @@ cudaError_t copy_possible_bonds(Scalar3* d_all_possible_bonds,
                                 const unsigned int* d_sorted_indexes_group_2,
                                 const unsigned int* d_n_neigh,
                                 const unsigned int* d_nlist,
-                                const size_t* d_nhead_list,
+                                const size_t* d_n_head_list,
                                 const BoxDim box,
                                 const unsigned int max_bonds,
                                 const Scalar r_cut,
@@ -369,7 +369,7 @@ cudaError_t copy_possible_bonds(Scalar3* d_all_possible_bonds,
         d_sorted_indexes_group_2,
         d_n_neigh,
         d_nlist,
-        d_nhead_list,
+        d_n_head_list,
         box,
         max_bonds,
         r_cut,
