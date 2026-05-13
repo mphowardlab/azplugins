@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2020, Michael P. Howard
 // Copyright (c) 2021-2025, Auburn University
-// This file is part of the azplugins project, released under the Modified BSD License.
+// Part of azplugins, released under the BSD 3-Clause License.
 
 // Maintainer: astatt
 
@@ -65,7 +65,6 @@ struct isZeroBondGPU
         return !(bool)tag_1;
         }
     };
-
 
 struct CompareBondsGPU
     {
@@ -137,18 +136,21 @@ __global__ void copy_nlist_possible_bonds(Scalar3* d_all_possible_bonds,
         // test if j is in group 2
 
         // wrapper for pointer needed for thrust
-        thrust::device_ptr<const unsigned int> d_sorted_indexes_group_2_wrap(d_sorted_indexes_group_2);
+        thrust::device_ptr<const unsigned int> d_sorted_indexes_group_2_wrap(
+            d_sorted_indexes_group_2);
 
-        auto iter = thrust::find(thrust::device, d_sorted_indexes_group_2_wrap,d_sorted_indexes_group_2_wrap+size_group_2, pidx_j);
+        auto iter = thrust::find(thrust::device,
+                                 d_sorted_indexes_group_2_wrap,
+                                 d_sorted_indexes_group_2_wrap + size_group_2,
+                                 pidx_j);
 
-        if (iter != d_sorted_indexes_group_2_wrap+size_group_2)
-        {
-
+        if (iter != d_sorted_indexes_group_2_wrap + size_group_2)
+            {
             Scalar4 postype_j = d_postype[pidx_j];
             const unsigned int tag_j = d_tag[pidx_j];
 
             Scalar3 drij = make_scalar3(postype_j.x, postype_j.y, postype_j.z)
-                        - make_scalar3(postype_i.x, postype_i.y, postype_i.z);
+                           - make_scalar3(postype_i.x, postype_i.y, postype_i.z);
 
             // apply periodic boundary conditions (FLOPS: 12)
             drij = box.minImage(drij);
@@ -176,7 +178,7 @@ __global__ void copy_nlist_possible_bonds(Scalar3* d_all_possible_bonds,
                     }
                 ++n_curr_bond;
                 }
-        }
+            }
         }
     }
 

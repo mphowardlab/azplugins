@@ -1,8 +1,8 @@
 # Copyright (c) 2018-2020, Michael P. Howard
-# Copyright (c) 2021-2022, Auburn University
-# This file is part of the azplugins project, released under the Modified BSD License.
+# Copyright (c) 2021-2025, Auburn University
+# Part of azplugins, released under the BSD 3-Clause License.
 
-""" Updaters. """
+"""Updaters."""
 
 import hoomd
 
@@ -10,33 +10,35 @@ from hoomd.azplugins import _azplugins
 from hoomd.data.parameterdicts import ParameterDict
 from hoomd.data.typeconverter import OnlyTypes
 
-class dynamic_bond(hoomd.operation.Updater):
-    R""" Update bonds dynamically during simulation.
+
+class DynamicBond(hoomd.operation.Updater):
+    R"""Update bonds dynamically during simulation.
 
     Args:
         r_cut (float): Distance cutoff for making bonds between particles
         probability (float): Probability of bond formation, between 0 and 1, default = 1
         bond_type (str): Type of bond to be formed
-        group_1 (:py:mod: `hoomd.filter.ParticleFilter`): First particle group to form bonds between
-        group_2 (:py:mod:`hoomd.filter.ParticleFilter`): Second particle group to form bonds between
+        group_1 (:py:mod: `hoomd.filter.ParticleFilter`): First particle group
+        group_2 (:py:mod:`hoomd.filter.ParticleFilter`): Second particle group
         max_bonds_1 (int): Maximum number of bonds a particle in group_1 can have
         max_bonds_2 (int): Maximum number of bonds a particle in group_2 can have
         seed (int): Seed to the pseudo-random number generator
-        nlist (:py:mod:`hoomd.md.nlist`): NeighborList (optional) for updating the exclusions
+        nlist (:py:mod:`hoomd.md.nlist`): NeighborList (optional) to update exclusions
         period (int): Particle types will be updated every *period* time steps
         phase (int): When -1, start on the current time step. Otherwise, execute
                      on steps where *(step + phase) % period* is 0.
 
         Forms bonds of type bond_type between particles in group_1 and group_2 during
-        the simulation, if particle distances are shorter than r_cut. If the neighborlist
-        used for the pair potential in the simulation is given as a parameter nlist, the
-        neighbor list exclusions will be updated to include the newly formed bonds.
-        Each particle has a number of maximum bonds which it can form, given by
-        max_bonds_1 for particles in group_1 and max_bonds_2 for group_2.
+        the simulation, if particle distances are shorter than r_cut. If the
+        neighborlist used for the pair potential in the simulation is given as a
+        parameter nlist, the neighbor list exclusions will be updated to include the
+        newly formed bonds. Each particle has a number of maximum bonds which it can
+        form, given by max_bonds_1 for particles in group_1 and max_bonds_2 for group_2.
 
         The particles in the two groups group_1 and group_2 should be completely
         separate with no common elements, e.g. two different types, or the two
-        groups should be identical, where now max_bonds_1 needs to be equal to max_bonds_2.
+        groups should be identical, where now max_bonds_1 needs to be equal to
+        max_bonds_2.
 
 
         .. warning::
@@ -47,115 +49,118 @@ class dynamic_bond(hoomd.operation.Updater):
 
         Examples::
 
-            azplugins.update.dynamic_bond(nlist=nl,r_cut=1.0,bond_type=0,
-                group_1=hoomd.group.type(type='A'),group_2=hoomd.group.type(type='B'),max_bonds_1=3,max_bonds_2=2)
+            azplugins.update.dynamic_bond(
+                nlist=nl,
+                r_cut=1.0,
+                bond_type=0,
+                group_1=hoomd.group.type(type="A"),
+                group_2=hoomd.group.type(type="B"),
+                max_bonds_1=3,
+                max_bonds_2=2,
+            )
     """
+
     _ext_module = _azplugins
     _cpp_class_name = "DynamicBondUpdater"
 
-    def __init__(self,
-                 trigger,
-                 nlist,
-                 group_1,
-                 group_2,
-                 bond_type=None,
-                 max_bonds_group_1=None,
-                 max_bonds_group_2=None,
-                 r_cut=None,
-                 seed=0,
-                 probability=1):
+    def __init__(
+        self,
+        trigger,
+        nlist,
+        group_1,
+        group_2,
+        bond_type=None,
+        max_bonds_group_1=None,
+        max_bonds_group_2=None,
+        r_cut=None,
+        seed=0,
+        probability=1,
+    ):
         super().__init__(trigger)
 
         params = ParameterDict(
             r_cut=OnlyTypes(float, allow_none=True),
-            nlist =OnlyTypes(hoomd.md.nlist.NeighborList,strict=True, allow_none=False),
+            nlist=OnlyTypes(hoomd.md.nlist.NeighborList, strict=True, allow_none=False),
             group_1=OnlyTypes(hoomd.filter.ParticleFilter, allow_none=False),
             group_2=OnlyTypes(hoomd.filter.ParticleFilter, allow_none=False),
             max_bonds_group_1=OnlyTypes(int, allow_none=True),
             max_bonds_group_2=OnlyTypes(int, allow_none=True),
-            bond_type=OnlyTypes(int,strict=True,allow_none=True),
-            seed = OnlyTypes(int,strict=True,allow_none=False),
-            probability = float(probability)
+            bond_type=OnlyTypes(int, strict=True, allow_none=True),
+            seed=OnlyTypes(int, strict=True, allow_none=False),
+            probability=float(probability),
         )
 
         params.update(
             dict(
-                r_cut = r_cut,
+                r_cut=r_cut,
                 nlist=nlist,
                 group_1=group_1,
                 group_2=group_2,
                 max_bonds_group_1=max_bonds_group_1,
                 max_bonds_group_2=max_bonds_group_2,
-                bond_type = bond_type,
-                seed = seed,
-                probability = probability
+                bond_type=bond_type,
+                seed=seed,
+                probability=probability,
             )
         )
 
         self._param_dict.update(params)
-        #self.set_params(r_cut,probability,bond_type,max_bonds_1,max_bonds_2,nlist)
+        # self.set_params(r_cut,probability,bond_type,max_bonds_1,max_bonds_2,nlist)
 
     @property
     def bond_type(self):
+        """bond_type (int): Type of the bonds that are made by this updater."""
         return self._cpp_obj.bond_type
 
     @bond_type.setter
-    def bond_type(self,value):
+    def bond_type(self, value):
         if value is not None:
-            self._param_dict['bond_type']=value
+            self._param_dict["bond_type"] = value
             self._cpp_obj.setBondType(value)
 
     @property
     def probability(self):
+        """Probability (float): Probability of forming bonds. Value between 0 and 1."""
         return self._cpp_obj.probability
 
     @probability.setter
-    def probability(self,value):
-        self._param_dict['probability']=value
+    def probability(self, value):
+        self._param_dict["probability"] = value
         self._cpp_obj.probability = value
 
     @property
     def r_cut(self):
-        """
-         r_cut (float): Distance cutoff for making bonds between particles
-        """
+        """r_cut (float): Distance cutoff for making bonds between particles."""
         return self._cpp_obj.r_cut
 
     @r_cut.setter
     def r_cut(self, value):
         self._cpp_obj.r_cut = value
-        self._param_dict['r_cut']=value
-
+        self._param_dict["r_cut"] = value
 
     @property
     def max_bonds_group_1(self):
-        """
-         max_bonds_1 (int)
-        """
+        """max_bonds_1 (int): Max bonds on group 1."""
         return self._cpp_obj.max_bonds_group_1
 
     @max_bonds_group_1.setter
     def max_bonds_group_1(self, value):
         self._cpp_obj.max_bonds_group_1 = value
-        self._param_dict['max_bonds_group_1']=value
+        self._param_dict["max_bonds_group_1"] = value
 
     @property
     def max_bonds_group_2(self):
-        """
-         max_bonds_group_2 (int)
-        """
+        """max_bonds_2 (int): Max bonds on group 2."""
         return self._cpp_obj.max_bonds_group_2
 
     @max_bonds_group_2.setter
     def max_bonds_group_2(self, value):
         self._cpp_obj.max_bonds_group_2 = value
-        self._param_dict['max_bonds_group_2']=value
-
-
+        self._param_dict["max_bonds_group_2"] = value
 
     def _attach_hook(self):
-        sim = self._simulation
         """Create the c++ mirror class."""
+        sim = self._simulation
         if isinstance(self._simulation.device, hoomd.device.CPU):
             cpp_class = getattr(self._ext_module, self._cpp_class_name)
         else:
@@ -179,10 +184,7 @@ class dynamic_bond(hoomd.operation.Updater):
             self.nlist._cpp_obj,
             group_1,
             group_2,
-            self.seed
+            self.seed,
         )
 
         super()._attach_hook()
-
-
-
