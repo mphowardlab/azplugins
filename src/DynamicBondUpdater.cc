@@ -40,7 +40,6 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
       m_pair_nlist_exclusions_set(true), m_box_changed(true), m_max_N_changed(true)
     {
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdater" << std::endl;
-    std::cout << " in constructor 1" << std::endl;
 
     m_pdata->getBoxChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotBoxChanged>(
         this);
@@ -79,7 +78,7 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
       m_pair_nlist(pair_nlist), m_pair_nlist_exclusions_set(true), m_box_changed(true),
       m_max_N_changed(true)
     {
-    std::cout << " in constructor 2" << std::endl;
+
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdater" << std::endl;
 
     m_pdata->getBoxChangeSignal().connect<DynamicBondUpdater, &DynamicBondUpdater::slotBoxChanged>(
@@ -116,8 +115,6 @@ DynamicBondUpdater::~DynamicBondUpdater()
  */
 void DynamicBondUpdater::update(uint64_t timestep)
     {
-    std::cout << " in  update" << std::endl;
-    // Scalar test = m_pair_internal_nlist->getRCut(pybind11::make_tuple('A','A'));
 
     // don't do anything if either one of the groups is  empty
     if (m_group_1->getNumMembers() == 0 || m_group_2->getNumMembers() == 0)
@@ -291,9 +288,6 @@ void DynamicBondUpdater::calculateExistingBonds()
 
             bool overflowed = false;
 
-            // std::cout << "inside of CalculatingExistingBonds: array accsess readwrite
-            // h_n_existing_bonds " << std::endl;
-
             ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds,
                                                          access_location::host,
                                                          access_mode::readwrite);
@@ -366,9 +360,6 @@ void DynamicBondUpdater::AddtoExistingBonds(unsigned int tag_a, unsigned int tag
     assert(tag_b <= m_pdata->getMaximumTag());
 
     bool overflowed = false;
-
-    std::cout << "inside of AddtoExistingBonds: array accsess readwrite h_n_existing_bonds "
-              << std::endl;
 
     ArrayHandle<unsigned int> h_n_existing_bonds(m_n_existing_bonds,
                                                  access_location::host,
@@ -648,9 +639,6 @@ void DynamicBondUpdater::makeBonds(uint64_t timestep)
 
             bool overflowed = false;
 
-            // std::cout << "inside of makeBonds: array accsess readwrite h_n_existing_bonds " <<
-            // std::endl;
-
             // resize the list if necessary
             if (h_n_existing_bonds.data[tag_i] == m_existing_bonds_list_indexer.getH())
                 overflowed = true;
@@ -758,7 +746,6 @@ void DynamicBondUpdater::setGroupOverlap()
             m_groups_identical = true;
             }
         }
-    std::cout << "groups identical " << m_groups_identical << std::endl;
     }
 
 /*! Sets cutoffs based on types present in the two groups to save some performance from
@@ -822,8 +809,6 @@ void DynamicBondUpdater::setCutoffs()
                 {
                 m_pair_internal_nlist->setRcut(element_1, element_2, m_r_cut);
                 m_pair_internal_nlist->setRcut(element_2, element_1, m_r_cut);
-                std::cout << " cutoffs set " << element_1 << " " << element_2 << " " << m_r_cut
-                          << std::endl;
                 }
             }
         }
