@@ -81,6 +81,9 @@ void export_PotentialPairDPDThermoGeneralWeight(pybind11::module&);
 void export_PotentialExternalWallColloid(pybind11::module&);
 void export_PotentialExternalWallLJ93(pybind11::module&);
 
+void export_PerturbedLennardJonesEvap(pybind11::module&);
+void export_VariantInterpolated(pybind11::module&);
+
 #ifdef ENABLE_HIP
 // bond
 void export_ImagePotentialBondHarmonicGPU(pybind11::module&);
@@ -152,6 +155,10 @@ PYBIND11_MODULE(_azplugins, m)
     // wall
     export_PotentialExternalWallColloid(m);
     export_PotentialExternalWallLJ93(m);
+
+    // evaporation
+    export_PerturbedLennardJonesEvap(m);
+    export_VariantInterpolated(m);
 
 #ifdef ENABLE_HIP
     // bond

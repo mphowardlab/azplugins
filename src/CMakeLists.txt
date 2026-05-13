@@ -5,6 +5,8 @@ set(COMPONENT_NAME azplugins)
 set(_${COMPONENT_NAME}_sources
     ConstantFlow.cc
     export_ImagePotentialBondHarmonic.cc
+    export_PerturbedLennardJonesEvap.cc
+    export_VariantInterpolated.cc
     module.cc
     ParabolicFlow.cc
     VelocityCompute.cc
@@ -32,6 +34,7 @@ set(python_files
     external.py
     flow.py
     pair.py
+    variant.py
     wall.py
     )
 

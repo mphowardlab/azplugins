@@ -57,12 +57,6 @@ template<typename T> class LinearInterpolator2D
             }
         }
 
-    //! Destructor
-    ~LinearInterpolator2D()
-        {
-        delete[] m_data;
-        }
-
     //! Interpolate at (x0, x1)
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar operator()(Scalar x0, Scalar x1) const
         {
@@ -106,12 +100,13 @@ template<typename T> class LinearInterpolator2D
         return c0 * (Scalar(1) - t1) + c1 * t1;
         }
 
-    //! Lower bound for a given dimension
+    //! Lower bound
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar getLo(int dim) const
         {
         return m_lo[dim];
         }
-    //! Upper bound for a given dimension
+
+    //! Upper bound
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar getHi(int dim) const
         {
         return m_hi[dim];

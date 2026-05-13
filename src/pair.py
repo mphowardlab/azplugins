@@ -4,10 +4,13 @@
 
 """Pair potentials."""
 
+import numpy
+
 from hoomd.azplugins import _azplugins
 from hoomd.data.parameterdicts import ParameterDict, TypeParameterDict
 from hoomd.data.typeparam import TypeParameter
 from hoomd.md import pair
+from hoomd.md.force import Force
 from hoomd.variant import Variant
 
 
@@ -424,6 +427,67 @@ class PerturbedLennardJones(pair.Pair):
             ),
         )
         self._add_typeparam(params)
+
+
+class PerturbedLennardJonesEvap(Force):
+    """Perturbed Lennard Jones potential for evaporation"""
+
+    _ext_module = _azplugins
+    _cpp_class_name = "PerturbedLennardJonesEvap"
+
+    def __init__(
+        self,
+        nlist,
+        rcut,
+        epsilon,
+        sigma,
+        scale_factor,
+        energy_shift,
+        attraction_scale_factor_data,
+        attraction_scale_factor_shape,
+        domain,
+        variant,
+    ):
+        super().__init__()
+
+        self._nlist = nlist
+        self._variant = variant
+
+        param_dict = ParameterDict(
+            epsilon=float,
+            sigma=float,
+        )
+
+        param_dict["epsilon"] = float(epsilon)
+        param_dict["sigma"] = float(sigma)
+
+        self._param_dict.update(param_dict)
+
+        self._domain = numpy.asarray(domain, dtype=numpy.float64)
+        self._attraction_scale_factor_data = numpy.asarray(
+            attraction_scale_factor_data, dtype=numpy.float64
+        )
+        self._attraction_scale_factor_shape = numpy.asarray(
+            attraction_scale_factor_shape, dtype=numpy.uint32
+        )
+
+    def _attach_hook(self):
+        self._nlist._attach(self._simulation)
+
+        cls = getattr(self._ext_module, self._cpp_class_name)
+        self._cpp_obj = cls(
+            self._simulation.state._cpp_sys_def,
+            self._nlist._cpp_obj,
+            self.rcut,
+            self.epsilon,
+            self.sigma,
+            self.scale_factor,
+            self.energy_shift,
+            self._attraction_scale_factor_data,
+            self._attraction_scale_factor_shape,
+            self._domain,
+            self._variant,
+        )
 
 
 class TwoPatchMorse(pair.aniso.AnisotropicPair):
