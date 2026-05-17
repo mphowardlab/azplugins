@@ -128,12 +128,20 @@ eulerFromQuat(const quat<Scalar>& q, Scalar& alpha, Scalar& beta, Scalar& gamma)
 
     } // namespace detail
 
+//! Base class for shared reduced-domain bounds.
+class ShapeSymmetry
+    {
+    public:
+    static constexpr Scalar domain_lower[5]
+        = {Scalar(0.0), Scalar(1.0e-5), Scalar(0.0), Scalar(1.0e-5), Scalar(0.0)};
+    };
+
 //! Null symmetry: no reduction.
 /*! Full natural domain:
     theta in [0, 2 pi], phi in [1e-5, pi-1e-5], alpha in [0, 2 pi],
     beta in [1e-5, pi-1e-5], gamma in [0, 2 pi].
 */
-class ShapeSymmetryNull
+class ShapeSymmetryNull : public ShapeSymmetry
     {
     public:
     //! Upper bounds of the reduced domain.
@@ -165,7 +173,7 @@ class ShapeSymmetryNull
     theta in [0, pi/4], phi in [1e-5, pi/2], alpha in [0, 2 pi],
     beta in [1e-5, arccos(1/sqrt(3))], gamma in [0, pi/2].
 */
-class ShapeSymmetryCube
+class ShapeSymmetryCube : public ShapeSymmetry
     {
     public:
     //! Upper bounds of the reduced domain.
@@ -280,10 +288,10 @@ class ShapeSymmetryCube
 
 //! Tetrahedron symmetry evaluator.
 /*! Reduced domain:
-    theta in [0, 2 pi/3], phi in [0, pi], alpha in [0, 2 pi],
-    beta in [0, pi], gamma in [0, 2 pi/3].
+    theta in [0, 2 pi/3], phi in [1e-5, pi], alpha in [0, 2 pi],
+    beta in [1e-5, pi-1e-5], gamma in [0, 2 pi/3].
 */
-class ShapeSymmetryTetrahedron
+class ShapeSymmetryTetrahedron : public ShapeSymmetry
     {
     public:
     //! Upper bounds of the reduced domain.

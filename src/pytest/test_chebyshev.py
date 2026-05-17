@@ -2,8 +2,11 @@
 # Copyright (c) 2021-2025, Auburn University
 # Part of azplugins, released under the BSD 3-Clause License.
 
+"""Chebyshev anisotropic pair potential unit tests."""
+
+import collections
+
 import numpy
-from scipy.interpolate import RegularGridInterpolator
 from scipy.spatial.transform import Rotation
 
 import hoomd
@@ -11,126 +14,101 @@ import hoomd.azplugins
 
 import pytest
 
-# Parameters that are identical across every energy/force/torque test.
-rc = 3.0
-phi_min = 1e-5
-beta_min = 1e-5
 
-terms = numpy.array(
-    [
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 0, 0],
-        [1, 0, 0, 0, 0, 0],
-        [1, 0, 0, 1, 0, 0],
-    ],
-    dtype=numpy.uint32,
-)
-coeffs = numpy.array([1.0, 0.25, 1.5, -1.0], dtype=numpy.float64)
+_DEVICE_PARAMS = ["cpu"]
 
-# r0 data: shape (3, 2, 3, 2, 3) = 108 values.
-r0_data = numpy.array([1, 2.1, 3.2] * 36, dtype=numpy.float64).reshape(3, 2, 3, 2, 3)
+if hoomd.version.gpu_enabled:
+    try:
+        if len(hoomd.device.GPU.get_available_devices()) > 0:
+            _DEVICE_PARAMS.append("gpu")
+    except Exception:
+        pass
 
 
-def rho_to_r(rho, r0, rc):
-    """Invert rho = (1/r - 1/r0) / (1/(r0+rc) - 1/r0) to recover r."""
-    inv_r0 = 1.0 / r0
-    inv_r0_rc = 1.0 / (r0 + rc)
-    inv_r = rho * (inv_r0_rc - inv_r0) + inv_r0
-    return 1.0 / inv_r
+@pytest.fixture(params=_DEVICE_PARAMS)
+def simulation_factory(request):
+    """Create a Simulation on CPU, and on GPU when available."""
+
+    def make_simulation(snapshot):
+        if request.param == "cpu":
+            device = hoomd.device.CPU()
+        else:
+            device = hoomd.device.GPU()
+
+        sim = hoomd.Simulation(device=device, seed=1)
+        sim.create_state_from_snapshot(snapshot)
+        return sim
+
+    return make_simulation
 
 
-def build_simulation(
-    simulation_factory,
-    two_particle_snapshot_factory,
-    pot_cls,
-    r0,
-    rho,
-    theta,
-    phi,
-    alpha,
-    beta,
-    gamma,
-):
-    """Place two particles at the prescribed coordinates and
-    return the attached potential.
+@pytest.fixture
+def two_particle_snapshot_factory():
+    """Create a basic 2-particle snapshot for pair-potential tests."""
 
-    Particle 0 sits at the origin with identity orientation.  Particle 1
-    is placed so that the C++ code sees (rho, theta, phi, alpha, beta,
-    gamma) as the pair's generalised coordinates.  For Null symmetry the
-    caller supplies ``r0`` from the test's own interpolator; for Cube /
-    Tetrahedron tests the caller supplies the reduced-frame ``r0``
-    directly because the input angles need not to be in the reduced
-    coordinates which interpolator expects.
-    """
-    snap = two_particle_snapshot_factory()
-    if snap.communicator.rank == 0:
-        r = rho_to_r(rho, r0, rc)
+    def make_snapshot():
+        snap = hoomd.Snapshot()
 
-        dx = r * numpy.sin(phi) * numpy.cos(theta)
-        dy = r * numpy.sin(phi) * numpy.sin(theta)
-        dz = r * numpy.cos(phi)
+        if snap.communicator.rank == 0:
+            snap.configuration.box = [20, 20, 20, 0, 0, 0]
+            snap.particles.N = 2
+            snap.particles.types = ["A"]
+            snap.particles.typeid[:] = [0, 0]
+            snap.particles.position[:] = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+            snap.particles.orientation[:] = [[1.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0]]
+            snap.particles.moment_inertia[:] = [0.0, 0.0, 0.0]
 
-        q_j = Rotation.from_euler("ZXZ", [alpha, beta, gamma]).as_quat(
-            scalar_first=True
-        )
+        return snap
 
-        snap.particles.position[0] = [0.0, 0.0, 0.0]
-        snap.particles.position[1] = [-dx, -dy, -dz]
-        snap.particles.orientation[0] = [1, 0, 0, 0]
-        snap.particles.orientation[1] = q_j
-        snap.particles.moment_inertia[:] = [0.1, 0.1, 0.1]
+    return make_snapshot
 
-    sim = simulation_factory(snap)
 
-    integrator = hoomd.md.Integrator(dt=0.001)
-    integrator.methods = [hoomd.md.methods.ConstantVolume(hoomd.filter.All())]
-
-    nlist = hoomd.md.nlist.Cell(buffer=1)
-    pot = pot_cls(
-        nlist=nlist,
-        terms=terms,
-        coeffs=coeffs,
-        r0=r0_data,
-        r_cut=rc,
+def good_kwargs():
+    """A set of constructor kwargs known to be valid."""
+    return dict(
+        nlist=hoomd.md.nlist.Cell(buffer=0.4),
+        terms=numpy.zeros((1, 6), dtype=numpy.uint32),
+        coeffs=numpy.zeros((1,), dtype=numpy.float64),
+        r0=numpy.zeros((2, 2, 2, 2, 2), dtype=numpy.float64),
+        r_cut=3.0,
     )
 
-    integrator.forces = [pot]
-    sim.operations.integrator = integrator
-    sim.run(0)
-    return sim, pot
+
+def test_chebyshev_invalid_terms_shape():
+    """Raise ValueError when ``terms`` is not (Nterms, 6)."""
+    kwargs = good_kwargs()
+    kwargs["terms"] = numpy.zeros((1, 5), dtype=numpy.uint32)
+    kwargs["coeffs"] = numpy.zeros((1,), dtype=numpy.float64)
+    with pytest.raises(ValueError, match=r"terms must have shape \(Nterms, 6\)\."):
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential(**kwargs)
 
 
-def check_pair(sim, pot, expected_energy, expected_force, expected_torque):
-    """Compare the C++ output on both particles."""
-    if sim.device.communicator.rank == 0:
-        half_e = 0.5 * expected_energy
-
-        numpy.testing.assert_allclose(pot.energies[0], half_e, atol=1e-3, rtol=1e-3)
-        numpy.testing.assert_allclose(
-            pot.forces[0], expected_force, atol=1e-3, rtol=1e-3
-        )
-        numpy.testing.assert_allclose(
-            pot.torques[0], expected_torque, atol=1e-3, rtol=1e-3
-        )
-
-        numpy.testing.assert_allclose(pot.energies[1], half_e, atol=1e-3, rtol=1e-3)
-        numpy.testing.assert_allclose(
-            pot.forces[1], -expected_force, atol=1e-3, rtol=1e-3
-        )
-        numpy.testing.assert_allclose(
-            pot.torques[1], -expected_torque, atol=1e-3, rtol=1e-3
-        )
+def test_chebyshev_invalid_coeffs_shape():
+    """Raise ValueError when ``coeffs`` length does not match Nterms."""
+    kwargs = good_kwargs()
+    kwargs["terms"] = numpy.zeros((2, 6), dtype=numpy.uint32)
+    kwargs["coeffs"] = numpy.zeros((1,), dtype=numpy.float64)
+    with pytest.raises(ValueError, match=r"coeffs must have shape \(Nterms,\)"):
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential(**kwargs)
 
 
-def check_zero_pair(sim, pot):
-    """Assert that both particles have zero force, torque, and energy."""
-    if sim.device.communicator.rank == 0:
-        numpy.testing.assert_allclose(pot.energies[0], 0.0, atol=1e-10)
-        numpy.testing.assert_allclose(pot.forces[0], [0.0, 0.0, 0.0], atol=1e-10)
-        numpy.testing.assert_allclose(pot.torques[0], [0.0, 0.0, 0.0], atol=1e-10)
-        numpy.testing.assert_allclose(pot.energies[1], 0.0, atol=1e-10)
-        numpy.testing.assert_allclose(pot.forces[1], [0.0, 0.0, 0.0], atol=1e-10)
-        numpy.testing.assert_allclose(pot.torques[1], [0.0, 0.0, 0.0], atol=1e-10)
+def test_chebyshev_invalid_r0_ndim():
+    """Raise ValueError when ``r0`` is not a 5D array."""
+    kwargs = good_kwargs()
+    kwargs["r0"] = numpy.zeros((2, 2, 2, 2), dtype=numpy.float64)
+    with pytest.raises(ValueError, match=r"r0 must be a 5D array\."):
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential(**kwargs)
+
+
+def test_chebyshev_invalid_r0_shape():
+    """Raise ValueError when ``r0`` has a dimension with less than 2 points."""
+    kwargs = good_kwargs()
+    kwargs["r0"] = numpy.zeros((2, 2, 1, 2, 2), dtype=numpy.float64)
+    with pytest.raises(
+        ValueError,
+        match=r"r0 must have at least 2 grid points along each of its 5 dimensions\.",
+    ):
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential(**kwargs)
 
 
 def test_chebyshev_construct_attach_zero(
@@ -190,506 +168,469 @@ def test_chebyshev_construct_attach_zero(
         numpy.testing.assert_array_equal(pot.energies, numpy.zeros((2,)))
 
 
-def good_kwargs():
-    """A set of constructor kwargs known to be valid."""
-    return dict(
-        nlist=hoomd.md.nlist.Cell(buffer=0.4),
-        terms=numpy.zeros((1, 6), dtype=numpy.uint32),
-        coeffs=numpy.zeros((1,), dtype=numpy.float64),
-        r0=numpy.zeros((2, 2, 2, 2, 2), dtype=numpy.float64),
-        r_cut=3.0,
-    )
+# Parameters that are identical across every test.
+rc = 3.0
+phi_min = 1e-5
+beta_min = 1e-5
 
+terms = numpy.array(
+    [
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0],
+        [1, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 0, 0],
+    ],
+    dtype=numpy.uint32,
+)
+coeffs = numpy.array([1.0, 0.25, 1.5, -1.0], dtype=numpy.float64)
 
-def test_chebyshev_invalid_terms_shape():
-    """Raise ValueError when ``terms`` is not (Nterms, 6)."""
-    kwargs = good_kwargs()
-    kwargs["terms"] = numpy.zeros((1, 5), dtype=numpy.uint32)
-    kwargs["coeffs"] = numpy.zeros((1,), dtype=numpy.float64)
-    with pytest.raises(ValueError, match=r"terms must have shape \(Nterms, 6\)\."):
-        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential(**kwargs)
+# r0 data: shape (3, 2, 3, 2, 3) = 108 values.
+r0_data = numpy.array([1, 2.1, 3.2] * 36, dtype=numpy.float64).reshape(3, 2, 3, 2, 3)
 
+PotentialTestCase = collections.namedtuple(
+    "PotentialTestCase",
+    [
+        "name",
+        "potential",
+        "r0",
+        "rho",
+        "theta",
+        "phi",
+        "alpha",
+        "beta",
+        "gamma",
+        "energy",
+        "force",
+        "torque",
+        "zero_output",
+    ],
+)
 
-def test_chebyshev_invalid_coeffs_shape():
-    """Raise ValueError when ``coeffs`` length does not match Nterms."""
-    kwargs = good_kwargs()
-    kwargs["terms"] = numpy.zeros((2, 6), dtype=numpy.uint32)
-    kwargs["coeffs"] = numpy.zeros((1,), dtype=numpy.float64)
-    with pytest.raises(ValueError, match=r"coeffs must have shape \(Nterms,\)"):
-        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential(**kwargs)
-
-
-def test_chebyshev_invalid_r0_ndim():
-    """Raise ValueError when ``r0`` is not a 5D array."""
-    kwargs = good_kwargs()
-    kwargs["r0"] = numpy.zeros((2, 2, 2, 2), dtype=numpy.float64)
-    with pytest.raises(ValueError, match=r"r0 must be a 5D array\."):
-        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential(**kwargs)
-
-
-def test_chebyshev_invalid_r0_shape():
-    """Raise ValueError when ``r0`` has a dimension with less than 2 points."""
-    kwargs = good_kwargs()
-    kwargs["r0"] = numpy.zeros((2, 2, 1, 2, 2), dtype=numpy.float64)
-    with pytest.raises(
-        ValueError,
-        match=r"r0 must have at least 2 grid points along each of its 5 dimensions\.",
-    ):
-        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential(**kwargs)
-
+potential_tests = []
 
 # Null symmetry
-def test_chebyshev_force_torque_energy_null_symmetry(
-    simulation_factory, two_particle_snapshot_factory
-):
-    """Force, torque, and energy with no symmetry reduction."""
-    # r0 interpolator aligned with r0_data's shape (3, 2, 3, 2, 3).
-    theta_grid = numpy.linspace(0, 2 * numpy.pi, 3)
-    phi_grid = numpy.linspace(phi_min, numpy.pi - phi_min, 2)
-    alpha_grid = numpy.linspace(0, 2 * numpy.pi, 3)
-    beta_grid = numpy.linspace(beta_min, numpy.pi - beta_min, 2)
-    gamma_grid = numpy.linspace(0, 2 * numpy.pi, 3)
-
-    r0_interp = RegularGridInterpolator(
-        (theta_grid, phi_grid, alpha_grid, beta_grid, gamma_grid),
-        r0_data,
-        method="linear",
-        bounds_error=False,
-        fill_value=numpy.nan,
-    )
-
-    def run(rho, theta, phi, alpha, beta, gamma):
-        r0 = float(r0_interp(numpy.array([theta, phi, alpha, beta, gamma]))[0])
-        return build_simulation(
-            simulation_factory,
-            two_particle_snapshot_factory,
-            hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential,
-            r0,
-            rho,
-            theta,
-            phi,
-            alpha,
-            beta,
-            gamma,
-        )
-
-    # point 1: interior
-    sim, pot = run(
-        rho=0.2,
-        theta=numpy.pi / 4,
-        phi=numpy.pi / 4,
-        alpha=2 * numpy.pi / 5,
-        beta=numpy.pi / 2,
-        gamma=numpy.pi,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-0.41,
-        expected_force=numpy.array([-1.324, -1.324, -1.872]),
-        expected_torque=numpy.array([0.944, -0.307, -0.271]),
-    )
-
-    # point 2: rho < 0 (clamped for derivatives, extrapolated for energy)
-    sim, pot = run(
-        rho=-0.1,
-        theta=numpy.pi / 4,
-        phi=numpy.pi / 4,
-        alpha=2 * numpy.pi / 5,
-        beta=numpy.pi / 2,
-        gamma=numpy.pi,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-1.67,
-        expected_force=numpy.array([-1.906, -1.906, -2.695]),
-        expected_torque=numpy.array([1.226, -0.398, -0.398]),
-    )
-
-    # point 3: phi at upper boundary
-    sim, pot = run(
-        rho=0.0,
-        theta=numpy.pi / 4,
-        phi=numpy.pi - phi_min,
-        alpha=2 * numpy.pi / 15,
-        beta=numpy.pi / 2,
-        gamma=numpy.pi,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-1.583,
-        expected_force=numpy.array([0.0, 0.0, 3.832]),
-        expected_torque=numpy.array([0.546, -1.226, -0.398]),
-    )
-
-    # point 4: beta at lower boundary
-    sim, pot = run(
-        rho=0.2,
-        theta=numpy.pi / 4,
-        phi=numpy.pi / 4,
-        alpha=2 * numpy.pi / 5,
-        beta=beta_min,
-        gamma=numpy.pi,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-0.41,
-        expected_force=numpy.array([-1.324, -1.324, -1.872]),
-        expected_torque=numpy.array([120148.0, -39038.6, -0.271]),
-    )
-
-    # point 5: interior with rho near 1
-    sim, pot = run(
-        rho=0.95,
-        theta=numpy.pi / 4,
-        phi=numpy.pi / 6,
-        alpha=2 * numpy.pi / 5,
-        beta=numpy.pi / 2,
-        gamma=numpy.pi / 8,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=2.74,
-        expected_force=numpy.array([-0.174, -0.174, -0.427]),
-        expected_torque=numpy.array([0.207, -0.067, 0.207]),
-    )
-
-    # point 6: rho > 1, beyond surface cutoff - all zeros
-    sim, pot = run(
-        rho=1.05,
-        theta=numpy.pi / 4,
-        phi=numpy.pi / 6,
-        alpha=2 * numpy.pi / 5,
-        beta=numpy.pi / 2,
-        gamma=numpy.pi / 8,
-    )
-    check_zero_pair(sim, pot)
-
+potential_tests += [
+    PotentialTestCase(
+        "null_point_1",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential,
+        2.1,
+        0.2,
+        numpy.pi / 4,
+        numpy.pi / 4,
+        2 * numpy.pi / 5,
+        numpy.pi / 2,
+        numpy.pi,
+        -0.41,
+        (-1.324, -1.324, -1.872),
+        (0.944, -0.307, -0.271),
+        False,
+    ),
+    PotentialTestCase(
+        "null_point_2",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential,
+        2.1,
+        -0.1,
+        numpy.pi / 4,
+        numpy.pi / 4,
+        2 * numpy.pi / 5,
+        numpy.pi / 2,
+        numpy.pi,
+        -1.67,
+        (-1.906, -1.906, -2.695),
+        (1.226, -0.398, -0.398),
+        False,
+    ),
+    PotentialTestCase(
+        "null_point_3",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential,
+        2.1,
+        0.0,
+        numpy.pi / 4,
+        numpy.pi - phi_min,
+        2 * numpy.pi / 15,
+        numpy.pi / 2,
+        numpy.pi,
+        -1.583,
+        (0.0, 0.0, 3.832),
+        (0.546, -1.226, -0.398),
+        False,
+    ),
+    PotentialTestCase(
+        "null_point_4",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential,
+        2.1,
+        0.2,
+        numpy.pi / 4,
+        numpy.pi / 4,
+        2 * numpy.pi / 5,
+        beta_min,
+        numpy.pi,
+        -0.41,
+        (-1.324, -1.324, -1.872),
+        (120148.0, -39038.6, -0.271),
+        False,
+    ),
+    PotentialTestCase(
+        "null_point_5",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential,
+        1.1375,
+        0.95,
+        numpy.pi / 4,
+        numpy.pi / 6,
+        2 * numpy.pi / 5,
+        numpy.pi / 2,
+        numpy.pi / 8,
+        2.74,
+        (-0.174, -0.174, -0.427),
+        (0.207, -0.067, 0.207),
+        False,
+    ),
+    PotentialTestCase(
+        "null_point_6",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotential,
+        1.1375,
+        1.05,
+        numpy.pi / 4,
+        numpy.pi / 6,
+        2 * numpy.pi / 5,
+        numpy.pi / 2,
+        numpy.pi / 8,
+        0.0,
+        None,
+        None,
+        True,
+    ),
+]
 
 # Cube symmetry
-def test_chebyshev_force_torque_energy_cube_symmetry(
-    simulation_factory, two_particle_snapshot_factory
-):
-    """Force, torque, and energy with cube symmetry reduction.
-
-    Reduced domain: theta in [0, pi/4], phi in [1e-5, pi/2],
-    alpha in [0, 2 pi], beta in [1e-5, arccos(1/sqrt(3))],
-    gamma in [0, pi/2]."""
-
-    def run(r0, rho, theta, phi, alpha, beta, gamma):
-        return build_simulation(
-            simulation_factory,
-            two_particle_snapshot_factory,
-            hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialCube,
-            r0,
-            rho,
-            theta,
-            phi,
-            alpha,
-            beta,
-            gamma,
-        )
-
-    # point 1: interior
-    sim, pot = run(
-        r0=2.46666667,
-        rho=0.2,
-        theta=numpy.pi / 8,
-        phi=numpy.pi / 5,
-        alpha=2 * numpy.pi / 5,
-        beta=numpy.pi / 6,
-        gamma=numpy.pi / 3,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-0.41,
-        expected_force=numpy.array([-1.335, -0.553, -1.989]),
-        expected_torque=numpy.array([7.395, -2.403, -0.271]),
-    )
-
-    # point 2: rho < 0 (clamped for derivatives, extrapolated for energy)
-    sim, pot = run(
-        r0=2.46666667,
-        rho=-0.1,
-        theta=numpy.pi / 8,
-        phi=numpy.pi / 5,
-        alpha=2 * numpy.pi / 5,
-        beta=numpy.pi / 6,
-        gamma=numpy.pi / 3,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-1.67,
-        expected_force=numpy.array([-1.875, -0.777, -2.793]),
-        expected_torque=numpy.array([9.579, -3.113, -0.398]),
-    )
-
-    # point 3: interior with rho=0
-    sim, pot = run(
-        r0=2.62072583,
-        rho=0.0,
-        theta=2 * numpy.pi / 7,
-        phi=numpy.pi / 9,
-        alpha=2 * numpy.pi / 15,
-        beta=numpy.pi / 4,
-        gamma=numpy.pi / 5,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-0.751,
-        expected_force=numpy.array([-0.518, -0.65, -2.285]),
-        expected_torque=numpy.array([4.223, -0.398, 3.08]),
-    )
-
-    # point 4: theta, phi, and beta out of bound
-    sim, pot = run(
-        r0=2.11254315,
-        rho=0.0,
-        theta=2 * numpy.pi / 7,
-        phi=2 * numpy.pi / 3,
-        alpha=2 * numpy.pi / 15,
-        beta=numpy.pi / 3,
-        gamma=numpy.pi / 5,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-0.427,
-        expected_force=numpy.array([-1.256, -1.575, 1.163]),
-        expected_torque=numpy.array([4.872, -0.906, 0.398]),
-    )
-
-    # point 5: beta at lower boundary, gamma outside the domain
-    sim, pot = run(
-        r0=1.0,
-        rho=0.2,
-        theta=numpy.pi / 4,
-        phi=numpy.pi / 4,
-        alpha=2 * numpy.pi / 5,
-        beta=beta_min,
-        gamma=numpy.pi,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-0.41,
-        expected_force=numpy.array([-2.023, -2.023, -2.861]),
-        expected_torque=numpy.array([6.31798953e05, -2.05283924e05, -0.271]),
-    )
-
-    # point 6: all angles outside the domain (except alpha)
-    sim, pot = run(
-        r0=1.0,
-        rho=0.95,
-        theta=numpy.pi,
-        phi=2 * numpy.pi / 3,
-        alpha=2 * numpy.pi / 5,
-        beta=2 * numpy.pi / 3,
-        gamma=2 * numpy.pi,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=2.61,
-        expected_force=numpy.array([0.363, 0.0, 0.209]),
-        expected_torque=numpy.array([-1.135, 0.369, -0.207]),
-    )
-
-    # point 7: equivalent to point 6 but already in the reduced domain
-    sim, pot = run(
-        r0=1.0,
-        rho=0.95,
-        theta=0.0,
-        phi=1.0471975511965979,
-        alpha=1.8849555921538759,
-        beta=0.5235987755982987,
-        gamma=0.0,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=2.61,
-        expected_force=numpy.array([-0.363, -0.0, -0.209]),
-        expected_torque=numpy.array([1.135, 0.369, 0.207]),
-    )
-
-    # point 8: rho > 1, beyond surface cutoff - all zeros
-    sim, pot = run(
-        r0=1.0,
-        rho=1.05,
-        theta=numpy.pi / 4,
-        phi=numpy.pi / 6,
-        alpha=2 * numpy.pi / 5,
-        beta=numpy.pi / 2,
-        gamma=numpy.pi / 8,
-    )
-    check_zero_pair(sim, pot)
-
+potential_tests += [
+    PotentialTestCase(
+        "cube_point_1",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialCube,
+        2.46666667,
+        0.2,
+        numpy.pi / 8,
+        numpy.pi / 5,
+        2 * numpy.pi / 5,
+        numpy.pi / 6,
+        numpy.pi / 3,
+        -0.41,
+        (-1.335, -0.553, -1.989),
+        (7.395, -2.403, -0.271),
+        False,
+    ),
+    PotentialTestCase(
+        "cube_point_2",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialCube,
+        2.46666667,
+        -0.1,
+        numpy.pi / 8,
+        numpy.pi / 5,
+        2 * numpy.pi / 5,
+        numpy.pi / 6,
+        numpy.pi / 3,
+        -1.67,
+        (-1.875, -0.777, -2.793),
+        (9.579, -3.113, -0.398),
+        False,
+    ),
+    PotentialTestCase(
+        "cube_point_3",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialCube,
+        2.62072583,
+        0.0,
+        2 * numpy.pi / 7,
+        numpy.pi / 9,
+        2 * numpy.pi / 15,
+        numpy.pi / 4,
+        numpy.pi / 5,
+        -0.751,
+        (-0.518, -0.65, -2.285),
+        (4.223, -0.398, 3.08),
+        False,
+    ),
+    PotentialTestCase(
+        "cube_point_4",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialCube,
+        2.11254315,
+        0.0,
+        2 * numpy.pi / 7,
+        2 * numpy.pi / 3,
+        2 * numpy.pi / 15,
+        numpy.pi / 3,
+        numpy.pi / 5,
+        -0.427,
+        (-1.256, -1.575, 1.163),
+        (4.872, -0.906, 0.398),
+        False,
+    ),
+    PotentialTestCase(
+        "cube_point_5",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialCube,
+        1.0,
+        0.2,
+        numpy.pi / 4,
+        numpy.pi / 4,
+        2 * numpy.pi / 5,
+        beta_min,
+        numpy.pi,
+        -0.41,
+        (-2.023, -2.023, -2.861),
+        (6.31798953e05, -2.05283924e05, -0.271),
+        False,
+    ),
+    PotentialTestCase(
+        "cube_point_6",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialCube,
+        1.0,
+        0.95,
+        numpy.pi,
+        2 * numpy.pi / 3,
+        2 * numpy.pi / 5,
+        2 * numpy.pi / 3,
+        2 * numpy.pi,
+        2.61,
+        (0.363, 0.0, 0.209),
+        (-1.135, 0.369, -0.207),
+        False,
+    ),
+    PotentialTestCase(
+        "cube_point_7",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialCube,
+        1.0,
+        0.95,
+        0.0,
+        1.0471975511965979,
+        1.8849555921538759,
+        0.5235987755982987,
+        0.0,
+        2.61,
+        (-0.363, -0.0, -0.209),
+        (1.135, 0.369, 0.207),
+        False,
+    ),
+    PotentialTestCase(
+        "cube_point_8",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialCube,
+        1.0,
+        1.05,
+        numpy.pi / 4,
+        numpy.pi / 6,
+        2 * numpy.pi / 5,
+        numpy.pi / 2,
+        numpy.pi / 8,
+        0.0,
+        None,
+        None,
+        True,
+    ),
+]
 
 # Tetrahedron symmetry
-def test_chebyshev_force_torque_energy_tetrahedron_symmetry(
-    simulation_factory, two_particle_snapshot_factory
+potential_tests += [
+    PotentialTestCase(
+        "tetrahedron_point_1",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialTetrahedron,
+        2.1,
+        0.2,
+        numpy.pi / 8,
+        numpy.pi / 5,
+        2 * numpy.pi / 5,
+        numpy.pi / 6,
+        numpy.pi / 3,
+        -0.41,
+        (-1.437, -0.595, -2.142),
+        (6.111, -1.985, -0.271),
+        False,
+    ),
+    PotentialTestCase(
+        "tetrahedron_point_2",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialTetrahedron,
+        2.1,
+        -0.1,
+        numpy.pi / 8,
+        numpy.pi / 5,
+        2 * numpy.pi / 5,
+        numpy.pi / 6,
+        numpy.pi / 3,
+        -1.67,
+        (-2.07, -0.857, -3.084),
+        (8.013, -2.604, -0.398),
+        False,
+    ),
+    PotentialTestCase(
+        "tetrahedron_point_3",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialTetrahedron,
+        1.66,
+        0.0,
+        3 * numpy.pi / 2,
+        phi_min,
+        2 * numpy.pi / 15,
+        numpy.pi / 4,
+        numpy.pi / 5,
+        -0.75,
+        (0.0, 0.0, -3.182),
+        (2.084, -4.680, -0.398),
+        False,
+    ),
+    PotentialTestCase(
+        "tetrahedron_point_4",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialTetrahedron,
+        2.1,
+        0.65,
+        numpy.pi / 4,
+        numpy.pi / 4,
+        2 * numpy.pi / 5,
+        beta_min,
+        numpy.pi,
+        1.48,
+        (-0.649, -0.649, -0.917),
+        (1.54802229e05, -5.02982930e04, 0.016),
+        False,
+    ),
+    PotentialTestCase(
+        "tetrahedron_point_5",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialTetrahedron,
+        2.1,
+        0.2,
+        numpy.pi / 4,
+        numpy.pi - phi_min,
+        2 * numpy.pi / 5,
+        numpy.pi - beta_min,
+        numpy.pi,
+        -0.41,
+        (0.0, 0.0, 2.647),
+        (2.57516972e05, -8.36723360e04, -0.271),
+        False,
+    ),
+    PotentialTestCase(
+        "tetrahedron_point_6",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialTetrahedron,
+        1.0,
+        0.95,
+        numpy.pi,
+        2 * numpy.pi / 3,
+        2 * numpy.pi / 5,
+        2 * numpy.pi / 3,
+        2 * numpy.pi,
+        1.873,
+        (0.146, 0.0, 0.084),
+        (0.371, -0.120, 0.207),
+        False,
+    ),
+    PotentialTestCase(
+        "tetrahedron_point_7",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialTetrahedron,
+        1.0,
+        0.95,
+        1.0471975511965979,
+        2.0943951023931953,
+        5.445427266222309,
+        2.0943951023931953,
+        0.0,
+        1.873,
+        (-0.073, -0.127, 0.084),
+        (-0.29, -0.261, 0.207),
+        False,
+    ),
+    PotentialTestCase(
+        "tetrahedron_point_8",
+        hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialTetrahedron,
+        1.0,
+        1.05,
+        numpy.pi / 4,
+        numpy.pi / 6,
+        2 * numpy.pi / 5,
+        numpy.pi / 2,
+        numpy.pi / 8,
+        0.0,
+        None,
+        None,
+        True,
+    ),
+]
+
+
+def rho_to_r(rho, r0, rc):
+    """Invert rho = (1/r - 1/r0) / (1/(r0+rc) - 1/r0)."""
+    inv_r0 = 1.0 / r0
+    inv_r0_rc = 1.0 / (r0 + rc)
+    inv_r = rho * (inv_r0_rc - inv_r0) + inv_r0
+    return 1.0 / inv_r
+
+
+@pytest.mark.parametrize("potential_test", potential_tests, ids=lambda x: x.name)
+def test_energy_force_and_torque(
+    simulation_factory, two_particle_snapshot_factory, potential_test
 ):
-    """Force, torque, and energy with tetrahedron symmetry reduction.
+    """Test energy, force, and torque evaluation."""
+    snap = two_particle_snapshot_factory()
+    if snap.communicator.rank == 0:
+        r = rho_to_r(potential_test.rho, potential_test.r0, rc)
 
-    Reduced domain: theta in [0, 2 pi/3], phi in [1e-5, pi],
-    alpha in [0, 2 pi], beta in [1e-5, pi], gamma in [0, 2 pi/3]."""
+        dx = r * numpy.sin(potential_test.phi) * numpy.cos(potential_test.theta)
+        dy = r * numpy.sin(potential_test.phi) * numpy.sin(potential_test.theta)
+        dz = r * numpy.cos(potential_test.phi)
 
-    def run(r0, rho, theta, phi, alpha, beta, gamma):
-        return build_simulation(
-            simulation_factory,
-            two_particle_snapshot_factory,
-            hoomd.azplugins.pair.ChebyshevAnisotropicPairPotentialTetrahedron,
-            r0,
-            rho,
-            theta,
-            phi,
-            alpha,
-            beta,
-            gamma,
-        )
+        q_j = Rotation.from_euler(
+            "ZXZ",
+            [potential_test.alpha, potential_test.beta, potential_test.gamma],
+        ).as_quat(scalar_first=True)
 
-    # point 1: interior
-    sim, pot = run(
-        r0=2.1,
-        rho=0.2,
-        theta=numpy.pi / 8,
-        phi=numpy.pi / 5,
-        alpha=2 * numpy.pi / 5,
-        beta=numpy.pi / 6,
-        gamma=numpy.pi / 3,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-0.41,
-        expected_force=numpy.array([-1.437, -0.595, -2.142]),
-        expected_torque=numpy.array([6.111, -1.985, -0.271]),
-    )
+        snap.particles.position[:] = [[0.0, 0.0, 0.0], [-dx, -dy, -dz]]
+        snap.particles.orientation[:] = [[1, 0, 0, 0], q_j]
+        snap.particles.moment_inertia[:] = [0.1, 0.1, 0.1]
 
-    # point 2: rho < 0 (clamped for derivatives, extrapolated for energy)
-    sim, pot = run(
-        r0=2.1,
-        rho=-0.1,
-        theta=numpy.pi / 8,
-        phi=numpy.pi / 5,
-        alpha=2 * numpy.pi / 5,
-        beta=numpy.pi / 6,
-        gamma=numpy.pi / 3,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-1.67,
-        expected_force=numpy.array([-2.07, -0.857, -3.084]),
-        expected_torque=numpy.array([8.013, -2.604, -0.398]),
-    )
+    sim = simulation_factory(snap)
 
-    # point 3: phi at the boundary and theta is outside the domain
-    sim, pot = run(
-        r0=1.66,
-        rho=0.0,
-        theta=3 * numpy.pi / 2,
-        phi=phi_min,
-        alpha=2 * numpy.pi / 15,
-        beta=numpy.pi / 4,
-        gamma=numpy.pi / 5,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-0.75,
-        expected_force=numpy.array([0.0, 0.0, -3.182]),
-        expected_torque=numpy.array([2.084, -4.680, -0.398]),
-    )
+    integrator = hoomd.md.Integrator(dt=0.001)
+    nve = hoomd.md.methods.ConstantVolume(hoomd.filter.All())
+    integrator.methods = [nve]
 
-    # point 4: beta at the bound and gamma out of bound
-    sim, pot = run(
-        r0=2.1,
-        rho=0.65,
-        theta=numpy.pi / 4,
-        phi=numpy.pi / 4,
-        alpha=2 * numpy.pi / 5,
-        beta=beta_min,
-        gamma=numpy.pi,
+    potential = potential_test.potential(
+        nlist=hoomd.md.nlist.Cell(buffer=1),
+        terms=terms,
+        coeffs=coeffs,
+        r0=r0_data,
+        r_cut=rc,
     )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=1.48,
-        expected_force=numpy.array([-0.649, -0.649, -0.917]),
-        expected_torque=numpy.array([1.54802229e05, -5.02982930e04, 0.016]),
-    )
+    integrator.forces = [potential]
 
-    # point 5: phi and beta at boundary, gamma outside the domain
-    sim, pot = run(
-        r0=2.1,
-        rho=0.2,
-        theta=numpy.pi / 4,
-        phi=numpy.pi - phi_min,
-        alpha=2 * numpy.pi / 5,
-        beta=numpy.pi - beta_min,
-        gamma=numpy.pi,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=-0.41,
-        expected_force=numpy.array([0.0, 0.0, 2.647]),
-        expected_torque=numpy.array([2.57516972e05, -8.36723360e04, -0.271]),
-    )
+    sim.operations.integrator = integrator
+    sim.run(0)
+    if sim.device.communicator.rank == 0:
+        if potential_test.zero_output:
+            numpy.testing.assert_allclose(potential.energies, [0.0, 0.0], atol=1e-10)
+            numpy.testing.assert_allclose(
+                potential.forces,
+                [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+                atol=1e-10,
+            )
+            numpy.testing.assert_allclose(
+                potential.torques,
+                [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+                atol=1e-10,
+            )
+        else:
+            e = potential_test.energy
+            f = numpy.array(potential_test.force)
+            T = numpy.array(potential_test.torque)
 
-    # point 6: all angles outside the domain (except alpha)
-    sim, pot = run(
-        r0=1.0,
-        rho=0.95,
-        theta=numpy.pi,
-        phi=2 * numpy.pi / 3,
-        alpha=2 * numpy.pi / 5,
-        beta=2 * numpy.pi / 3,
-        gamma=2 * numpy.pi,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=1.873,
-        expected_force=numpy.array([0.146, 0.0, 0.084]),
-        expected_torque=numpy.array([0.371, -0.120, 0.207]),
-    )
-
-    # point 7: equivalent to point 6 but already in the reduced domain
-    sim, pot = run(
-        r0=1.0,
-        rho=0.95,
-        theta=1.0471975511965979,
-        phi=2.0943951023931953,
-        alpha=5.445427266222309,
-        beta=2.0943951023931953,
-        gamma=0.0,
-    )
-    check_pair(
-        sim,
-        pot,
-        expected_energy=1.873,
-        expected_force=numpy.array([-0.073, -0.127, 0.084]),
-        expected_torque=numpy.array([-0.29, -0.261, 0.207]),
-    )
-
-    # point 8: rho > 1, beyond surface cutoff - all zeros
-    sim, pot = run(
-        r0=1.0,
-        rho=1.05,
-        theta=numpy.pi / 4,
-        phi=numpy.pi / 6,
-        alpha=2 * numpy.pi / 5,
-        beta=numpy.pi / 2,
-        gamma=numpy.pi / 8,
-    )
-    check_zero_pair(sim, pot)
+            numpy.testing.assert_allclose(
+                potential.energies,
+                [0.5 * e, 0.5 * e],
+                atol=1e-3,
+                rtol=1e-3,
+            )
+            numpy.testing.assert_allclose(
+                potential.forces,
+                [f, -f],
+                atol=1e-3,
+                rtol=1e-3,
+            )
+            numpy.testing.assert_allclose(
+                potential.torques,
+                [T, -T],
+                atol=1e-3,
+                rtol=1e-3,
+            )

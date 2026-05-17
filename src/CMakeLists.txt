@@ -173,6 +173,14 @@ foreach(_symmetry ${_chebyshev_symmetries})
                    @ONLY)
     set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources}
         export_ChebyshevAnisotropicPairPotential${_symmetry}.cc)
+
+    if (ENABLE_HIP)
+        configure_file(export_ChebyshevAnisotropicPairPotentialGPU.cc.inc
+                       export_ChebyshevAnisotropicPairPotential${_symmetry}GPU.cc
+                       @ONLY)
+        set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources}
+            export_ChebyshevAnisotropicPairPotential${_symmetry}GPU.cc)
+    endif()
 endforeach()
 
 # process velocity field geometries

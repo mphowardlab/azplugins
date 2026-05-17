@@ -101,6 +101,9 @@ void export_SphericalHarmonicBarrierGPU(pybind11::module&);
 
 // pair
 void export_AnisoPotentialPairTwoPatchMorseGPU(pybind11::module&);
+void export_ChebyshevAnisotropicPairPotentialNullGPU(pybind11::module&);
+void export_ChebyshevAnisotropicPairPotentialCubeGPU(pybind11::module&);
+void export_ChebyshevAnisotropicPairPotentialTetrahedronGPU(pybind11::module&);
 void export_PotentialPairColloidGPU(pybind11::module&);
 void export_PotentialPairExpandedYukawaGPU(pybind11::module&);
 void export_PotentialPairHertzGPU(pybind11::module&);
@@ -176,6 +179,9 @@ PYBIND11_MODULE(_azplugins, m)
 
     // pair
     export_AnisoPotentialPairTwoPatchMorseGPU(m);
+    export_ChebyshevAnisotropicPairPotentialNullGPU(m);
+    export_ChebyshevAnisotropicPairPotentialCubeGPU(m);
+    export_ChebyshevAnisotropicPairPotentialTetrahedronGPU(m);
     export_PotentialPairColloidGPU(m);
     export_PotentialPairExpandedYukawaGPU(m);
     export_PotentialPairHertzGPU(m);

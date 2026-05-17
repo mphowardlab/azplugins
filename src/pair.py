@@ -5,11 +5,13 @@
 """Pair potentials."""
 
 import numpy
+import hoomd
 from hoomd.azplugins import _azplugins
 from hoomd.data.parameterdicts import ParameterDict, TypeParameterDict
 from hoomd.data.typeparam import TypeParameter
 from hoomd.md import pair
 from hoomd.md.force import Force
+from hoomd.md import _md
 from hoomd.variant import Variant
 
 
@@ -58,7 +60,13 @@ class ChebyshevAnisotropicPairPotential(Force):
     def _attach_hook(self):
         self._nlist._attach(self._simulation)
 
-        cls = getattr(self._ext_module, self._cpp_class_name)
+        if isinstance(self._simulation.device, hoomd.device.CPU):
+            cls = getattr(self._ext_module, self._cpp_class_name)
+            self._nlist._cpp_obj.setStorageMode(_md.NeighborList.storageMode.half)
+        else:
+            cls = getattr(self._ext_module, self._cpp_class_name + "GPU")
+            self._nlist._cpp_obj.setStorageMode(_md.NeighborList.storageMode.full)
+
         self._cpp_obj = cls(
             self._simulation.state._cpp_sys_def,
             self._nlist._cpp_obj,
@@ -69,6 +77,9 @@ class ChebyshevAnisotropicPairPotential(Force):
         )
 
         super()._attach_hook()
+
+    def _detach_hook(self):
+        self._nlist._detach()
 
 
 class ChebyshevAnisotropicPairPotentialCube(ChebyshevAnisotropicPairPotential):
