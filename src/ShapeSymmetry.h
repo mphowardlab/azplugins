@@ -128,28 +128,31 @@ eulerFromQuat(const quat<Scalar>& q, Scalar& alpha, Scalar& beta, Scalar& gamma)
 
     } // namespace detail
 
-//! Base class for shared reduced-domain bounds.
-class ShapeSymmetry
-    {
-    public:
-    static constexpr Scalar domain_lower[5]
-        = {Scalar(0.0), Scalar(1.0e-5), Scalar(0.0), Scalar(1.0e-5), Scalar(0.0)};
-    };
-
 //! Null symmetry: no reduction.
 /*! Full natural domain:
     theta in [0, 2 pi], phi in [1e-5, pi-1e-5], alpha in [0, 2 pi],
     beta in [1e-5, pi-1e-5], gamma in [0, 2 pi].
 */
-class ShapeSymmetryNull : public ShapeSymmetry
+class ShapeSymmetryNull
     {
     public:
-    //! Upper bounds of the reduced domain.
-    static constexpr Scalar domain_upper[5] = {Scalar(2.0 * M_PI),
-                                               Scalar(M_PI) - Scalar(1e-5),
-                                               Scalar(2.0 * M_PI),
-                                               Scalar(M_PI) - Scalar(1e-5),
-                                               Scalar(2.0 * M_PI)};
+    //! Lower bound of the reduced domain for angular coordinate i (0..4).
+    static constexpr Scalar domain_lower(unsigned int i)
+        {
+        const Scalar v[5] = {Scalar(0.0), Scalar(1.0e-5), Scalar(0.0), Scalar(1.0e-5), Scalar(0.0)};
+        return v[i];
+        }
+
+    //! Upper bound of the reduced domain for angular coordinate i (0..4)
+    static constexpr Scalar domain_upper(unsigned int i)
+        {
+        const Scalar v[5] = {Scalar(2.0 * M_PI),
+                             Scalar(M_PI) - Scalar(1e-5),
+                             Scalar(2.0 * M_PI),
+                             Scalar(M_PI) - Scalar(1e-5),
+                             Scalar(2.0 * M_PI)};
+        return v[i];
+        }
 
 #ifndef __HIPCC__
     static std::string getName()
@@ -173,15 +176,26 @@ class ShapeSymmetryNull : public ShapeSymmetry
     theta in [0, pi/4], phi in [1e-5, pi/2], alpha in [0, 2 pi],
     beta in [1e-5, arccos(1/sqrt(3))], gamma in [0, pi/2].
 */
-class ShapeSymmetryCube : public ShapeSymmetry
+class ShapeSymmetryCube
     {
     public:
-    //! Upper bounds of the reduced domain.
-    static constexpr Scalar domain_upper[5] = {Scalar(M_PI / 4.0),
-                                               Scalar(M_PI / 2.0),
-                                               Scalar(2.0 * M_PI),
-                                               Scalar(0.9553166181245093),
-                                               Scalar(M_PI / 2.0)};
+    //! Lower bound of the reduced domain for angular coordinate i (0..4).
+    static constexpr Scalar domain_lower(unsigned int i)
+        {
+        const Scalar v[5] = {Scalar(0.0), Scalar(1.0e-5), Scalar(0.0), Scalar(1.0e-5), Scalar(0.0)};
+        return v[i];
+        }
+
+    //! Upper bound of the reduced domain for angular coordinate i (0..4).
+    static constexpr Scalar domain_upper(unsigned int i)
+        {
+        const Scalar v[5] = {Scalar(M_PI / 4.0),
+                             Scalar(M_PI / 2.0),
+                             Scalar(2.0 * M_PI),
+                             Scalar(0.9553166181245093),
+                             Scalar(M_PI / 2.0)};
+        return v[i];
+        }
 
 #ifndef __HIPCC__
     static std::string getName()
@@ -291,15 +305,26 @@ class ShapeSymmetryCube : public ShapeSymmetry
     theta in [0, 2 pi/3], phi in [1e-5, pi], alpha in [0, 2 pi],
     beta in [1e-5, pi-1e-5], gamma in [0, 2 pi/3].
 */
-class ShapeSymmetryTetrahedron : public ShapeSymmetry
+class ShapeSymmetryTetrahedron
     {
     public:
-    //! Upper bounds of the reduced domain.
-    static constexpr Scalar domain_upper[5] = {Scalar(2.0 * M_PI / 3.0),
-                                               Scalar(M_PI) - Scalar(1e-5),
-                                               Scalar(2.0 * M_PI),
-                                               Scalar(M_PI - Scalar(1e-5)),
-                                               Scalar(2.0 * M_PI / 3.0)};
+    //! Lower bound of the reduced domain for angular coordinate i (0..4).
+    static constexpr Scalar domain_lower(unsigned int i)
+        {
+        const Scalar v[5] = {Scalar(0.0), Scalar(1.0e-5), Scalar(0.0), Scalar(1.0e-5), Scalar(0.0)};
+        return v[i];
+        }
+
+    //! Upper bound of the reduced domain for angular coordinate i (0..4).
+    static constexpr Scalar domain_upper(unsigned int i)
+        {
+        const Scalar v[5] = {Scalar(2.0 * M_PI / 3.0),
+                             Scalar(M_PI) - Scalar(1e-5),
+                             Scalar(2.0 * M_PI),
+                             Scalar(M_PI - Scalar(1e-5)),
+                             Scalar(2.0 * M_PI / 3.0)};
+        return v[i];
+        }
 
 #ifndef __HIPCC__
     static std::string getName()

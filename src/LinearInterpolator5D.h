@@ -190,8 +190,10 @@ template<typename T> class LinearInterpolator5D
                 {
                 out[i] = in[2 * i] * omt + in[2 * i + 1] * t;
                 }
-            // Swap input/output
-            std::swap(in, out);
+            // Swap input/output (manual swap; std::swap is host-only)
+            Scalar* tmp = in;
+            in = out;
+            out = tmp;
             len = out_len;
             }
 

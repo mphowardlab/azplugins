@@ -80,7 +80,9 @@ inline void chebEvaluate(Scalar x, unsigned int max_deg, Scalar* T, Scalar* dT)
 
 //! Chebyshev anisotropic pair potential, templated on a symmetry reducer.
 /*!
- * \tparam ShapeSymmetryT A class providing a static \c domain_upper[5] array
+ * \tparam ShapeSymmetryT A class providing static methods
+ *         \c domain_lower(i) and \c domain_upper(i) returning the bounds
+ *         of the redcued domain for the i-th angular coordinate (0..4),
  *         and a static \c reduce(theta, phi, alpha, beta, gamma) method that
  *         maps the angles into a fundamental domain and returns the applied
  *         rotation as a quaternion.  See \c ShapeSymmetry.h.
@@ -278,7 +280,7 @@ void ChebyshevAnisotropicPairPotential<ShapeSymmetryT>::initializeChebyshevData(
     for (unsigned int d = 0; d < num_angle_coordinates; ++d)
         {
         m_cheb_scale[d + 1]
-            = Scalar(2) / (ShapeSymmetryT::domain_upper[d] - ShapeSymmetryT::domain_lower[d]);
+            = Scalar(2) / (ShapeSymmetryT::domain_upper(d) - ShapeSymmetryT::domain_lower(d));
         }
 
     m_max_deg_global = 0;
@@ -329,10 +331,18 @@ void ChebyshevAnisotropicPairPotential<ShapeSymmetryT>::computeForces(uint64_t t
     const Scalar nlist_rcutsq = m_nlist_r_cut * m_nlist_r_cut;
     const Scalar fd_step = Scalar(1.0e-6);
 
+    Scalar domain_lower[num_angle_coordinates];
+    Scalar domain_upper[num_angle_coordinates];
+    for (unsigned int d = 0; d < num_angle_coordinates; ++d)
+        {
+        domain_lower[d] = ShapeSymmetryT::domain_lower(d);
+        domain_upper[d] = ShapeSymmetryT::domain_upper(d);
+        }
+
     LinearInterpolator5D<Scalar> interp(h_r0_data.data,
                                         h_r0_shape.data,
-                                        ShapeSymmetryT::domain_lower,
-                                        ShapeSymmetryT::domain_upper);
+                                        domain_lower,
+                                        domain_upper);
 
     m_force.zeroFill();
     m_torque.zeroFill();
@@ -345,16 +355,15 @@ void ChebyshevAnisotropicPairPotential<ShapeSymmetryT>::computeForces(uint64_t t
     //! Euler-angle singularity tolerance for the alpha/gamma extraction.
     const Scalar euler_singularity_tol = Scalar(1e-7);
 
-    const Scalar phi_eval_min = ShapeSymmetryT::domain_lower[1];
-    const Scalar phi_eval_max = ShapeSymmetryT::domain_upper[1];
-    const Scalar beta_eval_min = ShapeSymmetryT::domain_lower[3];
-    const Scalar beta_eval_max = ShapeSymmetryT::domain_upper[3];
+    const Scalar phi_eval_min = domain_lower[1];
+    const Scalar phi_eval_max = domain_upper[1];
+    const Scalar beta_eval_min = domain_lower[3];
+    const Scalar beta_eval_max = domain_upper[3];
 
     for (unsigned int i = 0; i < N; ++i)
         {
         // Per-pair position and orientation are loaded inside the loop after
         // sorting by tag (on full lists)
-
         // Initialize particle force, torque, and energy
         Scalar3 fi = make_scalar3(0, 0, 0);
         Scalar3 ti = make_scalar3(0, 0, 0);
@@ -373,6 +382,7 @@ void ChebyshevAnisotropicPairPotential<ShapeSymmetryT>::computeForces(uint64_t t
             unsigned int eval_a = i;
             unsigned int eval_b = j;
             bool i_is_eval_a = true;
+            if (!use_third_law)
                 {
                 const unsigned int tag_i = h_tag.data[i];
                 const unsigned int tag_j = h_tag.data[j];
@@ -410,7 +420,7 @@ void ChebyshevAnisotropicPairPotential<ShapeSymmetryT>::computeForces(uint64_t t
             const quat<Scalar> q_rel = q_a_conj * q_b;
 
             // Convert position to spherical coordinates
-            // Skip overlapping particles
+            // Skip overlapping particles.
             const Scalar r = fast::sqrt(dot(dx_body, dx_body));
             if (r < Scalar(1e-12))
                 {
@@ -469,7 +479,7 @@ void ChebyshevAnisotropicPairPotential<ShapeSymmetryT>::computeForces(uint64_t t
             const quat<Scalar> sym_transformation
                 = ShapeSymmetryT::reduce(theta, phi, alpha, beta, gamma);
 
-            // Move phi and beta away from 0 and pi to avoid 1/sin(beta or phi)
+            // check phi and beta away from 0 and pi to avoid 1/sin(beta or phi)
             // singularity in the Jacobian (used the same threshold as beta).
             if (beta < beta_eval_min)
                 beta = beta_eval_min;
@@ -527,9 +537,7 @@ void ChebyshevAnisotropicPairPotential<ShapeSymmetryT>::computeForces(uint64_t t
             const Scalar ang_coords[num_angle_coordinates] = {theta, phi, alpha, beta, gamma};
             for (unsigned int c = 0; c < 5; ++c)
                 {
-                chebEvaluate(chebScale(ang_coords[c],
-                                       ShapeSymmetryT::domain_lower[c],
-                                       ShapeSymmetryT::domain_upper[c]),
+                chebEvaluate(chebScale(ang_coords[c], domain_lower[c], domain_upper[c]),
                              m_max_deg[c + 1],
                              m_cheb_T_flat.data() + m_cheb_idx(0, c + 1),
                              m_cheb_dT_flat.data() + m_cheb_idx(0, c + 1));
@@ -642,14 +650,14 @@ void ChebyshevAnisotropicPairPotential<ShapeSymmetryT>::computeForces(uint64_t t
             // Newton's third law for half neighbor list
             if (use_third_law && j < N_local)
                 {
-                h_force.data[j].x -= sign * f_x;
-                h_force.data[j].y -= sign * f_y;
-                h_force.data[j].z -= sign * f_z;
+                h_force.data[j].x -= f_x;
+                h_force.data[j].y -= f_y;
+                h_force.data[j].z -= f_z;
                 h_force.data[j].w += Scalar(0.5) * u_energy;
 
-                h_torque.data[j].x -= sign * tau_x;
-                h_torque.data[j].y -= sign * tau_y;
-                h_torque.data[j].z -= sign * tau_z;
+                h_torque.data[j].x -= tau_x;
+                h_torque.data[j].y -= tau_y;
+                h_torque.data[j].z -= tau_z;
                 }
             }
 
