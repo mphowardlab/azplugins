@@ -69,6 +69,7 @@ class DynamicBond(hoomd.operation.Updater):
         nlist,
         group_1,
         group_2,
+        update_exclusions=True,
         bond_type=None,
         max_bonds_group_1=None,
         max_bonds_group_2=None,
@@ -83,6 +84,7 @@ class DynamicBond(hoomd.operation.Updater):
             nlist=OnlyTypes(hoomd.md.nlist.NeighborList, strict=True, allow_none=False),
             group_1=OnlyTypes(hoomd.filter.ParticleFilter, allow_none=False),
             group_2=OnlyTypes(hoomd.filter.ParticleFilter, allow_none=False),
+            update_exclusions=OnlyTypes(bool,allow_none=True),
             max_bonds_group_1=OnlyTypes(int, allow_none=True),
             max_bonds_group_2=OnlyTypes(int, allow_none=True),
             bond_type=OnlyTypes(int, strict=True, allow_none=True),
@@ -96,6 +98,7 @@ class DynamicBond(hoomd.operation.Updater):
                 nlist=nlist,
                 group_1=group_1,
                 group_2=group_2,
+                update_exclusions=update_exclusions,
                 max_bonds_group_1=max_bonds_group_1,
                 max_bonds_group_2=max_bonds_group_2,
                 bond_type=bond_type,
@@ -105,7 +108,6 @@ class DynamicBond(hoomd.operation.Updater):
         )
 
         self._param_dict.update(params)
-        # self.set_params(r_cut,probability,bond_type,max_bonds_1,max_bonds_2,nlist)
 
     @property
     def bond_type(self):
@@ -182,6 +184,7 @@ class DynamicBond(hoomd.operation.Updater):
             sim.state._cpp_sys_def,
             self.trigger,
             self.nlist._cpp_obj,
+            self.update_exclusions,
             group_1,
             group_2,
             self.seed,
