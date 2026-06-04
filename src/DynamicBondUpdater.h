@@ -192,11 +192,10 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
     virtual void filterPossibleBonds();
 
     bool CheckisExistingLegalBond(Scalar3 i); // this acesses info in m_existing_bonds_list_tag.
-                                              // todo: rename to something sensible
+
     void calculateExistingBonds();
     void makeBonds(uint64_t timestep);
 
-    void AddtoExistingBonds(unsigned int tag1, unsigned int tag2);
     bool isExistingBond(unsigned int tag1,
                         unsigned int tag2); // this acesses info in m_existing_bonds_list_tag
     void checkBoxSize();
