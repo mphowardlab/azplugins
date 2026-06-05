@@ -12,6 +12,7 @@ Maintainers
 
 Contributors
 ------------
+* Jinny Cha
 * Mohammadreza Fakhraei
 * Arjun Goswami
 * Brandon Jeong

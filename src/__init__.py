@@ -6,4 +6,4 @@
 
 from hoomd.azplugins import bond, compute, external, flow, pair, wall
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
