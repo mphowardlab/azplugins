@@ -30,8 +30,7 @@ namespace azplugins
  */
 DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                                        std::shared_ptr<Trigger> trigger,
-                                       std::shared_ptr<md::NeighborList> pair_nlist,
-                                       bool update_exclusions,
+                                      // std::shared_ptr<md::NeighborList> pair_nlist,
                                        std::shared_ptr<ParticleGroup> group_1,
                                        std::shared_ptr<ParticleGroup> group_2,
                                        uint16_t seed)
@@ -45,8 +44,8 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
            m_max_bonds_group_1(0),
            m_max_bonds_group_2(0),
            m_seed(seed),
-           m_pair_nlist(pair_nlist),
-           m_pair_nlist_exclusions_set(update_exclusions),
+         //  m_pair_nlist(pair_nlist),
+           m_pair_nlist_exclusions_set(false),
            m_box_changed(true),
            m_max_N_changed(true)
     {
@@ -75,8 +74,7 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
 
 DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                          std::shared_ptr<Trigger> trigger,
-                         std::shared_ptr<md::NeighborList> pair_nlist,
-                         bool update_exclusions,
+                         //std::shared_ptr<md::NeighborList> pair_nlist,
                          std::shared_ptr<ParticleGroup> group_1,
                          std::shared_ptr<ParticleGroup> group_2,
                          uint16_t seed,
@@ -96,8 +94,8 @@ DynamicBondUpdater::DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
          m_max_bonds_group_1(max_bonds_group_1),
          m_max_bonds_group_2(max_bonds_group_2),
          m_seed(seed),
-         m_pair_nlist(pair_nlist),
-         m_pair_nlist_exclusions_set(update_exclusions),
+       //  m_pair_nlist(pair_nlist),
+         m_pair_nlist_exclusions_set(false),
          m_box_changed(true),
          m_max_N_changed(true)
     {
@@ -574,14 +572,12 @@ void DynamicBondUpdater::makeBonds(uint64_t timestep)
           h_n_existing_bonds.data[tag_j]++;
 
           }
-          // END DynamicBondUpdater::AddtoExistingBonds
-
-
           if (m_pair_nlist_exclusions_set)
             {
             m_pair_nlist -> addExclusion(tag_i,tag_j);
-            m_pair_internal_nlist -> addExclusion(tag_i,tag_j);
             }
+          // the internal neigh list should always get the exclusions updates to not re-find already existing bonds over and over
+          m_pair_internal_nlist -> addExclusion(tag_i,tag_j);
         }
       }
 
@@ -780,15 +776,13 @@ void export_DynamicBondUpdater(pybind11::module& m)
       "DynamicBondUpdater")
     .def(pybind11::init<std::shared_ptr<SystemDefinition>,
       std::shared_ptr<Trigger>,
-      std::shared_ptr<md::NeighborList>,
-      bool,
+      //std::shared_ptr<md::NeighborList>,
       std::shared_ptr<ParticleGroup>,
       std::shared_ptr<ParticleGroup>,
       uint16_t>())
     .def(pybind11::init<std::shared_ptr<SystemDefinition>,
       std::shared_ptr<Trigger>,
-      std::shared_ptr<md::NeighborList>,
-      bool,
+      //std::shared_ptr<md::NeighborList>,
       std::shared_ptr<ParticleGroup>,
       std::shared_ptr<ParticleGroup>,
       uint16_t,
@@ -800,6 +794,7 @@ void export_DynamicBondUpdater(pybind11::module& m)
       .def_property("r_cut", &DynamicBondUpdater::getRcut, &DynamicBondUpdater::setRcut)
       .def_property("probability", &DynamicBondUpdater::getProbability, &DynamicBondUpdater::setProbability)
       .def_property("bond_type",&DynamicBondUpdater::getBondType, &DynamicBondUpdater::setBondType)
+      .def("setNlist",&DynamicBondUpdater::setNeighborList)
       .def_property("max_bonds_group_1", &DynamicBondUpdater::getMaxBondsGroup1, &DynamicBondUpdater::setMaxBondsGroup1)
       .def_property("max_bonds_group_2", &DynamicBondUpdater::getMaxBondsGroup2, &DynamicBondUpdater::setMaxBondsGroup2);
     }

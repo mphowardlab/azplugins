@@ -15,10 +15,8 @@ def test_setters_getters(simulation_factory, one_particle_snapshot_factory):
         r_cut=1,
         trigger=hoomd.trigger.Periodic(period=10),
         bond_type=0,
-        group_1=hoomd.filter.All(),
-        group_2=hoomd.filter.All(),
-        max_bonds_group_1=0,
-        max_bonds_group_2=0,
+        groups=[hoomd.filter.All()],
+        max_bonds = [0],
     )
 
     assert numpy.equal(u.r_cut, 1)
@@ -54,10 +52,8 @@ def test_form_bonds_same_group(simulation_factory):
         r_cut=1.1,
         trigger=hoomd.trigger.Periodic(period=1),
         bond_type=0,
-        group_1=group,
-        group_2=group,
-        max_bonds_group_1=2,
-        max_bonds_group_2=2,
+        groups=[group],
+        max_bonds=[2]
     )
 
     # test bond formation. All are in the same group, so bonds should be formed
@@ -123,10 +119,8 @@ def test_form_bonds_same_group_priority(simulation_factory):
         r_cut=1.1,
         trigger=hoomd.trigger.Periodic(period=1),
         bond_type=0,
-        group_1=group,
-        group_2=group,
-        max_bonds_group_1=2,
-        max_bonds_group_2=2,
+        groups=[group],
+        max_bonds=[2]
     )
 
     # test bond formation. All are in the same group, so bonds should be formed
@@ -173,10 +167,8 @@ def test_update_bond_two_groups(simulation_factory):
         r_cut=1.0,
         trigger=hoomd.trigger.Periodic(period=1),
         bond_type=0,
-        group_1=group_1,
-        group_2=group_2,
-        max_bonds_group_1=1,
-        max_bonds_group_2=2,
+        groups=[group_1,group_2],
+        max_bonds=[1,2],
     )
 
     # test bond formation between particle 1-2

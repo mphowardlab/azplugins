@@ -53,10 +53,8 @@ class DynamicBond(hoomd.operation.Updater):
                 nlist=nl,
                 r_cut=1.0,
                 bond_type=0,
-                group_1=hoomd.group.type(type="A"),
-                group_2=hoomd.group.type(type="B"),
-                max_bonds_1=3,
-                max_bonds_2=2,
+                groups=[hoomd.group.type(type="A"),hoomd.group.type(type="B")],
+                max_bonds=[2,3]
             )
     """
 
@@ -66,41 +64,32 @@ class DynamicBond(hoomd.operation.Updater):
     def __init__(
         self,
         trigger,
-        nlist,
-        group_1,
-        group_2,
-        update_exclusions=True,
-        bond_type=None,
-        max_bonds_group_1=None,
-        max_bonds_group_2=None,
-        r_cut=None,
+        groups,
+        max_bonds,
+        bond_type,
+        nlist = None,
+        r_cut=1.0,
         seed=0,
-        probability=1,
+        probability=1.0,
     ):
         super().__init__(trigger)
 
         params = ParameterDict(
-            r_cut=OnlyTypes(float, allow_none=True),
-            nlist=OnlyTypes(hoomd.md.nlist.NeighborList, strict=True, allow_none=False),
-            group_1=OnlyTypes(hoomd.filter.ParticleFilter, allow_none=False),
-            group_2=OnlyTypes(hoomd.filter.ParticleFilter, allow_none=False),
-            update_exclusions=OnlyTypes(bool,allow_none=True),
-            max_bonds_group_1=OnlyTypes(int, allow_none=True),
-            max_bonds_group_2=OnlyTypes(int, allow_none=True),
-            bond_type=OnlyTypes(int, strict=True, allow_none=True),
+            r_cut=OnlyTypes(float, allow_none=False),
+            nlist=OnlyTypes(hoomd.md.nlist.NeighborList, strict=True, allow_none=True),
+            groups=list(groups),
+            max_bonds =list(max_bonds),
+            bond_type=OnlyTypes(int, strict=True, allow_none=False),
             seed=OnlyTypes(int, strict=True, allow_none=False),
-            probability=float(probability),
+            probability=OnlyTypes(float, strict=False,allow_none=True),
         )
 
         params.update(
             dict(
                 r_cut=r_cut,
                 nlist=nlist,
-                group_1=group_1,
-                group_2=group_2,
-                update_exclusions=update_exclusions,
-                max_bonds_group_1=max_bonds_group_1,
-                max_bonds_group_2=max_bonds_group_2,
+                groups=groups,
+                max_bonds=max_bonds,
                 bond_type=bond_type,
                 seed=seed,
                 probability=probability,
@@ -108,6 +97,52 @@ class DynamicBond(hoomd.operation.Updater):
         )
 
         self._param_dict.update(params)
+
+    def _parse_groups(self,vec_groups,vec_max_bonds,sim):
+        """Converts Groups depending if there is one or two given.
+
+        Args:
+            vec_groups (Sequence[filter]): A sequence of length 2 or 1 of type ``hoomd.filter.ParticleFilter``.
+            vec_max_bonds(Sequence[int]): A sequence of length 2 or 1 of type ``int``.
+        """
+        try:
+            l_vec = len(vec_groups)
+        except:
+            raise ValueError("Expected array of hoomd.filter.ParticleFilter for argument `groups`.")
+        if l_vec == 1:
+            if isinstance(vec_groups[0], hoomd.filter.ParticleFilter):
+                self.group_1 = sim.state._get_group(vec_groups[0])
+                self.group_2 = sim.state._get_group(vec_groups[0])
+                self._param_dict["group_1"] = self.group_1
+                self._param_dict["group_2"] = self.group_2
+                if len(vec_max_bonds) !=1:
+                    raise ValueError("Expected array[int] of same length as `groups` for argument `max_bonds`.")
+                else:
+                    self.max_bonds_group_1 = vec_max_bonds[0]
+                    self._param_dict["max_bonds_group_1"] = vec_max_bonds[0]
+                    self.max_bonds_group_2 = vec_max_bonds[0]
+                    self._param_dict["max_bonds_group_2"] = vec_max_bonds[0]
+            else:
+                raise ValueError("Expected array of hoomd.filter.ParticleFilter for argument `groups`.")
+        elif l_vec == 2:
+            if isinstance(vec_groups[0], hoomd.filter.ParticleFilter) and\
+               isinstance(vec_groups[1], hoomd.filter.ParticleFilter):
+                self.group_1 = sim.state._get_group(vec_groups[0])
+                self.group_2 = sim.state._get_group(vec_groups[1])
+                self._param_dict["group_1"] = self.group_1
+                self._param_dict["group_2"] = self.group_2
+                if len(vec_max_bonds) != 2:
+                    raise ValueError("Expected array[int] of same length as `groups` for argument `max_bonds`.")
+                else:
+                    self.max_bonds_group_1 = vec_max_bonds[0]
+                    self._param_dict["max_bonds_group_1"] = vec_max_bonds[0]
+                    self.max_bonds_group_2 = vec_max_bonds[1]
+                    self._param_dict["max_bonds_group_2"] = vec_max_bonds[1]
+            else:
+                raise ValueError("Expected array of hoomd.filter.ParticleFilter for argument `groups`.")
+        else:
+            raise ValueError(
+                "Expected an array of one or two hoomd.filter.ParticleFilter for argument `groups`.")
 
     @property
     def bond_type(self):
@@ -140,54 +175,34 @@ class DynamicBond(hoomd.operation.Updater):
         self._cpp_obj.r_cut = value
         self._param_dict["r_cut"] = value
 
-    @property
-    def max_bonds_group_1(self):
-        """max_bonds_1 (int): Max bonds on group 1."""
-        return self._cpp_obj.max_bonds_group_1
-
-    @max_bonds_group_1.setter
-    def max_bonds_group_1(self, value):
-        self._cpp_obj.max_bonds_group_1 = value
-        self._param_dict["max_bonds_group_1"] = value
-
-    @property
-    def max_bonds_group_2(self):
-        """max_bonds_2 (int): Max bonds on group 2."""
-        return self._cpp_obj.max_bonds_group_2
-
-    @max_bonds_group_2.setter
-    def max_bonds_group_2(self, value):
-        self._cpp_obj.max_bonds_group_2 = value
-        self._param_dict["max_bonds_group_2"] = value
-
     def _attach_hook(self):
         """Create the c++ mirror class."""
+
         sim = self._simulation
+
         if isinstance(self._simulation.device, hoomd.device.CPU):
             cpp_class = getattr(self._ext_module, self._cpp_class_name)
         else:
             cpp_class = getattr(self._ext_module, self._cpp_class_name + "GPU")
 
-        if self.group_1 is not None:
-            group_1 = sim.state._get_group(self.group_1)
-        else:
-            group_1 = None
-
-        if self.group_2 is not None:
-            group_2 = sim.state._get_group(self.group_2)
-        else:
-            group_2 = None
-
-        self.nlist._attach(sim)
+        self._parse_groups(self.groups,self.max_bonds,sim)
 
         self._cpp_obj = cpp_class(
             sim.state._cpp_sys_def,
             self.trigger,
-            self.nlist._cpp_obj,
-            self.update_exclusions,
-            group_1,
-            group_2,
+            self.group_1,
+            self.group_2,
             self.seed,
+            self.r_cut,
+            self.probability,
+            self.max_bonds_group_1,
+            self.max_bonds_group_2,
+            self.bond_type
         )
+
+        if self.nlist is not None:
+            self.nlist._attach(sim)
+            self._cpp_obj.setNlist(self.nlist._cpp_obj)
+
 
         super()._attach_hook()

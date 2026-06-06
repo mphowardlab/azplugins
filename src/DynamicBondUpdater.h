@@ -47,8 +47,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
     //! Simple constructor
     DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                        std::shared_ptr<Trigger> trigger,
-                       std::shared_ptr<md::NeighborList> pair_nlist,
-                       bool update_exclusions,
+                      // std::shared_ptr<md::NeighborList> pair_nlist,
                        std::shared_ptr<ParticleGroup> group_1,
                        std::shared_ptr<ParticleGroup> group_2,
                        uint16_t seed);
@@ -56,8 +55,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
     //! Constructor with parameters
     DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                        std::shared_ptr<Trigger> trigger,
-                       std::shared_ptr<md::NeighborList> pair_nlist,
-                       bool update_exclusions,
+                      // std::shared_ptr<md::NeighborList> pair_nlist,
                        std::shared_ptr<ParticleGroup> group_1,
                        std::shared_ptr<ParticleGroup> group_2,
                        uint16_t seed,
@@ -125,6 +123,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
      */
     void setMaxBondsGroup2(unsigned int max_bonds_group_2)
         {
+        std::cout << " in setmaxbondsgroup2 "<< max_bonds_group_2<<std::endl;
         m_max_bonds_group_2 = max_bonds_group_2;
         checkMaxBondsGroup();
         }
@@ -143,6 +142,13 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
     Scalar getProbability()
         {
         return m_probability;
+        }
+
+    void setNeighborList(std::shared_ptr<md::NeighborList> pair_nlist)
+        {
+        std::cout << "in setNeighborList "<< pair_nlist << std::endl;
+        m_pair_nlist = pair_nlist;
+        m_pair_nlist_exclusions_set = true;
         }
 
     protected:
@@ -185,10 +191,12 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
     std::shared_ptr<md::NeighborList>
         m_pair_nlist; //!< The hoomd neighborlist, only used if exclusions of the newly formed bonds
                       //!< need to be set
-    std::shared_ptr<md::NeighborList> m_pair_internal_nlist;
     bool m_pair_nlist_exclusions_set; //!< whether or not the bonds are set as exclusions in the
                                       //!< hoomd particle neighborlist. Set to true when
                                       //!< m_pair_nlist is set
+
+    std::shared_ptr<md::NeighborList> m_pair_internal_nlist; // internal list for finding all possible bonds
+
 
     //! filter out existing and doublicate bonds from all found possible bonds
     virtual void filterPossibleBonds();
