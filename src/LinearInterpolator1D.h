@@ -41,7 +41,7 @@ template<typename T> class LinearInterpolator1D
         m_dx = (m_hi - m_lo) / Scalar(n - 1);
         }
 
-    //! Implement piecewise linear interpolation
+    //! Implement piecewise linear interpolation on a uniform grid
     AZPLUGINS_HOSTDEVICE AZPLUGINS_FORCEINLINE Scalar operator()(Scalar x) const
         {
         const Scalar f = (x - m_lo) / m_dx;

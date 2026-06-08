@@ -264,7 +264,7 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
                     pei += wca_shift * pair_eng;
                     if (third_law)
                         {
-                        h_force.data[j].w += wca_shift * pair_eng;
+                        h_force.data[j].w += Scalar(0.5) * wca_shift * pair_eng;
                         }
                     }
                 else

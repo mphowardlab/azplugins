@@ -43,8 +43,8 @@ void export_VariantInterpolated(py::module& m)
 
                 return std::make_shared<VariantInterpolated>(data_ptr, N, t_lo, t_hi);
             }))
-        .def_property_readonly("t_lo", &VariantInterpolated::getTLo)
-        .def_property_readonly("t_hi", &VariantInterpolated::getTHi);
+        .def_property("t_lo", &VariantInterpolated::getTLo, &VariantInterpolated::setTLo)
+        .def_property("t_hi", &VariantInterpolated::getTHi, &VariantInterpolated::setTHi);
     }
     } // namespace detail
     } // namespace azplugins
