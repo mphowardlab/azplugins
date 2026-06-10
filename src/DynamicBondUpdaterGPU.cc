@@ -26,11 +26,10 @@ namespace azplugins
  */
 DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
                                              std::shared_ptr<Trigger> trigger,
-                                             std::shared_ptr<md::NeighborList> pair_nlist,
                                              std::shared_ptr<ParticleGroup> group_1,
                                              std::shared_ptr<ParticleGroup> group_2,
                                              uint16_t seed)
-    : DynamicBondUpdater(sysdef, trigger, pair_nlist, group_1, group_2, seed),
+    : DynamicBondUpdater(sysdef, trigger, group_1, group_2, seed),
       m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf)
     {
     // only one GPU is supported
@@ -53,7 +52,6 @@ DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> s
 
 DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
                                              std::shared_ptr<Trigger> trigger,
-                                             std::shared_ptr<md::NeighborList> pair_nlist,
                                              std::shared_ptr<ParticleGroup> group_1,
                                              std::shared_ptr<ParticleGroup> group_2,
                                              uint16_t seed,
@@ -64,7 +62,6 @@ DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> s
                                              unsigned int bond_type)
     : DynamicBondUpdater(sysdef,
                          trigger,
-                         pair_nlist,
                          group_1,
                          group_2,
                          seed,
@@ -221,13 +218,11 @@ void export_DynamicBondUpdaterGPU(pybind11::module& m)
         "DynamicBondUpdaterGPU")
         .def(pybind11::init<std::shared_ptr<SystemDefinition>,
                             std::shared_ptr<Trigger>,
-                            std::shared_ptr<md::NeighborList>,
                             std::shared_ptr<ParticleGroup>,
                             std::shared_ptr<ParticleGroup>,
                             uint16_t>())
         .def(pybind11::init<std::shared_ptr<SystemDefinition>,
                             std::shared_ptr<Trigger>,
-                            std::shared_ptr<md::NeighborList>,
                             std::shared_ptr<ParticleGroup>,
                             std::shared_ptr<ParticleGroup>,
                             uint16_t,

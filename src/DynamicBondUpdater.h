@@ -47,7 +47,6 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
     //! Simple constructor
     DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                        std::shared_ptr<Trigger> trigger,
-                      // std::shared_ptr<md::NeighborList> pair_nlist,
                        std::shared_ptr<ParticleGroup> group_1,
                        std::shared_ptr<ParticleGroup> group_2,
                        uint16_t seed);
@@ -55,7 +54,6 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
     //! Constructor with parameters
     DynamicBondUpdater(std::shared_ptr<SystemDefinition> sysdef,
                        std::shared_ptr<Trigger> trigger,
-                      // std::shared_ptr<md::NeighborList> pair_nlist,
                        std::shared_ptr<ParticleGroup> group_1,
                        std::shared_ptr<ParticleGroup> group_2,
                        uint16_t seed,
