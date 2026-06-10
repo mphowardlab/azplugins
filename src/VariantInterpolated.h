@@ -2,7 +2,6 @@
 // Copyright (c) 2021-2025, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
-
 #ifndef AZPLUGINS_VARIANT_INTERPOLATED_H_
 #define AZPLUGINS_VARIANT_INTERPOLATED_H_
 
@@ -61,13 +60,13 @@ class PYBIND11_EXPORT VariantInterpolated : public Variant
         {
         return m_t_hi;
         }
-    
+
     Scalar setTLo(Scalar t_lo)
         {
         m_t_lo = t_lo;
         return m_t_lo;
         }
-    
+
     Scalar setTHi(Scalar t_hi)
         {
         m_t_hi = t_hi;

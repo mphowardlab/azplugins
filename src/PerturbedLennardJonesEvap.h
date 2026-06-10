@@ -83,7 +83,12 @@ class PerturbedLennardJonesEvap : public ForceCompute
                               const Scalar* domain,
                               std::shared_ptr<VariantInterpolated> variant);
 
-    ~PerturbedLennardJonesEvap() { }
+    //! Destructor
+    ~PerturbedLennardJonesEvap()
+        {
+        if (m_r_cut_nlist)
+            m_nlist->removeRCutMatrix(m_r_cut_nlist);
+        }
 
     Scalar scaleTime(uint64_t timestep) const
         {
@@ -120,6 +125,9 @@ class PerturbedLennardJonesEvap : public ForceCompute
     GPUArray<Scalar> m_attraction_scale_factor_data;        //!< Flattened (y, t) data
     GPUArray<unsigned int> m_attraction_scale_factor_shape; //!< [ny, nt]
     std::shared_ptr<VariantInterpolated> m_variant;
+
+    std::shared_ptr<GPUArray<Scalar>>
+        m_r_cut_nlist; //!< Cutoff matrix shared with the neighbor list
 
     void computeForces(uint64_t timestep) override;
     };
@@ -160,7 +168,6 @@ PerturbedLennardJonesEvap::PerturbedLennardJonesEvap(
         std::copy(attraction_scale_factor_shape, attraction_scale_factor_shape + 2, h_shape.data);
         }
 
-        // Allocate and fill the tabulated data
         {
         const unsigned int n_data
             = attraction_scale_factor_shape[0] * attraction_scale_factor_shape[1];
@@ -173,6 +180,22 @@ PerturbedLennardJonesEvap::PerturbedLennardJonesEvap(
                                    access_mode::overwrite);
 
         std::copy(attraction_scale_factor_data, attraction_scale_factor_data + n_data, h_data.data);
+        }
+
+        {
+        const Index2D typpair_idx(m_pdata->getNTypes());
+        m_r_cut_nlist
+            = std::make_shared<GPUArray<Scalar>>(typpair_idx.getNumElements(), m_exec_conf);
+            {
+            ArrayHandle<Scalar> h_r_cut_nlist(*m_r_cut_nlist,
+                                              access_location::host,
+                                              access_mode::overwrite);
+
+            for (unsigned int i = 0; i < m_r_cut_nlist->getNumElements(); ++i)
+                h_r_cut_nlist.data[i] = m_rcut;
+            }
+        m_nlist->addRCutMatrix(m_r_cut_nlist);
+        m_nlist->notifyRCutMatrixChange();
         }
     }
 
@@ -189,7 +212,7 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
     m_force.zeroFill();
 
-    ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
+    ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::readwrite);
     ArrayHandle<Scalar> h_data(m_attraction_scale_factor_data,
                                access_location::host,
                                access_mode::read);
@@ -214,6 +237,16 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
     const Scalar hi[2] = {h_domain.data[1], h_domain.data[3]};
     LinearInterpolator2D<Scalar> interp(h_data.data, h_shape.data, lo, hi);
 
+    auto clamp_scaled_y = [](Scalar y, Scalar height)
+    {
+        const Scalar s = y / height;
+        if (!(s > Scalar(0.0)))
+            return Scalar(0.0);
+        if (s > Scalar(1.0))
+            return Scalar(1.0);
+        return s;
+    };
+
     const BoxDim box = m_pdata->getGlobalBox();
     const unsigned int N = m_pdata->getN();
 
@@ -221,7 +254,7 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
         {
         const Scalar3 pos_i = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
 
-        Scalar scaled_y_i = Scalar(h_pos.data[i].y / interface_height);
+        Scalar scaled_y_i = clamp_scaled_y(h_pos.data[i].y, interface_height);
         Scalar3 fi = make_scalar3(0, 0, 0);
         Scalar pei = 0;
 
@@ -235,7 +268,7 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
             const unsigned int j = h_nlist.data[head + k];
             if (j == i)
                 continue;
-            Scalar scaled_y_j = Scalar(h_pos.data[j].y / interface_height);
+            Scalar scaled_y_j = clamp_scaled_y(h_pos.data[j].y, interface_height);
             Scalar3 pos_j = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
 
             const Scalar attraction_scale_factor_j = interp(scaled_y_j, scaled_t);
@@ -247,77 +280,61 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
             const Scalar rsq = dot(dx, dx);
             const Scalar attraction_scale_factor_avg
                 = Scalar(0.5) * (attraction_scale_factor_i + attraction_scale_factor_j);
+
             const Scalar wca_shift
-                = epsilon_x_4 * (Scalar(1.0) - attraction_scale_factor_avg) / Scalar(4.);
+                = epsilon_x_4 * (Scalar(1.0) - attraction_scale_factor_avg) / Scalar(4.0);
 
             if (rsq < rcutsq && lj1 != 0)
                 {
                 const Scalar r2inv = Scalar(1) / rsq;
                 const Scalar r6inv = r2inv * r2inv * r2inv;
 
-                const Scalar pair_eng = r6inv * (lj1 * r6inv - lj2);
-                const Scalar force_divr
+                Scalar pair_eng = r6inv * (lj1 * r6inv - lj2);
+                Scalar force_divr
                     = r6inv * r2inv * (Scalar(12.0) * lj1 * r6inv - Scalar(6.0) * lj2);
 
                 if (rsq < rwcasq)
                     {
-                    pei += wca_shift * pair_eng;
-                    if (third_law)
-                        {
-                        h_force.data[j].w += Scalar(0.5) * wca_shift * pair_eng;
-                        }
+                    pair_eng += wca_shift;
                     }
                 else
                     {
-                    fi.x += attraction_scale_factor_avg * force_divr * dx.x;
-                    fi.y += attraction_scale_factor_avg * force_divr * dx.y;
-                    fi.z += attraction_scale_factor_avg * force_divr * dx.z;
-                    pei += attraction_scale_factor_avg * pair_eng;
-
-                    if (third_law)
-                        {
-                        h_force.data[j].x -= attraction_scale_factor_avg * force_divr * dx.x;
-                        h_force.data[j].y -= attraction_scale_factor_avg * force_divr * dx.y;
-                        h_force.data[j].z -= attraction_scale_factor_avg * force_divr * dx.z;
-                        h_force.data[j].w += Scalar(0.5) * attraction_scale_factor_avg * pair_eng;
-                        }
+                    pair_eng *= attraction_scale_factor_avg;
+                    force_divr *= attraction_scale_factor_avg;
                     }
 
                 if (m_energy_shift)
                     {
                     const Scalar rcut2inv = Scalar(1.0) / rcutsq;
                     const Scalar rcut6inv = rcut2inv * rcut2inv * rcut2inv;
-                    Scalar pair_eng_shift = rcut6inv * (lj1 * rcut6inv - lj2);
-                    const Scalar force_divr_shift
-                        = rcut6inv * rcut2inv * (Scalar(12.0) * lj1 * rcut6inv - Scalar(6.0) * lj2);
 
-                    if (rsq < rwcasq)
+                    Scalar pair_eng_shift = rcut6inv * (lj1 * rcut6inv - lj2);
+
+                    if (rcutsq < rwcasq)
                         {
-                        pei += wca_shift * pair_eng_shift;
-                        if (third_law)
-                            {
-                            h_force.data[j].w += Scalar(0.5) * wca_shift * pair_eng_shift;
-                            }
+                        pair_eng_shift += wca_shift;
                         }
                     else
                         {
-                        fi.x += attraction_scale_factor_avg * force_divr_shift * dx.x;
-                        fi.y += attraction_scale_factor_avg * force_divr_shift * dx.y;
-                        fi.z += attraction_scale_factor_avg * force_divr_shift * dx.z;
-                        pei += attraction_scale_factor_avg * pair_eng_shift;
-
-                        if (third_law)
-                            {
-                            h_force.data[j].x
-                                -= attraction_scale_factor_avg * force_divr_shift * dx.x;
-                            h_force.data[j].y
-                                -= attraction_scale_factor_avg * force_divr_shift * dx.y;
-                            h_force.data[j].z
-                                -= attraction_scale_factor_avg * force_divr_shift * dx.z;
-                            h_force.data[j].w
-                                += Scalar(0.5) * attraction_scale_factor_avg * pair_eng_shift;
-                            }
+                        pair_eng_shift *= attraction_scale_factor_avg;
                         }
+
+                    // Apply the shift to the pair energy
+                    pair_eng -= pair_eng_shift;
+                    }
+
+                fi.x += force_divr * dx.x;
+                fi.y += force_divr * dx.y;
+                fi.z += force_divr * dx.z;
+
+                pei += pair_eng;
+
+                if (third_law)
+                    {
+                    h_force.data[j].x -= force_divr * dx.x;
+                    h_force.data[j].y -= force_divr * dx.y;
+                    h_force.data[j].z -= force_divr * dx.z;
+                    h_force.data[j].w += Scalar(0.5) * pair_eng;
                     }
                 }
             }

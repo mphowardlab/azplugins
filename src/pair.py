@@ -454,13 +454,17 @@ class PerturbedLennardJonesEvap(Force):
         self._variant = variant
 
         param_dict = ParameterDict(
+            rcut=float,
             epsilon=float,
             sigma=float,
+            scale_factor=float,
+            energy_shift=bool,
         )
-
+        param_dict["rcut"] = float(rcut)
         param_dict["epsilon"] = float(epsilon)
         param_dict["sigma"] = float(sigma)
-
+        param_dict["scale_factor"] = float(scale_factor)
+        param_dict["energy_shift"] = bool(energy_shift)
         self._param_dict.update(param_dict)
 
         self._domain = numpy.asarray(domain, dtype=numpy.float64)
