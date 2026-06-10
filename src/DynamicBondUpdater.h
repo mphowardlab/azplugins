@@ -41,6 +41,18 @@ namespace hoomd
 namespace azplugins
     {
 
+//! Dynamic bond formation
+/*!
+ * Adds bonds between two groups of particles, which can either be 100% identical or
+ * completely  different. It uses a cutoff and a maximum number of  bonds on each
+ * particle, and optionally a probability of bond formation. Internally, a tree
+ * neighbor list is used to efficiently find all possible bond formation pairs, which
+ * is then sorted and down selected before the bonds are added to the system sequentially.
+ *
+ * \warning This updater should not be used with MPI.
+ *
+ */
+
 class PYBIND11_EXPORT DynamicBondUpdater : public Updater
     {
     public:
@@ -121,7 +133,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
      */
     void setMaxBondsGroup2(unsigned int max_bonds_group_2)
         {
-        std::cout << " in setmaxbondsgroup2 "<< max_bonds_group_2<<std::endl;
+        std::cout << " in setmaxbondsgroup2 " << max_bonds_group_2 << std::endl;
         m_max_bonds_group_2 = max_bonds_group_2;
         checkMaxBondsGroup();
         }
@@ -144,7 +156,7 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
     void setNeighborList(std::shared_ptr<md::NeighborList> pair_nlist)
         {
-        std::cout << "in setNeighborList "<< pair_nlist << std::endl;
+        std::cout << "in setNeighborList " << pair_nlist << std::endl;
         m_pair_nlist = pair_nlist;
         m_pair_nlist_exclusions_set = true;
         }
@@ -193,8 +205,8 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
                                       //!< hoomd particle neighborlist. Set to true when
                                       //!< m_pair_nlist is set
 
-    std::shared_ptr<md::NeighborList> m_pair_internal_nlist; // internal list for finding all possible bonds
-
+    std::shared_ptr<md::NeighborList>
+        m_pair_internal_nlist; // internal list for finding all possible bonds
 
     //! filter out existing and doublicate bonds from all found possible bonds
     virtual void filterPossibleBonds();

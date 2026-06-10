@@ -24,7 +24,6 @@ namespace hoomd
 namespace azplugins
     {
 
-// todo: migrate to separate file/class.
 // this sorts according distance, then first tag, then second tag
 struct SortBondsGPU
     {

@@ -19,10 +19,11 @@ namespace azplugins
 
 /*!
  * \param sysdef System definition
+ * \param trigger Trigger of how often this updater gets executed
+ * \param group_1 first group of particles to make bonds between
+ * \param group_2 second group of particles to make bonds between (can be identical to group_1)
+ * \param seed seed for the random number generator for bond probability checking
  *
- * The system is initialized in a configuration that will be invalid on the
- * first check of the types and region. This constructor requires that the user
- * properly initialize the system via setters.
  */
 DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
                                              std::shared_ptr<Trigger> trigger,
@@ -50,6 +51,19 @@ DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> s
     m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdaterGPU" << std::endl;
     }
 
+/*!
+ * \param sysdef System definition
+ * \param trigger Trigger of how often this updater gets executed
+ * \param group_1 first group of particles to make bonds between
+ * \param group_2 second group of particles to make bonds between (can be identical to group_1)
+ * \param seed seed for the random number generator for bond probability checking
+ * \param r_cut radius to search for neighbors for potential bonding pairs in
+ * \param probability bond forming probability
+ * \param max_bonds_group_1 maximum bonds a particle in group 1 can have
+ * \param max_bonds_group_2 maximum bonds a particle in group 2 can have (can be identical
+ *                          to max_bonds_group_1 )
+ * \param bond_type type of bond this updater will form
+ */
 DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
                                              std::shared_ptr<Trigger> trigger,
                                              std::shared_ptr<ParticleGroup> group_1,
