@@ -55,6 +55,7 @@ Contents
     module-azplugins-compute
     module-azplugins-external
     module-azplugins-flow
+    module-azplugins-update
     module-azplugins-pair
     module-azplugins-wall
 
