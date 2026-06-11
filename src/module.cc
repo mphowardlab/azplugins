@@ -77,6 +77,9 @@ void export_PotentialPairPerturbedLennardJones(pybind11::module&);
 // dpd
 void export_PotentialPairDPDThermoGeneralWeight(pybind11::module&);
 
+// update
+void export_DynamicBondUpdater(pybind11::module&);
+
 // wall
 void export_PotentialExternalWallColloid(pybind11::module&);
 void export_PotentialExternalWallLJ93(pybind11::module&);
@@ -105,6 +108,9 @@ void export_PotentialPairPerturbedLennardJonesGPU(pybind11::module&);
 
 // dpd
 void export_PotentialPairDPDThermoGeneralWeightGPU(pybind11::module&);
+
+// update
+void export_DynamicBondUpdaterGPU(pybind11::module&);
 
 // wall
 void export_PotentialExternalWallColloidGPU(pybind11::module&);
@@ -149,6 +155,9 @@ PYBIND11_MODULE(_azplugins, m)
     // dpd pair
     export_PotentialPairDPDThermoGeneralWeight(m);
 
+    // updater
+    export_DynamicBondUpdater(m);
+
     // wall
     export_PotentialExternalWallColloid(m);
     export_PotentialExternalWallLJ93(m);
@@ -177,6 +186,9 @@ PYBIND11_MODULE(_azplugins, m)
 
     // dpd pair
     export_PotentialPairDPDThermoGeneralWeightGPU(m);
+
+    // updater
+    export_DynamicBondUpdaterGPU(m);
 
     // wall
     export_PotentialExternalWallColloidGPU(m);
