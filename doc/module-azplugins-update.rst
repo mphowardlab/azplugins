@@ -3,7 +3,7 @@
 .. Part of azplugins, released under the BSD 3-Clause License.
 
 azplugins.update
---------------
+----------------
 
 .. rubric:: Overview
 
