@@ -143,7 +143,7 @@ void ChebyshevAnisotropicPairPotentialGPU<ShapeSymmetryT>::computeForces(uint64_
                                       this->m_nlist_r_cut,
                                       domain_lower,
                                       domain_upper,
-                                      256));
+                                      32));
 
     if (this->m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();

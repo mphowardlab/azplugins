@@ -18,6 +18,11 @@
 
 #include <cstddef>
 
+// CUB is only needed for block-wide reduction.
+#ifdef __HIPCC__
+#include <hipcub/hipcub.hpp>
+#endif
+
 /*! \file ChebyshevAnisotropicPairPotentialGPU.cuh
     \brief Defines templated GPU kernel code for the Chebyshev anisotropic pair potential.
 */
@@ -127,12 +132,21 @@ __device__ inline Scalar chebyshev_scale_device(Scalar x, Scalar lo, Scalar hi)
     return (Scalar(2) * (x - lo) / (hi - lo)) - Scalar(1);
     }
 
-template<class ShapeSymmetryT>
+template<class ShapeSymmetryT, unsigned int BLOCK_SIZE>
 __global__ void gpu_compute_chebyshev_pair_forces_kernel(chebyshev_pair_args_t args)
     {
-    const unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+    // one block per particle.
+    // each block is responsible for just one particle i.
+    // for each neighbor j, the first 6 threads fill the
+    // univariate Chebyshev tables for the 6 coordinates into shared-memory,
+    // then every thread evaluates a chunk of the term list (reading
+    // from the shared memory)
+    const unsigned int i = blockIdx.x;
     if (i >= args.N)
         return;
+
+    const unsigned int tid = threadIdx.x;
+    const unsigned int nthreads = blockDim.x;
 
     const Scalar nlist_rcutsq = args.nlist_r_cut * args.nlist_r_cut;
     const Scalar fd_step = Scalar(1.0e-6);
@@ -145,6 +159,18 @@ __global__ void gpu_compute_chebyshev_pair_forces_kernel(chebyshev_pair_args_t a
                                         args.d_r0_shape,
                                         args.domain_lower,
                                         args.domain_upper);
+
+    // dynamic shared memory
+    // univariate T, univariate dT, & CUB reduce temp storage
+    extern __shared__ unsigned char smem[];
+    const unsigned int stride = chebyshev_max_degree + 1;
+    Scalar* s_T = reinterpret_cast<Scalar*>(smem);
+    Scalar* s_dT = s_T + n_coords * stride;
+    // CUB temp storage
+    void* s_cub = reinterpret_cast<void*>(s_dT + n_coords * stride);
+
+    // CUB block-reduce
+    typedef hipcub::BlockReduce<Scalar, BLOCK_SIZE> BlockReduceT;
 
     unsigned int max_deg[n_coords] = {0, 0, 0, 0, 0, 0};
     for (unsigned int t = 0; t < args.Nterms; ++t)
@@ -161,13 +187,7 @@ __global__ void gpu_compute_chebyshev_pair_forces_kernel(chebyshev_pair_args_t a
     Scalar cheb_scale[n_coords];
     cheb_scale[0] = Scalar(2);
     for (unsigned int d = 0; d < n_angles; ++d)
-        {
         cheb_scale[d + 1] = Scalar(2) / (args.domain_upper[d] - args.domain_lower[d]);
-        }
-
-    // Chebyshev polynomial values & derivatives.
-    Scalar cheb_T_flat[n_coords * (chebyshev_max_degree + 1)];
-    Scalar cheb_dT_flat[n_coords * (chebyshev_max_degree + 1)];
 
     Scalar3 fi = make_scalar3(0, 0, 0);
     Scalar3 ti = make_scalar3(0, 0, 0);
@@ -299,25 +319,28 @@ __global__ void gpu_compute_chebyshev_pair_forces_kernel(chebyshev_pair_args_t a
         const Scalar drho_dr0
             = (inv_r0_sq * rho_denom - rho_num * (inv_r0_sq - inv_r0_rcut_sq)) / rho_denom_sq;
 
-        chebyshev_eval_device(chebyshev_scale_device(rho, Scalar(0), Scalar(1)),
-                              max_deg[0],
-                              cheb_T_flat + 0 * (chebyshev_max_degree + 1),
-                              cheb_dT_flat + 0 * (chebyshev_max_degree + 1));
-
-        const Scalar ang_coords[n_angles] = {theta, phi, alpha, beta, gamma};
-        for (unsigned int c = 0; c < n_angles; ++c)
+        // populate univariate Chebyshev tables in shared memory
+        if (tid < n_coords)
             {
-            chebyshev_eval_device(
-                chebyshev_scale_device(ang_coords[c], args.domain_lower[c], args.domain_upper[c]),
-                max_deg[c + 1],
-                cheb_T_flat + (c + 1) * (chebyshev_max_degree + 1),
-                cheb_dT_flat + (c + 1) * (chebyshev_max_degree + 1));
+            const unsigned int c = tid;
+            Scalar x_scaled;
+            if (c == 0)
+                x_scaled = chebyshev_scale_device(rho, Scalar(0), Scalar(1));
+            else
+                {
+                const Scalar ang[n_angles] = {theta, phi, alpha, beta, gamma};
+                x_scaled = chebyshev_scale_device(ang[c - 1],
+                                                  args.domain_lower[c - 1],
+                                                  args.domain_upper[c - 1]);
+                }
+            chebyshev_eval_device(x_scaled, max_deg[c], s_T + c * stride, s_dT + c * stride);
             }
+        __syncthreads();
 
+        // each thread evaluates a chunk of the term list
         Scalar u = Scalar(0);
         Scalar du[n_coords] = {Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0)};
-
-        for (unsigned int t = 0; t < args.Nterms; ++t)
+        for (unsigned int t = tid; t < args.Nterms; t += nthreads)
             {
             const unsigned int* degs = args.d_terms + n_coords * t;
             const Scalar coeff = args.d_coeffs[t];
@@ -326,8 +349,8 @@ __global__ void gpu_compute_chebyshev_pair_forces_kernel(chebyshev_pair_args_t a
             Scalar dT_vals[n_coords];
             for (unsigned int c = 0; c < n_coords; ++c)
                 {
-                T_vals[c] = cheb_T_flat[c * (chebyshev_max_degree + 1) + degs[c]];
-                dT_vals[c] = cheb_dT_flat[c * (chebyshev_max_degree + 1) + degs[c]];
+                T_vals[c] = s_T[c * stride + degs[c]];
+                dT_vals[c] = s_dT[c * stride + degs[c]];
                 }
 
             Scalar prefix[n_coords + 1];
@@ -344,6 +367,7 @@ __global__ void gpu_compute_chebyshev_pair_forces_kernel(chebyshev_pair_args_t a
             for (unsigned int c = 0; c < n_coords; ++c)
                 du[c] += coeff * dT_vals[c] * cheb_scale[c] * prefix[c] * suffix[c + 1];
             }
+        __syncthreads();
 
         const Scalar u_energy = (rho_energy < Scalar(0)) ? (u + rho_energy * du[0]) : u;
 
@@ -399,15 +423,57 @@ __global__ void gpu_compute_chebyshev_pair_forces_kernel(chebyshev_pair_args_t a
         pei += u_energy;
         }
 
-    args.d_force[i].x = fi.x;
-    args.d_force[i].y = fi.y;
-    args.d_force[i].z = fi.z;
-    args.d_force[i].w = Scalar(0.5) * pei;
+    // block reduction
+    typename BlockReduceT::TempStorage& cub_temp
+        = *reinterpret_cast<typename BlockReduceT::TempStorage*>(s_cub);
 
-    args.d_torque[i].x = ti.x;
-    args.d_torque[i].y = ti.y;
-    args.d_torque[i].z = ti.z;
-    args.d_torque[i].w = Scalar(0);
+    Scalar fx = BlockReduceT(cub_temp).Sum(fi.x);
+    __syncthreads();
+    Scalar fy = BlockReduceT(cub_temp).Sum(fi.y);
+    __syncthreads();
+    Scalar fz = BlockReduceT(cub_temp).Sum(fi.z);
+    __syncthreads();
+    Scalar tx = BlockReduceT(cub_temp).Sum(ti.x);
+    __syncthreads();
+    Scalar ty = BlockReduceT(cub_temp).Sum(ti.y);
+    __syncthreads();
+    Scalar tz = BlockReduceT(cub_temp).Sum(ti.z);
+    __syncthreads();
+    Scalar pe = BlockReduceT(cub_temp).Sum(pei);
+    __syncthreads();
+
+    if (tid == 0)
+        {
+        args.d_force[i].x = fx;
+        args.d_force[i].y = fy;
+        args.d_force[i].z = fz;
+        args.d_force[i].w = Scalar(0.5) * pe;
+
+        args.d_torque[i].x = tx;
+        args.d_torque[i].y = ty;
+        args.d_torque[i].z = tz;
+        args.d_torque[i].w = Scalar(0);
+        }
+    }
+
+template<class ShapeSymmetryT, unsigned int BLOCK_SIZE>
+inline void launch_chebyshev_kernel(const chebyshev_pair_args_t& args)
+    {
+    constexpr unsigned int n_coords = 6;
+    const unsigned int stride = chebyshev_max_degree + 1;
+    const size_t univariate_bytes = static_cast<size_t>(2) * n_coords * stride * sizeof(Scalar);
+
+    typedef hipcub::BlockReduce<Scalar, BLOCK_SIZE> BlockReduceT;
+    const size_t cub_bytes = sizeof(typename BlockReduceT::TempStorage);
+
+    const size_t shared_bytes = univariate_bytes + cub_bytes;
+
+    hipLaunchKernelGGL((gpu_compute_chebyshev_pair_forces_kernel<ShapeSymmetryT, BLOCK_SIZE>),
+                       dim3(args.N),
+                       dim3(BLOCK_SIZE),
+                       shared_bytes,
+                       0,
+                       args);
     }
 
 //! Driver function for each symmetry.
@@ -418,15 +484,17 @@ gpu_compute_chebyshev_pair_forces(const chebyshev_pair_args_t& args)
     if (args.N == 0)
         return hipSuccess;
 
-    const unsigned int block_size = args.block_size ? args.block_size : 256;
-    const unsigned int n_blocks = (args.N + block_size - 1) / block_size;
+    // tune later with a profiler.
+    const unsigned int requested = args.block_size ? args.block_size : 32;
 
-    hipLaunchKernelGGL((gpu_compute_chebyshev_pair_forces_kernel<ShapeSymmetryT>),
-                       dim3(n_blocks),
-                       dim3(block_size),
-                       0,
-                       0,
-                       args);
+    if (requested <= 32)
+        launch_chebyshev_kernel<ShapeSymmetryT, 32>(args);
+    else if (requested <= 64)
+        launch_chebyshev_kernel<ShapeSymmetryT, 64>(args);
+    else if (requested <= 128)
+        launch_chebyshev_kernel<ShapeSymmetryT, 128>(args);
+    else
+        launch_chebyshev_kernel<ShapeSymmetryT, 256>(args);
 
     return hipSuccess;
     }
