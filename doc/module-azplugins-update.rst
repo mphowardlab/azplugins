@@ -18,6 +18,6 @@ azplugins.bond
 
 .. automodule:: hoomd.azplugins.update
     :synopsis: Updaters.
-    :members: DynamicBond
+    :members: DynamicBond,
     :no-inherited-members:
     :show-inheritance:
