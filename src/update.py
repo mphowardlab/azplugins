@@ -28,45 +28,45 @@ class DynamicBond(hoomd.operation.Updater):
         nlist (:py:mod:`hoomd.md.nlist`, optional): NeighborList (optional) to update
                                                     exclusions
 
-        Forms bonds of type bond_type between particles in the groups=[group_1,group_2]
-        during the simulation, if particle distances are shorter than r_cut. If the
-        neighborlist used for the pair potential in the simulation is given as a
-        parameter nlist, the neighbor list exclusions will be updated to include the
-        newly formed bonds. Each particle has a number of maximum bonds which it can
-        form, given by max_bonds=[max_bonds_1,max_bonds_2] for particles in group_1 and
-        max_bonds_2 for group_2.
+    Forms bonds of type bond_type between particles in the groups=[group_1,group_2]
+    during the simulation, if particle distances are shorter than r_cut. If the
+    neighborlist used for the pair potential in the simulation is given as a
+    parameter nlist, the neighbor list exclusions will be updated to include the
+    newly formed bonds. Each particle has a number of maximum bonds which it can
+    form, given by max_bonds=[max_bonds_1,max_bonds_2] for particles in group_1 and
+    max_bonds_2 for group_2.
 
-        The particles in the two groups group_1 and group_2 should be completely
-        separate with no common elements, e.g. two different types. Alternatively, only
-        one element in the groups list and only one element in the max_bonds list can
-        be given, then the bonds will be formed within that given group.
+    The particles in the two groups group_1 and group_2 should be completely
+    separate with no common elements, e.g. two different types. Alternatively, only
+    one element in the groups list and only one element in the max_bonds list can
+    be given, then the bonds will be formed within that given group.
 
-        .. warning::
-            If the groups group_1 or group_2 are modified during the simulation, this
-            Updater will not be updated to reflect the changes. It is the user's
-            responsibility to ensure that the groups do not change as long as this
-            updater is active.
+    .. warning::
+        If the groups group_1 or group_2 are modified during the simulation, this
+        Updater will not be updated to reflect the changes. It is the user's
+        responsibility to ensure that the groups do not change as long as this
+        updater is active.
 
-        .. warning::
-            This updater is not implemeted for MPI.
+    .. warning::
+        This updater is not implemeted for MPI.
 
-        Examples::
+    Examples::
 
-            azplugins.update.dynamic_bond(
-                nlist=nl,
-                r_cut=1.0,
-                bond_type=0,
-                probability=0.8,
-                groups=[hoomd.group.type(type="A"), hoomd.group.type(type="B")],
-                max_bonds=[2, 3],
-            )
+        azplugins.update.dynamic_bond(
+            nlist=nl,
+            r_cut=1.0,
+            bond_type=0,
+            probability=0.8,
+            groups=[hoomd.group.type(type="A"), hoomd.group.type(type="B")],
+            max_bonds=[2, 3],
+        )
 
-            azplugins.update.dynamic_bond(
-                r_cut=1.0,
-                bond_type=0,
-                groups=[hoomd.group.type(type="A")],
-                max_bonds=[2],
-            )
+        azplugins.update.dynamic_bond(
+            r_cut=1.0,
+            bond_type=0,
+            groups=[hoomd.group.type(type="A")],
+            max_bonds=[2],
+        )
     """
 
     _ext_module = _azplugins
