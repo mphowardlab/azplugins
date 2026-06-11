@@ -133,7 +133,6 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
      */
     void setMaxBondsGroup2(unsigned int max_bonds_group_2)
         {
-        std::cout << " in setmaxbondsgroup2 " << max_bonds_group_2 << std::endl;
         m_max_bonds_group_2 = max_bonds_group_2;
         checkMaxBondsGroup();
         }
@@ -156,7 +155,6 @@ class PYBIND11_EXPORT DynamicBondUpdater : public Updater
 
     void setNeighborList(std::shared_ptr<md::NeighborList> pair_nlist)
         {
-        std::cout << "in setNeighborList " << pair_nlist << std::endl;
         m_pair_nlist = pair_nlist;
         m_pair_nlist_exclusions_set = true;
         }
