@@ -2,7 +2,7 @@
 .. Copyright (c) 2021-2025, Auburn University
 .. Part of azplugins, released under the BSD 3-Clause License.
 
-azplugins.bond
+azplugins.update
 --------------
 
 .. rubric:: Overview
