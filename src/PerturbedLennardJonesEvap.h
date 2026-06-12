@@ -74,8 +74,8 @@ class PerturbedLennardJonesEvap : public ForceCompute
 
     PerturbedLennardJonesEvap(std::shared_ptr<SystemDefinition> sysdef,
                               std::shared_ptr<hoomd::md::NeighborList> nlist,
-                              Scalar r_cut,
-                              Scalar scale_factor,
+                              const Scalar r_cut,
+                              const Scalar time_scale_factor,
                               const param_type& params,
                               bool energy_shift,
                               const Scalar* attraction_scale_factor_data,
@@ -92,7 +92,7 @@ class PerturbedLennardJonesEvap : public ForceCompute
 
     Scalar scaleTime(uint64_t timestep) const
         {
-        return Scalar(static_cast<Scalar>(timestep) / m_scale_factor);
+        return Scalar(static_cast<Scalar>(timestep) / m_time_scale_factor);
         }
 
     Scalar getRCut() const
@@ -114,7 +114,7 @@ class PerturbedLennardJonesEvap : public ForceCompute
     std::shared_ptr<hoomd::md::NeighborList> m_nlist; //!< Neighbor list
     Scalar epsilon_x_4;
     Scalar m_rcut;
-    Scalar m_scale_factor; //!< Time scaling factor
+    Scalar m_time_scale_factor; //!< Time scaling factor
     Scalar lj1;
     Scalar lj2;
     Scalar rcutsq;
@@ -135,8 +135,8 @@ class PerturbedLennardJonesEvap : public ForceCompute
 PerturbedLennardJonesEvap::PerturbedLennardJonesEvap(
     std::shared_ptr<SystemDefinition> sysdef,
     std::shared_ptr<hoomd::md::NeighborList> nlist,
-    Scalar rcut,
-    Scalar scale_factor,
+    const Scalar rcut,
+    const Scalar time_scale_factor,
     const param_type& params,
     bool energy_shift,
     const Scalar* attraction_scale_factor_data,
@@ -144,7 +144,8 @@ PerturbedLennardJonesEvap::PerturbedLennardJonesEvap(
     const Scalar* domain,
     std::shared_ptr<VariantInterpolated> variant)
     : ForceCompute(sysdef), m_nlist(nlist), epsilon_x_4(params.epsilon_x_4), m_rcut(rcut),
-      m_scale_factor(scale_factor), lj1(params.epsilon_x_4 * params.sigma_6 * params.sigma_6),
+      m_time_scale_factor(time_scale_factor),
+      lj1(params.epsilon_x_4 * params.sigma_6 * params.sigma_6),
       lj2(params.epsilon_x_4 * params.sigma_6), rcutsq(rcut * rcut), rwcasq(params.rwcasq),
       sigma_6(params.sigma_6), m_energy_shift(energy_shift), m_variant(variant)
     {

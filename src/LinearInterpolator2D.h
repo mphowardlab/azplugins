@@ -79,6 +79,7 @@ template<typename T> class LinearInterpolator2D
 
             assert(b >= 0);
             assert(b < static_cast<int>(nd - 1));
+
             bin[d] = b;
             frac[d] = f - Scalar(b);
             }

@@ -55,6 +55,7 @@ template<typename T> class LinearInterpolator1D
 
         assert(b >= 0);
         assert(b < static_cast<int>(m_n - 1));
+
         const Scalar frac = f - Scalar(b);
 
         const Scalar c0 = m_data[b];

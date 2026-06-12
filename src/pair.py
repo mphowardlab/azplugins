@@ -441,7 +441,7 @@ class PerturbedLennardJonesEvap(Force):
         rcut,
         epsilon,
         sigma,
-        scale_factor,
+        time_scale_factor,
         energy_shift,
         attraction_scale_factor_data,
         attraction_scale_factor_shape,
@@ -457,13 +457,13 @@ class PerturbedLennardJonesEvap(Force):
             rcut=float,
             epsilon=float,
             sigma=float,
-            scale_factor=float,
+            time_scale_factor=float,
             energy_shift=bool,
         )
         param_dict["rcut"] = float(rcut)
         param_dict["epsilon"] = float(epsilon)
         param_dict["sigma"] = float(sigma)
-        param_dict["scale_factor"] = float(scale_factor)
+        param_dict["time_scale_factor"] = float(time_scale_factor)
         param_dict["energy_shift"] = bool(energy_shift)
         self._param_dict.update(param_dict)
 
@@ -485,7 +485,7 @@ class PerturbedLennardJonesEvap(Force):
             self.rcut,
             self.epsilon,
             self.sigma,
-            self.scale_factor,
+            self.time_scale_factor,
             self.energy_shift,
             self._attraction_scale_factor_data,
             self._attraction_scale_factor_shape,

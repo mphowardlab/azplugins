@@ -25,7 +25,7 @@ void export_PerturbedLennardJonesEvap(py::module& m)
                Scalar rcut,
                Scalar epsilon,
                Scalar sigma,
-               Scalar scale_factor,
+               Scalar time_scale_factor,
                bool energy_shift,
                py::array_t<Scalar, py::array::c_style | py::array::forcecast>
                    attraction_scale_factor_data,
@@ -53,7 +53,7 @@ void export_PerturbedLennardJonesEvap(py::module& m)
                 return std::make_shared<PerturbedLennardJonesEvap>(sysdef,
                                                                    nlist,
                                                                    rcut,
-                                                                   scale_factor,
+                                                                   time_scale_factor,
                                                                    params,
                                                                    energy_shift,
                                                                    data_ptr,

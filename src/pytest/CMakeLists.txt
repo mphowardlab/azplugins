@@ -8,6 +8,7 @@ set(test_files
     test_pair.py
     test_pair_aniso.py
     test_pair_dpd.py
+    test_perturbedljevap.py
     test_wall.py
     test_variant.py
     )
