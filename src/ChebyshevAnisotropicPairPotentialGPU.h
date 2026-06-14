@@ -110,8 +110,8 @@ void ChebyshevAnisotropicPairPotentialGPU<ShapeSymmetryT>::computeForces(uint64_
                                          access_mode::read);
     ArrayHandle<unsigned int> d_terms(this->m_terms, access_location::device, access_mode::read);
     ArrayHandle<Scalar> d_coeffs(this->m_coeffs, access_location::device, access_mode::read);
-    ArrayHandle<Scalar4> d_force(this->m_force, access_location::device, access_mode::overwrite);
-    ArrayHandle<Scalar4> d_torque(this->m_torque, access_location::device, access_mode::overwrite);
+    ArrayHandle<Scalar4> d_force(this->m_force, access_location::device, access_mode::readwrite);
+    ArrayHandle<Scalar4> d_torque(this->m_torque, access_location::device, access_mode::readwrite);
 
     Scalar domain_lower[5];
     Scalar domain_upper[5];

@@ -189,30 +189,29 @@ __global__ void gpu_compute_chebyshev_pair_forces_kernel(chebyshev_pair_args_t a
     for (unsigned int d = 0; d < n_angles; ++d)
         cheb_scale[d + 1] = Scalar(2) / (args.domain_upper[d] - args.domain_lower[d]);
 
-    Scalar3 fi = make_scalar3(0, 0, 0);
-    Scalar3 ti = make_scalar3(0, 0, 0);
-    Scalar pei = Scalar(0);
+    // Half list
+    typename BlockReduceT::TempStorage& cub_temp
+        = *reinterpret_cast<typename BlockReduceT::TempStorage*>(s_cub);
 
     const size_t myHead = args.d_head_list[i];
     const unsigned int size = args.d_n_neigh[i];
+    const unsigned int tag_i = args.d_tag[i];
+
+    Scalar3 fi = make_scalar3(0, 0, 0);
+    Scalar3 ti = make_scalar3(0, 0, 0);
+    Scalar ei = Scalar(0);
 
     for (unsigned int k = 0; k < size; ++k)
         {
         const unsigned int j = args.d_nlist[myHead + k];
 
-        unsigned int eval_a = i;
-        unsigned int eval_b = j;
-        bool i_is_eval_a = true;
-            {
-            const unsigned int tag_i = args.d_tag[i];
-            const unsigned int tag_j = args.d_tag[j];
-            if (tag_j < tag_i)
-                {
-                eval_a = j;
-                eval_b = i;
-                i_is_eval_a = false;
-                }
-            }
+        // Skip pairs owned by the other block.
+        const unsigned int tag_j = args.d_tag[j];
+        if (tag_i > tag_j)
+            continue;
+
+        const unsigned int eval_a = i;
+        const unsigned int eval_b = j;
 
         const Scalar3 pos_a
             = make_scalar3(args.d_pos[eval_a].x, args.d_pos[eval_a].y, args.d_pos[eval_a].z);
@@ -410,49 +409,55 @@ __global__ void gpu_compute_chebyshev_pair_forces_kernel(chebyshev_pair_args_t a
         const vec3<Scalar> f_lab = rotate(sym_inv, vec3<Scalar>(f_x_red, f_y_red, f_z_red));
         const vec3<Scalar> tau_lab = rotate(sym_inv, vec3<Scalar>(tau_x_red, tau_y_red, tau_z_red));
 
-        const Scalar sign = i_is_eval_a ? Scalar(1) : Scalar(-1);
+        // block reduction (one pair total).
+        Scalar fx = BlockReduceT(cub_temp).Sum(f_lab.x);
+        __syncthreads();
+        Scalar fy = BlockReduceT(cub_temp).Sum(f_lab.y);
+        __syncthreads();
+        Scalar fz = BlockReduceT(cub_temp).Sum(f_lab.z);
+        __syncthreads();
+        Scalar tx = BlockReduceT(cub_temp).Sum(tau_lab.x);
+        __syncthreads();
+        Scalar ty = BlockReduceT(cub_temp).Sum(tau_lab.y);
+        __syncthreads();
+        Scalar tz = BlockReduceT(cub_temp).Sum(tau_lab.z);
+        __syncthreads();
+        Scalar ue = BlockReduceT(cub_temp).Sum(u_energy);
+        __syncthreads();
 
-        fi.x += sign * f_lab.x;
-        fi.y += sign * f_lab.y;
-        fi.z += sign * f_lab.z;
+        // i is accumulated locally.
+        // only j need a per-pair atomicAdd because
+        // it is owned by another block.
+        if (tid == 0)
+            {
+            fi.x += fx;
+            fi.y += fy;
+            fi.z += fz;
+            ti.x += tx;
+            ti.y += ty;
+            ti.z += tz;
+            ei += Scalar(0.5) * ue;
 
-        ti.x += sign * tau_lab.x;
-        ti.y += sign * tau_lab.y;
-        ti.z += sign * tau_lab.z;
-
-        pei += u_energy;
+            atomicAdd(&args.d_force[j].x, -fx);
+            atomicAdd(&args.d_force[j].y, -fy);
+            atomicAdd(&args.d_force[j].z, -fz);
+            atomicAdd(&args.d_force[j].w, Scalar(0.5) * ue);
+            atomicAdd(&args.d_torque[j].x, -tx);
+            atomicAdd(&args.d_torque[j].y, -ty);
+            atomicAdd(&args.d_torque[j].z, -tz);
+            }
         }
 
-    // block reduction
-    typename BlockReduceT::TempStorage& cub_temp
-        = *reinterpret_cast<typename BlockReduceT::TempStorage*>(s_cub);
-
-    Scalar fx = BlockReduceT(cub_temp).Sum(fi.x);
-    __syncthreads();
-    Scalar fy = BlockReduceT(cub_temp).Sum(fi.y);
-    __syncthreads();
-    Scalar fz = BlockReduceT(cub_temp).Sum(fi.z);
-    __syncthreads();
-    Scalar tx = BlockReduceT(cub_temp).Sum(ti.x);
-    __syncthreads();
-    Scalar ty = BlockReduceT(cub_temp).Sum(ti.y);
-    __syncthreads();
-    Scalar tz = BlockReduceT(cub_temp).Sum(ti.z);
-    __syncthreads();
-    Scalar pe = BlockReduceT(cub_temp).Sum(pei);
-    __syncthreads();
-
+    // One atomic set for i
     if (tid == 0)
         {
-        args.d_force[i].x = fx;
-        args.d_force[i].y = fy;
-        args.d_force[i].z = fz;
-        args.d_force[i].w = Scalar(0.5) * pe;
-
-        args.d_torque[i].x = tx;
-        args.d_torque[i].y = ty;
-        args.d_torque[i].z = tz;
-        args.d_torque[i].w = Scalar(0);
+        atomicAdd(&args.d_force[i].x, fi.x);
+        atomicAdd(&args.d_force[i].y, fi.y);
+        atomicAdd(&args.d_force[i].z, fi.z);
+        atomicAdd(&args.d_force[i].w, ei);
+        atomicAdd(&args.d_torque[i].x, ti.x);
+        atomicAdd(&args.d_torque[i].y, ti.y);
+        atomicAdd(&args.d_torque[i].z, ti.z);
         }
     }
 
