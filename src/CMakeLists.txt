@@ -65,6 +65,12 @@ set(_aniso_pair_evaluators
     TwoPatchMorse
     )
 
+set(_chebyshev_symmetries
+    Null
+    Cube
+    Tetrahedron
+    )
+
 # process bond potentials
 foreach(_evaluator ${_bond_evaluators})
     configure_file(export_PotentialBond.cc.inc
@@ -157,6 +163,28 @@ foreach(_evaluator ${_aniso_pair_evaluators})
                        @ONLY)
         set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources} export_AnisoPotentialPair${_evaluator}GPU.cc)
         set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources} AnisoPotentialPair${_evaluator}GPUKernel.cu)
+    endif()
+endforeach()
+
+# process Chebyshev anisotropic pair potential
+foreach(_symmetry ${_chebyshev_symmetries})
+    configure_file(export_ChebyshevAnisotropicPairPotential.cc.inc
+                   export_ChebyshevAnisotropicPairPotential${_symmetry}.cc
+                   @ONLY)
+    set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources}
+        export_ChebyshevAnisotropicPairPotential${_symmetry}.cc)
+
+    if (ENABLE_HIP)
+        configure_file(export_ChebyshevAnisotropicPairPotentialGPU.cc.inc
+                       export_ChebyshevAnisotropicPairPotential${_symmetry}GPU.cc
+                       @ONLY)
+        set(_${COMPONENT_NAME}_sources ${_${COMPONENT_NAME}_sources}
+            export_ChebyshevAnisotropicPairPotential${_symmetry}GPU.cc)
+        configure_file(ChebyshevAnisotropicPairPotentialGPUKernel.cu.inc
+                       ChebyshevAnisotropicPairPotential${_symmetry}GPUKernel.cu
+                       @ONLY)
+        set(_${COMPONENT_NAME}_cu_sources ${_${COMPONENT_NAME}_cu_sources}
+            ChebyshevAnisotropicPairPotential${_symmetry}GPUKernel.cu)
     endif()
 endforeach()
 
