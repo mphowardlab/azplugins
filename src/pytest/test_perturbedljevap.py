@@ -10,41 +10,16 @@ import numpy
 
 import pytest
 
-_DEVICE_PARAMS = ["cpu"]
-
-if hoomd.version.gpu_enabled:
-    try:
-        if len(hoomd.device.GPU.get_available_devices()) > 0:
-            _DEVICE_PARAMS.append("gpu")
-    except Exception:
-        pass
-
-
-@pytest.fixture(params=_DEVICE_PARAMS)
-def simulation_factory(request):
-    """Create a Simulation on CPU, and on GPU when available."""
-
-    def make_simulation(snapshot):
-        if request.param == "cpu":
-            device = hoomd.device.CPU()
-        else:
-            device = hoomd.device.GPU()
-
-        sim = hoomd.Simulation(device=device, seed=1)
-        sim.create_state_from_snapshot(snapshot)
-        return sim
-
-    return make_simulation
-
 
 @pytest.fixture
 def two_particle_snapshot_factory():
     snap = hoomd.Snapshot()
+    d = 1
     if snap.communicator.rank == 0:
         snap.configuration.box = [20, 20, 20, 0, 0, 0]
         snap.particles.N = 2
         snap.particles.types = ["A"]
-        snap.particles.position[:] = [[0, 0, 0], [0, 1.2, 0]]
+        snap.particles.position[:] = [[-d/2, 0, 0], [d/2, 1.2, 0]]
 
     return snap
 
@@ -189,8 +164,8 @@ def test_energy_and_force_calculation_const(
 
     sim.run(0)
 
-    expected_forces = [[0.0, 1.32701601, 0.0], [0.0, -1.32701601, 0.0]]
-    expected_energies = [-0.26728958627492283, -0.26728958627492283]
+    expected_forces = [[0.35032675, 0.4203921, 0.], [-0.35032675, -0.4203921, 0.]]
+    expected_energies = [-0.07691956918309711, -0.07691956918309711]
 
     forces = evap.forces
     energies = evap.energies
@@ -256,9 +231,10 @@ def test_energy_and_force_calculation_vary(
     sim.operations.integrator = integrator
     sim.run(0)
 
-    expected_forces = [[0, 1.51500993942280826, 0], [0, -1.51500993942280826, 0]]
-
-    expected_energies = [-0.305155610997203564, -0.305155610997203564]
+    expected_forces = [[0.39995636970934184, 0.47994764365121023, 0.0], 
+                       [-0.39995636970934184, -0.47994764365121023, 0.0]]
+    
+    expected_energies = [-0.08781650815070254, -0.08781650815070254]
 
     forces = evap.forces
     energies = evap.energies
@@ -270,17 +246,10 @@ def test_energy_and_force_calculation_vary(
     """
 
     sim.run(100)
-
-    snapshot = sim.state.get_snapshot()
-    positions = snapshot.particles.position
-
-    print(f"Particle 1 position: {positions[1]}")
-
-    expected_energies = [-0.04900309081706919, -0.04900309081706919]
-    expected_forces = [
-        [0.0, 0.24328626764453856, 0.0],
-        [0.0, -0.24328626764453856, 0.0],
-    ]
+    
+    expected_energies = [-0.014101921016901138, -0.014101921016901138]   
+    expected_forces   = [[0.06422657031828848, 0.07707188438194618, 0.0], 
+                         [-0.06422657031828848, -0.07707188438194618, 0.0]]   
 
     forces = evap.forces
     energies = evap.energies
@@ -288,3 +257,4 @@ def test_energy_and_force_calculation_vary(
     if sim.device.communicator.rank == 0:
         numpy.testing.assert_allclose(forces, expected_forces)
         numpy.testing.assert_allclose(energies, expected_energies)
+
