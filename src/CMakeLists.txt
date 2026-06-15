@@ -14,6 +14,7 @@ set(_${COMPONENT_NAME}_sources
 if (ENABLE_HIP)
     list(APPEND _${COMPONENT_NAME}_sources
     export_ImagePotentialBondHarmonicGPU.cc
+    export_PerturbedLennardJonesEvapGPU.cc
     VelocityComputeGPU.cc
     )
 endif()

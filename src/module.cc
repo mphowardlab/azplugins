@@ -105,6 +105,7 @@ void export_PotentialPairColloidGPU(pybind11::module&);
 void export_PotentialPairExpandedYukawaGPU(pybind11::module&);
 void export_PotentialPairHertzGPU(pybind11::module&);
 void export_PotentialPairPerturbedLennardJonesGPU(pybind11::module&);
+void export_PerturbedLennardJonesEvapGPU(pybind11::module&);
 
 // dpd
 void export_PotentialPairDPDThermoGeneralWeightGPU(pybind11::module&);
@@ -181,6 +182,7 @@ PYBIND11_MODULE(_azplugins, m)
     export_PotentialPairExpandedYukawaGPU(m);
     export_PotentialPairHertzGPU(m);
     export_PotentialPairPerturbedLennardJonesGPU(m);
+    export_PerturbedLennardJonesEvapGPU(m);
 
     // dpd pair
     export_PotentialPairDPDThermoGeneralWeightGPU(m);

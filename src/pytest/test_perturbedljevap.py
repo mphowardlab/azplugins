@@ -19,7 +19,7 @@ def two_particle_snapshot_factory():
         snap.configuration.box = [20, 20, 20, 0, 0, 0]
         snap.particles.N = 2
         snap.particles.types = ["A"]
-        snap.particles.position[:] = [[-d/2, 0, 0], [d/2, 1.2, 0]]
+        snap.particles.position[:] = [[-d / 2, 0, 0], [d / 2, 1.2, 0]]
 
     return snap
 
@@ -164,7 +164,7 @@ def test_energy_and_force_calculation_const(
 
     sim.run(0)
 
-    expected_forces = [[0.35032675, 0.4203921, 0.], [-0.35032675, -0.4203921, 0.]]
+    expected_forces = [[0.35032675, 0.4203921, 0.0], [-0.35032675, -0.4203921, 0.0]]
     expected_energies = [-0.07691956918309711, -0.07691956918309711]
 
     forces = evap.forces
@@ -231,13 +231,15 @@ def test_energy_and_force_calculation_vary(
     sim.operations.integrator = integrator
     sim.run(0)
 
-    expected_forces = [[0.39995636970934184, 0.47994764365121023, 0.0], 
-                       [-0.39995636970934184, -0.47994764365121023, 0.0]]
-    
+    expected_forces = [
+        [0.39995636970934184, 0.47994764365121023, 0.0],
+        [-0.39995636970934184, -0.47994764365121023, 0.0],
+    ]
     expected_energies = [-0.08781650815070254, -0.08781650815070254]
 
     forces = evap.forces
     energies = evap.energies
+
     if sim.device.communicator.rank == 0:
         numpy.testing.assert_allclose(forces, expected_forces)
         numpy.testing.assert_allclose(energies, expected_energies)
@@ -246,10 +248,12 @@ def test_energy_and_force_calculation_vary(
     """
 
     sim.run(100)
-    
-    expected_energies = [-0.014101921016901138, -0.014101921016901138]   
-    expected_forces   = [[0.06422657031828848, 0.07707188438194618, 0.0], 
-                         [-0.06422657031828848, -0.07707188438194618, 0.0]]   
+
+    expected_forces = [
+        [0.06422657031828848, 0.07707188438194618, 0.0],
+        [-0.06422657031828848, -0.07707188438194618, 0.0],
+    ]
+    expected_energies = [-0.014101921016901138, -0.014101921016901138]
 
     forces = evap.forces
     energies = evap.energies
@@ -257,4 +261,3 @@ def test_energy_and_force_calculation_vary(
     if sim.device.communicator.rank == 0:
         numpy.testing.assert_allclose(forces, expected_forces)
         numpy.testing.assert_allclose(energies, expected_energies)
-
