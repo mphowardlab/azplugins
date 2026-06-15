@@ -2,6 +2,8 @@
 # Copyright (c) 2021-2025, Auburn University
 # Part of azplugins, released under the BSD 3-Clause License.
 
+"""Test Perturbed Lennard-Jones for Evaporation pair potential."""
+
 import hoomd
 import hoomd.azplugins
 import numpy
@@ -244,7 +246,7 @@ with varying attraction scale factor.
 def test_energy_and_force_calculation_vary(
     valid_args_vary, two_particle_snapshot_factory, simulation_factory
 ):
-    """Energies/forces at t=0 and t=2.5, with and without time scaling."""
+    """Energies/forces at t=0 and t=0.5, with and without time scaling."""
     snap = two_particle_snapshot_factory
     evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**valid_args_vary)
     sim = simulation_factory(snap)
@@ -260,6 +262,29 @@ def test_energy_and_force_calculation_vary(
 
     forces = evap.forces
     energies = evap.energies
+    if sim.device.communicator.rank == 0:
+        numpy.testing.assert_allclose(forces, expected_forces)
+        numpy.testing.assert_allclose(energies, expected_energies)
+
+    """Test if the potential energy and forces change as expected after a certain time.
+    """
+
+    sim.run(100)
+
+    snapshot = sim.state.get_snapshot()
+    positions = snapshot.particles.position
+
+    print(f"Particle 1 position: {positions[1]}")
+
+    expected_energies = [-0.04900309081706919, -0.04900309081706919]
+    expected_forces = [
+        [0.0, 0.24328626764453856, 0.0],
+        [0.0, -0.24328626764453856, 0.0],
+    ]
+
+    forces = evap.forces
+    energies = evap.energies
+
     if sim.device.communicator.rank == 0:
         numpy.testing.assert_allclose(forces, expected_forces)
         numpy.testing.assert_allclose(energies, expected_energies)
