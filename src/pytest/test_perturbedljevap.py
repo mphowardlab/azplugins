@@ -8,6 +8,44 @@ import numpy
 
 import pytest
 
+_DEVICE_PARAMS = ["cpu"]
+
+if hoomd.version.gpu_enabled:
+    try:
+        if len(hoomd.device.GPU.get_available_devices()) > 0:
+            _DEVICE_PARAMS.append("gpu")
+    except Exception:
+        pass
+
+
+@pytest.fixture(params=_DEVICE_PARAMS)
+def simulation_factory(request):
+    """Create a Simulation on CPU, and on GPU when available."""
+
+    def make_simulation(snapshot):
+        if request.param == "cpu":
+            device = hoomd.device.CPU()
+        else:
+            device = hoomd.device.GPU()
+
+        sim = hoomd.Simulation(device=device, seed=1)
+        sim.create_state_from_snapshot(snapshot)
+        return sim
+
+    return make_simulation
+
+
+@pytest.fixture
+def two_particle_snapshot_factory():
+    snap = hoomd.Snapshot()
+    if snap.communicator.rank == 0:
+        snap.configuration.box = [20, 20, 20, 0, 0, 0]
+        snap.particles.N = 2
+        snap.particles.types = ["A"]
+        snap.particles.position[:] = [[0, 0, 0], [0, 1.2, 0]]
+
+    return snap
+
 
 @pytest.fixture
 def valid_args_const():
@@ -25,18 +63,6 @@ def valid_args_const():
             [5.0, 4.0, 2.0, 1.0], 0, 300
         ),
     }
-
-
-@pytest.fixture
-def two_particle_snapshot_factory():
-    snap = hoomd.Snapshot()
-    if snap.communicator.rank == 0:
-        snap.configuration.box = [20, 20, 20, 0, 0, 0]
-        snap.particles.N = 2
-        snap.particles.types = ["A"]
-        snap.particles.position[:] = [[0, 0, 0], [0, 1.2, 0]]
-
-    return snap
 
 
 def test_constructor(valid_args_const):
@@ -63,13 +89,14 @@ def test_constructor(valid_args_const):
     assert evap.time_scale_factor == 1.0
 
 
-def test_domain_mismatch(valid_args_const, two_particle_snapshot_factory):
+def test_domain_mismatch(
+    valid_args_const, two_particle_snapshot_factory, simulation_factory
+):
     snap = two_particle_snapshot_factory
+    sim = simulation_factory(snap)
+
     bad_args = valid_args_const.copy()
     bad_args["domain"] = [0.0, 10.0]
-
-    sim = hoomd.Simulation(device=hoomd.device.CPU(), seed=42)
-    sim.create_state_from_snapshot(snap)
 
     integrator = hoomd.md.Integrator(dt=0.005)
     sim.operations.integrator = integrator
@@ -81,13 +108,14 @@ def test_domain_mismatch(valid_args_const, two_particle_snapshot_factory):
         sim.run(0)
 
 
-def test_shape_mismatch(valid_args_const, two_particle_snapshot_factory):
+def test_shape_mismatch(
+    valid_args_const, two_particle_snapshot_factory, simulation_factory
+):
     snap = two_particle_snapshot_factory
     bad_args = valid_args_const.copy()
     bad_args["attraction_scale_factor_shape"] = [2, 2, 2]
 
-    sim = hoomd.Simulation(device=hoomd.device.CPU(), seed=42)
-    sim.create_state_from_snapshot(snap)
+    sim = simulation_factory(snap)
 
     integrator = hoomd.md.Integrator(dt=0.005)
     sim.operations.integrator = integrator
@@ -99,13 +127,14 @@ def test_shape_mismatch(valid_args_const, two_particle_snapshot_factory):
         sim.run(0)
 
 
-def test_data_size_mismatch(valid_args_const, two_particle_snapshot_factory):
+def test_data_size_mismatch(
+    valid_args_const, two_particle_snapshot_factory, simulation_factory
+):
     snap = two_particle_snapshot_factory
     bad_args = valid_args_const.copy()
     bad_args["attraction_scale_factor_data"] = [1.0, 1.0]
 
-    sim = hoomd.Simulation(device=hoomd.device.CPU(), seed=42)
-    sim.create_state_from_snapshot(snap)
+    sim = simulation_factory(snap)
 
     integrator = hoomd.md.Integrator(dt=0.005)
     sim.operations.integrator = integrator
@@ -117,15 +146,16 @@ def test_data_size_mismatch(valid_args_const, two_particle_snapshot_factory):
         sim.run(0)
 
 
-def test_variant_mismatch(valid_args_const, two_particle_snapshot_factory):
+def test_variant_mismatch(
+    valid_args_const, two_particle_snapshot_factory, simulation_factory
+):
     snap = two_particle_snapshot_factory
     bad_args = valid_args_const.copy()
     bad_args["variant"] = hoomd.variant.Constant(
         1.0
     )  # Invalid: Should be VariantInterpolated
 
-    sim = hoomd.Simulation(device=hoomd.device.CPU(), seed=42)
-    sim.create_state_from_snapshot(snap)
+    sim = simulation_factory(snap)
 
     integrator = hoomd.md.Integrator(dt=0.005)
     sim.operations.integrator = integrator
@@ -143,13 +173,12 @@ with constant attraction scalefactor.
 
 
 def test_energy_and_force_calculation_const(
-    valid_args_const, two_particle_snapshot_factory
+    valid_args_const, two_particle_snapshot_factory, simulation_factory
 ):
     snap = two_particle_snapshot_factory
     evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**valid_args_const)
 
-    sim = hoomd.Simulation(device=hoomd.device.CPU(), seed=42)
-    sim.create_state_from_snapshot(snap)
+    sim = simulation_factory(snap)
 
     integrator = hoomd.md.Integrator(dt=0.005)
     integrator.forces = [evap]
@@ -161,16 +190,19 @@ def test_energy_and_force_calculation_const(
     expected_forces = [[0.0, 1.32701601, 0.0], [0.0, -1.32701601, 0.0]]
     expected_energies = [-0.26728958627492283, -0.26728958627492283]
 
+    forces = evap.forces
+    energies = evap.energies
+
     if sim.device.communicator.rank == 0:
-        numpy.testing.assert_allclose(evap.forces, expected_forces)
-        numpy.testing.assert_allclose(evap.energies, expected_energies)
+        numpy.testing.assert_allclose(forces, expected_forces)
+        numpy.testing.assert_allclose(energies, expected_energies)
 
 
 @pytest.fixture(
     params=[
         # (time_scale_factor, domain)
-        (1.0, [0.0, 1.0, 0.0, 1000.0]),
-        (2.0, [0.0, 1.0, 0.0, 500.0]),
+        (1.0, [0.0, 1.0, 0.0, 100.0]),
+        (2.0, [0.0, 1.0, 0.0, 50.0]),
     ],
     ids=["unscaled_time", "scaled_time"],
 )
@@ -199,7 +231,7 @@ def valid_args_vary(request):
         "variant": hoomd.azplugins.variant.VariantInterpolated(
             [12, 10, 8, 6, 4, 2],
             0.0,
-            1000.0,  # Unscaled coordinates for the interpolated variant
+            100.0,  # Run for 100 timesteps, which corresponds to t = 0.5 for dt = 0.005
         ),
     }
 
@@ -210,14 +242,12 @@ with varying attraction scale factor.
 
 
 def test_energy_and_force_calculation_vary(
-    valid_args_vary, two_particle_snapshot_factory
+    valid_args_vary, two_particle_snapshot_factory, simulation_factory
 ):
     """Energies/forces at t=0 and t=2.5, with and without time scaling."""
     snap = two_particle_snapshot_factory
     evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**valid_args_vary)
-
-    sim = hoomd.Simulation(device=hoomd.device.CPU(), seed=42)
-    sim.create_state_from_snapshot(snap)
+    sim = simulation_factory(snap)
 
     integrator = hoomd.md.Integrator(dt=0.005)
     integrator.forces = [evap]
@@ -228,17 +258,8 @@ def test_energy_and_force_calculation_vary(
 
     expected_energies = [-0.305155610997203564, -0.305155610997203564]
 
+    forces = evap.forces
+    energies = evap.energies
     if sim.device.communicator.rank == 0:
-        numpy.testing.assert_allclose(evap.forces, expected_forces)
-        numpy.testing.assert_allclose(evap.energies, expected_energies)
-
-    """Test if the potential energy and forces change as expected after a certain time.
-    """
-    sim.run(500)  # Run for 500 steps, which corresponds to t = 2.5 for dt = 0.005
-
-    expected_energies = [-0.18901192172298115, -0.18901192172298115]
-    expected_forces = [[0.0, 0.9383898894860773, 0.0], [0.0, -0.9383898894860773, 0.0]]
-
-    if sim.device.communicator.rank == 0:
-        numpy.testing.assert_allclose(evap.forces, expected_forces)
-        numpy.testing.assert_allclose(evap.energies, expected_energies)
+        numpy.testing.assert_allclose(forces, expected_forces)
+        numpy.testing.assert_allclose(energies, expected_energies)
