@@ -17,7 +17,7 @@ namespace py = pybind11;
 void export_PerturbedLennardJonesEvapGPU(py::module& m)
     {
     py::class_<PerturbedLennardJonesEvapGPU,
-               PerturbedLennardJonesEvap,
+	       PerturbedLennardJonesEvap,
                std::shared_ptr<PerturbedLennardJonesEvapGPU>>(m, "PerturbedLennardJonesEvapGPU")
         .def(py::init(
             [](std::shared_ptr<SystemDefinition> sysdef,

@@ -5,6 +5,7 @@ set(COMPONENT_NAME azplugins)
 set(_${COMPONENT_NAME}_sources
     ConstantFlow.cc
     export_ImagePotentialBondHarmonic.cc
+    PerturbedLennardJonesEvap.cc
     export_PerturbedLennardJonesEvap.cc
     export_VariantInterpolated.cc
     module.cc
@@ -14,6 +15,7 @@ set(_${COMPONENT_NAME}_sources
 if (ENABLE_HIP)
     list(APPEND _${COMPONENT_NAME}_sources
     export_ImagePotentialBondHarmonicGPU.cc
+    PerturbedLennardJonesEvapGPU.cc
     export_PerturbedLennardJonesEvapGPU.cc
     VelocityComputeGPU.cc
     )
@@ -22,6 +24,7 @@ endif()
 # TODO: List all GPU C++ source code files in _${COMPONENT_NAME}_cu_sources.
 set(_${COMPONENT_NAME}_cu_sources
     ImagePotentialBondGPUKernel.cu
+    PerturbedLennardJonesEvapGPU.cu
     VelocityComputeGPU.cu
     VelocityFieldComputeGPU.cu
     )
