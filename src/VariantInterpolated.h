@@ -45,10 +45,10 @@ class PYBIND11_EXPORT VariantInterpolated : public Variant
     Scalar operator()(uint64_t timestep)
         {
         ArrayHandle<Scalar> h_data(m_data, access_location::host, access_mode::read);
-
+        const Scalar t = static_cast<Scalar>(timestep);
         // LinearInterpolator1D
         LinearInterpolator1D<Scalar> interp(h_data.data, m_n, m_t_lo, m_t_hi);
-        return interp(static_cast<Scalar>(timestep));
+        return interp(t);
         }
 
     Scalar getTLo() const

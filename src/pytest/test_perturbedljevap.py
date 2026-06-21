@@ -14,13 +14,14 @@ import pytest
 @pytest.fixture
 def two_particle_snapshot_factory():
     snap = hoomd.Snapshot()
-    d = 1
     if snap.communicator.rank == 0:
         snap.configuration.box = [20, 20, 20, 0, 0, 0]
         snap.particles.N = 2
         snap.particles.types = ["A"]
-        snap.particles.position[:] = [[-d / 2, 0, 0], [d / 2, 1.2, 0]]
-
+        snap.particles.position[:] = [
+            [-10, -10, -10],
+            [-10, -8.8, -10],
+        ]
     return snap
 
 
@@ -35,7 +36,7 @@ def valid_args_const():
         "energy_shift": False,
         "attraction_scale_factor_data": numpy.array([[0.6, 0.6], [0.6, 0.6]]),
         "attraction_scale_factor_shape": [2, 2],
-        "domain": [0.0, 1.0, 0.0, 100.0],
+        "domain": [0.0, 100.0],
         "variant": hoomd.azplugins.variant.VariantInterpolated(
             [5.0, 4.0, 2.0, 1.0], 0, 300
         ),
@@ -73,7 +74,7 @@ def test_domain_mismatch(
     sim = simulation_factory(snap)
 
     bad_args = valid_args_const.copy()
-    bad_args["domain"] = [0.0, 10.0]
+    bad_args["domain"] = [10.0]
 
     integrator = hoomd.md.Integrator(dt=0.005)
     sim.operations.integrator = integrator
@@ -164,8 +165,8 @@ def test_energy_and_force_calculation_const(
 
     sim.run(0)
 
-    expected_forces = [[0.35032675, 0.4203921, 0.0], [-0.35032675, -0.4203921, 0.0]]
-    expected_energies = [-0.07691956918309711, -0.07691956918309711]
+    expected_forces = [[0.0, 1.32701601, 0.0], [0.0, -1.32701601, 0.0]]
+    expected_energies = [-0.267289586, -0.267289586]
 
     forces = evap.forces
     energies = evap.energies
@@ -178,8 +179,8 @@ def test_energy_and_force_calculation_const(
 @pytest.fixture(
     params=[
         # (time_scale_factor, domain)
-        (1.0, [0.0, 1.0, 0.0, 100.0]),
-        (2.0, [0.0, 1.0, 0.0, 50.0]),
+        (1.0, [0.0, 100.0]),
+        (2.0, [0.0, 50.0]),
     ],
     ids=["unscaled_time", "scaled_time"],
 )
@@ -206,7 +207,7 @@ def valid_args_vary(request):
         "attraction_scale_factor_shape": attraction_factor_table.shape,
         "domain": domain,
         "variant": hoomd.azplugins.variant.VariantInterpolated(
-            [12, 10, 8, 6, 4, 2],
+            [2, 0, -2, -4, -6, -8],
             0.0,
             100.0,  # Run for 100 timesteps, which corresponds to t = 0.5 for dt = 0.005
         ),
@@ -232,10 +233,10 @@ def test_energy_and_force_calculation_vary(
     sim.run(0)
 
     expected_forces = [
-        [0.39995636970934184, 0.47994764365121023, 0.0],
-        [-0.39995636970934184, -0.47994764365121023, 0.0],
+        [0, 1.5150099394228083, 0.0],
+        [0, -1.5150099394228083, 0.0],
     ]
-    expected_energies = [-0.08781650815070254, -0.08781650815070254]
+    expected_energies = [-0.30515561, -0.30515561]
 
     forces = evap.forces
     energies = evap.energies
@@ -250,10 +251,10 @@ def test_energy_and_force_calculation_vary(
     sim.run(100)
 
     expected_forces = [
-        [0.06422657031828848, 0.07707188438194618, 0.0],
-        [-0.06422657031828848, -0.07707188438194618, 0.0],
+        [0.0, 0.24328626, 0.0],
+        [0.0, -0.24328626, 0.0],
     ]
-    expected_energies = [-0.014101921016901138, -0.014101921016901138]
+    expected_energies = [-0.04900309, -0.04900309]
 
     forces = evap.forces
     energies = evap.energies

@@ -28,13 +28,13 @@ PerturbedLennardJonesEvap::PerturbedLennardJonesEvap(
       lj2(params.epsilon_x_4 * params.sigma_6), rcutsq(rcut * rcut), rwcasq(params.rwcasq),
       sigma_6(params.sigma_6), m_energy_shift(energy_shift), m_variant(variant)
     {
-        // Allocate and fill the (y, t) domain: [y_lo, y_hi, t_lo, t_hi]
+        // Allocate and fill the domain for time: [t_lo, t_hi]
         {
-        GPUArray<Scalar> domain_arr(4, m_exec_conf);
+        GPUArray<Scalar> domain_arr(2, m_exec_conf);
         m_domain.swap(domain_arr);
 
         ArrayHandle<Scalar> h_domain(m_domain, access_location::host, access_mode::overwrite);
-        std::copy(domain, domain + 4, h_domain.data);
+        std::copy(domain, domain + 2, h_domain.data);
         }
 
         // Allocate and fill the table shape (ny, nt)
@@ -113,13 +113,13 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
                                     access_mode::read);
 
     // Build the interpolator: lo = {y_lo, t_lo}, hi = {y_hi, t_hi}
-    const Scalar lo[2] = {h_domain.data[0], h_domain.data[2]};
-    const Scalar hi[2] = {h_domain.data[1], h_domain.data[3]};
+    const Scalar lo[2] = {Scalar(0.0), h_domain.data[0]};
+    const Scalar hi[2] = {Scalar(1.0), h_domain.data[1]}; // y is always scaled between 0 and 1
     LinearInterpolator2D<Scalar> interp(h_data.data, h_shape.data, lo, hi);
 
-    auto clamp_scaled_y = [](Scalar y, Scalar height)
+    auto clamp_scaled_y = [](Scalar y, Scalar height, Scalar ylo)
     {
-        const Scalar s = y / height;
+        const Scalar s = (y - ylo) / (height - ylo);
         if (!(s > Scalar(0.0)))
             return Scalar(0.0);
         if (s > Scalar(1.0))
@@ -134,7 +134,7 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
         {
         const Scalar3 pos_i = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
 
-        Scalar scaled_y_i = clamp_scaled_y(h_pos.data[i].y, interface_height);
+        Scalar scaled_y_i = clamp_scaled_y(h_pos.data[i].y, interface_height, box.getLo().y);
         Scalar3 fi = make_scalar3(0, 0, 0);
         Scalar pei = 0;
 
@@ -148,7 +148,7 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
             const unsigned int j = h_nlist.data[head + k];
             if (j == i)
                 continue;
-            Scalar scaled_y_j = clamp_scaled_y(h_pos.data[j].y, interface_height);
+            Scalar scaled_y_j = clamp_scaled_y(h_pos.data[j].y, interface_height, box.getLo().y);
             Scalar3 pos_j = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
 
             const Scalar attraction_scale_factor_j = interp(scaled_y_j, scaled_t);

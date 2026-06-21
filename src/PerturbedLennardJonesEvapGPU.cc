@@ -36,7 +36,7 @@ PerturbedLennardJonesEvapGPU::PerturbedLennardJonesEvapGPU(
     m_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
                                    m_exec_conf,
                                    "perturbed_lennard_jones_evap"));
-    m_autotuners.push_back(m_tuner);
+    this->m_autotuners.push_back(m_tuner);
     }
 
 void PerturbedLennardJonesEvapGPU::computeForces(uint64_t timestep)
@@ -68,37 +68,35 @@ void PerturbedLennardJonesEvapGPU::computeForces(uint64_t timestep)
     ArrayHandle<Scalar> h_domain(m_domain, access_location::host, access_mode::read);
 
     // build the interpolator: lo = {y_lo, t_lo}, hi = {y_hi, t_hi}
-    const Scalar lo[2] = {h_domain.data[0], h_domain.data[2]};
-    const Scalar hi[2] = {h_domain.data[1], h_domain.data[3]};
+    const Scalar lo[2] = {Scalar(0.0), h_domain.data[0]};
+    const Scalar hi[2] = {Scalar(1.0), h_domain.data[1]};
     const LinearInterpolator2D<Scalar> interp(d_data.data, h_shape.data, lo, hi);
 
     ArrayHandle<Scalar4> d_force(m_force, access_location::device, access_mode::overwrite);
-    
+
     m_tuner->begin();
-    gpu::perturbed_lennard_jones_evap_args_t args(
-        d_force.data,
-        d_pos.data,
-        this->m_pdata->getGlobalBox(),
-        this->m_pdata->getN(),
-        d_n_neigh.data,
-        d_nlist.data,
-        d_head_list.data,
-        interp,
-        scaled_t,
-        interface_height,
-        lj1,
-        lj2,
-        epsilon_x_4,
-        rcutsq,
-        rwcasq,
-        m_energy_shift,
-        m_tuner->getParam()[0]);
+    gpu::perturbed_lennard_jones_evap_args_t args(d_force.data,
+                                                  d_pos.data,
+                                                  this->m_pdata->getGlobalBox(),
+                                                  this->m_pdata->getN(),
+                                                  d_n_neigh.data,
+                                                  d_nlist.data,
+                                                  d_head_list.data,
+                                                  interp,
+                                                  scaled_t,
+                                                  interface_height,
+                                                  lj1,
+                                                  lj2,
+                                                  epsilon_x_4,
+                                                  rcutsq,
+                                                  rwcasq,
+                                                  m_energy_shift,
+                                                  m_tuner->getParam()[0]);
 
     gpu::compute_perturbed_lennard_jones_evap_forces(args);
     if (this->m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
     m_tuner->end();
-
     }
 
     } // end namespace azplugins

@@ -13,9 +13,9 @@ namespace gpu
 namespace kernel
     {
 
-__device__ __inline__ Scalar clamp_scaled_y(Scalar y, Scalar height)
+__device__ __inline__ Scalar clamp_scaled_y(Scalar y, Scalar height, Scalar ylo)
     {
-    const Scalar s = y / height;
+    const Scalar s = (y - ylo) / (height - ylo);
     if (!(s > Scalar(0.0)))
         return Scalar(0.0);
     if (s > Scalar(1.0))
@@ -49,7 +49,7 @@ compute_perturbed_lennard_jones_evap_forces(Scalar4* d_force,
     const Scalar4 postype_i = __ldg(d_pos + idx);
     const Scalar3 pos_i = make_scalar3(postype_i.x, postype_i.y, postype_i.z);
 
-    const Scalar scaled_y_i = clamp_scaled_y(postype_i.y, interface_height);
+    const Scalar scaled_y_i = clamp_scaled_y(postype_i.y, interface_height, box.getLo().y);
     const Scalar attraction_scale_factor_i = interp(scaled_y_i, scaled_t);
 
     // initialize the force and energy to 0
@@ -70,7 +70,7 @@ compute_perturbed_lennard_jones_evap_forces(Scalar4* d_force,
         const Scalar4 postype_j = __ldg(d_pos + j);
         const Scalar3 pos_j = make_scalar3(postype_j.x, postype_j.y, postype_j.z);
 
-        const Scalar scaled_y_j = clamp_scaled_y(postype_j.y, interface_height);
+        const Scalar scaled_y_j = clamp_scaled_y(postype_j.y, interface_height, box.getLo().y);
         const Scalar attraction_scale_factor_j = interp(scaled_y_j, scaled_t);
 
         // minimum-image

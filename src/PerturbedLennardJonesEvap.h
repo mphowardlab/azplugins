@@ -50,7 +50,7 @@ struct PairParametersPerturbedLennardJonesEvap
         auto sigma = v["sigma"].cast<Scalar>();
         auto epsilon = v["epsilon"].cast<Scalar>();
 
-		const Scalar sigma_2 = sigma * sigma;
+        const Scalar sigma_2 = sigma * sigma;
         const Scalar sigma_4 = sigma_2 * sigma_2;
         sigma_6 = sigma_2 * sigma_4;
         epsilon_x_4 = Scalar(4.0) * epsilon;

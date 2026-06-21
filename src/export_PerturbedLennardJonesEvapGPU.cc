@@ -17,7 +17,7 @@ namespace py = pybind11;
 void export_PerturbedLennardJonesEvapGPU(py::module& m)
     {
     py::class_<PerturbedLennardJonesEvapGPU,
-	       PerturbedLennardJonesEvap,
+               PerturbedLennardJonesEvap,
                std::shared_ptr<PerturbedLennardJonesEvapGPU>>(m, "PerturbedLennardJonesEvapGPU")
         .def(py::init(
             [](std::shared_ptr<SystemDefinition> sysdef,
@@ -36,9 +36,9 @@ void export_PerturbedLennardJonesEvapGPU(py::module& m)
             {
                 if (attraction_scale_factor_shape.size() != 2)
                     throw std::runtime_error("lambda_shape must have 2 elements");
-                if (domain.size() != 4)
+                if (domain.size() != 2)
                     throw std::runtime_error(
-                        "domain must have 4 elements [y_lo, y_hi, t_lo, t_hi]");
+                        "domain must have 2 elements [y_lo, y_hi, t_lo, t_hi]");
 
                 const unsigned int* shape_ptr = attraction_scale_factor_shape.data();
                 const Scalar* data_ptr = attraction_scale_factor_data.data();

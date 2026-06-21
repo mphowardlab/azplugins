@@ -5,8 +5,13 @@
 #ifndef AZPLUGINS_PERTURBED_LENNARD_JONES_EVAP_GPU_H_
 #define AZPLUGINS_PERTURBED_LENNARD_JONES_EVAP_GPU_H_
 
-#include "PerturbedLennardJonesEvapGPU.cuh"
+#ifdef __HIPCC__
+#error This header cannot be compiled by nvcc
+#endif
+
 #include "PerturbedLennardJonesEvap.h"
+#include "PerturbedLennardJonesEvapGPU.cuh"
+#include "hoomd/Autotuner.h"
 
 namespace hoomd
     {

@@ -36,9 +36,8 @@ void export_PerturbedLennardJonesEvap(py::module& m)
             {
                 if (attraction_scale_factor_shape.size() != 2)
                     throw std::runtime_error("lambda_shape must have 2 elements");
-                if (domain.size() != 4)
-                    throw std::runtime_error(
-                        "domain must have 4 elements [y_lo, y_hi, t_lo, t_hi]");
+                if (domain.size() != 2)
+                    throw std::runtime_error("domain must have 2 elements [t_lo, t_hi]");
 
                 const unsigned int* shape_ptr = attraction_scale_factor_shape.data();
                 const Scalar* data_ptr = attraction_scale_factor_data.data();
