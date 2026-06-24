@@ -70,15 +70,26 @@ void PerturbedLennardJonesEvapGPU::computeForces(uint64_t timestep)
     // build the interpolator: lo = {y_lo, t_lo}, hi = {y_hi, t_hi}
     const Scalar lo[2] = {Scalar(0.0), h_domain.data[0]};
     const Scalar hi[2] = {Scalar(1.0), h_domain.data[1]};
+
     const LinearInterpolator2D<Scalar> interp(d_data.data, h_shape.data, lo, hi);
+
+    const unsigned int N = this->m_pdata->getN();
+    const unsigned int n_ghost = this->m_pdata->getNGhosts();
+
+    GPUArray<Scalar> scale_factor(N + n_ghost, m_exec_conf);
+    ArrayHandle<Scalar> d_scale_factor(scale_factor,
+                                       access_location::device,
+                                       access_mode::overwrite);
 
     ArrayHandle<Scalar4> d_force(m_force, access_location::device, access_mode::overwrite);
 
     m_tuner->begin();
     gpu::perturbed_lennard_jones_evap_args_t args(d_force.data,
                                                   d_pos.data,
+                                                  d_scale_factor.data,
                                                   this->m_pdata->getGlobalBox(),
-                                                  this->m_pdata->getN(),
+                                                  N,
+                                                  n_ghost,
                                                   d_n_neigh.data,
                                                   d_nlist.data,
                                                   d_head_list.data,

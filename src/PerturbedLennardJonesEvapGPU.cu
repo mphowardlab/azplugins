@@ -12,34 +12,47 @@ namespace gpu
     {
 namespace kernel
     {
-
 __device__ __inline__ Scalar clamp_scaled_y(Scalar y, Scalar height, Scalar ylo)
     {
     const Scalar s = (y - ylo) / (height - ylo);
-    if (!(s > Scalar(0.0)))
+    if (s < Scalar(0.0))
         return Scalar(0.0);
     if (s > Scalar(1.0))
         return Scalar(1.0);
     return s;
     }
 
-__global__ void
-compute_perturbed_lennard_jones_evap_forces(Scalar4* d_force,
-                                            const Scalar4* d_pos,
-                                            const BoxDim& box,
-                                            const unsigned int N,
-                                            const unsigned int* d_n_neigh,
-                                            const unsigned int* d_nlist,
-                                            const size_t* d_head_list,
-                                            const LinearInterpolator2D<Scalar>& interp,
-                                            const Scalar interface_height,
-                                            const Scalar scaled_t,
-                                            const Scalar lj1,
-                                            const Scalar lj2,
-                                            const Scalar epsilon_x_4,
-                                            const Scalar rcutsq,
-                                            const Scalar rwcasq,
-                                            const bool energy_shift)
+__global__ void compute_attraction_scale_factor(Scalar* d_scale_factor,
+                                                const Scalar4* d_pos,
+                                                const unsigned int Ntot,
+                                                const LinearInterpolator2D<Scalar> interp,
+                                                const Scalar interface_height,
+                                                const Scalar scaled_t,
+                                                const Scalar y_lo)
+    {
+    const unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= Ntot)
+        return;
+
+    const Scalar y = __ldg(d_pos + i).y;
+    const Scalar scaled_pos_y = clamp_scaled_y(y, interface_height, y_lo);
+    d_scale_factor[i] = interp(scaled_pos_y, scaled_t);
+    }
+
+__global__ void compute_perturbed_lennard_jones_evap_forces(Scalar4* d_force,
+                                                            const Scalar4* d_pos,
+                                                            const BoxDim& box,
+                                                            const unsigned int N,
+                                                            const unsigned int* d_n_neigh,
+                                                            const unsigned int* d_nlist,
+                                                            const size_t* d_head_list,
+                                                            const Scalar* d_scale_factor,
+                                                            const Scalar lj1,
+                                                            const Scalar lj2,
+                                                            const Scalar epsilon_x_4,
+                                                            const Scalar rcutsq,
+                                                            const Scalar rwcasq,
+                                                            const bool energy_shift)
     {
     // start by identifying which particle we are to handle
     const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -49,9 +62,7 @@ compute_perturbed_lennard_jones_evap_forces(Scalar4* d_force,
     const Scalar4 postype_i = __ldg(d_pos + idx);
     const Scalar3 pos_i = make_scalar3(postype_i.x, postype_i.y, postype_i.z);
 
-    const Scalar scaled_y_i = clamp_scaled_y(postype_i.y, interface_height, box.getLo().y);
-    const Scalar attraction_scale_factor_i = interp(scaled_y_i, scaled_t);
-
+    const Scalar attraction_scale_factor_i = __ldg(d_scale_factor + idx);
     // initialize the force and energy to 0
     Scalar3 fi = make_scalar3(0, 0, 0);
     Scalar pei = 0;
@@ -70,8 +81,7 @@ compute_perturbed_lennard_jones_evap_forces(Scalar4* d_force,
         const Scalar4 postype_j = __ldg(d_pos + j);
         const Scalar3 pos_j = make_scalar3(postype_j.x, postype_j.y, postype_j.z);
 
-        const Scalar scaled_y_j = clamp_scaled_y(postype_j.y, interface_height, box.getLo().y);
-        const Scalar attraction_scale_factor_j = interp(scaled_y_j, scaled_t);
+        const Scalar attraction_scale_factor_j = __ldg(d_scale_factor + j);
 
         // minimum-image
         Scalar3 dx = pos_i - pos_j;
@@ -147,8 +157,23 @@ compute_perturbed_lennard_jones_evap_forces(const perturbed_lennard_jones_evap_a
 
     const unsigned int run_block_size = min(args.block_size, max_block_size);
 
+    const unsigned int Ntot = args.N + args.N_ghost;
     dim3 grid(args.N / run_block_size + 1, 1, 1);
     dim3 threads(run_block_size, 1, 1);
+
+    const Scalar ylo = args.box.getLo().y;
+    hipLaunchKernelGGL((azplugins::gpu::kernel::compute_attraction_scale_factor),
+                       grid,
+                       threads,
+                       0,
+                       0,
+                       args.d_scale_factor,
+                       args.d_pos,
+                       Ntot,
+                       args.interp,
+                       args.interface_height,
+                       args.scaled_t,
+                       ylo);
 
     hipLaunchKernelGGL((azplugins::gpu::kernel::compute_perturbed_lennard_jones_evap_forces),
                        grid,
@@ -162,9 +187,7 @@ compute_perturbed_lennard_jones_evap_forces(const perturbed_lennard_jones_evap_a
                        args.d_n_neigh,
                        args.d_nlist,
                        args.d_head_list,
-                       args.interp,
-                       args.interface_height,
-                       args.scaled_t,
+                       args.d_scale_factor,
                        args.lj1,
                        args.lj2,
                        args.epsilon_x_4,

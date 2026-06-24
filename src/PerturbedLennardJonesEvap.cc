@@ -129,16 +129,26 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
 
     const BoxDim box = m_pdata->getGlobalBox();
     const unsigned int N = m_pdata->getN();
+    const unsigned int N_tot = N + m_pdata->getNGhosts();
+
+    GPUArray<Scalar> scale_factor(N_tot, m_exec_conf);
+    ArrayHandle<Scalar> h_scale_factor(scale_factor, access_location::host, access_mode::readwrite);
+
+    for (unsigned int k = 0; k < N_tot; k++)
+        {
+        const Scalar scaled_pos_y
+            = clamp_scaled_y(h_pos.data[k].y, interface_height, box.getLo().y);
+        h_scale_factor.data[k] = interp(scaled_pos_y, scaled_t);
+        }
 
     for (unsigned int i = 0; i < N; ++i)
         {
         const Scalar3 pos_i = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
 
-        Scalar scaled_y_i = clamp_scaled_y(h_pos.data[i].y, interface_height, box.getLo().y);
         Scalar3 fi = make_scalar3(0, 0, 0);
         Scalar pei = 0;
 
-        const Scalar attraction_scale_factor_i = interp(scaled_y_i, scaled_t);
+        const Scalar attraction_scale_factor_i = h_scale_factor.data[i];
 
         const unsigned int size = (unsigned int)h_n_neigh.data[i];
         const size_t head = h_head_list.data[i];
@@ -148,10 +158,9 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
             const unsigned int j = h_nlist.data[head + k];
             if (j == i)
                 continue;
-            Scalar scaled_y_j = clamp_scaled_y(h_pos.data[j].y, interface_height, box.getLo().y);
             Scalar3 pos_j = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
 
-            const Scalar attraction_scale_factor_j = interp(scaled_y_j, scaled_t);
+            const Scalar attraction_scale_factor_j = h_scale_factor.data[j];
 
             // Minimum-image
             Scalar3 dx = pos_i - pos_j;

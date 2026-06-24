@@ -27,8 +27,10 @@ struct perturbed_lennard_jones_evap_args_t
     {
     perturbed_lennard_jones_evap_args_t(Scalar4* _d_force,
                                         const Scalar4* _d_pos,
+                                        Scalar* _d_scale_factor,
                                         const BoxDim& _box,
                                         const unsigned int _N,
+                                        const unsigned int _n_ghost,
                                         const unsigned int* _d_n_neigh,
                                         const unsigned int* _d_nlist,
                                         const size_t* _d_head_list,
@@ -42,16 +44,18 @@ struct perturbed_lennard_jones_evap_args_t
                                         const Scalar _rwcasq,
                                         const bool _energy_shift,
                                         const unsigned int _block_size)
-        : d_force(_d_force), d_pos(_d_pos), box(_box), N(_N), d_n_neigh(_d_n_neigh),
-          d_nlist(_d_nlist), d_head_list(_d_head_list), interp(_interp), scaled_t(_scaled_t),
-          interface_height(_interface_height), lj1(_lj1), lj2(_lj2), epsilon_x_4(_epsilon_x_4),
-          rcutsq(_rcutsq), rwcasq(_rwcasq), energy_shift(_energy_shift),
-          block_size(_block_size) { };
+        : d_force(_d_force), d_pos(_d_pos), d_scale_factor(_d_scale_factor), box(_box), N(_N),
+          N_ghost(_n_ghost), d_n_neigh(_d_n_neigh), d_nlist(_d_nlist), d_head_list(_d_head_list),
+          interp(_interp), scaled_t(_scaled_t), interface_height(_interface_height), lj1(_lj1),
+          lj2(_lj2), epsilon_x_4(_epsilon_x_4), rcutsq(_rcutsq), rwcasq(_rwcasq),
+          energy_shift(_energy_shift), block_size(_block_size) { };
 
     Scalar4* d_force;
     const Scalar4* d_pos;
+    Scalar* d_scale_factor;
     const BoxDim box;
     const unsigned int N;
+    const unsigned int N_ghost;
     const unsigned int* d_n_neigh;
     const unsigned int* d_nlist;
     const size_t* d_head_list;

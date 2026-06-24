@@ -47,8 +47,21 @@ class PYBIND11_EXPORT VariantInterpolated : public Variant
         ArrayHandle<Scalar> h_data(m_data, access_location::host, access_mode::read);
         const Scalar t = static_cast<Scalar>(timestep);
         // LinearInterpolator1D
-        LinearInterpolator1D<Scalar> interp(h_data.data, m_n, m_t_lo, m_t_hi);
-        return interp(t);
+        if (t < m_t_lo)
+            {
+            return h_data.data[0];
+            }
+
+        if (t > m_t_hi)
+            {
+            return h_data.data[m_n];
+            }
+
+        else
+            {
+            LinearInterpolator1D<Scalar> interp(h_data.data, m_n, m_t_lo, m_t_hi);
+            return interp(t);
+            }
         }
 
     Scalar getTLo() const
