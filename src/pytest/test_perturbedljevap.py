@@ -35,7 +35,6 @@ def valid_args_const():
         "time_scale_factor": 1.0,
         "energy_shift": False,
         "attraction_scale_factor_data": numpy.array([[0.6, 0.6], [0.6, 0.6]]),
-        "attraction_scale_factor_shape": [2, 2],
         "domain": [0.0, 100.0],
         "variant": hoomd.azplugins.variant.VariantInterpolated(
             [5.0, 4.0, 2.0, 1.0], 0, 300
@@ -58,10 +57,6 @@ def test_constructor(valid_args_const):
         evap._attraction_scale_factor_data,
         valid_args_const["attraction_scale_factor_data"],
     )
-    numpy.testing.assert_array_equal(
-        evap._attraction_scale_factor_shape,
-        valid_args_const["attraction_scale_factor_shape"],
-    )
 
     assert evap.rcut == 3.0
     assert evap.time_scale_factor == 1.0
@@ -75,25 +70,6 @@ def test_domain_mismatch(
 
     bad_args = valid_args_const.copy()
     bad_args["domain"] = [10.0]
-
-    integrator = hoomd.md.Integrator(dt=0.005)
-    sim.operations.integrator = integrator
-
-    evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**bad_args)
-    sim.operations.integrator.forces = [evap]
-
-    with pytest.raises(RuntimeError):
-        sim.run(0)
-
-
-def test_shape_mismatch(
-    valid_args_const, two_particle_snapshot_factory, simulation_factory
-):
-    snap = two_particle_snapshot_factory
-    bad_args = valid_args_const.copy()
-    bad_args["attraction_scale_factor_shape"] = [2, 2, 2]
-
-    sim = simulation_factory(snap)
 
     integrator = hoomd.md.Integrator(dt=0.005)
     sim.operations.integrator = integrator
@@ -202,9 +178,8 @@ def valid_args_vary(request):
         "epsilon": 1.0,
         "sigma": 1.0,
         "time_scale_factor": time_scale_factor,
-        "energy_shift": False,
+        "energy_shift": True,
         "attraction_scale_factor_data": attraction_factor_table,
-        "attraction_scale_factor_shape": attraction_factor_table.shape,
         "domain": domain,
         "variant": hoomd.azplugins.variant.VariantInterpolated(
             [2, 0, -2, -4, -6, -8],
@@ -236,7 +211,7 @@ def test_energy_and_force_calculation_vary(
         [0, 1.5150099394228083, 0.0],
         [0, -1.5150099394228083, 0.0],
     ]
-    expected_energies = [-0.30515561, -0.30515561]
+    expected_energies = [-0.3032789, -0.3032789]
 
     forces = evap.forces
     energies = evap.energies
@@ -254,7 +229,7 @@ def test_energy_and_force_calculation_vary(
         [0.0, 0.24328626, 0.0],
         [0.0, -0.24328626, 0.0],
     ]
-    expected_energies = [-0.04900309, -0.04900309]
+    expected_energies = [-0.048701721, -0.048701721]
 
     forces = evap.forces
     energies = evap.energies

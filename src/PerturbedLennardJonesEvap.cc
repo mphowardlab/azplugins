@@ -10,7 +10,8 @@ namespace hoomd
     {
 namespace azplugins
     {
-
+namespace detail
+    {
 PerturbedLennardJonesEvap::PerturbedLennardJonesEvap(
     std::shared_ptr<SystemDefinition> sysdef,
     std::shared_ptr<hoomd::md::NeighborList> nlist,
@@ -22,11 +23,8 @@ PerturbedLennardJonesEvap::PerturbedLennardJonesEvap(
     const unsigned int* attraction_scale_factor_shape,
     const Scalar* domain,
     std::shared_ptr<VariantInterpolated> variant)
-    : ForceCompute(sysdef), m_nlist(nlist), epsilon_x_4(params.epsilon_x_4), m_rcut(rcut),
-      m_time_scale_factor(time_scale_factor),
-      lj1(params.epsilon_x_4 * params.sigma_6 * params.sigma_6),
-      lj2(params.epsilon_x_4 * params.sigma_6), rcutsq(rcut * rcut), rwcasq(params.rwcasq),
-      sigma_6(params.sigma_6), m_energy_shift(energy_shift), m_variant(variant)
+    : ForceCompute(sysdef), m_nlist(nlist), m_rcut(rcut), m_time_scale_factor(time_scale_factor),
+      m_params(params), m_energy_shift(energy_shift), m_variant(variant)
     {
         // Allocate and fill the domain for time: [t_lo, t_hi]
         {
@@ -117,30 +115,35 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
     const Scalar hi[2] = {Scalar(1.0), h_domain.data[1]}; // y is always scaled between 0 and 1
     LinearInterpolator2D<Scalar> interp(h_data.data, h_shape.data, lo, hi);
 
-    auto clamp_scaled_y = [](Scalar y, Scalar height, Scalar ylo)
-    {
-        const Scalar s = (y - ylo) / (height - ylo);
-        if (!(s > Scalar(0.0)))
-            return Scalar(0.0);
-        if (s > Scalar(1.0))
-            return Scalar(1.0);
-        return s;
-    };
-
     const BoxDim box = m_pdata->getGlobalBox();
     const unsigned int N = m_pdata->getN();
-    const unsigned int N_tot = N + m_pdata->getNGhosts();
+    const unsigned int Ntot = N + m_pdata->getNGhosts();
 
-    GPUArray<Scalar> scale_factor(N_tot, m_exec_conf);
-    ArrayHandle<Scalar> h_scale_factor(scale_factor, access_location::host, access_mode::readwrite);
-
-    for (unsigned int k = 0; k < N_tot; k++)
+    if (m_scale_factor.getNumElements() < Ntot)
         {
-        const Scalar scaled_pos_y
-            = clamp_scaled_y(h_pos.data[k].y, interface_height, box.getLo().y);
+        GPUArray<Scalar> tmp(Ntot, m_exec_conf);
+        m_scale_factor.swap(tmp);
+        }
+    ArrayHandle<Scalar> h_scale_factor(m_scale_factor,
+                                       access_location::host,
+                                       access_mode::readwrite);
+
+    for (unsigned int k = 0; k < Ntot; k++)
+        {
+        Scalar scaled_pos_y
+            = (h_pos.data[k].y - box.getLo().y) / (interface_height - box.getLo().y);
+        if (scaled_pos_y < 0)
+            {
+            scaled_pos_y = Scalar(0.0);
+            }
+        if (scaled_pos_y > 1)
+            {
+            scaled_pos_y = Scalar(1.0);
+            }
         h_scale_factor.data[k] = interp(scaled_pos_y, scaled_t);
         }
 
+    Scalar rcutsq = m_rcut * m_rcut;
     for (unsigned int i = 0; i < N; ++i)
         {
         const Scalar3 pos_i = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
@@ -170,48 +173,15 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
             const Scalar attraction_scale_factor_avg
                 = Scalar(0.5) * (attraction_scale_factor_i + attraction_scale_factor_j);
 
-            const Scalar wca_shift
-                = epsilon_x_4 * (Scalar(1.0) - attraction_scale_factor_avg) / Scalar(4.0);
+            m_params.attraction_scale_factor = attraction_scale_factor_avg;
 
-            if (rsq < rcutsq && lj1 != 0)
+            Scalar force_divr = Scalar(0.0);
+            Scalar pair_eng = Scalar(0.0);
+            PairEvaluatorPerturbedLennardJones eval(rsq, rcutsq, m_params);
+            bool evaluated = eval.evalForceAndEnergy(force_divr, pair_eng, m_energy_shift);
+
+            if (evaluated)
                 {
-                const Scalar r2inv = Scalar(1) / rsq;
-                const Scalar r6inv = r2inv * r2inv * r2inv;
-
-                Scalar pair_eng = r6inv * (lj1 * r6inv - lj2);
-                Scalar force_divr
-                    = r6inv * r2inv * (Scalar(12.0) * lj1 * r6inv - Scalar(6.0) * lj2);
-
-                if (rsq < rwcasq)
-                    {
-                    pair_eng += wca_shift;
-                    }
-                else
-                    {
-                    pair_eng *= attraction_scale_factor_avg;
-                    force_divr *= attraction_scale_factor_avg;
-                    }
-
-                if (m_energy_shift)
-                    {
-                    const Scalar rcut2inv = Scalar(1.0) / rcutsq;
-                    const Scalar rcut6inv = rcut2inv * rcut2inv * rcut2inv;
-
-                    Scalar pair_eng_shift = rcut6inv * (lj1 * rcut6inv - lj2);
-
-                    if (rcutsq < rwcasq)
-                        {
-                        pair_eng_shift += wca_shift;
-                        }
-                    else
-                        {
-                        pair_eng_shift *= attraction_scale_factor_avg;
-                        }
-
-                    // Apply the shift to the pair energy
-                    pair_eng -= pair_eng_shift;
-                    }
-
                 fi.x += force_divr * dx.x;
                 fi.y += force_divr * dx.y;
                 fi.z += force_divr * dx.z;
@@ -235,5 +205,61 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
         }
     }
 
+namespace py = pybind11;
+
+void export_PerturbedLennardJonesEvap(py::module& m)
+    {
+    py::class_<PerturbedLennardJonesEvap, ForceCompute, std::shared_ptr<PerturbedLennardJonesEvap>>(
+        m,
+        "PerturbedLennardJonesEvap")
+        .def(py::init(
+            [](std::shared_ptr<SystemDefinition> sysdef,
+               std::shared_ptr<hoomd::md::NeighborList> nlist,
+               Scalar rcut,
+               Scalar epsilon,
+               Scalar sigma,
+               Scalar time_scale_factor,
+               bool energy_shift,
+               py::array_t<Scalar, py::array::c_style | py::array::forcecast>
+                   attraction_scale_factor_data,
+               py::array_t<unsigned int, py::array::c_style | py::array::forcecast>
+                   attraction_scale_factor_shape,
+               py::array_t<Scalar, py::array::c_style | py::array::forcecast> domain,
+               std::shared_ptr<VariantInterpolated> variant)
+            {
+                if (attraction_scale_factor_shape.size() != 2)
+                    throw std::runtime_error("lambda_shape must have 2 elements");
+                if (domain.size() != 2)
+                    throw std::runtime_error("domain must have 2 elements [t_lo, t_hi]");
+
+                const unsigned int* shape_ptr = attraction_scale_factor_shape.data();
+                const Scalar* data_ptr = attraction_scale_factor_data.data();
+                const Scalar* dom_ptr = domain.data();
+
+                if (attraction_scale_factor_data.size()
+                    != static_cast<py::ssize_t>(shape_ptr[0] * shape_ptr[1]))
+                    throw std::runtime_error(
+                        "attraction_scale_factor_data size does not match lambda_shape");
+
+                PairParametersPerturbedLennardJones params;
+                const Scalar sigma_2 = sigma * sigma;
+                params.sigma_6 = sigma_2 * sigma_2 * sigma_2;
+                params.epsilon_x_4 = Scalar(4.0) * epsilon;
+                params.rwcasq = std::pow(Scalar(2.0), Scalar(1.0) / Scalar(3.0)) * sigma_2;
+
+                return std::make_shared<PerturbedLennardJonesEvap>(sysdef,
+                                                                   nlist,
+                                                                   rcut,
+                                                                   time_scale_factor,
+                                                                   params,
+                                                                   energy_shift,
+                                                                   data_ptr,
+                                                                   shape_ptr,
+                                                                   dom_ptr,
+                                                                   variant);
+            }));
+    }
+
+    } // end namespace detail
     } // end namespace azplugins
     } // end namespace hoomd

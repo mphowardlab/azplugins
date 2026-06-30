@@ -6,7 +6,6 @@ set(_${COMPONENT_NAME}_sources
     ConstantFlow.cc
     export_ImagePotentialBondHarmonic.cc
     PerturbedLennardJonesEvap.cc
-    export_PerturbedLennardJonesEvap.cc
     export_VariantInterpolated.cc
     module.cc
     ParabolicFlow.cc
@@ -16,7 +15,6 @@ if (ENABLE_HIP)
     list(APPEND _${COMPONENT_NAME}_sources
     export_ImagePotentialBondHarmonicGPU.cc
     PerturbedLennardJonesEvapGPU.cc
-    export_PerturbedLennardJonesEvapGPU.cc
     VelocityComputeGPU.cc
     )
 endif()

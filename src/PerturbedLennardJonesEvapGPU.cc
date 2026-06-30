@@ -10,7 +10,8 @@ namespace hoomd
     {
 namespace azplugins
     {
-
+namespace detail
+    {
 PerturbedLennardJonesEvapGPU::PerturbedLennardJonesEvapGPU(
     std::shared_ptr<SystemDefinition> sysdef,
     std::shared_ptr<hoomd::md::NeighborList> nlist,
@@ -33,6 +34,14 @@ PerturbedLennardJonesEvapGPU::PerturbedLennardJonesEvapGPU(
                                 domain,
                                 variant)
     {
+    if (!this->m_exec_conf->isCUDAEnabled())
+        {
+        this->m_exec_conf->msg->error()
+            << "Creating a PerturbedLennardJonesPotentialGPU with no GPU in the "
+            << "execution configuration" << std::endl;
+        throw std::runtime_error("Error initializing PerturbedLennardJonesEvapPotentialGPU");
+        }
+
     m_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
                                    m_exec_conf,
                                    "perturbed_lennard_jones_evap"));
@@ -41,23 +50,21 @@ PerturbedLennardJonesEvapGPU::PerturbedLennardJonesEvapGPU(
 
 void PerturbedLennardJonesEvapGPU::computeForces(uint64_t timestep)
     {
-    m_nlist->compute(timestep);
-
+    this->m_nlist->compute(timestep);
+    this->m_force.zeroFill();
     const Scalar interface_height = (*m_variant)(timestep);
     const Scalar scaled_t = scaleTime(timestep);
 
-    ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
+    const BoxDim box = this->m_pdata->getGlobalBox();
+    const unsigned int N = this->m_pdata->getN();
+    const unsigned int n_ghost = this->m_pdata->getNGhosts();
+    const unsigned int Ntot = N + n_ghost;
 
-    // neighbor-list arrays
-    ArrayHandle<unsigned int> d_n_neigh(m_nlist->getNNeighArray(),
-                                        access_location::device,
-                                        access_mode::read);
-    ArrayHandle<unsigned int> d_nlist(m_nlist->getNListArray(),
-                                      access_location::device,
-                                      access_mode::read);
-    ArrayHandle<size_t> d_head_list(m_nlist->getHeadList(),
-                                    access_location::device,
-                                    access_mode::read);
+    if (m_scale_factor.getNumElements() < Ntot)
+        {
+        GPUArray<Scalar> tmp(Ntot, m_exec_conf);
+        m_scale_factor.swap(tmp);
+        }
 
     ArrayHandle<Scalar> d_data(m_attraction_scale_factor_data,
                                access_location::device,
@@ -67,27 +74,32 @@ void PerturbedLennardJonesEvapGPU::computeForces(uint64_t timestep)
                                       access_mode::read);
     ArrayHandle<Scalar> h_domain(m_domain, access_location::host, access_mode::read);
 
-    // build the interpolator: lo = {y_lo, t_lo}, hi = {y_hi, t_hi}
     const Scalar lo[2] = {Scalar(0.0), h_domain.data[0]};
     const Scalar hi[2] = {Scalar(1.0), h_domain.data[1]};
 
-    const LinearInterpolator2D<Scalar> interp(d_data.data, h_shape.data, lo, hi);
+    LinearInterpolator2D<Scalar> interp(d_data.data, h_shape.data, lo, hi);
 
-    const unsigned int N = this->m_pdata->getN();
-    const unsigned int n_ghost = this->m_pdata->getNGhosts();
-
-    GPUArray<Scalar> scale_factor(N + n_ghost, m_exec_conf);
-    ArrayHandle<Scalar> d_scale_factor(scale_factor,
+    ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
+    ArrayHandle<unsigned int> d_n_neigh(m_nlist->getNNeighArray(),
+                                        access_location::device,
+                                        access_mode::read);
+    ArrayHandle<unsigned int> d_nlist(m_nlist->getNListArray(),
+                                      access_location::device,
+                                      access_mode::read);
+    ArrayHandle<size_t> d_head_list(m_nlist->getHeadList(),
+                                    access_location::device,
+                                    access_mode::read);
+    ArrayHandle<Scalar> d_scale_factor(m_scale_factor,
                                        access_location::device,
-                                       access_mode::overwrite);
-
+                                       access_mode::readwrite);
     ArrayHandle<Scalar4> d_force(m_force, access_location::device, access_mode::overwrite);
 
-    m_tuner->begin();
+    const Scalar rcutsq = m_rcut * m_rcut;
+    this->m_tuner->begin();
     gpu::perturbed_lennard_jones_evap_args_t args(d_force.data,
                                                   d_pos.data,
                                                   d_scale_factor.data,
-                                                  this->m_pdata->getGlobalBox(),
+                                                  box,
                                                   N,
                                                   n_ghost,
                                                   d_n_neigh.data,
@@ -96,19 +108,74 @@ void PerturbedLennardJonesEvapGPU::computeForces(uint64_t timestep)
                                                   interp,
                                                   scaled_t,
                                                   interface_height,
-                                                  lj1,
-                                                  lj2,
-                                                  epsilon_x_4,
                                                   rcutsq,
-                                                  rwcasq,
+                                                  m_params,
                                                   m_energy_shift,
                                                   m_tuner->getParam()[0]);
 
     gpu::compute_perturbed_lennard_jones_evap_forces(args);
     if (this->m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
-    m_tuner->end();
+    this->m_tuner->end();
+    }
+namespace py = pybind11;
+
+void export_PerturbedLennardJonesEvapGPU(py::module& m)
+    {
+    py::class_<PerturbedLennardJonesEvapGPU,
+               PerturbedLennardJonesEvap,
+               std::shared_ptr<PerturbedLennardJonesEvapGPU>>(m, "PerturbedLennardJonesEvapGPU")
+        .def(py::init(
+            [](std::shared_ptr<SystemDefinition> sysdef,
+               std::shared_ptr<hoomd::md::NeighborList> nlist,
+               Scalar rcut,
+               Scalar epsilon,
+               Scalar sigma,
+               Scalar scale_factor,
+               bool energy_shift,
+               py::array_t<Scalar, py::array::c_style | py::array::forcecast>
+                   attraction_scale_factor_data,
+               py::array_t<unsigned int, py::array::c_style | py::array::forcecast>
+                   attraction_scale_factor_shape,
+               py::array_t<Scalar, py::array::c_style | py::array::forcecast> domain,
+               std::shared_ptr<VariantInterpolated> variant)
+            {
+                if (attraction_scale_factor_shape.size() != 2)
+                    throw std::runtime_error("lambda_shape must have 2 elements");
+                if (domain.size() != 2)
+                    throw std::runtime_error(
+                        "domain must have 2 elements [y_lo, y_hi, t_lo, t_hi]");
+
+                const unsigned int* shape_ptr = attraction_scale_factor_shape.data();
+                const Scalar* data_ptr = attraction_scale_factor_data.data();
+                const Scalar* dom_ptr = domain.data();
+
+                if (attraction_scale_factor_data.size()
+                    != static_cast<py::ssize_t>(shape_ptr[0] * shape_ptr[1]))
+                    throw std::runtime_error(
+                        "attraction_scale_factor_data size does not match lambda_shape");
+
+                PairParametersPerturbedLennardJones params;
+                const Scalar sigma_2 = sigma * sigma;
+                const Scalar sigma_4 = sigma_2 * sigma_2;
+                params.sigma_6 = sigma_2 * sigma_4;
+                params.epsilon_x_4 = Scalar(4.0) * epsilon;
+                params.rwcasq = std::pow(Scalar(2.0), Scalar(1.0) / Scalar(3.0)) * sigma_2;
+                params.attraction_scale_factor = Scalar(0.0);
+
+                return std::make_shared<PerturbedLennardJonesEvapGPU>(sysdef,
+                                                                      nlist,
+                                                                      rcut,
+                                                                      scale_factor,
+                                                                      params,
+                                                                      energy_shift,
+                                                                      data_ptr,
+                                                                      shape_ptr,
+                                                                      dom_ptr,
+                                                                      variant);
+            }));
     }
 
+    } // end namespace detail
     } // end namespace azplugins
     } // end namespace hoomd

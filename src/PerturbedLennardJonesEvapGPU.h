@@ -5,22 +5,29 @@
 #ifndef AZPLUGINS_PERTURBED_LENNARD_JONES_EVAP_GPU_H_
 #define AZPLUGINS_PERTURBED_LENNARD_JONES_EVAP_GPU_H_
 
-#ifdef __HIPCC__
-#error This header cannot be compiled by nvcc
-#endif
+#ifdef ENABLE_HIP
 
 #include "PerturbedLennardJonesEvap.h"
 #include "PerturbedLennardJonesEvapGPU.cuh"
 #include "hoomd/Autotuner.h"
 
+#ifdef __HIPCC__
+#error This header cannot be compiled by nvcc
+#endif
+
 namespace hoomd
     {
 namespace azplugins
     {
-class PYBIND11_EXPORT PerturbedLennardJonesEvapGPU : public PerturbedLennardJonesEvap
+namespace detail
+    {
+class PerturbedLennardJonesEvapGPU : public PerturbedLennardJonesEvap
     {
     public:
     //! Constructor
+
+    typedef detail::PairParametersPerturbedLennardJones param_type;
+
     PerturbedLennardJonesEvapGPU(std::shared_ptr<SystemDefinition> sysdef,
                                  std::shared_ptr<hoomd::md::NeighborList> nlist,
                                  const Scalar r_cut,
@@ -37,12 +44,11 @@ class PYBIND11_EXPORT PerturbedLennardJonesEvapGPU : public PerturbedLennardJone
     void computeForces(uint64_t timestep) override;
     };
 
-namespace detail
-    {
 void export_PerturbedLennardJonesEvapGPU(pybind11::module& m);
     } // end namespace detail
 
     } // end namespace azplugins
     } // end namespace hoomd
 
+#endif // ENABLE_HIP
 #endif // AZPLUGINS_PERTURBED_LENNARD_JONES_EVAP_GPU_H_

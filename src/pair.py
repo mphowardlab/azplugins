@@ -5,7 +5,7 @@
 """Pair potentials."""
 
 import numpy
-
+import hoomd
 from hoomd.azplugins import _azplugins
 from hoomd.data.parameterdicts import ParameterDict, TypeParameterDict
 from hoomd.data.typeparam import TypeParameter
@@ -444,7 +444,6 @@ class PerturbedLennardJonesEvap(Force):
         time_scale_factor,
         energy_shift,
         attraction_scale_factor_data,
-        attraction_scale_factor_shape,
         domain,
         variant,
     ):
@@ -472,13 +471,17 @@ class PerturbedLennardJonesEvap(Force):
             attraction_scale_factor_data, dtype=numpy.float64
         )
         self._attraction_scale_factor_shape = numpy.asarray(
-            attraction_scale_factor_shape, dtype=numpy.uint32
-        )
+            attraction_scale_factor_data, dtype=numpy.uint64
+        ).shape
 
     def _attach_hook(self):
         self._nlist._attach(self._simulation)
 
-        cls = getattr(self._ext_module, self._cpp_class_name)
+        if isinstance(self._simulation.device, hoomd.device.CPU):
+            cls = getattr(self._ext_module, self._cpp_class_name)
+        else:
+            cls = getattr(self._ext_module, self._cpp_class_name + "GPU")
+
         self._cpp_obj = cls(
             self._simulation.state._cpp_sys_def,
             self._nlist._cpp_obj,
