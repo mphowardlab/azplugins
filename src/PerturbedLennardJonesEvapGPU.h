@@ -26,13 +26,12 @@ class PerturbedLennardJonesEvapGPU : public PerturbedLennardJonesEvap
     public:
     //! Constructor
 
-    typedef detail::PairParametersPerturbedLennardJones param_type;
+    typedef PairParametersPerturbedLennardJones param_type;
 
     PerturbedLennardJonesEvapGPU(std::shared_ptr<SystemDefinition> sysdef,
                                  std::shared_ptr<hoomd::md::NeighborList> nlist,
                                  const Scalar r_cut,
                                  const Scalar scale_factor,
-                                 const param_type& params,
                                  bool energy_shift,
                                  const Scalar* attraction_scale_factor_data,
                                  const unsigned int* attraction_scale_factor_shape,

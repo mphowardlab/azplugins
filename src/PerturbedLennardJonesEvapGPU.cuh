@@ -40,13 +40,14 @@ struct perturbed_lennard_jones_evap_args_t
                                         const Scalar _scaled_t,
                                         const Scalar _interface_height,
                                         const Scalar _rcutsq,
-                                        PairParametersPerturbedLennardJones _params,
+                                        const PairParametersPerturbedLennardJones* _d_params,
+                                        const unsigned int _ntypes,
                                         const bool _energy_shift,
                                         const unsigned int _block_size)
         : d_force(_d_force), d_pos(_d_pos), d_scale_factor(_d_scale_factor), box(_box), N(_N),
           n_ghost(_n_ghost), d_n_neigh(_d_n_neigh), d_nlist(_d_nlist), d_head_list(_d_head_list),
           interp(_interp), scaled_t(_scaled_t), interface_height(_interface_height),
-          rcutsq(_rcutsq), params(_params), energy_shift(_energy_shift),
+          rcutsq(_rcutsq), d_params(_d_params), ntypes(_ntypes), energy_shift(_energy_shift),
           block_size(_block_size) { };
 
     Scalar4* d_force;
@@ -62,7 +63,8 @@ struct perturbed_lennard_jones_evap_args_t
     const Scalar scaled_t;
     const Scalar interface_height;
     const Scalar rcutsq;
-    PairParametersPerturbedLennardJones params;
+    const PairParametersPerturbedLennardJones* d_params; //!< Per type-pair parameter table
+    const unsigned int ntypes;                           //!< Number of particle types
     const bool energy_shift;
     const unsigned int block_size;
     };

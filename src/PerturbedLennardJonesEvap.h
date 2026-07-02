@@ -13,6 +13,7 @@
 #include "hoomd/BoxDim.h"
 #include "hoomd/ForceCompute.h"
 #include "hoomd/GPUArray.h"
+#include "hoomd/Index1D.h"
 #include "hoomd/Variant.h"
 #include "hoomd/VectorMath.h"
 #include "hoomd/md/NeighborList.h"
@@ -30,13 +31,12 @@ namespace detail
 class PerturbedLennardJonesEvap : public ForceCompute
     {
     public:
-    typedef detail::PairParametersPerturbedLennardJones param_type;
-
+    typedef PairParametersPerturbedLennardJones param_type;
+    //! Constructor
     PerturbedLennardJonesEvap(std::shared_ptr<SystemDefinition> sysdef,
                               std::shared_ptr<hoomd::md::NeighborList> nlist,
-                              const Scalar r_cut,
+                              const Scalar rcut,
                               const Scalar time_scale_factor,
-                              const param_type& params,
                               bool energy_shift,
                               const Scalar* attraction_scale_factor_data,
                               const unsigned int* attraction_scale_factor_shape,
@@ -50,17 +50,17 @@ class PerturbedLennardJonesEvap : public ForceCompute
             m_nlist->removeRCutMatrix(m_r_cut_nlist);
         }
 
-    Scalar scaleTime(uint64_t timestep) const
-        {
-        return Scalar(static_cast<Scalar>(timestep) / m_time_scale_factor);
-        }
+    //! Set and get parameters for sigma and epsilon for different types
+    void setParams(unsigned int typ1, unsigned int typ2, const param_type& param);
+    void setParamsPython(pybind11::tuple typ, pybind11::dict params);
+    pybind11::dict getParams(pybind11::tuple typ);
 
     protected:
     std::shared_ptr<hoomd::md::NeighborList> m_nlist; //!< Neighbor list
-    Scalar epsilon_x_4;
     Scalar m_rcut;
     Scalar m_time_scale_factor; //!< Time scaling factor
-    param_type m_params;
+    Index2D m_typpair_idx;      //!< Indexer for the type-pair parameter table
+    GPUArray<param_type> m_params;
     bool m_energy_shift;
     GPUArray<Scalar> m_domain;                              //!< [t_lo, t_hi]
     GPUArray<Scalar> m_attraction_scale_factor_data;        //!< Flattened (y, t) data
@@ -70,6 +70,8 @@ class PerturbedLennardJonesEvap : public ForceCompute
 
     std::shared_ptr<GPUArray<Scalar>>
         m_r_cut_nlist; //!< Cutoff matrix shared with the neighbor list
+
+    void validateTypes(unsigned int typ1, unsigned int typ2, std::string action) const;
 
     void computeForces(uint64_t timestep) override;
     };

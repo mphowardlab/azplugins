@@ -17,7 +17,6 @@ PerturbedLennardJonesEvapGPU::PerturbedLennardJonesEvapGPU(
     std::shared_ptr<hoomd::md::NeighborList> nlist,
     const Scalar r_cut,
     const Scalar scale_factor,
-    const param_type& params,
     bool energy_shift,
     const Scalar* attraction_scale_factor_data,
     const unsigned int* attraction_scale_factor_shape,
@@ -27,7 +26,6 @@ PerturbedLennardJonesEvapGPU::PerturbedLennardJonesEvapGPU(
                                 nlist,
                                 r_cut,
                                 scale_factor,
-                                params,
                                 energy_shift,
                                 attraction_scale_factor_data,
                                 attraction_scale_factor_shape,
@@ -53,12 +51,13 @@ void PerturbedLennardJonesEvapGPU::computeForces(uint64_t timestep)
     this->m_nlist->compute(timestep);
     this->m_force.zeroFill();
     const Scalar interface_height = (*m_variant)(timestep);
-    const Scalar scaled_t = scaleTime(timestep);
+    const Scalar scaled_t = Scalar(static_cast<Scalar>(timestep) / m_time_scale_factor);
 
     const BoxDim box = this->m_pdata->getGlobalBox();
     const unsigned int N = this->m_pdata->getN();
     const unsigned int n_ghost = this->m_pdata->getNGhosts();
     const unsigned int Ntot = N + n_ghost;
+    const unsigned int ntypes = this->m_pdata->getNTypes();
 
     if (m_scale_factor.getNumElements() < Ntot)
         {
@@ -92,6 +91,7 @@ void PerturbedLennardJonesEvapGPU::computeForces(uint64_t timestep)
     ArrayHandle<Scalar> d_scale_factor(m_scale_factor,
                                        access_location::device,
                                        access_mode::readwrite);
+    ArrayHandle<param_type> d_params(m_params, access_location::device, access_mode::read);
     ArrayHandle<Scalar4> d_force(m_force, access_location::device, access_mode::overwrite);
 
     const Scalar rcutsq = m_rcut * m_rcut;
@@ -109,7 +109,8 @@ void PerturbedLennardJonesEvapGPU::computeForces(uint64_t timestep)
                                                   scaled_t,
                                                   interface_height,
                                                   rcutsq,
-                                                  m_params,
+                                                  d_params.data,
+                                                  ntypes,
                                                   m_energy_shift,
                                                   m_tuner->getParam()[0]);
 
@@ -129,8 +130,6 @@ void export_PerturbedLennardJonesEvapGPU(py::module& m)
             [](std::shared_ptr<SystemDefinition> sysdef,
                std::shared_ptr<hoomd::md::NeighborList> nlist,
                Scalar rcut,
-               Scalar epsilon,
-               Scalar sigma,
                Scalar scale_factor,
                bool energy_shift,
                py::array_t<Scalar, py::array::c_style | py::array::forcecast>
@@ -155,19 +154,10 @@ void export_PerturbedLennardJonesEvapGPU(py::module& m)
                     throw std::runtime_error(
                         "attraction_scale_factor_data size does not match lambda_shape");
 
-                PairParametersPerturbedLennardJones params;
-                const Scalar sigma_2 = sigma * sigma;
-                const Scalar sigma_4 = sigma_2 * sigma_2;
-                params.sigma_6 = sigma_2 * sigma_4;
-                params.epsilon_x_4 = Scalar(4.0) * epsilon;
-                params.rwcasq = std::pow(Scalar(2.0), Scalar(1.0) / Scalar(3.0)) * sigma_2;
-                params.attraction_scale_factor = Scalar(0.0);
-
                 return std::make_shared<PerturbedLennardJonesEvapGPU>(sysdef,
                                                                       nlist,
                                                                       rcut,
                                                                       scale_factor,
-                                                                      params,
                                                                       energy_shift,
                                                                       data_ptr,
                                                                       shape_ptr,

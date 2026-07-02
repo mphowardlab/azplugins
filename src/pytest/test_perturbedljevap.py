@@ -30,8 +30,6 @@ def valid_args_const():
     return {
         "nlist": hoomd.md.nlist.Cell(buffer=0.4),
         "rcut": 3.0,
-        "epsilon": 1.0,
-        "sigma": 1.0,
         "time_scale_factor": 1.0,
         "energy_shift": False,
         "attraction_scale_factor_data": numpy.array([[0.6, 0.6], [0.6, 0.6]]),
@@ -44,9 +42,10 @@ def valid_args_const():
 
 def test_constructor(valid_args_const):
     evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**valid_args_const)
+    evap.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
 
-    assert evap.epsilon == 1.0
-    assert evap.sigma == 1.0
+    assert evap.params[("A", "A")]["epsilon"] == 1.0
+    assert evap.params[("A", "A")]["sigma"] == 1.0
 
     assert evap._nlist is valid_args_const["nlist"]
     assert evap._variant is valid_args_const["variant"]
@@ -75,6 +74,7 @@ def test_domain_mismatch(
     sim.operations.integrator = integrator
 
     evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**bad_args)
+    evap.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
     sim.operations.integrator.forces = [evap]
 
     with pytest.raises(RuntimeError):
@@ -94,6 +94,7 @@ def test_data_size_mismatch(
     sim.operations.integrator = integrator
 
     evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**bad_args)
+    evap.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
     sim.operations.integrator.forces = [evap]
 
     with pytest.raises(RuntimeError):
@@ -115,6 +116,7 @@ def test_variant_mismatch(
     sim.operations.integrator = integrator
 
     evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**bad_args)
+    evap.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
     sim.operations.integrator.forces = [evap]
 
     with pytest.raises(TypeError):
@@ -131,7 +133,7 @@ def test_energy_and_force_calculation_const(
 ):
     snap = two_particle_snapshot_factory
     evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**valid_args_const)
-
+    evap.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
     sim = simulation_factory(snap)
 
     integrator = hoomd.md.Integrator(dt=0.005)
@@ -175,8 +177,6 @@ def valid_args_vary(request):
     return {
         "nlist": hoomd.md.nlist.Cell(buffer=0.4),
         "rcut": 3.0,
-        "epsilon": 1.0,
-        "sigma": 1.0,
         "time_scale_factor": time_scale_factor,
         "energy_shift": True,
         "attraction_scale_factor_data": attraction_factor_table,
@@ -200,6 +200,7 @@ def test_energy_and_force_calculation_vary(
     """Energies/forces at t=0 and t=0.5, with and without time scaling."""
     snap = two_particle_snapshot_factory
     evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**valid_args_vary)
+    evap.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
     sim = simulation_factory(snap)
 
     integrator = hoomd.md.Integrator(dt=0.005)

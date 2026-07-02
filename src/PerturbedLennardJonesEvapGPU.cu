@@ -4,7 +4,6 @@
 
 #include "PairEvaluatorPerturbedLennardJones.h"
 #include "PerturbedLennardJonesEvapGPU.cuh"
-#include "hoomd/WarpTools.cuh"
 
 namespace hoomd
     {
@@ -32,7 +31,7 @@ __global__ void compute_attraction_scale_factor(Scalar* d_scale_factor,
     const Scalar y = __ldg(d_pos + i).y;
     Scalar scaled_pos_y = (y - y_lo) / (interface_height - y_lo);
 
-    if (!(scaled_pos_y > Scalar(0.0)))
+    if (scaled_pos_y < Scalar(0.0))
         scaled_pos_y = Scalar(0.0);
     if (scaled_pos_y > Scalar(1.0))
         scaled_pos_y = Scalar(1.0);
@@ -51,15 +50,19 @@ compute_perturbed_lennard_jones_evap_forces(Scalar4* d_force,
                                             const unsigned int* d_nlist,
                                             const size_t* d_head_list,
                                             const Scalar rcutsq,
-                                            PairParametersPerturbedLennardJones params,
+                                            const PairParametersPerturbedLennardJones* d_params,
+                                            const unsigned int ntypes,
                                             const bool energy_shift)
     {
     const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= N)
         return;
 
+    const Index2D typpair_idx(ntypes);
+
     const Scalar4 postype_i = __ldg(d_pos + idx);
     const Scalar3 pos_i = make_scalar3(postype_i.x, postype_i.y, postype_i.z);
+    const unsigned int type_i = __scalar_as_int(postype_i.w);
 
     const Scalar attraction_scale_factor_i = __ldg(d_scale_factor + idx);
     // initialize the force and energy to 0
@@ -78,6 +81,7 @@ compute_perturbed_lennard_jones_evap_forces(Scalar4* d_force,
 
         const Scalar4 postype_j = __ldg(d_pos + j);
         const Scalar3 pos_j = make_scalar3(postype_j.x, postype_j.y, postype_j.z);
+        const unsigned int type_j = __scalar_as_int(postype_j.w);
         const Scalar attraction_scale_factor_j = __ldg(d_scale_factor + j);
 
         // minimum-image
@@ -85,13 +89,17 @@ compute_perturbed_lennard_jones_evap_forces(Scalar4* d_force,
         dx = box.minImage(dx);
         const Scalar rsq = dot(dx, dx);
 
+        PairParametersPerturbedLennardJones params = d_params[typpair_idx(type_i, type_j)];
+        // Setting averaged attraction scale factor
         params.attraction_scale_factor
             = Scalar(0.5) * (attraction_scale_factor_i + attraction_scale_factor_j);
 
         Scalar force_divr = Scalar(0.0);
         Scalar pair_eng = Scalar(0.0);
         PairEvaluatorPerturbedLennardJones eval(rsq, rcutsq, params);
-        if (eval.evalForceAndEnergy(force_divr, pair_eng, energy_shift))
+        bool evaluated = eval.evalForceAndEnergy(force_divr, pair_eng, energy_shift);
+
+        if (evaluated)
             {
             fi.x += force_divr * dx.x;
             fi.y += force_divr * dx.y;
@@ -150,7 +158,8 @@ compute_perturbed_lennard_jones_evap_forces(const perturbed_lennard_jones_evap_a
                        args.d_nlist,
                        args.d_head_list,
                        args.rcutsq,
-                       args.params,
+                       args.d_params,
+                       args.ntypes,
                        args.energy_shift);
 
     return hipSuccess;

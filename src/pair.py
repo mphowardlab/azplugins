@@ -430,7 +430,57 @@ class PerturbedLennardJones(pair.Pair):
 
 
 class PerturbedLennardJonesEvap(Force):
-    """Perturbed Lennard Jones potential for evaporation"""
+    r"""Perturbed Lennard-Jones potential for evaporation.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list.
+        rcut (float): Cutoff radius :math:`[\mathrm{length}]`.
+        time_scale_factor (float): Factor used to rescale the timestep when
+            sampling the attraction scale-factor table.
+        energy_shift (bool): If ``True``, shift the potential to zero at ``rcut``.
+        attraction_scale_factor_data (numpy.ndarray): 2D ``(ny, nt)`` table of
+            the attraction scale factor :math:`\lambda` as a function of scaled
+            y coordinate and scaled time.
+        domain (numpy.ndarray): ``[t_lo, t_hi]`` time domain of the table.
+        variant (hoomd.azplugins.variant.VariantInterpolated): Interface height
+            as a function of timestep.
+
+    This works similar to the standard perturbed Lennard Jones pair potential,
+    except the attraction scale factor :math:`\lambda` is not constant.
+    It is computed for every time step and depends on the particle's y coordinate.
+    This emulates the evaporation of the bad solvent and its concentration
+    gradient as the air-solvent interface recedes. For now, types are added so that
+    epsilon can be set to zero for other particle types for which this potential is
+    not valid.
+
+    Example::
+
+        nl = hoomd.md.nlist.Cell(buffer=0.4)
+        plj_evap = azplugins.pair.PerturbedLennardJonesEvap(
+            nlist=nl,
+            rcut=3.0,
+            time_scale_factor=1.0,
+            energy_shift=True,
+            attraction_scale_factor_data=lambda_table,
+            domain=[0.0, t_max],
+            variant=interface_variant,
+        )
+        plj_evap.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
+        plj_evap.params[("A", "B")] = dict(epsilon=0.0, sigma=0.0)
+        plj_evap.params[("B", "B")] = dict(epsilon=0.0, sigma=0.0)
+
+    .. py:attribute:: params
+
+        The potential parameters. The dictionary has the following keys:
+
+        * ``epsilon`` (`float`, **required**) - energy parameter
+          :math:`\varepsilon` :math:`[\mathrm{energy}]`
+        * ``sigma`` (`float`, **required**) - particle size :math:`\sigma`
+          :math:`[\mathrm{length}]`
+
+        Type: :class:`~hoomd.data.typeparam.TypeParameter` [`tuple`
+        [``particle_type``, ``particle_type``], `dict`]
+    """
 
     _ext_module = _azplugins
     _cpp_class_name = "PerturbedLennardJonesEvap"
@@ -439,8 +489,6 @@ class PerturbedLennardJonesEvap(Force):
         self,
         nlist,
         rcut,
-        epsilon,
-        sigma,
         time_scale_factor,
         energy_shift,
         attraction_scale_factor_data,
@@ -452,16 +500,19 @@ class PerturbedLennardJonesEvap(Force):
         self._nlist = nlist
         self._variant = variant
 
+        params = TypeParameter(
+            "params",
+            "particle_types",
+            TypeParameterDict(epsilon=float, sigma=float, len_keys=2),
+        )
+        self._add_typeparam(params)
+
         param_dict = ParameterDict(
             rcut=float,
-            epsilon=float,
-            sigma=float,
             time_scale_factor=float,
             energy_shift=bool,
         )
         param_dict["rcut"] = float(rcut)
-        param_dict["epsilon"] = float(epsilon)
-        param_dict["sigma"] = float(sigma)
         param_dict["time_scale_factor"] = float(time_scale_factor)
         param_dict["energy_shift"] = bool(energy_shift)
         self._param_dict.update(param_dict)
@@ -471,8 +522,8 @@ class PerturbedLennardJonesEvap(Force):
             attraction_scale_factor_data, dtype=numpy.float64
         )
         self._attraction_scale_factor_shape = numpy.asarray(
-            attraction_scale_factor_data, dtype=numpy.uint64
-        ).shape
+            self._attraction_scale_factor_data.shape, dtype=numpy.uint64
+        )
 
     def _attach_hook(self):
         self._nlist._attach(self._simulation)
@@ -486,8 +537,6 @@ class PerturbedLennardJonesEvap(Force):
             self._simulation.state._cpp_sys_def,
             self._nlist._cpp_obj,
             self.rcut,
-            self.epsilon,
-            self.sigma,
             self.time_scale_factor,
             self.energy_shift,
             self._attraction_scale_factor_data,

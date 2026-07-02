@@ -5,6 +5,7 @@
 #include "PerturbedLennardJonesEvap.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace hoomd
     {
@@ -17,14 +18,13 @@ PerturbedLennardJonesEvap::PerturbedLennardJonesEvap(
     std::shared_ptr<hoomd::md::NeighborList> nlist,
     const Scalar rcut,
     const Scalar time_scale_factor,
-    const param_type& params,
     bool energy_shift,
     const Scalar* attraction_scale_factor_data,
     const unsigned int* attraction_scale_factor_shape,
     const Scalar* domain,
     std::shared_ptr<VariantInterpolated> variant)
     : ForceCompute(sysdef), m_nlist(nlist), m_rcut(rcut), m_time_scale_factor(time_scale_factor),
-      m_params(params), m_energy_shift(energy_shift), m_variant(variant)
+      m_typpair_idx(m_pdata->getNTypes()), m_energy_shift(energy_shift), m_variant(variant)
     {
         // Allocate and fill the domain for time: [t_lo, t_hi]
         {
@@ -61,9 +61,14 @@ PerturbedLennardJonesEvap::PerturbedLennardJonesEvap(
         }
 
         {
-        const Index2D typpair_idx(m_pdata->getNTypes());
+        GPUArray<param_type> params_arr(m_typpair_idx.getNumElements(), m_exec_conf);
+        m_params.swap(params_arr);
+        ArrayHandle<param_type> h_params(m_params, access_location::host, access_mode::overwrite);
+        }
+
+        {
         m_r_cut_nlist
-            = std::make_shared<GPUArray<Scalar>>(typpair_idx.getNumElements(), m_exec_conf);
+            = std::make_shared<GPUArray<Scalar>>(m_typpair_idx.getNumElements(), m_exec_conf);
             {
             ArrayHandle<Scalar> h_r_cut_nlist(*m_r_cut_nlist,
                                               access_location::host,
@@ -77,6 +82,59 @@ PerturbedLennardJonesEvap::PerturbedLennardJonesEvap(
         }
     }
 
+void PerturbedLennardJonesEvap::validateTypes(unsigned int typ1,
+                                              unsigned int typ2,
+                                              std::string action) const
+    {
+    const unsigned int n_types = m_pdata->getNTypes();
+    if (typ1 >= n_types || typ2 >= n_types)
+        throw std::runtime_error("Invalid type encountered when " + action);
+    }
+
+void PerturbedLennardJonesEvap::setParams(unsigned int typ1,
+                                          unsigned int typ2,
+                                          const param_type& param)
+    {
+    validateTypes(typ1, typ2, "setting params");
+    ArrayHandle<param_type> h_params(m_params, access_location::host, access_mode::readwrite);
+
+    h_params.data[m_typpair_idx(typ1, typ2)] = param;
+    h_params.data[m_typpair_idx(typ2, typ1)] = param;
+    }
+
+void PerturbedLennardJonesEvap::setParamsPython(pybind11::tuple typ, pybind11::dict params)
+    {
+    const auto typ1 = m_pdata->getTypeByName(typ[0].cast<std::string>());
+    const auto typ2 = m_pdata->getTypeByName(typ[1].cast<std::string>());
+
+    const Scalar epsilon = params["epsilon"].cast<Scalar>();
+    const Scalar sigma = params["sigma"].cast<Scalar>();
+    const Scalar sigma_2 = sigma * sigma;
+
+    param_type p;
+    p.sigma_6 = sigma_2 * sigma_2 * sigma_2;
+    p.epsilon_x_4 = Scalar(4.0) * epsilon;
+    p.rwcasq = std::pow(Scalar(2.0), Scalar(1.0) / Scalar(3.0)) * sigma_2;
+    p.attraction_scale_factor = Scalar(0.0);
+
+    setParams(typ1, typ2, p);
+    }
+
+pybind11::dict PerturbedLennardJonesEvap::getParams(pybind11::tuple typ)
+    {
+    const auto typ1 = m_pdata->getTypeByName(typ[0].cast<std::string>());
+    const auto typ2 = m_pdata->getTypeByName(typ[1].cast<std::string>());
+    validateTypes(typ1, typ2, "getting params");
+
+    ArrayHandle<param_type> h_params(m_params, access_location::host, access_mode::read);
+    const param_type& p = h_params.data[m_typpair_idx(typ1, typ2)];
+
+    pybind11::dict v;
+    v["epsilon"] = p.epsilon_x_4 / Scalar(4.0);
+    v["sigma"] = std::pow(p.sigma_6, Scalar(1.0) / Scalar(6.0));
+    return v;
+    }
+
 void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
     {
     m_nlist->compute(timestep);
@@ -84,7 +142,8 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
     const bool third_law
         = (m_nlist->getStorageMode() == hoomd::md::NeighborList::storageMode::half);
 
-    Scalar scaled_t = scaleTime(timestep);
+    Scalar scaled_t = Scalar(static_cast<Scalar>(timestep) / m_time_scale_factor);
+
     Scalar interface_height = (*m_variant)(timestep);
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
@@ -98,6 +157,7 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
                                       access_location::host,
                                       access_mode::read);
     ArrayHandle<Scalar> h_domain(m_domain, access_location::host, access_mode::read);
+    ArrayHandle<param_type> h_params(m_params, access_location::host, access_mode::read);
 
     // Neighbor-list arrays
     ArrayHandle<unsigned int> h_n_neigh(m_nlist->getNNeighArray(),
@@ -147,6 +207,7 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
     for (unsigned int i = 0; i < N; ++i)
         {
         const Scalar3 pos_i = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
+        const unsigned int type_i = __scalar_as_int(h_pos.data[i].w);
 
         Scalar3 fi = make_scalar3(0, 0, 0);
         Scalar pei = 0;
@@ -162,6 +223,7 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
             if (j == i)
                 continue;
             Scalar3 pos_j = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
+            const unsigned int type_j = __scalar_as_int(h_pos.data[j].w);
 
             const Scalar attraction_scale_factor_j = h_scale_factor.data[j];
 
@@ -170,14 +232,15 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
             dx = box.minImage(dx);
 
             const Scalar rsq = dot(dx, dx);
-            const Scalar attraction_scale_factor_avg
-                = Scalar(0.5) * (attraction_scale_factor_i + attraction_scale_factor_j);
+            param_type param = h_params.data[m_typpair_idx(type_i, type_j)];
 
-            m_params.attraction_scale_factor = attraction_scale_factor_avg;
+            // Setting averaged attraction scale factor
+            param.attraction_scale_factor
+                = Scalar(0.5) * (attraction_scale_factor_i + attraction_scale_factor_j);
 
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
-            PairEvaluatorPerturbedLennardJones eval(rsq, rcutsq, m_params);
+            PairEvaluatorPerturbedLennardJones eval(rsq, rcutsq, param);
             bool evaluated = eval.evalForceAndEnergy(force_divr, pair_eng, m_energy_shift);
 
             if (evaluated)
@@ -216,8 +279,6 @@ void export_PerturbedLennardJonesEvap(py::module& m)
             [](std::shared_ptr<SystemDefinition> sysdef,
                std::shared_ptr<hoomd::md::NeighborList> nlist,
                Scalar rcut,
-               Scalar epsilon,
-               Scalar sigma,
                Scalar time_scale_factor,
                bool energy_shift,
                py::array_t<Scalar, py::array::c_style | py::array::forcecast>
@@ -241,23 +302,18 @@ void export_PerturbedLennardJonesEvap(py::module& m)
                     throw std::runtime_error(
                         "attraction_scale_factor_data size does not match lambda_shape");
 
-                PairParametersPerturbedLennardJones params;
-                const Scalar sigma_2 = sigma * sigma;
-                params.sigma_6 = sigma_2 * sigma_2 * sigma_2;
-                params.epsilon_x_4 = Scalar(4.0) * epsilon;
-                params.rwcasq = std::pow(Scalar(2.0), Scalar(1.0) / Scalar(3.0)) * sigma_2;
-
                 return std::make_shared<PerturbedLennardJonesEvap>(sysdef,
                                                                    nlist,
                                                                    rcut,
                                                                    time_scale_factor,
-                                                                   params,
                                                                    energy_shift,
                                                                    data_ptr,
                                                                    shape_ptr,
                                                                    dom_ptr,
                                                                    variant);
-            }));
+            }))
+        .def("setParams", &PerturbedLennardJonesEvap::setParamsPython)
+        .def("getParams", &PerturbedLennardJonesEvap::getParams);
     }
 
     } // end namespace detail
