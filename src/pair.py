@@ -436,7 +436,7 @@ class PerturbedLennardJonesEvap(Force):
         nlist (hoomd.md.nlist.NeighborList): Neighbor list.
         rcut (float): Cutoff radius :math:`[\mathrm{length}]`.
         time_scale_factor (float): Factor used to rescale the timestep when
-            sampling the attraction scale-factor table.
+            interpolating the attraction scale-factor table.
         energy_shift (bool): If ``True``, shift the potential to zero at ``rcut``.
         attraction_scale_factor_data (numpy.ndarray): 2D ``(ny, nt)`` table of
             the attraction scale factor :math:`\lambda` as a function of scaled
@@ -447,11 +447,13 @@ class PerturbedLennardJonesEvap(Force):
 
     This works similar to the standard perturbed Lennard Jones pair potential,
     except the attraction scale factor :math:`\lambda` is not constant.
-    It is computed for every time step and depends on the particle's y coordinate.
-    This emulates the evaporation of the bad solvent and its concentration
-    gradient as the air-solvent interface recedes. For now, types are added so that
-    epsilon can be set to zero for other particle types for which this potential is
-    not valid.
+    The attraction scale factor is determined by interpolating a regular
+    two-dimesional array where the rows define the y coordinates and the columns
+    define time coordinates. It is computed for every time step and depends on
+    the particle's y coordinate. This emulates the evaporation of the bad solvent
+    and its concentration gradient as the air-solvent interface recedes. For now,
+    types are added so that epsilon can be set to zero for other particle types
+    for which this potential is not valid.
 
     Example::
 
