@@ -1,5 +1,5 @@
 .. Copyright (c) 2018-2020, Michael P. Howard
-.. Copyright (c) 2021-2025, Auburn University
+.. Copyright (c) 2021-2026, Auburn University
 .. Part of azplugins, released under the BSD 3-Clause License.
 
 Release notes
@@ -7,6 +7,22 @@ Release notes
 
 v1
 ---
+
+v1.3.0
+^^^^^^
+Released 5 June 2026
+
+*New features*
+
+* ``wall`` reimplements wall potentials from azplugins v0.
+* ``wall.LJ93`` is a Lennard-Jones 9-3 wall potential.
+* ``wall.Colloid`` is an integrated Lennard-Jones wall potential for colloidal
+  particles.
+
+*Other changes*
+
+* Test against HOOMD 7.
+* Update copyright year.
 
 v1.2.0
 ^^^^^^

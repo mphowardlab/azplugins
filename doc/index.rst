@@ -1,5 +1,5 @@
 .. Copyright (c) 2018-2020, Michael P. Howard
-.. Copyright (c) 2021-2025, Auburn University
+.. Copyright (c) 2021-2026, Auburn University
 .. Part of azplugins, released under the BSD 3-Clause License.
 
 =========
@@ -8,7 +8,7 @@ azplugins
 
 azplugins is a component for `HOOMD-blue`_ which expands its functionality for
 tackling a variety of problems in soft matter physics. Currently, azplugins is
-tested against v6.0.0 of HOOMD-blue.
+tested against v7.0.1 of HOOMD-blue.
 
 Compiling
 =========

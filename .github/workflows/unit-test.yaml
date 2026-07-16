@@ -8,7 +8,7 @@ env:
 
   #############################################################################################
   # HOOMD-blue version to build.
-  HOOMD_BLUE_VERSION: v6.0.0
+  HOOMD_BLUE_VERSION: v7.0.1
   # prevent deadlocked MPI tests from causing the job to cancel
   MPIEXEC_TIMEOUT: 3000
   # allow mpirun to execute as root in the tests
@@ -40,7 +40,7 @@ jobs:
     name: Build and test [${{ matrix.name }}]
     runs-on: ubuntu-24.04
     container:
-      image: nvidia/cuda:12.9.1-devel-ubuntu22.04
+      image: nvidia/cuda:12.9.2-devel-ubuntu22.04
     strategy:
       fail-fast: false
       matrix:
@@ -60,12 +60,12 @@ jobs:
 
     steps:
       - name: Checkout component
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: component
       - name: Restore cached HOOMD-blue build
         id: cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: install
           key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-mpi-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}
@@ -74,14 +74,14 @@ jobs:
           apt-get update
           apt-get install git --yes
       - name: Checkout HOOMD-blue
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: glotzerlab/hoomd-blue
           path: hoomd-blue
           submodules: true
           ref: ${{ env.HOOMD_BLUE_VERSION }}
       - name: Create Python Environment
-        uses: prefix-dev/setup-pixi@v0.9.5
+        uses: prefix-dev/setup-pixi@v0.10.0
         with:
           pixi-version: v0.54.1
           cache: false
@@ -112,7 +112,7 @@ jobs:
         working-directory: build-hoomd-blue
       - name: Cache HOOMD-blue build
         if: steps.cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: install
           key: hoomd-blue-${{ env.HOOMD_BLUE_VERSION }}-mpi-${{ matrix.enable_mpi }}-gpu-${{ matrix.enable_gpu }}

@@ -1,5 +1,5 @@
 # Copyright (c) 2018-2020, Michael P. Howard
-# Copyright (c) 2021-2025, Auburn University
+# Copyright (c) 2021-2026, Auburn University
 # Part of azplugins, released under the BSD 3-Clause License.
 
 """Sphinx configuration."""
@@ -18,7 +18,7 @@ project = "azplugins"
 year = datetime.date.today().year
 copyright = f"2018-2020, Michael P. Howard. 2021-{year}, Auburn University."
 author = "Michael P. Howard"
-release = "1.2.0"
+release = "1.3.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
