@@ -1,5 +1,5 @@
 // Copyright (c) 2018-2020, Michael P. Howard
-// Copyright (c) 2021-2025, Auburn University
+// Copyright (c) 2021-2026, Auburn University
 // Part of azplugins, released under the BSD 3-Clause License.
 
 #include "PerturbedLennardJonesEvap.h"
@@ -192,11 +192,11 @@ void PerturbedLennardJonesEvap::computeForces(uint64_t timestep)
         {
         Scalar scaled_pos_y
             = (h_pos.data[k].y - box.getLo().y) / (interface_height - box.getLo().y);
-        if (scaled_pos_y < 0)
+        if (scaled_pos_y < Scalar(0.0))
             {
             scaled_pos_y = Scalar(0.0);
             }
-        if (scaled_pos_y > 1)
+        if (scaled_pos_y > Scalar(1.0))
             {
             scaled_pos_y = Scalar(1.0);
             }
