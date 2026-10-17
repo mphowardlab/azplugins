@@ -4,11 +4,104 @@
 
 """Pair potentials."""
 
+import numpy
+import hoomd
 from hoomd.azplugins import _azplugins
 from hoomd.data.parameterdicts import ParameterDict, TypeParameterDict
 from hoomd.data.typeparam import TypeParameter
 from hoomd.md import pair
+from hoomd.md.force import Force
+from hoomd.md import _md
 from hoomd.variant import Variant
+
+
+class ChebyshevAnisotropicPairPotential(Force):
+    """Chebyshev anisotropic pair potential.
+
+    Base class for Chebyshev anisotropic pair potentials.  It corresponds to
+    the ``ShapeSymmetryNull`` (no symmetry reduction), so it
+    can be instantiated directly for shapes with no symmetry.  Shape-specific
+    subclasses (e.g. ``ChebyshevAnisotropicPairPotentialCube``) override
+    ``_cpp_class_name`` to select a different compiled C++ symmetry.
+    """
+
+    _ext_module = _azplugins
+    _cpp_class_name = "ChebyshevAnisotropicPairPotentialNull"
+
+    def __init__(self, nlist, terms, coeffs, r0, r_cut):
+        super().__init__()
+
+        self._nlist = nlist
+
+        param_dict = ParameterDict(r_cut=float)
+        param_dict["r_cut"] = float(r_cut)
+        self._param_dict.update(param_dict)
+
+        self._terms = numpy.asarray(terms, dtype=numpy.uint32)
+        self._coeffs = numpy.asarray(coeffs, dtype=numpy.float64)
+
+        self.r0 = numpy.asarray(r0, dtype=numpy.float64)
+
+        if self._terms.ndim != 2 or self._terms.shape[1] != 6:
+            raise ValueError("terms must have shape (Nterms, 6).")
+
+        n_terms = int(self._terms.shape[0])
+        if self._coeffs.ndim != 1 or int(self._coeffs.shape[0]) != n_terms:
+            raise ValueError("coeffs must have shape (Nterms,).")
+
+        if self.r0.ndim != 5:
+            raise ValueError("r0 must be a 5D array.")
+
+        if any(dim < 2 for dim in self.r0.shape):
+            raise ValueError(
+                "r0 must have at least 2 grid points along each of its 5 dimensions."
+            )
+
+    def _attach_hook(self):
+        self._nlist._attach(self._simulation)
+
+        if isinstance(self._simulation.device, hoomd.device.CPU):
+            cls = getattr(self._ext_module, self._cpp_class_name)
+            self._nlist._cpp_obj.setStorageMode(_md.NeighborList.storageMode.half)
+        else:
+            cls = getattr(self._ext_module, self._cpp_class_name + "GPU")
+            self._nlist._cpp_obj.setStorageMode(_md.NeighborList.storageMode.full)
+
+        self._cpp_obj = cls(
+            self._simulation.state._cpp_sys_def,
+            self._nlist._cpp_obj,
+            self.r_cut,
+            self._terms,
+            self._coeffs,
+            self.r0,
+        )
+
+        super()._attach_hook()
+
+    def _detach_hook(self):
+        self._nlist._detach()
+
+
+class ChebyshevAnisotropicPairPotentialCube(ChebyshevAnisotropicPairPotential):
+    """Chebyshev anisotropic pair potential with cube symmetry reduction.
+
+    Reduced domain:
+    theta in [0, pi/4], phi in [1e-5, pi/2], alpha in [0, 2 pi],
+    beta in [1e-5, arccos(1/sqrt(3))], gamma in [0, pi/2].
+    """
+
+    _cpp_class_name = "ChebyshevAnisotropicPairPotentialCube"
+
+
+class ChebyshevAnisotropicPairPotentialTetrahedron(ChebyshevAnisotropicPairPotential):
+    """Chebyshev anisotropic pair potential with tetrahedron symmetry reduction.
+
+    Reduced domain:
+    theta in [0, 2 pi/3], phi in [1e-5, pi-1e-5], alpha in [0, 2 pi],
+    beta in [1e-5, pi-1e-5], gamma in [0, 2 pi/3].
+    """
+
+    _cpp_class_name = "ChebyshevAnisotropicPairPotentialTetrahedron"
 
 
 class Colloid(pair.Pair):
