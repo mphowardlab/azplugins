@@ -1,0 +1,293 @@
+# Copyright (c) 2018-2020, Michael P. Howard
+# Copyright (c) 2021-2026, Auburn University
+# Part of azplugins, released under the BSD 3-Clause License.
+
+"""Test Perturbed Lennard-Jones for Evaporation pair potential."""
+
+import hoomd
+import hoomd.azplugins
+import numpy
+
+import pytest
+
+
+@pytest.fixture
+def two_particle_snapshot_factory():
+
+    def make_snapshot(positions):
+        snap = hoomd.Snapshot()
+        if snap.communicator.rank == 0:
+            snap.configuration.box = [20, 20, 20, 0, 0, 0]
+            snap.particles.N = 2
+            snap.particles.types = ["A"]
+            snap.particles.position[:] = positions
+        return snap
+
+    return make_snapshot
+
+
+@pytest.fixture
+def valid_args_const():
+    return {
+        "nlist": hoomd.md.nlist.Cell(buffer=0.4),
+        "rcut": 3.0,
+        "time_scale_factor": 1.0,
+        "energy_shift": False,
+        "attraction_scale_factor_data": numpy.array([[0.6, 0.6], [0.6, 0.6]]),
+        "domain": [0.0, 100.0],
+        "variant": hoomd.azplugins.variant.VariantInterpolated(
+            [5.0, 4.0, 2.0, 1.0], 0, 300
+        ),
+    }
+
+
+def test_constructor(valid_args_const):
+    evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**valid_args_const)
+    evap.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
+
+    assert evap.params[("A", "A")]["epsilon"] == 1.0
+    assert evap.params[("A", "A")]["sigma"] == 1.0
+
+    assert evap._nlist is valid_args_const["nlist"]
+    assert evap._variant is valid_args_const["variant"]
+
+    # Check numpy array casting
+    numpy.testing.assert_allclose(evap._domain, valid_args_const["domain"])
+    numpy.testing.assert_allclose(
+        evap._attraction_scale_factor_data,
+        valid_args_const["attraction_scale_factor_data"],
+    )
+
+    assert evap.rcut == 3.0
+    assert evap.time_scale_factor == 1.0
+
+
+def test_domain_mismatch(
+    valid_args_const, two_particle_snapshot_factory, simulation_factory
+):
+    snap = two_particle_snapshot_factory([[0, 0, 0.1], [0, 0, 0.1]])
+    sim = simulation_factory(snap)
+
+    bad_args = valid_args_const.copy()
+    bad_args["domain"] = [10.0]
+
+    integrator = hoomd.md.Integrator(dt=0.005)
+    sim.operations.integrator = integrator
+
+    evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**bad_args)
+    evap.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
+    sim.operations.integrator.forces = [evap]
+
+    with pytest.raises(RuntimeError):
+        sim.run(0)
+
+
+def test_data_size_mismatch(
+    valid_args_const, two_particle_snapshot_factory, simulation_factory
+):
+    snap = two_particle_snapshot_factory([[0, 0, 0.1], [0, 0, 0.1]])
+
+    bad_args = valid_args_const.copy()
+    bad_args["attraction_scale_factor_data"] = [1.0, 1.0]
+
+    sim = simulation_factory(snap)
+
+    integrator = hoomd.md.Integrator(dt=0.005)
+    sim.operations.integrator = integrator
+
+    evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**bad_args)
+    evap.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
+    sim.operations.integrator.forces = [evap]
+
+    with pytest.raises(RuntimeError):
+        sim.run(0)
+
+
+def test_variant_mismatch(
+    valid_args_const, two_particle_snapshot_factory, simulation_factory
+):
+    snap = two_particle_snapshot_factory([[0, 0, 0.1], [0, 0, 0.1]])
+
+    bad_args = valid_args_const.copy()
+    bad_args["variant"] = hoomd.variant.Constant(
+        1.0
+    )  # Invalid: Should be VariantInterpolated
+
+    sim = simulation_factory(snap)
+
+    integrator = hoomd.md.Integrator(dt=0.005)
+    sim.operations.integrator = integrator
+
+    evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**bad_args)
+    evap.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
+    sim.operations.integrator.forces = [evap]
+
+    with pytest.raises(TypeError):
+        sim.run(0)
+
+
+"""Test energy and force calculation for single particle type
+with constant attraction scalefactor.
+"""
+
+
+@pytest.mark.parametrize(
+    "positions, epsilon, expected_forces, expected_energies",
+    [
+        (
+            [[-10, -10, -10], [-10, -8.8, -10]],
+            1.0,
+            [[0.0, 1.32701601, 0.0], [0.0, -1.32701601, 0.0]],
+            [-0.267289586, -0.267289586],
+        ),
+    ],
+)
+def test_energy_and_force_calculation_const(
+    valid_args_const,
+    two_particle_snapshot_factory,
+    simulation_factory,
+    positions,
+    epsilon,
+    expected_forces,
+    expected_energies,
+):
+    snap = two_particle_snapshot_factory(positions)
+    evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**valid_args_const)
+    evap.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
+    sim = simulation_factory(snap)
+
+    integrator = hoomd.md.Integrator(dt=0.005)
+    integrator.forces = [evap]
+
+    sim.operations.integrator = integrator
+
+    sim.run(0)
+
+    forces = evap.forces
+    energies = evap.energies
+
+    if sim.device.communicator.rank == 0:
+        numpy.testing.assert_allclose(forces, expected_forces)
+        numpy.testing.assert_allclose(energies, expected_energies)
+
+
+@pytest.fixture(
+    params=[
+        # (time_scale_factor, domain)
+        (1.0, [0.0, 100.0]),
+        (2.0, [0.0, 50.0]),
+    ],
+    ids=["unscaled_time", "scaled_time"],
+)
+def valid_args_vary(request):
+
+    time_scale_factor, domain = request.param
+    attraction_factor_table = numpy.array(
+        [
+            [0.7, 0.6, 0.5, 0.4, 0.3, 0.2],
+            [0.6, 0.5, 0.4, 0.3, 0.2, 0.1],
+            [0.5, 0.4, 0.3, 0.2, 0.1, 0.0],
+            [0.4, 0.3, 0.2, 0.1, 0.0, 0.0],
+        ]
+    )
+
+    return {
+        "nlist": hoomd.md.nlist.Cell(buffer=0.4),
+        "rcut": 3.0,
+        "time_scale_factor": time_scale_factor,
+        "energy_shift": False,
+        "attraction_scale_factor_data": attraction_factor_table,
+        "domain": domain,
+        "variant": hoomd.azplugins.variant.VariantInterpolated(
+            [2, 0, -2, -4, -6, -8],
+            0.0,
+            100.0,  # Run for 100 timesteps, which corresponds to t = 0.5 for dt = 0.005
+        ),
+    }
+
+
+"""Test energy and force calculation for single particle type
+with varying attraction scale factor."""
+
+
+@pytest.mark.parametrize(
+    (
+        "positions",
+        "epsilon",
+        "expected_forces_t0",
+        "expected_energies_t0",
+        "expected_forces_t100",
+        "expected_energies_t100",
+    ),
+    [
+        (
+            [[-10, -10, -10], [-10, -8.8, -10]],
+            1.0,
+            [[0, 1.5150099394228083, 0.0], [0, -1.5150099394228083, 0.0]],
+            [-0.3051556, -0.3051556],
+            [[0.0, 0.24328626, 0.0], [0.0, -0.24328626, 0.0]],
+            [-0.04900309, -0.04900309],
+        ),
+        (
+            [[-0.5, -0.5, 0.1], [0.5, 0.5, 0.1]],
+            2.0,
+            [[1.0125, 1.0125, 0.0], [-1.0125, -1.0125, 0.0]],
+            [-0.196875, -0.196875],
+            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+            [0.0, 0.0],
+        ),
+        (
+            [[0.0, 8.0, 5], [-0.5, 8.5, 4.5]],
+            1.0,
+            [
+                [141.87105624142694, -141.87105624142694, 141.87105624142694],
+                [-141.87105624142694, 141.87105624142694, -141.87105624142694],
+            ],
+            [6.796570644718809, 6.796570644718809],
+            [
+                [141.87105624142694, -141.87105624142694, 141.87105624142694],
+                [-141.87105624142694, 141.87105624142694, -141.87105624142694],
+            ],
+            [6.996570644718809, 6.996570644718809],
+        ),
+    ],
+)
+def test_energy_and_force_calculation_vary(
+    valid_args_vary,
+    two_particle_snapshot_factory,
+    simulation_factory,
+    positions,
+    epsilon,
+    expected_forces_t0,
+    expected_energies_t0,
+    expected_forces_t100,
+    expected_energies_t100,
+):
+    """Energies/forces at t=0 and t=0.5, with and without time scaling."""
+    snap = two_particle_snapshot_factory(positions)
+    evap = hoomd.azplugins.pair.PerturbedLennardJonesEvap(**valid_args_vary)
+    evap.params[("A", "A")] = dict(epsilon=epsilon, sigma=1.0)
+    sim = simulation_factory(snap)
+
+    integrator = hoomd.md.Integrator(dt=0.005)
+    integrator.forces = [evap]
+    sim.operations.integrator = integrator
+    sim.run(0)
+
+    forces = evap.forces
+    energies = evap.energies
+
+    if sim.device.communicator.rank == 0:
+        numpy.testing.assert_allclose(forces, expected_forces_t0)
+        numpy.testing.assert_allclose(energies, expected_energies_t0)
+
+    """Test if the potential energy and forces change as expected after a certain time.
+    """
+
+    sim.run(100)
+    forces = evap.forces
+    energies = evap.energies
+
+    if sim.device.communicator.rank == 0:
+        numpy.testing.assert_allclose(forces, expected_forces_t100)
+        numpy.testing.assert_allclose(energies, expected_energies_t100)
