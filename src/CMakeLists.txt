@@ -164,6 +164,7 @@ endforeach()
 set(_binning_geometries
     Cartesian
     Cylindrical
+    Spherical
     )
 foreach(_geometry ${_binning_geometries})
     configure_file(export_VelocityFieldCompute.cc.inc
