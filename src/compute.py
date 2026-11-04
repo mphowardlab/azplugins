@@ -328,3 +328,57 @@ class CylindricalVelocityFieldCompute(VelocityFieldCompute):
             )
 
     """
+
+
+class SphericalVelocityFieldCompute(VelocityFieldCompute):
+    r"""Compute velocity field in spherical coordinates.
+
+    Args:
+        num_bins (tuple[int]): Number of bins along each of the 3 spherical
+            coordinates. A value of zero indicates the coordinate is ignored.
+        lower_bounds (tuple[float]): Lower bounds for each coordinate. The
+            value of this bound is ignored if the number of bins is zero.
+        upper_bounds (tuple[float]): Upper bounds for each coordinate. The
+            value of this bound is ignored if the number of bins is zero.
+        filter (hoomd.filter.ParticleFilter): HOOMD particles to include in calculation.
+            The default value of `None` means no HOOMD particles are included.
+        include_mpcd_particles (bool): If `True`, include MPCD particles in
+            the calculation. This argument only takes effect if HOOMD was
+            compiled with the MPCD component.
+
+    `SphericalVelocityFieldCompute` calculates the mass-averaged velocity in a
+    bin using the spherical coordinate system :math:`(r, \theta, \phi)`, where
+    :math:`\theta` is the azimuthal angle around the *z* axis with
+    :math:`0 \le \theta < 2\pi` and :math:`\phi` is the polar angle from the
+    *z* axis with :math:`0 \le \phi \le \pi`. The spherical position
+    coordinates are related to the Cartesian coordinates :math:`(x, y, z)` by
+
+    .. math::
+
+        r = \sqrt{x^2 + y^2 + z^2} \\
+        \theta = \arctan\left(\frac{y}{x}\right) \\
+        \phi = \arccos\left(\frac{z}{r}\right)
+
+    Before averaging, Cartesian velocity vectors are converted to the
+    spherical coordinate system using the change-of-basis matrix:
+
+    .. math::
+
+        \left(\begin{array}{ccc}
+        \sin\phi\cos\theta & \sin\phi\sin\theta & \cos\phi \\
+        -\sin\theta & \cos\theta & 0 \\
+        \cos\phi\cos\theta & \cos\phi\sin\theta & -\sin\phi
+        \end{array}\right)
+
+    Particles that lie outside the lower and upper bounds are ignored.
+
+    Example::
+
+        velocity_field = hoomd.azplugins.compute.SphericalVelocityFieldCompute(
+            num_bins=(10, 0, 18),
+            lower_bounds=(0, 0, 0),
+            upper_bounds=(10, 0, numpy.pi),
+            filter=hoomd.filter.All(),
+            )
+
+    """
