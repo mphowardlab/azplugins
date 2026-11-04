@@ -24,7 +24,7 @@ azplugins.compute
     :synopsis: Computes.
     :members: CartesianVelocityFieldCompute,
         CylindricalVelocityFieldCompute,
-        SphericalVelocityFieldCompute
+        SphericalVelocityFieldCompute,
         VelocityCompute,
         VelocityFieldCompute
     :no-inherited-members:

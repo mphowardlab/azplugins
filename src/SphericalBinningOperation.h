@@ -32,8 +32,7 @@ class SphericalBinningOperation : public BinningOperation
         uint3 bin_ = make_uint3(0, 0, 0);
 
         // bin with respect to r first because it is needed for the vector transform
-        const Scalar r = fast::sqrt(coordinates.x * coordinates.x + coordinates.y * coordinates.y
-                                    + coordinates.z * coordinates.z);
+        const Scalar r = fast::sqrt(dot(coordinates, coordinates));
 
         if (m_should_bin[0] && !bin1D(bin_.x, r, 0))
             {
