@@ -1,0 +1,253 @@
+// Copyright (c) 2018-2020, Michael P. Howard
+// Copyright (c) 2021-2025, Auburn University
+// Part of azplugins, released under the BSD 3-Clause License.
+
+// Maintainer: astatt
+
+/*!
+ * \file DynamicBondUpdaterGPU.cc
+ * \brief Definition of DynamicBondUpdaterGPU
+ */
+
+#include "DynamicBondUpdaterGPU.h"
+#include "DynamicBondUpdaterGPU.cuh"
+
+namespace hoomd
+    {
+namespace azplugins
+    {
+
+/*!
+ * \param sysdef System definition
+ * \param trigger Trigger of how often this updater gets executed
+ * \param group_1 first group of particles to make bonds between
+ * \param group_2 second group of particles to make bonds between (can be identical to group_1)
+ * \param seed seed for the random number generator for bond probability checking
+ *
+ */
+DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
+                                             std::shared_ptr<Trigger> trigger,
+                                             std::shared_ptr<ParticleGroup> group_1,
+                                             std::shared_ptr<ParticleGroup> group_2,
+                                             uint16_t seed)
+    : DynamicBondUpdater(sysdef, trigger, group_1, group_2, seed),
+      m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf)
+    {
+    // only one GPU is supported
+    if (!m_exec_conf->isCUDAEnabled())
+        {
+        throw std::runtime_error("Cannot initialize DynamicBondUpdaterGPU on a CPU device.");
+        }
+
+    m_tuner_copy_nlist.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                              m_exec_conf,
+                                              "dynamic_bonding_copy_nlist"));
+    m_tuner_filter_bonds.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                                m_exec_conf,
+                                                "dynamic_bonding_filter_bonds"));
+
+    m_autotuners.insert(m_autotuners.end(), {m_tuner_copy_nlist, m_tuner_filter_bonds});
+
+    m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdaterGPU" << std::endl;
+    }
+
+/*!
+ * \param sysdef System definition
+ * \param trigger Trigger of how often this updater gets executed
+ * \param group_1 first group of particles to make bonds between
+ * \param group_2 second group of particles to make bonds between (can be identical to group_1)
+ * \param seed seed for the random number generator for bond probability checking
+ * \param r_cut radius to search for neighbors for potential bonding pairs in
+ * \param probability bond forming probability
+ * \param max_bonds_group_1 maximum bonds a particle in group 1 can have
+ * \param max_bonds_group_2 maximum bonds a particle in group 2 can have (can be identical
+ *                          to max_bonds_group_1 )
+ * \param bond_type type of bond this updater will form
+ */
+DynamicBondUpdaterGPU::DynamicBondUpdaterGPU(std::shared_ptr<SystemDefinition> sysdef,
+                                             std::shared_ptr<Trigger> trigger,
+                                             std::shared_ptr<ParticleGroup> group_1,
+                                             std::shared_ptr<ParticleGroup> group_2,
+                                             uint16_t seed,
+                                             const Scalar r_cut,
+                                             const Scalar probability,
+                                             unsigned int max_bonds_group_1,
+                                             unsigned int max_bonds_group_2,
+                                             unsigned int bond_type)
+    : DynamicBondUpdater(sysdef,
+                         trigger,
+                         group_1,
+                         group_2,
+                         seed,
+                         r_cut,
+                         probability,
+                         max_bonds_group_1,
+                         max_bonds_group_2,
+                         bond_type),
+      m_num_nonzero_bonds_flag(m_exec_conf), m_max_bonds_overflow_flag(m_exec_conf)
+    {
+    // only one GPU is supported
+    if (!m_exec_conf->isCUDAEnabled())
+        {
+        throw std::runtime_error("Cannot initialize DynamicBondUpdaterGPU on a CPU device.");
+        }
+
+    m_tuner_copy_nlist.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                              m_exec_conf,
+                                              "dynamic_bonding_copy_nlist"));
+    m_tuner_filter_bonds.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
+                                                m_exec_conf,
+                                                "dynamic_bonding_filter_bonds"));
+
+    m_autotuners.insert(m_autotuners.end(), {m_tuner_copy_nlist, m_tuner_filter_bonds});
+
+    m_exec_conf->msg->notice(5) << "Constructing DynamicBondUpdaterGPU" << std::endl;
+    }
+
+DynamicBondUpdaterGPU::~DynamicBondUpdaterGPU()
+    {
+    m_exec_conf->msg->notice(5) << "Destroying DynamicBondUpdaterGPU" << std::endl;
+    }
+
+void DynamicBondUpdaterGPU::filterPossibleBonds()
+    {
+    // copy data from m_n_list to d_all_possible_bonds. nlist saves indices and the existing bonds
+    // have to be stored by tags so copy data first then sort out existing bonds
+    const unsigned int size = m_group_1->getNumMembers() * m_max_bonds;
+    ArrayHandle<unsigned int> d_n_existing_bonds(m_n_existing_bonds,
+                                                 access_location::device,
+                                                 access_mode::read);
+    ArrayHandle<unsigned int> d_existing_bonds_list(m_existing_bonds_list,
+                                                    access_location::device,
+                                                    access_mode::read);
+
+    ArrayHandle<unsigned int> d_nlist(m_pair_internal_nlist->getNListArray(),
+                                      access_location::device,
+                                      access_mode::read);
+    ArrayHandle<unsigned int> d_n_neigh(m_pair_internal_nlist->getNNeighArray(),
+                                        access_location::device,
+                                        access_mode::read);
+    ArrayHandle<size_t> d_n_head_list(m_pair_internal_nlist->getHeadList(),
+                                      access_location::device,
+                                      access_mode::read);
+
+    ArrayHandle<unsigned int> d_tag(m_pdata->getTags(), access_location::device, access_mode::read);
+    ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::read);
+    ArrayHandle<unsigned int> d_index_group_1(m_group_1->getIndexArray(),
+                                              access_location::device,
+                                              access_mode::read);
+
+    ArrayHandle<Scalar3> d_all_possible_bonds(m_all_possible_bonds,
+                                              access_location::device,
+                                              access_mode::readwrite);
+    cudaMemset((void*)d_all_possible_bonds.data,
+               0,
+               sizeof(Scalar3) * m_all_possible_bonds.getNumElements());
+
+    const BoxDim& box = m_pdata->getBox();
+
+    if (m_groups_identical)
+        {
+        m_tuner_copy_nlist->begin();
+        gpu::copy_possible_bonds(d_all_possible_bonds.data,
+                                 d_pos.data,
+                                 d_tag.data,
+                                 d_index_group_1.data,
+                                 d_index_group_1.data,
+                                 d_n_neigh.data,
+                                 d_nlist.data,
+                                 d_n_head_list.data,
+                                 box,
+                                 m_max_bonds,
+                                 m_r_cut,
+                                 m_groups_identical,
+                                 m_group_1->getNumMembers(),
+                                 m_group_1->getNumMembers(),
+                                 m_tuner_copy_nlist->getParam()[0]);
+        if (m_exec_conf->isCUDAErrorCheckingEnabled())
+            CHECK_CUDA_ERROR();
+        m_tuner_copy_nlist->end();
+        }
+    else
+        {
+        ArrayHandle<unsigned int> d_index_group_2(m_group_2->getIndexArray(),
+                                                  access_location::device,
+                                                  access_mode::read);
+        m_tuner_copy_nlist->begin();
+        gpu::copy_possible_bonds(d_all_possible_bonds.data,
+                                 d_pos.data,
+                                 d_tag.data,
+                                 d_index_group_1.data,
+                                 d_index_group_2.data,
+                                 d_n_neigh.data,
+                                 d_nlist.data,
+                                 d_n_head_list.data,
+                                 box,
+                                 m_max_bonds,
+                                 m_r_cut,
+                                 m_groups_identical,
+                                 m_group_2->getNumMembers(),
+                                 m_group_1->getNumMembers(),
+                                 m_tuner_copy_nlist->getParam()[0]);
+        if (m_exec_conf->isCUDAErrorCheckingEnabled())
+            CHECK_CUDA_ERROR();
+        m_tuner_copy_nlist->end();
+        }
+
+    // filter out the existing bonds - based on neighbor list exclusion handling
+    m_tuner_filter_bonds->begin();
+    gpu::filter_existing_bonds(d_all_possible_bonds.data,
+                               d_n_existing_bonds.data,
+                               d_existing_bonds_list.data,
+                               m_existing_bonds_list_indexer,
+                               size,
+                               m_tuner_filter_bonds->getParam()[0]);
+    if (m_exec_conf->isCUDAErrorCheckingEnabled())
+        CHECK_CUDA_ERROR();
+    m_tuner_filter_bonds->end();
+
+    m_num_all_possible_bonds = 0;
+
+    gpu::remove_zeros_and_sort_possible_bond_array(d_all_possible_bonds.data,
+                                                   size,
+                                                   m_num_nonzero_bonds_flag.getDeviceFlags());
+
+    m_num_all_possible_bonds = m_num_nonzero_bonds_flag.readFlags();
+
+    // at this point, the sub-array: d_all_possible_bonds[0,m_num_all_possible_bonds]
+    // should contain only unique entries of possible bonds which are not yet formed.
+    }
+
+namespace detail
+    {
+/*!
+ * \param m Python module to export to
+ */
+void export_DynamicBondUpdaterGPU(pybind11::module& m)
+    {
+    namespace py = pybind11;
+
+    py::class_<DynamicBondUpdaterGPU, DynamicBondUpdater, std::shared_ptr<DynamicBondUpdaterGPU>>(
+        m,
+        "DynamicBondUpdaterGPU")
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>,
+                            std::shared_ptr<Trigger>,
+                            std::shared_ptr<ParticleGroup>,
+                            std::shared_ptr<ParticleGroup>,
+                            uint16_t>())
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>,
+                            std::shared_ptr<Trigger>,
+                            std::shared_ptr<ParticleGroup>,
+                            std::shared_ptr<ParticleGroup>,
+                            uint16_t,
+                            Scalar,
+                            Scalar,
+                            unsigned int,
+                            unsigned int,
+                            unsigned int>());
+    }
+
+    } // end namespace detail
+    } // end namespace azplugins
+
+    } // end namespace hoomd
